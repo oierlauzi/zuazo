@@ -1,6 +1,5 @@
 #include "Zuazo.h"
-
-Zuazo::Context* defaultCtx=NULL; //Stores the default context. It gets created at init()
+#include "Context.h"
 
 using namespace Zuazo;
 
@@ -22,10 +21,11 @@ Error init(){
     if(err!=GLFW_TRUE)
         return Error::GLFW_INIT;
 
-    //Create a windowless CTX for defaultCtx
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    defaultCtx=glfwCreateWindow(640, 480, "", NULL, NULL);
-    glfwDefaultWindowHints();
+    //Initialize context handling
+    err=Context::init();
+    if(err)
+    	return Error::CONTEX_INIT;
+    glfwMakeContextCurrent(Context::s_defaultGLFWCtx);
 
     //Init GLEW
     err=glewInit();
@@ -55,47 +55,4 @@ Error init(){
  **/
 Error end(){
     return Error::NONE; //TODO:
-}
-
-
-/***************************************************
- *  CONTEXT RELATED FUNCTIONS                      *
- ***************************************************/
-
-/**
-	@brief creates a Zuazo context
-	@return The newliy generated context
- **/
-Context* createCtx(){
-    Context * ctx;
-
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    ctx=glfwCreateWindow(640, 480, "", NULL, defaultCtx);
-    glfwDefaultWindowHints();
-
-    return ctx;
-}
-
-/**
-	@brief destroys the given context
-	@param ctx the context that needs to be destroyed
- **/
-void destroyCtx(Context* ctx){
-    glfwDestroyWindow(ctx);
-}
-
-/**
-	@brief sets the default context as the active context
- **/
-void setDefaultCtxCurrent(){
-    glfwMakeContextCurrent(defaultCtx);
-}
-
-/**
-	@brief sets the given context as active
-	@param ctx the context that is going to become active
- **/
-void setCtxCurrent(const Context* ctx){
-    Context* ncCtx=const_cast<Context*>(ctx);
-    glfwMakeContextCurrent(ncCtx);
 }
