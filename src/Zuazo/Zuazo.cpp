@@ -1,7 +1,11 @@
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+
 #include "Zuazo.h"
 #include "Context.h"
 
-using namespace Zuazo;
+
+namespace Zuazo{
 
 /***************************************************
  *  INITIALIZATION / QUIT FUNCTIONS                *
@@ -55,4 +59,6 @@ Error init(){
  **/
 Error end(){
     return Error::NONE; //TODO:
+}
+
 }

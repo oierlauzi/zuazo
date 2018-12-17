@@ -3,13 +3,13 @@
 
 using namespace Zuazo;
 
+//A context pointer for each thread. In case it's needed
+//by setDefaultActive(), it will be constructed, otherwise it will be an empty pointer
+thread_local std::unique_ptr<Context> Context::s_threadCtx;
+
 //Holds the default GLFW context, where all GL objects will be shared
 //It is initialized by init()
 GLFWwindow * Context::s_defaultGLFWCtx=NULL;
-
-//A context pointer for each thread. I case it's demanded
-//by setActive(), the actual object will be constructed
-thread_local std::unique_ptr<Context> Context::s_threadCtx;
 
 
 /*
@@ -40,11 +40,11 @@ int Context::end() {
 		s_defaultGLFWCtx=NULL;
 		return 0; //All OK
 	}else
-		return -1; //init wasn'called/failed
+		return -1; //init() wasn't called or failed
 }
 
 Context::Context() {
-	//Create a windowless context for me. It will be sharing
+	//Create a window-less context for me. It will be sharing
 	// objects with s_defaultCtx
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     m_ctx=glfwCreateWindow(640, 480, "", NULL, s_defaultGLFWCtx);
@@ -59,19 +59,27 @@ Context::~Context() {
 /*
  * @brief sets this context as active
  */
-void Context::use() {
-	glfwMakeContextCurrent(m_ctx);
+inline void Context::setActive() {
+	if(m_ctx!=glfwGetCurrentContext())
+		glfwMakeContextCurrent(m_ctx); //This context is not active. Set it as active
 }
 
 /*
  * @brief sets as active the context bound this thread
  */
-void Context::setActive() {
+inline void Context::setDefaultActive() {
 	if(s_threadCtx)
-		s_threadCtx->use(); //Context exists, set it active
+		s_threadCtx->setActive(); //Context exists, set it active
 	else{
 		s_threadCtx=std::unique_ptr<Context>(new Context()); //Does not exist -> create it
-		s_threadCtx->use();	//Set it active
+		s_threadCtx->setActive();	//Set it active
 	}
 
+}
+
+/*
+ * @brief sets as active the main context
+ */
+inline void Context::setMainActive() {
+	glfwMakeContextCurrent(s_defaultGLFWCtx); //Set main context current
 }
