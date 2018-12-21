@@ -1,19 +1,25 @@
 #pragma once
 
-#include "Zuazo.h"
-
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include <sys/types.h>
 #include <memory>
+
+#include "../../include/Window.h"
+#include "../../include/Zuazo.h"
+
+struct GLFWwindow;
 
 namespace Zuazo{
 
+class Window;
+
 class Context{
 	friend Error Zuazo::init();
+	friend Window::Window(u_int32_t width, u_int32_t height, std::string name);
 public:
 	static int init();
 	static int end();
 	Context();
+	Context(const Context& ctx)=delete;
 	~Context();
 
 	void						setActive();

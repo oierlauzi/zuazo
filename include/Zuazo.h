@@ -1,18 +1,8 @@
 #pragma once
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-
-#include <stdlib.h>
-#include <math.h>
-#include <unistd.h>
-#include <string.h>
-#include <map>
-#include <queue>
-
 namespace Zuazo{
 
-//Errors that initialization and other things can produce
+//Errors that initialization and terminating can produce
 enum Error{
     OK			=0,
     NONE        =0,

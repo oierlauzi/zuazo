@@ -1,5 +1,7 @@
 #pragma once
 
+#include <sys/types.h>
+
 namespace Zuazo{
 
 struct Vec2{
@@ -39,6 +41,22 @@ struct Rectangle2C{
 struct RectangleCS{
 	Vec2	pos;
 	Vec2	size;
+};
+
+/*
+ * Contains a resolution
+ */
+struct Resolution{
+	u_int32_t	width=0;
+	u_int32_t	height=0;
+};
+
+/*
+ * Contains a rational number
+ */
+struct Rational{
+	int num=0;
+	int den=0;
 };
 
 }

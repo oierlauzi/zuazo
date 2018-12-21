@@ -1,5 +1,8 @@
 #include "Context.h"
-#include "Zuazo.h"
+
+#include <GLFW/glfw3.h>
+#include <stddef.h>
+
 
 using namespace Zuazo;
 
