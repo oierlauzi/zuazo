@@ -4,6 +4,7 @@
 #include <list>
 #include <set>
 #include <string>
+#include <thread>
 
 struct GLFWwindow;
 struct GLFWmonitor;
@@ -17,11 +18,15 @@ class Frame; //TODO
 class Window{
 public:
 	struct Screen{
-		Screen(const GLFWmonitor * mon);
+		friend Window;
 		std::string 	name="";
 		Resolution		res;
 		Rational		frameRate;
 		bool			isUsed=false;
+	private:
+		Screen(const GLFWmonitor * monitor);
+		GLFWmonitor	*	mon=NULL;
+
 	};
 
 	Window(u_int32_t width=1280, u_int32_t height=720, std::string name="");
@@ -30,11 +35,12 @@ public:
 
 	void			setRes(const Resolution& res);
 	void			setRes(u_int32_t width, u_int32_t height);
-	bool			setFullScreen(const Screen& screen);
+	void			setFullScreen(const Screen& screen);
 	bool			setFullScreen(const std::string name);
 	void			setWindowed();
 	void			setVSync(bool value);
 	void			setName(std::string name);
+	void			setResizeCbk(void(*resizeCbk)(u_int32_t width, u_int32_t height));
 
 	Resolution		getRes() const;
 	void			getRes(u_int32_t* width, u_int32_t* height) const;
@@ -60,9 +66,16 @@ private:
 		int			height=0;
 	}m_windowedParams;
 
+	void			(*m_resizeCbk)(u_int32_t width, u_int32_t height);
+
 	GLFWwindow* 	m_ctx; //The GLFW context
 
 	static std::set<GLFWmonitor *> s_usedScreens;
+
+	static std::thread	s_eventThread;
+
+	static void		eventThreadFunc();
+	static void		glfwResizeCbk(GLFWwindow * win, int width, int height);
 };
 
 }

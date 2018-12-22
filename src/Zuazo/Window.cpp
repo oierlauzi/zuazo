@@ -1,7 +1,11 @@
-#include "Window.h"
+#include "../../include/Window.h"
+
+#include <GLFW/glfw3.h>
+#include <unistd.h>
+#include <map>
+#include <utility>
 
 #include "Context.h"
-#include <GLFW/glfw3.h>
 
 using namespace Zuazo;
 
@@ -10,25 +14,34 @@ using namespace Zuazo;
  */
 std::set<GLFWmonitor *> Window::s_usedScreens;
 
+/*
+ * Stores the thread which continuously checks for events
+ */
+std::thread	Window::s_eventThread(eventThreadFunc);
+
 /********************************
  *	CONSTRUCTOR / DESTRUCTOR	*
  ********************************/
 
 Window::Window(u_int32_t width, u_int32_t height, std::string name) {
 	m_ctx=glfwCreateWindow(width, height, name.c_str(), NULL, Context::s_defaultGLFWCtx);
+	glfwSetWindowUserPointer(m_ctx, this);
+	glfwSetWindowSizeCallback(m_ctx, glfwResizeCbk);
+
 	m_res={width, height};
 	m_vSync=false;
 	m_name=name;
+	m_resizeCbk=NULL;
 
 	//Set vSync ON
 	setVSync(true);
 }
-
-/*
- * @brief copy constructor
- */
-Window::Window(const Window& window): Window(window.m_res.width, window.m_res.height, window.m_name) {
-}
+Window::Window(const Window& window) :
+		Window(
+			window.m_res.width,
+			window.m_res.height,
+			window.m_name
+		){}
 
 Window::~Window() {
 	if(glfwGetWindowMonitor(m_ctx))
@@ -37,21 +50,20 @@ Window::~Window() {
 	glfwDestroyWindow(m_ctx);
 }
 
-Window::Screen::Screen(const GLFWmonitor* mon) {
+Window::Screen::Screen(const GLFWmonitor* monitor) {
+	mon=const_cast<GLFWmonitor*>(monitor);
 	if(mon){
-		GLFWmonitor* ncMon=const_cast<GLFWmonitor*>(mon);
-
-		name=std::string(glfwGetMonitorName(ncMon)); //Query name
+		name=std::string(glfwGetMonitorName(mon)); //Query name
 
 		//Query resolution and frame-rate
-		const GLFWvidmode* vm=glfwGetVideoMode(ncMon);
+		const GLFWvidmode* vm=glfwGetVideoMode(mon);
 		res.width=vm->width;
 		res.height=vm->height;
 		frameRate.num=vm->refreshRate;
 		frameRate.den=1;
 
 		//Check if it is in use
-		if(s_usedScreens.find(ncMon)==s_usedScreens.end())
+		if(s_usedScreens.find(mon)==s_usedScreens.end())
 			isUsed=false; //Screen is not in use
 		else
 			isUsed=true; //Screen is being used by a Window
@@ -67,7 +79,8 @@ void Window::setRes(const Resolution& res) {
 }
 
 void Window::setRes(u_int32_t width, u_int32_t height) {
-	//TODO
+	glfwSetWindowSize(m_ctx, width, height);
+	m_res={width, height};
 }
 
 /*
@@ -75,8 +88,26 @@ void Window::setRes(u_int32_t width, u_int32_t height) {
  * @param screen: the target screen
  * @return true on success
  */
-bool Window::setFullScreen(const Screen& screen) {
-	return setFullScreen(screen.name);
+void Window::setFullScreen(const Screen& screen) {
+	if(screen.mon){
+		//Store window's position
+		glfwGetWindowPos(m_ctx, &m_windowedParams.x, &m_windowedParams.y);
+		glfwGetWindowSize(m_ctx, &m_windowedParams.width, &m_windowedParams.height);
+
+		//Get screen's parameters
+		int scrPosX, scrPosY;
+		glfwGetMonitorPos(screen.mon, &scrPosX, &scrPosY);
+		const GLFWvidmode* mode = glfwGetVideoMode(screen.mon);
+
+		//Finally set me on fullScreen
+		glfwSetWindowMonitor(m_ctx, screen.mon, scrPosX, scrPosY, mode->width, mode->height, mode->refreshRate);
+
+		//Update size data
+		m_res.width=mode->width;
+		m_res.height=mode->height;
+
+		s_usedScreens.insert(screen.mon);
+	}
 }
 
 /*
@@ -85,37 +116,18 @@ bool Window::setFullScreen(const Screen& screen) {
  * @return true on success
  */
 bool Window::setFullScreen(const std::string name) {
-	//Query avalible screens from GLFW
-	int count=0;
-	GLFWmonitor** monitors = glfwGetMonitors(&count);
+	//Get all the screens
+	std::list<Screen> screens=getScreens();
+
+	//Find the requested screen
+	Screen* screen=NULL;
+	for(Screen& scr : screens)
+		if(scr.name==name && !scr.isUsed)
+			screen=&scr;	//Found!
 
 
-	//Find a screen with the same name
-	GLFWmonitor* tgtMon=NULL;
-	for(int i=0; i<count && !tgtMon; i++){
-		std::string monName(glfwGetMonitorName(monitors[i]));
-		if(monName==name)
-			tgtMon=monitors[i]; //Found!
-	}
-
-	if(tgtMon){
-		//Store window's position
-		glfwGetWindowPos(m_ctx, &m_windowedParams.x, &m_windowedParams.y);
-		glfwGetWindowSize(m_ctx, &m_windowedParams.width, &m_windowedParams.height);
-
-		//Get screen's parameters
-		int scrPosX, scrPosY;
-		glfwGetMonitorPos(tgtMon, &scrPosX, &scrPosY);
-		const GLFWvidmode* mode = glfwGetVideoMode(tgtMon);
-
-		//Finally set me on fullScreen
-		glfwSetWindowMonitor(m_ctx, tgtMon, scrPosX, scrPosY, mode->width, mode->height, mode->refreshRate);
-
-		//Update size data
-		m_res.width=mode->width;
-		m_res.height=mode->height;
-
-		s_usedScreens.insert(tgtMon);
+	if(screen){
+		setFullScreen(*screen);
 		return true;
 	}else
 		return false;
@@ -156,8 +168,17 @@ void Window::setVSync(bool value) {
 		}
 	}
 }
+
 void Window::setName(std::string name){
 	glfwSetWindowTitle(m_ctx, name.c_str());
+}
+
+/*
+ * @brief Sets the callback which will be called whenever the window gets resized
+ * @param resizeCbk: A pointer to a function with the following prototype: void f(u_int32_t, u_int32_t)
+ */
+void Window::setResizeCbk(void(*resizeCbk)(u_int32_t width, u_int32_t height)){
+	m_resizeCbk=resizeCbk;
 }
 
 /********************************
@@ -237,4 +258,29 @@ std::list<Window::Screen> Window::getAvalibleScreens() {
 
 
 	return screens;
+}
+
+/*
+ * @brief: Continuously checks for events in GLFW
+ */
+void Window::eventThreadFunc(){
+	while(true){
+		glfwWaitEvents();
+		usleep(10000);
+	}
+}
+
+/*
+ * @brief: function which gets called by GLFW when a window changes it's resolution
+ */
+void Window::glfwResizeCbk(GLFWwindow * win, int width, int height){
+	Window * window=(Window *)glfwGetWindowUserPointer(win);
+	if(window){
+		window->m_res.width=width;
+		window->m_res.height=height;
+
+		//If the window has a resize callback, call it
+		if(window->m_resizeCbk)
+			window->m_resizeCbk(width, height);
+	}
 }

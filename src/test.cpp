@@ -22,12 +22,11 @@ int main(void){
 	 * 		TEST 1
 	 */
 
-	Zuazo::Window win(1920, 1080, "Ventana");
+	Zuazo::Window win(680, 480, "Ventana");
 	std::list<Zuazo::Window::Screen> screens=Zuazo::Window::getAvalibleScreens();
 
 	for(Zuazo::Window::Screen& scr : screens)
 		std::cout<<scr.name <<std::endl;
-
 
 	getchar();
 
