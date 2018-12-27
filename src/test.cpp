@@ -1,12 +1,12 @@
-#include <GL/glew.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <cstdio>
-#include <iostream>
-#include <list>
-#include <string>
 
-#include "../include/Window.h"
-#include "../include/Zuazo.h"
+#include "Zuazo/Drawtable.h"
+#include "Zuazo/Window.h"
+#include "Zuazo/Zuazo.h"
+#include "Zuazo/Context.h"
+
 
 #define TEST1
 
@@ -22,11 +22,12 @@ int main(void){
 	 * 		TEST 1
 	 */
 
+
 	Zuazo::Window win(680, 480, "Ventana");
-	std::list<Zuazo::Window::Screen> screens=Zuazo::Window::getAvalibleScreens();
+	/*std::list<Zuazo::Window::Screen> screens=Zuazo::Window::getAvalibleScreens();
 
 	for(Zuazo::Window::Screen& scr : screens)
-		std::cout<<scr.name <<std::endl;
+		std::cout<<scr.name <<std::endl;*/
 
 	getchar();
 
@@ -38,4 +39,11 @@ int main(void){
 
 
 	#endif
+
+	/*
+	 * 		TERMINATION
+	 */
+
+	Zuazo::end();
 }
+

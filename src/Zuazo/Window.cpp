@@ -1,4 +1,4 @@
-#include "../../include/Window.h"
+#include "Window.h"
 
 #include <GLFW/glfw3.h>
 #include <unistd.h>
@@ -17,14 +17,28 @@ std::set<GLFWmonitor *> Window::s_usedScreens;
 /*
  * Stores the thread which continuously checks for events
  */
-std::thread	Window::s_eventThread(eventThreadFunc);
+std::thread Window::s_eventThread;
+
+/********************************
+ *	INITIALIZER / TERMINATOR	*
+ ********************************/
+
+int Window::init(){
+	s_eventThread=std::thread(eventThreadFunc);
+	s_eventThread.detach();
+	return 0;
+}
+
+int Window::end(){
+	return 0;
+}
 
 /********************************
  *	CONSTRUCTOR / DESTRUCTOR	*
  ********************************/
 
 Window::Window(u_int32_t width, u_int32_t height, std::string name) {
-	m_ctx=glfwCreateWindow(width, height, name.c_str(), NULL, Context::s_defaultGLFWCtx);
+	m_ctx=glfwCreateWindow(width, height, name.c_str(), NULL, Context::s_mainGlfwCtx);
 	glfwSetWindowUserPointer(m_ctx, this);
 	glfwSetWindowSizeCallback(m_ctx, glfwResizeCbk);
 
@@ -35,6 +49,10 @@ Window::Window(u_int32_t width, u_int32_t height, std::string name) {
 
 	//Set vSync ON
 	setVSync(true);
+
+	//Initialize the thread
+	m_exit=false;
+	m_drawingThread=std::thread(&Window::drawThread, this);
 }
 
 Window::Window(const Window& window) :
@@ -47,6 +65,11 @@ Window::Window(const Window& window) :
 Window::~Window() {
 	if(glfwGetWindowMonitor(m_ctx))
 		setWindowed(); //Unuse screen
+
+	//Terminate the drawing thread
+	m_exit=true;
+	m_drawCond.notify_one();
+	m_drawingThread.join();
 
 	glfwDestroyWindow(m_ctx);
 }
@@ -156,6 +179,8 @@ void Window::setWindowed() {
  */
 void Window::setVSync(bool value) {
 	if(m_vSync != value){
+		std::unique_lock<std::mutex> lock(m_mutex);
+
 		//vSync setting needs to be changed
 		glfwMakeContextCurrent(m_ctx);
 		if(value){
@@ -215,16 +240,35 @@ std::string	Window::getName(){
  *		DRAW ACTIONS			*
  ********************************/
 
-void Window::draw(const Drawtable& drawtable) {
+/*
+ * @brief Draws the given frame on screen
+ * @param frame: The frame which is going to be drawn on screen
+ */
+void Window::draw(const Frame& frame) {
+	std::lock_guard<std::mutex> lock(m_mutex);
+	glfwMakeContextCurrent(m_ctx);
+
 	//TODO
+
+	m_drawCond.notify_one();
 }
 
-void Window::draw(const Frame& drawtable) {
-	//TODO
+/*
+ * @brief Whenever there is a available source, it draws it on screen
+ */
+void Window::drawThread(){
+	std::unique_lock<std::mutex> lock(m_mutex);
+	while(!m_exit){
+		m_drawCond.wait(lock); //Wait until drawing is signaled
+
+		//Draw content on screen
+		glfwMakeContextCurrent(m_ctx);
+		glfwSwapBuffers(m_ctx);
+	}
 }
 
 /********************************
- *		SCREEN LISTS			*
+ *		STATIC FUNCTIONS		*
  ********************************/
 
 /*
@@ -262,23 +306,21 @@ std::list<Window::Screen> Window::getAvalibleScreens() {
 }
 
 /*
- * @brief: Continuously checks for events in GLFW
+ * @brief Continuously checks for events in GLFW
  */
 void Window::eventThreadFunc(){
-	while(true){
+	while(!false){ //It's funny because its true. Don't worry compiler will solve it
 		glfwWaitEvents();
-		usleep(10000);
 	}
 }
 
 /*
- * @brief: function which gets called by GLFW when a window changes it's resolution
+ * @brief function which gets called by GLFW when a window changes it's resolution
  */
 void Window::glfwResizeCbk(GLFWwindow * win, int width, int height){
 	Window * window=(Window *)glfwGetWindowUserPointer(win);
 	if(window){
-		window->m_res.width=width;
-		window->m_res.height=height;
+		window->m_res={(u_int32_t)width, (u_int32_t)height};
 
 		//If the window has a resize callback, call it
 		if(window->m_resizeCbk)

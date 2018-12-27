@@ -1,18 +1,20 @@
 #include "Context.h"
 
 #include <GLFW/glfw3.h>
-#include <stddef.h>
+
 
 
 using namespace Zuazo;
 
-//A context pointer for each thread. In case it's needed
-//by setDefaultActive(), it will be constructed, otherwise it will be an empty pointer
-thread_local std::unique_ptr<Context> Context::s_threadCtx;
+/*
+ *	CONTEXT
+ */
 
-//Holds the default GLFW context, where all GL objects will be shared
-//It is initialized by init()
-GLFWwindow * Context::s_defaultGLFWCtx=NULL;
+//Holds the main context, which gets instanceated by init()
+std::unique_ptr<Context> 	Context::mainCtx;
+
+//Holds the main context's glfw context
+GLFWwindow * Context::s_mainGlfwCtx=NULL;
 
 
 /*
@@ -20,16 +22,14 @@ GLFWwindow * Context::s_defaultGLFWCtx=NULL;
  * @return generated error
  */
 int Context::init() {
-    //Creates a window-less GLFW context which will be used to share all objects across
-	//other contexts
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    s_defaultGLFWCtx=glfwCreateWindow(640, 480, "", NULL, NULL);
-    glfwDefaultWindowHints();
+	//Create the main context
+	mainCtx=std::unique_ptr<Context>(new Context());
 
-    if(s_defaultGLFWCtx)
-    	return 0; //Context was created
-    else
-    	return -1; //Error creating the context
+	//Set the reference for the main GLFW context
+	s_mainGlfwCtx=mainCtx->s_mainGlfwCtx;
+
+	//All should be OK
+	return 0;
 }
 
 /*
@@ -37,52 +37,79 @@ int Context::init() {
  * @return generated error
  */
 int Context::end() {
-	if(s_defaultGLFWCtx){
-		//Destroy the default GLFW context
-		glfwDestroyWindow(s_defaultGLFWCtx);
-		s_defaultGLFWCtx=NULL;
-		return 0; //All OK
-	}else
-		return -1; //init() wasn't called or failed
+	return 0;
 }
 
 Context::Context() {
 	//Create a window-less context for me. It will be sharing
 	// objects with s_defaultCtx
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    m_ctx=glfwCreateWindow(640, 480, "", NULL, s_defaultGLFWCtx);
+    m_glfwCtx=glfwCreateWindow(640, 480, "", NULL, s_mainGlfwCtx);
     glfwDefaultWindowHints();
 }
 
 Context::~Context() {
-	glfwDestroyWindow(m_ctx);
+	glfwDestroyWindow(m_glfwCtx);
 }
-
 
 /*
  * @brief sets this context as active
  */
-inline void Context::setActive() {
-	if(m_ctx!=glfwGetCurrentContext())
-		glfwMakeContextCurrent(m_ctx); //This context is not active. Set it as active
+inline void Context::setActive() const{
+	Context * ncCtx=const_cast<Context*>(this);
+
+	if(m_glfwCtx!=glfwGetCurrentContext())
+		glfwMakeContextCurrent(ncCtx->m_glfwCtx); //This context is not active. Set it as active
 }
+
+/*
+ * @brief sets this context as active and locks it's mutex
+ */
+inline void Context::use() const{
+	Context * ncCtx=const_cast<Context*>(this);
+
+	ncCtx->m_mutex.lock(); //Wait until it can be used in this thread
+	setActive(); //Set this context as the current
+}
+
+/*
+ * @brief unlocks it's mutex
+ */
+inline void Context::unuse() const{
+	Context * ncCtx=const_cast<Context*>(this);
+
+	ncCtx->m_mutex.unlock(); //Enable others to access this thread
+}
+
+/*
+ * 	UNIQUE CONTEXT
+ */
+
+UniqueContext::UniqueContext(const Context& ctx) {
+	m_ctx=&ctx;
+	m_ctx->use();
+}
+
+UniqueContext::~UniqueContext() {
+	m_ctx->unuse();
+}
+
+/*
+ * 	DEFAULT CONTEXT
+ */
+
+//A context pointer for each thread. In case it's needed
+//by setDefaultActive(), it will be constructed, otherwise it will be an empty pointer
+thread_local std::unique_ptr<Context> threadCtx;
 
 /*
  * @brief sets as active the context bound this thread
  */
-inline void Context::setDefaultActive() {
-	if(s_threadCtx)
-		s_threadCtx->setActive(); //Context exists, set it active
+inline void setDefaultContextActive(){
+	if(threadCtx)
+		threadCtx->setActive(); //Context exists, set it active
 	else{
-		s_threadCtx=std::unique_ptr<Context>(new Context()); //Does not exist -> create it
-		s_threadCtx->setActive();	//Set it active
+		threadCtx=std::unique_ptr<Context>(new Context()); //Does not exist -> create it
+		threadCtx->setActive();	//Set it active
 	}
-
-}
-
-/*
- * @brief sets as active the main context
- */
-inline void Context::setMainActive() {
-	glfwMakeContextCurrent(s_defaultGLFWCtx); //Set main context current
 }

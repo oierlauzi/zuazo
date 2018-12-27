@@ -3,7 +3,7 @@
 
 #include "Zuazo.h"
 #include "Context.h"
-
+#include "Window.h"
 
 namespace Zuazo{
 
@@ -29,7 +29,7 @@ Error init(){
     err=Context::init();
     if(err)
     	return Error::CONTEX_INIT;
-    glfwMakeContextCurrent(Context::s_defaultGLFWCtx);
+    Context::mainCtx->setActive();
 
     //Init GLEW
     err=glewInit();
@@ -40,7 +40,12 @@ Error init(){
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
 
-//TODO:
+    //Initialize window class
+    err=Window::init();
+    if(err)
+    	return Error::WINDOW_INIT;
+
+//TODO
     /*err=Shapes::Base::init();
     if(err!=OK)
         return Error::SHAPES_INIT;
@@ -58,7 +63,7 @@ Error init(){
 	@return Error generated destroying Error::NONE for all OK
  **/
 Error end(){
-    return Error::NONE; //TODO:
+    return Error::NONE; //TODO
 }
 
 }

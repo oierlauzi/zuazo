@@ -6,9 +6,10 @@ namespace Zuazo{
 enum Error{
     OK			=0,
     NONE        =0,
-    GLFW_INIT	=-1,
+    GLFW_INIT,
     GLEW_INIT,
 	CONTEX_INIT,
+	WINDOW_INIT,
     SHAPES_INIT,
     TEXT_INIT
 };

@@ -59,4 +59,12 @@ struct Rational{
 	int den=0;
 };
 
+/*
+ * Is used to exchange images with Zuazo
+ */
+struct MemFrame{
+	u_int8_t* data=NULL;
+	Resolution res;
+};
+
 }
