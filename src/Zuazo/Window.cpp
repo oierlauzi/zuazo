@@ -36,12 +36,13 @@ Window::Window(u_int32_t width, u_int32_t height, std::string name) {
 	//Set vSync ON
 	setVSync(true);
 }
+
 Window::Window(const Window& window) :
-		Window(
-			window.m_res.width,
-			window.m_res.height,
-			window.m_name
-		){}
+	Window(
+		window.m_res.width,
+		window.m_res.height,
+		window.m_name
+	){}
 
 Window::~Window() {
 	if(glfwGetWindowMonitor(m_ctx))
