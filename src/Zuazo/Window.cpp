@@ -1,7 +1,6 @@
 #include "Window.h"
 
 #include <GLFW/glfw3.h>
-#include <unistd.h>
 #include <map>
 #include <utility>
 
@@ -244,7 +243,7 @@ std::string	Window::getName(){
  * @brief Draws the given frame on screen
  * @param frame: The frame which is going to be drawn on screen
  */
-void Window::draw(const Frame& frame) {
+void Window::draw(const Surface& frame) {
 	std::lock_guard<std::mutex> lock(m_mutex);
 	glfwMakeContextCurrent(m_ctx);
 

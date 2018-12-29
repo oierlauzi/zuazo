@@ -2,7 +2,6 @@
 #include <unistd.h>
 #include <cstdio>
 
-#include "Zuazo/Drawtable.h"
 #include "Zuazo/Window.h"
 #include "Zuazo/Zuazo.h"
 #include "Zuazo/Context.h"

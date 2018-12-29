@@ -4,10 +4,8 @@
 #include <memory>
 #include <mutex>
 #include <string>
-#include <vector>
 
 #include "Window.h"
-#include "Zuazo.h"
 
 struct GLFWwindow;
 
@@ -30,12 +28,14 @@ public:
 	~Context();
 
 	void						setActive() const;
+	void						setPrevActive() const;
 	void						use()const;
 	void						unuse() const;
 
-	static std::unique_ptr<Context> 	mainCtx;
+	static Context* 			mainCtx;
 private:
 	GLFWwindow *				m_glfwCtx;
+	GLFWwindow *				m_prevGlfwCtx;
 	std::mutex					m_mutex;
 
 	static GLFWwindow *			s_mainGlfwCtx;
@@ -47,6 +47,7 @@ private:
 class UniqueContext{
 public:
 	UniqueContext(const Context& ctx);
+	UniqueContext(const Context* ctx);
 	UniqueContext(const UniqueContext& ctx)=delete;
 	~UniqueContext();
 private:
@@ -58,5 +59,6 @@ private:
  */
 
 extern void setDefaultContextActive();
+extern void setDefaultPrevContextActive();
 
 }

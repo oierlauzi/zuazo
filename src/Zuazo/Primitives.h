@@ -49,6 +49,10 @@ struct RectangleCS{
 struct Resolution{
 	u_int32_t	width=0;
 	u_int32_t	height=0;
+
+	operator bool() const{
+		return width && height;
+	}
 };
 
 /*
@@ -62,9 +66,9 @@ struct Rational{
 /*
  * Is used to exchange images with Zuazo
  */
-struct MemFrame{
-	u_int8_t* data=NULL;
+struct ExtImage{
 	Resolution res;
+	u_int8_t* data=NULL;
 };
 
 }

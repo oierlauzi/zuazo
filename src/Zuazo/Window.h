@@ -7,16 +7,14 @@
 #include <set>
 #include <string>
 #include <thread>
-#include <future>
 
 struct GLFWwindow;
 struct GLFWmonitor;
 
 #include "Primitives.h"
+#include "Surface.h"
 
 namespace Zuazo{
-
-class Frame;
 
 class Window{
 public:
@@ -55,7 +53,7 @@ public:
 	bool			getVSync() const;
 	std::string		getName();
 
-	void			draw(const Frame& frame);
+	void			draw(const Surface& frame);
 
 	static std::list<Screen> getScreens();
 	static std::list<Screen> getAvalibleScreens();

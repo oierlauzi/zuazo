@@ -1,35 +1,30 @@
 #pragma once
 
 #include <GL/glew.h>
+#include <stddef.h>
 #include <sys/types.h>
-#include <condition_variable>
 #include <mutex>
-#include <set>
-#include <vector>
-#include <thread>
 
-#include "Frame.h"
-#include "Context.h"
 #include "Primitives.h"
 
+namespace Zuazo{
 
-namespace Zuazo {
+class Surface;
 
 class Uploader {
+	friend Surface;
 public:
 	Uploader();
 	~Uploader();
 
-	void						upload(MemFrame& frame);
+	void						upload(ExtImage& frame);
 private:
 	//Class constants
 	static const u_int32_t 		BUFFERS=2;
 
 	struct Buffer{
-		u_int32_t					width=0;
-		u_int32_t					height=0;
-        u_int64_t              		size=0;
-
+		Resolution					res;
+		size_t						size;
 		GLuint						pbo=0;
 	};
 
@@ -37,10 +32,6 @@ private:
 	u_int32_t					m_currBuffer;
 
 	std::mutex					m_mutex;
-
-	static Context&				getContext();
-	static void					unuseContext(Context& ctx);
 };
 
 }
-

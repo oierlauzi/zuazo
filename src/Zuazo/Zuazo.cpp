@@ -1,7 +1,8 @@
+#include "Zuazo.h"
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "Zuazo.h"
 #include "Context.h"
 #include "Window.h"
 

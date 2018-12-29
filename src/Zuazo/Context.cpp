@@ -11,10 +11,10 @@ using namespace Zuazo;
  */
 
 //Holds the main context, which gets instanceated by init()
-std::unique_ptr<Context> 	Context::mainCtx;
+Context* Context::mainCtx;
 
 //Holds the main context's glfw context
-GLFWwindow * Context::s_mainGlfwCtx=NULL;
+GLFWwindow* Context::s_mainGlfwCtx=NULL;
 
 
 /*
@@ -23,7 +23,7 @@ GLFWwindow * Context::s_mainGlfwCtx=NULL;
  */
 int Context::init() {
 	//Create the main context
-	mainCtx=std::unique_ptr<Context>(new Context());
+	mainCtx=new Context();
 
 	//Set the reference for the main GLFW context
 	s_mainGlfwCtx=mainCtx->s_mainGlfwCtx;
@@ -37,6 +37,7 @@ int Context::init() {
  * @return generated error
  */
 int Context::end() {
+	delete mainCtx;
 	return 0;
 }
 
@@ -46,6 +47,8 @@ Context::Context() {
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     m_glfwCtx=glfwCreateWindow(640, 480, "", NULL, s_mainGlfwCtx);
     glfwDefaultWindowHints();
+
+    m_prevGlfwCtx=NULL;
 }
 
 Context::~Context() {
@@ -58,10 +61,19 @@ Context::~Context() {
 inline void Context::setActive() const{
 	Context * ncCtx=const_cast<Context*>(this);
 
-	if(m_glfwCtx!=glfwGetCurrentContext())
+	ncCtx->m_prevGlfwCtx=glfwGetCurrentContext(); //Query the previous context
+
+	if(m_glfwCtx!=m_prevGlfwCtx)
 		glfwMakeContextCurrent(ncCtx->m_glfwCtx); //This context is not active. Set it as active
 }
 
+/*
+ * @brief sets the previous context as active
+ */
+inline void Context::setPrevActive() const{
+	if(m_glfwCtx!=m_prevGlfwCtx)
+		glfwMakeContextCurrent(m_prevGlfwCtx); //The context has hanged. Set the previous active
+}
 /*
  * @brief sets this context as active and locks it's mutex
  */
@@ -73,11 +85,12 @@ inline void Context::use() const{
 }
 
 /*
- * @brief unlocks it's mutex
+ * @brief unlocks context's mutex
  */
 inline void Context::unuse() const{
 	Context * ncCtx=const_cast<Context*>(this);
 
+	setPrevActive();
 	ncCtx->m_mutex.unlock(); //Enable others to access this thread
 }
 
@@ -85,8 +98,10 @@ inline void Context::unuse() const{
  * 	UNIQUE CONTEXT
  */
 
-UniqueContext::UniqueContext(const Context& ctx) {
-	m_ctx=&ctx;
+UniqueContext::UniqueContext(const Context& ctx) : UniqueContext(&ctx){}
+
+UniqueContext::UniqueContext(const Context* ctx) {
+	m_ctx=ctx;
 	m_ctx->use();
 }
 
@@ -99,7 +114,7 @@ UniqueContext::~UniqueContext() {
  */
 
 //A context pointer for each thread. In case it's needed
-//by setDefaultActive(), it will be constructed, otherwise it will be an empty pointer
+//by setDefaultContextActive(), it will be constructed, otherwise it will be an empty pointer
 thread_local std::unique_ptr<Context> threadCtx;
 
 /*
@@ -112,4 +127,11 @@ inline void setDefaultContextActive(){
 		threadCtx=std::unique_ptr<Context>(new Context()); //Does not exist -> create it
 		threadCtx->setActive();	//Set it active
 	}
+}
+
+/*
+ * @brief sets the previous context as active
+ */
+inline void setDefaultPrevContextActive(){
+	threadCtx->setPrevActive(); //Context should exist, set the previous active
 }
