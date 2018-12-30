@@ -4,7 +4,7 @@
 #include <mutex>
 
 #include "Context.h"
-#include "Uploader.h"
+#include "Image.h"
 
 using namespace Zuazo;
 
@@ -46,8 +46,8 @@ Surface::Surface(const Surface& frame) : Surface(){
 	copy(frame);
 }
 
-Surface::Surface(const Uploader& uploader) : Surface(){
-	copy(uploader);
+Surface::Surface(const Image& image) : Surface(){
+	copy(image);
 }
 
 Surface::Surface(const ExtImage& extImage) : Surface(){
@@ -171,39 +171,35 @@ void Surface::copy(const Surface& frame){
 }
 
 /*
- * @brief Copies the last frame from the uploader
- * @param uploader: The source of the frame
+ * @brief Copies the last frame from the image
+ * @param image: The source of the frame
  */
-void Surface::copy(const Uploader& uploader){
-	Uploader& ncUploader=const_cast<Uploader&>(uploader);
-	ncUploader.m_mutex.lock();
+void Surface::copy(const Image& image){
+	Image& ncImage=const_cast<Image&>(image);
 
-	Uploader::Buffer& buffer=ncUploader.m_buffers[uploader.m_currBuffer];
+	//Lock the image
+	std::lock_guard<std::mutex> lock(ncImage.m_mutex);
 
-	{ //A scope for the context
-		//Get a context
-		UniqueContext ctx(Context::mainCtx);
+	//Get a context
+	UniqueContext ctx(Context::mainCtx);
 
-		//Set the new size
-		resize(buffer.res);
+	//Set the new size
+	resize(ncImage.m_res);
 
-		if(m_res){
-			//Copy the content of the buffer into the texture
-			glBindTexture(GL_TEXTURE_2D, m_texture);
-			glBindBuffer(GL_PIXEL_UNPACK_BUFFER, buffer.pbo);
+	if(m_res){
+		//Copy the content of the buffer into the texture
+		glBindTexture(GL_TEXTURE_2D, m_texture);
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, ncImage.m_pbo);
 
-			//Load texture from PBO
-			glTexSubImage2D(GL_TEXTURE_2D, 0,
-							0, 0,
-							m_res.width, m_res.height,
-							GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		//Load texture from PBO
+		glTexSubImage2D(GL_TEXTURE_2D, 0,
+						0, 0,
+						m_res.width, m_res.height,
+						GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
-			glBindTexture(GL_TEXTURE_2D, 0);
-			glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-		}
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 	}
-
-	ncUploader.m_mutex.unlock();
 }
 
 /*

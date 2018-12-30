@@ -5,6 +5,7 @@
 #include "Zuazo/Window.h"
 #include "Zuazo/Zuazo.h"
 #include "Zuazo/Context.h"
+#include "Zuazo/Image.h"
 
 
 #define TEST1
@@ -27,6 +28,20 @@ int main(void){
 
 	for(Zuazo::Window::Screen& scr : screens)
 		std::cout<<scr.name <<std::endl;*/
+
+	Zuazo::Uploader uplo;
+
+	Zuazo::ExtImage img;
+	img.res={1920, 1080};
+	img.data=(u_int8_t*)malloc(1920*1080*4);
+
+	uplo.upload(img);
+
+	free(img.data);
+
+	Zuazo::Surface sfc(uplo);
+
+	win.draw(sfc);
 
 	getchar();
 

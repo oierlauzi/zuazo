@@ -7,9 +7,10 @@
 
 namespace Zuazo{
 
-class Uploader;
+class Image;
 
 class Surface{
+	friend Image;
 public:
 	class Loop{
 		//TODO
@@ -33,7 +34,7 @@ public:
 	Surface(const Resolution& res);
 	Surface(u_int32_t width=0, u_int32_t height=0);
 	Surface(const Surface& frame);
-	Surface(const Uploader& uploader);
+	Surface(const Image& image);
 	Surface(const ExtImage& extImage);
 	virtual ~Surface();
 
@@ -48,7 +49,7 @@ public:
 	GLuint			getTexture() const;
 
 	void			copy(const Surface& frame);
-	void			copy(const Uploader& uploader);
+	void			copy(const Image& image);
 	void			copy(const ExtImage& extImage);
 	/* TODO
 	void			placeFrame(const Frame& frame, const Shapes::Base& area, Blending blend=Blending::NORMAL);

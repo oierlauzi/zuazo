@@ -4,6 +4,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <vector>
 
 #include "Window.h"
 
@@ -30,6 +31,7 @@ public:
 	void						setActive() const;
 	void						setPrevActive() const;
 	void						use()const;
+	bool						tryUse() const;
 	void						unuse() const;
 
 	static Context* 			mainCtx;
@@ -46,12 +48,17 @@ private:
  */
 class UniqueContext{
 public:
+	UniqueContext();
 	UniqueContext(const Context& ctx);
 	UniqueContext(const Context* ctx);
 	UniqueContext(const UniqueContext& ctx)=delete;
 	~UniqueContext();
 private:
+	static const u_int32_t 		MAX_SHARED_CONTEXTS=32;
+
 	const Context* m_ctx;
+
+	static std::vector<Context*> s_sharedContexts;
 };
 
 /*

@@ -68,20 +68,34 @@ inline void Context::setActive() const{
 }
 
 /*
- * @brief sets the previous context as active
+ * @brief Sets the previous context as active
  */
 inline void Context::setPrevActive() const{
 	if(m_glfwCtx!=m_prevGlfwCtx)
 		glfwMakeContextCurrent(m_prevGlfwCtx); //The context has hanged. Set the previous active
 }
+
 /*
- * @brief sets this context as active and locks it's mutex
+ * @brief Sets this context as active and locks it's mutex
  */
 inline void Context::use() const{
 	Context * ncCtx=const_cast<Context*>(this);
 
 	ncCtx->m_mutex.lock(); //Wait until it can be used in this thread
 	setActive(); //Set this context as the current
+}
+
+/*
+ * @brief If available, sets this context as current
+ * @return True if success, false if it is in use elsewhere
+ */
+inline bool Context::tryUse() const{
+	Context * ncCtx=const_cast<Context*>(this);
+
+	if(ncCtx->m_mutex.try_lock()){ //Try to lock the mutex
+		setActive(); //Set this context as the current
+		return true;
+	}else return false;
 }
 
 /*
@@ -97,6 +111,25 @@ inline void Context::unuse() const{
 /*
  * 	UNIQUE CONTEXT
  */
+
+//Stores all the available unique contexts
+std::vector<Context*> UniqueContext::s_sharedContexts;
+
+UniqueContext::UniqueContext(){
+	//Find a context
+	u_int32_t i=0;
+
+	do{
+		if(s_sharedContexts.size()>=i && i< MAX_SHARED_CONTEXTS){
+			//All the available contexts are in use but we can still create a new context
+			s_sharedContexts.emplace_back(new Context);
+		}
+
+		m_ctx=s_sharedContexts[i];
+
+		i=(i + 1) % MAX_SHARED_CONTEXTS;
+	}while(!m_ctx->tryUse());
+}
 
 UniqueContext::UniqueContext(const Context& ctx) : UniqueContext(&ctx){}
 
