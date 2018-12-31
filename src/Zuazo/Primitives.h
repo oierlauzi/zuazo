@@ -69,6 +69,10 @@ struct Rational{
 struct ExtImage{
 	Resolution res;
 	u_int8_t* data=NULL;
+
+	inline size_t getSize(){
+		return res.width * res.height * 4;
+	}
 };
 
 }

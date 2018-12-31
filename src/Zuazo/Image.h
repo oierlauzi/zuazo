@@ -10,9 +10,11 @@
 namespace Zuazo{
 
 class Surface;
+class Window;
 
 class Image {
 	friend Surface;
+	friend Window;
 public:
 	Image();
 	Image(const Image& image);
@@ -23,6 +25,7 @@ public:
 	void						copy(const Image& image);
 	void						copy(const ExtImage& extImage);
 	void						copy(const Surface& surface);
+	ExtImage					read();
 private:
 	Resolution					m_res;
 	size_t						m_size;

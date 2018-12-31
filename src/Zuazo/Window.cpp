@@ -102,8 +102,10 @@ void Window::setRes(const Resolution& res) {
 }
 
 void Window::setRes(u_int32_t width, u_int32_t height) {
-	glfwSetWindowSize(m_ctx, width, height);
-	m_res={width, height};
+	if(m_res.width!=width || m_res.height!=height){
+		glfwSetWindowSize(m_ctx, width, height);
+		m_res={width, height};
+	}
 }
 
 /*
@@ -240,14 +242,61 @@ std::string	Window::getName(){
  ********************************/
 
 /*
- * @brief Draws the given frame on screen
- * @param frame: The frame which is going to be drawn on screen
+ * @brief Draws the given surface on screen
+ * @param surface: The surface which is going to be drawn on screen
  */
-void Window::draw(const Surface& frame) {
+void Window::draw(const Surface& surface) {
 	std::lock_guard<std::mutex> lock(m_mutex);
 	glfwMakeContextCurrent(m_ctx);
 
-	//TODO
+	//Switch to orthogonal projection
+	glViewport(0, 0, m_res.width, m_res.height);
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0.0, m_res.width, 0.0, m_res.height, -1, 1);
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	//Clear
+	glClearColor(0,0,0,0);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glBindTexture(GL_TEXTURE_2D, surface.getTexture());
+
+	glBegin(GL_QUADS);
+		glColor4f(1,0,0,1); glVertex2f(0, 0);
+		glColor4f(0,1,0,1); glVertex2f(m_res.width, 0);
+		glColor4f(1,0,1,1); glVertex2f(m_res.width, m_res.height);
+		glColor4f(1,1,0,1); glVertex2f(0, m_res.height);
+	glEnd();
+
+	glfwMakeContextCurrent(NULL);
+	m_drawCond.notify_one();
+}
+
+/*
+ * @brief Draws the given image on screen
+ * @param image: The image which is going to be drawn on screen
+ */
+void Window::draw(const Image& img){
+	std::unique_lock<std::mutex> lock(m_mutex);
+	glfwMakeContextCurrent(m_ctx);
+
+	//Clear
+	glClearColor(0,0,0,0);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, img.m_pbo);
+	glDrawPixels(	img.m_res.width, img.m_res.height,
+					GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+	printf("%x\n", glGetError());
+
+	lock.unlock();
+	glfwMakeContextCurrent(NULL);
 
 	m_drawCond.notify_one();
 }
@@ -259,12 +308,10 @@ void Window::drawThread(){
 	std::unique_lock<std::mutex> lock(m_mutex);
 	while(!m_exit){
 		m_drawCond.wait(lock); //Wait until drawing is signaled
-
-		//Draw content on screen
-		glfwMakeContextCurrent(m_ctx);
 		glfwSwapBuffers(m_ctx);
 	}
 }
+
 
 /********************************
  *		STATIC FUNCTIONS		*

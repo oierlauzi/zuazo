@@ -1,6 +1,7 @@
 #include "Image.h"
 
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include "Context.h"
 #include "Surface.h"
@@ -41,7 +42,7 @@ Image::~Image() {
 }
 
 /********************************
- *		UPLOAD ACTIONS			*
+ *		I/O OPERATIONS			*
  ********************************/
 
 void Image::copy(const Image& image){
@@ -106,6 +107,30 @@ void Image::copy(const Surface& surface){
 	glBufferData(GL_PIXEL_UNPACK_BUFFER, m_size, 0, GL_STREAM_COPY);
 
 	//TODO
+}
+
+ExtImage Image::read(){
+	std::lock_guard<std::mutex> lock(m_mutex);
+
+	ExtImage extImg;
+	extImg.res=m_res;
+	extImg.data=(u_int8_t*)malloc(m_size);
+
+	UniqueContext ctx;
+
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, m_pbo);
+
+	//Map the PBO into memory
+	u_int8_t * glData=(u_int8_t*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+	if(glData){
+		//Copy the content to it
+		memcpy(extImg.data, glData, m_size);
+		glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+	}
+
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+
+	return extImg;
 }
 
 /********************************

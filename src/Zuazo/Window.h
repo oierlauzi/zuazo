@@ -13,6 +13,7 @@ struct GLFWmonitor;
 
 #include "Primitives.h"
 #include "Surface.h"
+#include "Image.h"
 
 namespace Zuazo{
 
@@ -53,7 +54,8 @@ public:
 	bool			getVSync() const;
 	std::string		getName();
 
-	void			draw(const Surface& frame);
+	void			draw(const Surface& surface);
+	void			draw(const Image& img);
 
 	static std::list<Screen> getScreens();
 	static std::list<Screen> getAvalibleScreens();

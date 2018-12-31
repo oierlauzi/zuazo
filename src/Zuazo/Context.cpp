@@ -26,7 +26,7 @@ int Context::init() {
 	mainCtx=new Context();
 
 	//Set the reference for the main GLFW context
-	s_mainGlfwCtx=mainCtx->s_mainGlfwCtx;
+	s_mainGlfwCtx=mainCtx->m_glfwCtx;
 
 	//All should be OK
 	return 0;
@@ -64,7 +64,7 @@ inline void Context::setActive() const{
 	ncCtx->m_prevGlfwCtx=glfwGetCurrentContext(); //Query the previous context
 
 	if(m_glfwCtx!=m_prevGlfwCtx)
-		glfwMakeContextCurrent(ncCtx->m_glfwCtx); //This context is not active. Set it as active
+		glfwMakeContextCurrent(m_glfwCtx); //This context is not active. Set it as active
 }
 
 /*
@@ -118,7 +118,6 @@ std::vector<Context*> UniqueContext::s_sharedContexts;
 UniqueContext::UniqueContext(){
 	//Find a context
 	u_int32_t i=0;
-
 	do{
 		if(s_sharedContexts.size()>=i && i< MAX_SHARED_CONTEXTS){
 			//All the available contexts are in use but we can still create a new context
