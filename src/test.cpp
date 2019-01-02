@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <cstdio>
 #include <cstring>
+#include <math.h>
 
 #include "Zuazo/Image.h"
 #include "Zuazo/Primitives.h"
@@ -33,30 +34,40 @@ int main(void){
 
 	Zuazo::Image img;
 
+	const u_int32_t width=1920;
+	const u_int32_t height=1080;
+
 	Zuazo::ExtImage extImg;
-	extImg.res={1920, 1080};
+	extImg.res={width, height};
 	extImg.data=(u_int8_t*)malloc(extImg.getSize());
 
 	//Zuazo::Surface sfc;
-
+	double i=0;
 	do{
 		//draw something
+		const u_int32_t radio=100;
+		u_int32_t posX=(0.5 + cos(i + 0)/4)*width;
+		u_int32_t posY=(0.5 + sin(i + 0)/4)*height;
 		u_int8_t color[]={
-				rand(),
-				rand(),
-				rand(),
+				(0.5 + sin(i*1.5 + 0		)/2) * 0xff,
+				(0.5 + sin(i*1.5 + M_PI*2/3	)/2) * 0xff,
+				(0.5 + sin(i*1.5 + M_PI*4/3	)/2) * 0xff,
 				1
 		};
 
-		for(u_int32_t i=200; i<800; i++)
-			for(u_int32_t j=200; j<800; j++){
+		for(u_int32_t i=posY-radio; i<posY+radio; i++){
+			u_int32_t row=i-posY;
+			u_int32_t  off=sqrt(radio*radio - row*row);
+			for(u_int32_t j=posX-off; j<posX+off; j++){
 				size_t pos=4 * (i*1920 + j);
 				for(u_int32_t h=0; h<4; h++)
 					extImg.data[pos+h]=color[h];
 			}
+		}
 
 		img.copy(extImg);
 		win.draw(img);
+		i+=0.01*M_PI;
 	//}while(getchar()!='e');
 	}while(true);
 
