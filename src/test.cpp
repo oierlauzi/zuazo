@@ -37,18 +37,28 @@ int main(void){
 	extImg.res={1920, 1080};
 	extImg.data=(u_int8_t*)malloc(extImg.getSize());
 
-	for(u_int32_t i=0; i<extImg.getSize(); i++)
-		extImg.data[i]=-1;
-
-	img.copy(extImg);
-
-	free(extImg.data);
-
-	//Zuazo::Surface sfc(img);
+	//Zuazo::Surface sfc;
 
 	do{
+		//draw something
+		u_int8_t color[]={
+				rand(),
+				rand(),
+				rand(),
+				1
+		};
+
+		for(u_int32_t i=200; i<800; i++)
+			for(u_int32_t j=200; j<800; j++){
+				size_t pos=4 * (i*1920 + j);
+				for(u_int32_t h=0; h<4; h++)
+					extImg.data[pos+h]=color[h];
+			}
+
+		img.copy(extImg);
 		win.draw(img);
-	}while(getchar()!='e');
+	//}while(getchar()!='e');
+	}while(true);
 
 
 	#endif
@@ -66,4 +76,3 @@ int main(void){
 
 	Zuazo::end();
 }
-

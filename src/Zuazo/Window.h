@@ -14,6 +14,7 @@ struct GLFWmonitor;
 #include "Primitives.h"
 #include "Surface.h"
 #include "Image.h"
+#include "Shader.h"
 
 namespace Zuazo{
 
@@ -82,6 +83,7 @@ private:
 	void			(*m_resizeCbk)(u_int32_t width, u_int32_t height); 	//Resize callback
 
 	GLFWwindow* 	m_ctx; 	//The GLFW window
+
 
 	void			drawThread();
 

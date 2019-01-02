@@ -119,7 +119,7 @@ UniqueContext::UniqueContext(){
 	//Find a context
 	u_int32_t i=0;
 	do{
-		if(s_sharedContexts.size()>=i && i< MAX_SHARED_CONTEXTS){
+		if(s_sharedContexts.size()<=i && i< MAX_SHARED_CONTEXTS){
 			//All the available contexts are in use but we can still create a new context
 			s_sharedContexts.emplace_back(new Context);
 		}
