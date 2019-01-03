@@ -5,8 +5,16 @@
 #include <utility>
 
 #include "Context.h"
+#include "Shader.h"
 
 using namespace Zuazo;
+
+const std::string Window::VERT_SHADER=
+		#include "../../shaders/copy.vert"
+		;
+const std::string Window::FRAG_SHADER=
+		#include "../../shaders/copy.frag"
+		;
 
 /*
  * Stores the screens that currently in use by any window
@@ -17,6 +25,7 @@ std::set<GLFWmonitor *> Window::s_usedScreens;
  * Stores the thread which continuously checks for events
  */
 std::thread Window::s_eventThread;
+
 
 /********************************
  *	INITIALIZER / TERMINATOR	*
@@ -40,18 +49,58 @@ Window::Window(u_int32_t width, u_int32_t height, std::string name) {
 	m_ctx=glfwCreateWindow(width, height, name.c_str(), NULL, Context::s_mainGlfwCtx);
 	glfwSetWindowUserPointer(m_ctx, this);
 	glfwSetWindowSizeCallback(m_ctx, glfwResizeCbk);
+	glfwMakeContextCurrent(m_ctx);
 
-	m_res={width, height};
-	m_vSync=false;
+	//Create the VAO and the VBO
+	glGenVertexArrays(1, &m_vao);
+	glGenBuffers(2, m_vbos);
+	m_shader=Shader::create(VERT_SHADER.c_str(), FRAG_SHADER.c_str());
+
+	//Initialize  texture coordinates and vertices on the VAO
+	glBindVertexArray(m_vao);
+
+	//The vertices
+	float vertices[]={
+			-1,	-1,
+			-1,	1,
+			1,	1,
+			1, 	-1
+	};
+	glBindBuffer(GL_ARRAY_BUFFER, m_vbos[0]);
+	glBufferData(GL_ARRAY_BUFFER, 2*4*sizeof(GLfloat), vertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+
+	//Texture coordenates
+	float textureCorrds[]={
+			0,		0,
+			0,		1,
+			1,		1,
+			1, 		0
+	};
+	glBindBuffer(GL_ARRAY_BUFFER, m_vbos[1]);
+	glBufferData(GL_ARRAY_BUFFER, 2*4*sizeof(GLfloat), textureCorrds, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	//Turn vSync on
+	glfwSwapInterval(1);
+	m_vSync=true;
+
+	m_res={0, 0};
 	m_name=name;
 	m_resizeCbk=NULL;
 
-	//Set vSync ON
-	setVSync(true);
+	resize(width, height);
 
 	//Initialize the thread
 	m_exit=false;
 	m_drawingThread=std::thread(&Window::drawThread, this);
+
+	glfwMakeContextCurrent(NULL);
 }
 
 Window::Window(const Window& window) :
@@ -64,6 +113,12 @@ Window::Window(const Window& window) :
 Window::~Window() {
 	if(glfwGetWindowMonitor(m_ctx))
 		setWindowed(); //Unuse screen
+
+	glfwMakeContextCurrent(m_ctx);
+	glDeleteVertexArrays(1, &m_vao);
+	glDeleteBuffers(2, m_vbos);
+	Shader::destroy(m_shader);
+	glfwMakeContextCurrent(NULL);
 
 	//Terminate the drawing thread
 	m_exit=true;
@@ -104,7 +159,7 @@ void Window::setRes(const Resolution& res) {
 void Window::setRes(u_int32_t width, u_int32_t height) {
 	if(m_res.width!=width || m_res.height!=height){
 		glfwSetWindowSize(m_ctx, width, height);
-		m_res={width, height};
+		resize(width, height);
 	}
 }
 
@@ -185,7 +240,7 @@ void Window::setVSync(bool value) {
 		//vSync setting needs to be changed
 		glfwMakeContextCurrent(m_ctx);
 		if(value){
-			//Turn vSyinc ON
+			//Turn vSync ON
 			glfwSwapInterval(1);
 			m_vSync=true;
 		}else{
@@ -253,9 +308,18 @@ void Window::draw(const Surface& surface) {
 	glClearColor(0,0,0,0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, surface.getTexture());
+	glBindVertexArray(m_vao);
 
-	//TODO
+	glUseProgram(m_shader);
+
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+	glUseProgram(0);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindVertexArray(0);
 
 	glfwMakeContextCurrent(NULL);
 	m_drawCond.notify_one();
@@ -294,6 +358,24 @@ void Window::drawThread(){
 	}
 }
 
+void Window::resize(u_int32_t width, u_int32_t height){
+	std::unique_lock<std::mutex> lock(m_mutex);
+
+	if(width!=m_res.width || height!=m_res.height){
+		m_res={width, height};
+
+		glfwMakeContextCurrent(m_ctx);
+
+		//Update the rendering view-port
+		glViewport(0, 0, m_res.width, m_res.height);
+
+		glfwMakeContextCurrent(NULL);
+
+		//If the window has a resize callback, call it
+		if(m_resizeCbk)
+			m_resizeCbk(width, height);
+	}
+}
 
 /********************************
  *		STATIC FUNCTIONS		*
@@ -347,11 +429,6 @@ void Window::eventThreadFunc(){
  */
 void Window::glfwResizeCbk(GLFWwindow * win, int width, int height){
 	Window * window=(Window *)glfwGetWindowUserPointer(win);
-	if(window){
-		window->m_res={(u_int32_t)width, (u_int32_t)height};
-
-		//If the window has a resize callback, call it
-		if(window->m_resizeCbk)
-			window->m_resizeCbk(width, height);
-	}
+	if(window)
+		window->resize(width, height);
 }

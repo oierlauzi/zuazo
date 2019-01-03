@@ -41,7 +41,7 @@ int main(void){
 	extImg.res={width, height};
 	extImg.data=(u_int8_t*)malloc(extImg.getSize());
 
-	//Zuazo::Surface sfc;
+	Zuazo::Surface sfc;
 	double i=0;
 	do{
 		//draw something
@@ -66,7 +66,8 @@ int main(void){
 		}
 
 		img.copy(extImg);
-		win.draw(img);
+		sfc.copy(img);
+		win.draw(sfc);
 		i+=0.01*M_PI;
 	//}while(getchar()!='e');
 	}while(true);

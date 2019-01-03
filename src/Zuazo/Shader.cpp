@@ -11,66 +11,82 @@ Shader::Shader() {
 Shader::Shader(const std::string&  vertSrc, const std::string& fragSrc) : Shader(vertSrc.c_str(), fragSrc.c_str()){}
 
 Shader::Shader(const char*  vertSrc, const char* fragSrc){
-	m_program=0;
-
 	UniqueContext ctx(Context::mainCtx);
-
-	//compile vertex and fragment shaders
-	GLuint vertShader=glCreateShader(GL_VERTEX_SHADER);
-	if(compile(vertShader, vertSrc)<0){
-		glDeleteShader(vertShader);
-		return;
-	}
-
-	GLuint  fragShader=glCreateShader(GL_FRAGMENT_SHADER);
-	if(compile(fragShader, fragSrc)<0){
-		glDeleteShader(vertShader);
-		glDeleteShader(fragShader);
-		return;
-	}
-
-	//Try to link the program
-	m_program=glCreateProgram();
-	glAttachShader(m_program, vertShader);
-	glAttachShader(m_program, fragShader);
-	glLinkProgram(m_program);
-
-	//Delete the shaders
-	glDetachShader(m_program, vertShader);
-	glDetachShader(m_program, fragShader);
-	glDeleteShader(vertShader);
-	glDeleteShader(fragShader);
-
-	//Check if the program has been successfully linked
-	int success;
-	glGetProgramiv(m_program, GL_LINK_STATUS, &success);
-	if(!success){
-		glDeleteProgram(m_program);
-		m_program=0;
-		return;
-	}
+	m_program=create(vertSrc, fragSrc);
 }
 
 
 Shader::~Shader() {
 	if(m_program){
 		UniqueContext ctx(Context::mainCtx);
-		glDeleteProgram(m_program);
+		destroy(m_program);
 	}
 }
 
-void Shader::use() {
-	if(m_program)
-		glUseProgram(m_program);
+void Shader::use() const{
+	glUseProgram(m_program);
 }
 
-GLint Shader::getUniformLoc(std::string name) {
+void Shader::unuse(){
+	glUseProgram(0);
+}
+
+GLint Shader::getUniformLoc(const std::string& name) const{
 	return glGetUniformLocation(m_program, name.c_str());
 }
 
-GLint Shader::getAttributeLoc(std::string name) {
+GLint Shader::getAttributeLoc(const std::string& name) const{
 	return glGetAttribLocation(m_program, name.c_str());
 }
+
+
+
+GLuint Shader::create(const char*  vertSrc, const char* fragSrc){
+	GLuint program=0;
+
+	//compile vertex and fragment shaders
+	GLuint vertShader=glCreateShader(GL_VERTEX_SHADER);
+	if(compile(vertShader, vertSrc)<0){
+		glDeleteShader(vertShader);
+		return 0;
+	}
+
+	GLuint  fragShader=glCreateShader(GL_FRAGMENT_SHADER);
+	if(compile(fragShader, fragSrc)<0){
+		glDeleteShader(vertShader);
+		glDeleteShader(fragShader);
+		return 0;
+	}
+
+	//Try to link the program
+	program=glCreateProgram();
+	glAttachShader(program, vertShader);
+	glAttachShader(program, fragShader);
+	glLinkProgram(program);
+
+	//Delete the shaders
+	glDetachShader(program, vertShader);
+	glDetachShader(program, fragShader);
+	glDeleteShader(vertShader);
+	glDeleteShader(fragShader);
+
+	//Check if the program has been successfully linked
+	int success;
+	glGetProgramiv(program, GL_LINK_STATUS, &success);
+	if(!success){
+		glDeleteProgram(program);
+		return 0;
+	}
+
+	return program;
+}
+
+void Shader::destroy(GLuint shader){
+	glDeleteProgram(shader);
+}
+
+
+
 
 int Shader::compile(GLuint shader, const char* src) {
 	//Compile the shader
@@ -85,4 +101,21 @@ int Shader::compile(GLuint shader, const char* src) {
 		return 0; //Compiled successfully
 	else
 		return -1; //Compilation error
+}
+
+
+
+
+UniqueShader::UniqueShader(const Shader& shader){
+	m_shader=&shader;
+	m_shader->use();
+}
+
+UniqueShader::UniqueShader(const Shader* shader){
+	m_shader=shader;
+	m_shader->use();
+}
+
+UniqueShader::~UniqueShader(){
+	m_shader->unuse();
 }

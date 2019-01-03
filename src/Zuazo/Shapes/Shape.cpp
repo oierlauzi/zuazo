@@ -65,13 +65,13 @@ Shape::~Shape() {
  *		DRAW ACTIONS			*
  ********************************/
 
-void Shape::drawTexture() const {
+inline void Shape::drawTexture() const {
 }
 
-void Shape::drawPerimeter() const {
+inline void Shape::drawPerimeter() const {
 }
 
-void Shape::drawSolid() const {
+inline void Shape::drawSolid() const {
 }
 
 

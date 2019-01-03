@@ -14,7 +14,6 @@ struct GLFWmonitor;
 #include "Primitives.h"
 #include "Surface.h"
 #include "Image.h"
-#include "Shader.h"
 
 namespace Zuazo{
 
@@ -84,8 +83,17 @@ private:
 
 	GLFWwindow* 	m_ctx; 	//The GLFW window
 
+	//VBO, VAO and Shader for the surface drawing
+	GLuint			m_vbos[2];
+	GLuint			m_vao;
+	GLuint			m_shader;
+
 
 	void			drawThread();
+	void			resize(u_int32_t width, u_int32_t height);
+
+	static const std::string VERT_SHADER;
+	static const std::string FRAG_SHADER;
 
 	static std::set<GLFWmonitor *> s_usedScreens;
 
