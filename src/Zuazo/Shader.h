@@ -31,7 +31,31 @@ public:
 	UniqueShader(const Shader* shader);
 	UniqueShader(const UniqueShader& shader)=delete;
 	~UniqueShader();
-private:
-	const Shader* m_shader;
 };
+
+/*
+ * INLINE FUNCTIONS
+ */
+
+inline void Shader::use() const{
+	glUseProgram(m_program);
+}
+
+inline void Shader::unuse(){
+	glUseProgram(0);
+}
+
+
+
+inline UniqueShader::UniqueShader(const Shader& shader){
+	shader.use();
+}
+
+inline UniqueShader::UniqueShader(const Shader* shader){
+	shader->use();
+}
+
+inline UniqueShader::~UniqueShader(){
+	Shader::unuse();
+}
 }

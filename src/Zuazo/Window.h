@@ -1,5 +1,6 @@
 #pragma once
 
+#include <GL/glew.h>
 #include <sys/types.h>
 #include <condition_variable>
 #include <list>

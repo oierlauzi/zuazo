@@ -23,14 +23,6 @@ Shader::~Shader() {
 	}
 }
 
-void Shader::use() const{
-	glUseProgram(m_program);
-}
-
-void Shader::unuse(){
-	glUseProgram(0);
-}
-
 GLint Shader::getUniformLoc(const std::string& name) const{
 	return glGetUniformLocation(m_program, name.c_str());
 }
@@ -85,9 +77,6 @@ void Shader::destroy(GLuint shader){
 	glDeleteProgram(shader);
 }
 
-
-
-
 int Shader::compile(GLuint shader, const char* src) {
 	//Compile the shader
 	glShaderSource(shader, 1, &src, NULL);
@@ -101,21 +90,4 @@ int Shader::compile(GLuint shader, const char* src) {
 		return 0; //Compiled successfully
 	else
 		return -1; //Compilation error
-}
-
-
-
-
-UniqueShader::UniqueShader(const Shader& shader){
-	m_shader=&shader;
-	m_shader->use();
-}
-
-UniqueShader::UniqueShader(const Shader* shader){
-	m_shader=shader;
-	m_shader->use();
-}
-
-UniqueShader::~UniqueShader(){
-	m_shader->unuse();
 }

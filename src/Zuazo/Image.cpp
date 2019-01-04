@@ -1,6 +1,5 @@
 #include "Image.h"
 
-#include <cstdio>
 #include <cstring>
 
 #include "Context.h"
@@ -109,28 +108,24 @@ void Image::copy(const Surface& surface){
 	//TODO
 }
 
-ExtImage Image::read(){
+void Image::read(ExtImage * img){
 	std::lock_guard<std::mutex> lock(m_mutex);
 
-	ExtImage extImg;
-	extImg.res=m_res;
-	extImg.data=(u_int8_t*)malloc(m_size);
+	if(m_res==img->res){
+		UniqueContext ctx;
 
-	UniqueContext ctx;
+		glBindBuffer(GL_PIXEL_PACK_BUFFER, m_pbo);
 
-	glBindBuffer(GL_PIXEL_PACK_BUFFER, m_pbo);
+		//Map the PBO into memory
+		u_int8_t * glData=(u_int8_t*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+		if(glData){
+			//Copy the content to it
+			memcpy(img->data, glData, m_size);
+			glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+		}
 
-	//Map the PBO into memory
-	u_int8_t * glData=(u_int8_t*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
-	if(glData){
-		//Copy the content to it
-		memcpy(extImg.data, glData, m_size);
-		glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+		glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 	}
-
-	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-
-	return extImg;
 }
 
 /********************************

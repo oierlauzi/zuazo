@@ -6,6 +6,7 @@
 #include <mutex>
 
 #include "Primitives.h"
+#include "Surface.h"
 
 namespace Zuazo{
 
@@ -25,7 +26,7 @@ public:
 	void						copy(const Image& image);
 	void						copy(const ExtImage& extImage);
 	void						copy(const Surface& surface);
-	ExtImage					read();
+	void						read(ExtImage * img);
 private:
 	Resolution					m_res;
 	size_t						m_size;

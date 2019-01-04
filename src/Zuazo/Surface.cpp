@@ -1,10 +1,6 @@
 #include "Surface.h"
 
-#include <stddef.h>
 #include <mutex>
-
-#include "Context.h"
-#include "Image.h"
 
 using namespace Zuazo;
 
@@ -66,78 +62,7 @@ Surface::~Surface() {
 }
 
 
-/********************************
- *			SETS				*
- ********************************/
 
-/*
- * @brief sets frame's resolution. There should be an active context
- * @param res: the desired resolution
- */
-void Surface::setRes(const Resolution& res) {
-	setRes(res.width, res.height);
-}
-
-/*
- * @brief sets frame's resolution. There should be an active context
- * @param width: the desired width
- * @param height: the desired height
- */
-void Surface::setRes(u_int32_t width, u_int32_t height) {
-	//Get a context
-	UniqueContext ctx(Context::mainCtx);
-
-	resize(width, height);
-	//TODO save the old content
-}
-
-
-/********************************
- *			GETS				*
- ********************************/
-
-/*
- * @brief returns a Resolution structure with the resolution of the frame
- * @return The resolution structure
- */
-Resolution Surface::getRes() const {
-	return m_res;
-}
-
-/*
- * @brief sets the given pointer's values according to the resolution of this frame.
- * @param width: Pointer to a unsigned int which will be set to the frame's width. NULL is NOT accepted
- * @param height: Pointer to a unsigned int which will be set to the frame's height. NULL is NOT accepted
- */
-void Surface::getRes(u_int32_t* width, u_int32_t* height) const {
-	*width=m_res.width;
-	*height=m_res.height;
-}
-
-/*
- * @brief returns the width of the frame
- * @return a unsigned int with the width of the frame
- */
-u_int32_t Surface::getWidth() const{
-	return m_res.width;
-}
-
-/*
- * @brief returns the height of the frame
- * @return a unsigned int with the height of the frame
- */
-u_int32_t Surface::getHeight() const{
-	return m_res.height;
-}
-
-
-/*
- * @brief returns the OpenGL texture id of this frame
- * @return a OpenGL texture id
- */
-GLuint Surface::getTexture() const {
-	return m_texture;
-}
 
 
 /********************************
@@ -222,26 +147,5 @@ void Surface::copy(const ExtImage& extImage){
 						GL_RGBA,  GL_UNSIGNED_BYTE,
 						extImage.data);
 	    glBindTexture(GL_TEXTURE_2D, 0);
-	}
-}
-
-
-
-/********************************
- *		PRIVATE FUNCTIONS		*
- ********************************/
-
-inline void Surface::resize(const Resolution& res){
-	resize(res.width, res.height);
-}
-
-inline void Surface::resize(u_int32_t width, u_int32_t height){
-	if(m_res.width!=width || m_res.height!=height){
-		m_res={width, height}; //Update the size
-
-		//Resize the texture
-		glBindTexture(GL_TEXTURE_2D, m_texture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 }

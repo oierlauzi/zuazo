@@ -34,8 +34,8 @@ int main(void){
 
 	Zuazo::Image img;
 
-	const u_int32_t width=1920;
-	const u_int32_t height=1080;
+	const u_int32_t width=2000;
+	const u_int32_t height=2000;
 
 	Zuazo::ExtImage extImg;
 	extImg.res={width, height};
@@ -59,7 +59,7 @@ int main(void){
 			u_int32_t row=i-posY;
 			u_int32_t  off=sqrt(radio*radio - row*row);
 			for(u_int32_t j=posX-off; j<posX+off; j++){
-				size_t pos=4 * (i*1920 + j);
+				size_t pos=4 * (i*width + j);
 				for(u_int32_t h=0; h<4; h++)
 					extImg.data[pos+h]=color[h];
 			}

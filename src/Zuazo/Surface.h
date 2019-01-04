@@ -1,8 +1,11 @@
 #pragma once
 
 #include <GL/glew.h>
+#include <stddef.h>
 #include <sys/types.h>
 
+#include "Context.h"
+#include "Image.h"
 #include "Primitives.h"
 
 namespace Zuazo{
@@ -12,12 +15,6 @@ class Image;
 class Surface{
 	friend Image;
 public:
-	class Loop{
-		//TODO
-	};
-
-
-
 	enum class Blending{
 		NONE,
 		NORMAL,
@@ -85,5 +82,106 @@ private:
 	void			stablishFence();*/
 
 };
+
+
+/*
+ * INLINE FUNCTIONS
+ */
+
+/********************************
+ *			SETS				*
+ ********************************/
+
+/*
+ * @brief sets frame's resolution. There should be an active context
+ * @param res: the desired resolution
+ */
+inline void Surface::setRes(const Resolution& res) {
+	setRes(res.width, res.height);
+}
+
+/*
+ * @brief sets frame's resolution. There should be an active context
+ * @param width: the desired width
+ * @param height: the desired height
+ */
+inline void Surface::setRes(u_int32_t width, u_int32_t height) {
+	//Get a context
+	UniqueContext ctx(Context::mainCtx);
+
+	resize(width, height);
+	//TODO save the old content
+}
+
+
+/********************************
+ *			GETS				*
+ ********************************/
+
+/*
+ * @brief returns a Resolution structure with the resolution of the frame
+ * @return The resolution structure
+ */
+inline Resolution Surface::getRes() const {
+	return m_res;
+}
+
+/*
+ * @brief sets the given pointer's values according to the resolution of this frame.
+ * @param width: Pointer to a unsigned int which will be set to the frame's width. NULL is NOT accepted
+ * @param height: Pointer to a unsigned int which will be set to the frame's height. NULL is NOT accepted
+ */
+inline void Surface::getRes(u_int32_t* width, u_int32_t* height) const {
+	*width=m_res.width;
+	*height=m_res.height;
+}
+
+/*
+ * @brief returns the width of the frame
+ * @return a unsigned int with the width of the frame
+ */
+inline u_int32_t Surface::getWidth() const{
+	return m_res.width;
+}
+
+/*
+ * @brief returns the height of the frame
+ * @return a unsigned int with the height of the frame
+ */
+inline u_int32_t Surface::getHeight() const{
+	return m_res.height;
+}
+
+
+/*
+ * @brief returns the OpenGL texture id of this frame
+ * @return a OpenGL texture id
+ */
+inline GLuint Surface::getTexture() const {
+	return m_texture;
+}
+
+/********************************
+ *		PRIVATE FUNCTIONS		*
+ ********************************/
+
+/*
+ * A context needs to be active for the following functions:
+ */
+
+inline void Surface::resize(const Resolution& res){
+	resize(res.width, res.height);
+}
+
+inline void Surface::resize(u_int32_t width, u_int32_t height){
+	if(m_res.width!=width || m_res.height!=height){
+		m_res={width, height}; //Update the size
+
+		//Resize the texture
+		glBindTexture(GL_TEXTURE_2D, m_texture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+}
 
 }
