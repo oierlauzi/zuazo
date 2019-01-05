@@ -55,8 +55,8 @@ public:
 	bool			getVSync() const;
 	std::string		getName();
 
-	void			draw(const Surface& surface);
-	void			draw(const Image& img);
+	void			show(const Surface& surface);
+	void			show(const Image& img);
 
 	static std::list<Screen> getScreens();
 	static std::list<Screen> getAvalibleScreens();
@@ -81,6 +81,7 @@ private:
 	}m_windowedParams;
 
 	void			(*m_resizeCbk)(u_int32_t width, u_int32_t height); 	//Resize callback
+	void *			m_resizeCbkObj;
 
 	GLFWwindow* 	m_ctx; 	//The GLFW window
 
@@ -89,6 +90,7 @@ private:
 	GLuint			m_vao;
 	GLuint			m_shader;
 
+	std::condition_variable m_resizeCond;
 
 	void			drawThread();
 	void			resize(u_int32_t width, u_int32_t height);
@@ -98,7 +100,9 @@ private:
 
 	static std::set<GLFWmonitor *> s_usedScreens;
 
+	//Event thread stuff
 	static std::thread	s_eventThread;
+	static bool		s_exit;
 
 	static void		eventThreadFunc();
 	static void		glfwResizeCbk(GLFWwindow * win, int width, int height);

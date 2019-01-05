@@ -34,8 +34,8 @@ int main(void){
 
 	Zuazo::Image img;
 
-	const u_int32_t width=2000;
-	const u_int32_t height=2000;
+	const u_int32_t width=1000;
+	const u_int32_t height=1000;
 
 	Zuazo::ExtImage extImg;
 	extImg.res={width, height};
@@ -49,9 +49,9 @@ int main(void){
 		u_int32_t posX=(0.5 + cos(i + 0)/4)*width;
 		u_int32_t posY=(0.5 + sin(i + 0)/4)*height;
 		u_int8_t color[]={
-				(0.5 + sin(i*1.5 + 0		)/2) * 0xff,
-				(0.5 + sin(i*1.5 + M_PI*2/3	)/2) * 0xff,
-				(0.5 + sin(i*1.5 + M_PI*4/3	)/2) * 0xff,
+				(u_int8_t)((0.5 + sin(i*1.5 + 0		)/2) * 0xff),
+				(u_int8_t)((0.5 + sin(i*1.5 + M_PI*2/3	)/2) * 0xff),
+				(u_int8_t)((0.5 + sin(i*1.5 + M_PI*4/3	)/2) * 0xff),
 				1
 		};
 
@@ -67,11 +67,10 @@ int main(void){
 
 		img.copy(extImg);
 		sfc.copy(img);
-		win.draw(sfc);
+		win.show(sfc);
 		i+=0.01*M_PI;
-	//}while(getchar()!='e');
-	}while(true);
-
+	}while(getchar()!='e');
+	//}while(true);
 
 	#endif
 	#ifdef TEST2

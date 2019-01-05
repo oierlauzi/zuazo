@@ -61,19 +61,6 @@ Shape::Shape(const Shape& shape) : Shape(shape.m_nVert){
 Shape::~Shape() {
 }
 
-/********************************
- *		DRAW ACTIONS			*
- ********************************/
-
-inline void Shape::drawTexture() const {
-}
-
-inline void Shape::drawPerimeter() const {
-}
-
-inline void Shape::drawSolid() const {
-}
-
 
 /********************************
  *		PRIVATE METHODS			*

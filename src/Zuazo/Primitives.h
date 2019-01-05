@@ -53,6 +53,14 @@ struct Resolution{
 	operator bool() const{
 		return width && height;
 	}
+
+    int operator==(const Resolution& right)const{
+        return right.width==width && right.height==height;
+    }
+
+    int operator!=(const Resolution& right)const{
+        return right.width!=width || right.height!=height;
+    }
 };
 
 /*

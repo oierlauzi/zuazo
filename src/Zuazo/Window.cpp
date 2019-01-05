@@ -26,18 +26,25 @@ std::set<GLFWmonitor *> Window::s_usedScreens;
  */
 std::thread Window::s_eventThread;
 
+/*
+ * Stores whether the event thread needs to exit
+ */
+bool Window::s_exit;
 
 /********************************
  *	INITIALIZER / TERMINATOR	*
  ********************************/
 
 int Window::init(){
+	s_exit=false;
 	s_eventThread=std::thread(eventThreadFunc);
-	s_eventThread.detach();
 	return 0;
 }
 
 int Window::end(){
+	s_exit=true;
+	glfwPostEmptyEvent(); //Indicate to the event thread that it should finish
+	s_eventThread.join();
 	return 0;
 }
 
@@ -71,7 +78,7 @@ Window::Window(u_int32_t width, u_int32_t height, std::string name) {
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(0);
 
-	//Texture coordenates
+	//Texture coordinates
 	float textureCorrds[]={
 			0,		0,
 			0,		1,
@@ -93,6 +100,7 @@ Window::Window(u_int32_t width, u_int32_t height, std::string name) {
 	m_res={0, 0};
 	m_name=name;
 	m_resizeCbk=NULL;
+	m_resizeCbkObj=NULL;
 
 	resize(width, height);
 
@@ -159,7 +167,6 @@ void Window::setRes(const Resolution& res) {
 void Window::setRes(u_int32_t width, u_int32_t height) {
 	if(m_res.width!=width || m_res.height!=height){
 		glfwSetWindowSize(m_ctx, width, height);
-		resize(width, height);
 	}
 }
 
@@ -170,6 +177,9 @@ void Window::setRes(u_int32_t width, u_int32_t height) {
  */
 void Window::setFullScreen(const Screen& screen) {
 	if(screen.mon){
+		//Set it in windowed mode to reset any previous fullscreen
+		setWindowed();
+
 		//Store window's position
 		glfwGetWindowPos(m_ctx, &m_windowedParams.x, &m_windowedParams.y);
 		glfwGetWindowSize(m_ctx, &m_windowedParams.width, &m_windowedParams.height);
@@ -181,10 +191,6 @@ void Window::setFullScreen(const Screen& screen) {
 
 		//Finally set me on fullScreen
 		glfwSetWindowMonitor(m_ctx, screen.mon, scrPosX, scrPosY, mode->width, mode->height, mode->refreshRate);
-
-		//Update size data
-		m_res.width=mode->width;
-		m_res.height=mode->height;
 
 		s_usedScreens.insert(screen.mon);
 	}
@@ -300,8 +306,15 @@ std::string	Window::getName(){
  * @brief Draws the given surface on screen
  * @param surface: The surface which is going to be drawn on screen
  */
-void Window::draw(const Surface& surface) {
-	std::lock_guard<std::mutex> lock(m_mutex);
+void Window::show(const Surface& surface) {
+	std::unique_lock<std::mutex> lock(m_mutex);
+
+	//Evaluate whether resizing needs to be done
+	if(surface.m_res != m_res){
+		glfwSetWindowSize(m_ctx, surface.m_res.width, surface.m_res.height);
+		m_resizeCond.wait(lock); //Wait until resizing has finished
+	}
+
 	glfwMakeContextCurrent(m_ctx);
 
 	//Clear
@@ -329,8 +342,15 @@ void Window::draw(const Surface& surface) {
  * @brief Draws the given image on screen
  * @param image: The image which is going to be drawn on screen
  */
-void Window::draw(const Image& img){
+void Window::show(const Image& img){
 	std::unique_lock<std::mutex> lock(m_mutex);
+
+	//Evaluate whether resizing needs to be done
+	if(img.m_res != m_res){
+		glfwSetWindowSize(m_ctx, img.m_res.width, img.m_res.height);
+		m_resizeCond.wait(lock); //Wait until resizing has finished
+	}
+
 	glfwMakeContextCurrent(m_ctx);
 
 	//Clear
@@ -361,20 +381,24 @@ void Window::drawThread(){
 void Window::resize(u_int32_t width, u_int32_t height){
 	std::unique_lock<std::mutex> lock(m_mutex);
 
-	if(width!=m_res.width || height!=m_res.height){
-		m_res={width, height};
+	m_res={width, height};
 
-		glfwMakeContextCurrent(m_ctx);
+	glfwMakeContextCurrent(m_ctx);
 
-		//Update the rendering view-port
-		glViewport(0, 0, m_res.width, m_res.height);
+	//Update the rendering view-port
+	glViewport(0, 0, m_res.width, m_res.height);
 
-		glfwMakeContextCurrent(NULL);
+	glfwMakeContextCurrent(NULL);
 
-		//If the window has a resize callback, call it
-		if(m_resizeCbk)
+	//If the window has a resize callback, call it
+	if(m_resizeCbk){
+		if(m_resizeCbkObj)
+			printf("Object's callback todo");//TODO
+		else
 			m_resizeCbk(width, height);
 	}
+
+	m_resizeCond.notify_all();
 }
 
 /********************************
@@ -419,7 +443,7 @@ std::list<Window::Screen> Window::getAvalibleScreens() {
  * @brief Continuously checks for events in GLFW
  */
 void Window::eventThreadFunc(){
-	while(!false){ //It's funny because its true. Don't worry compiler will solve it
+	while(!s_exit){
 		glfwWaitEvents();
 	}
 }

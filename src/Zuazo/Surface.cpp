@@ -149,3 +149,28 @@ void Surface::copy(const ExtImage& extImage){
 	    glBindTexture(GL_TEXTURE_2D, 0);
 	}
 }
+
+
+
+/********************************
+ *		PRIVATE FUNCTIONS		*
+ ********************************/
+
+/*
+ * A context needs to be active for the following functions:
+ */
+
+inline void Surface::resize(const Resolution& res){
+	resize(res.width, res.height);
+}
+
+inline void Surface::resize(u_int32_t width, u_int32_t height){
+	if(m_res.width!=width || m_res.height!=height){
+		m_res={width, height}; //Update the size
+
+		//Resize the texture
+		glBindTexture(GL_TEXTURE_2D, m_texture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+}

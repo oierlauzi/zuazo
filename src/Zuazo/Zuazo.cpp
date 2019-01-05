@@ -64,6 +64,7 @@ Error init(){
 	@return Error generated destroying Error::NONE for all OK
  **/
 Error end(){
+	Window::end();
     return Error::NONE; //TODO
 }
 

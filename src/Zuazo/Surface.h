@@ -11,9 +11,11 @@
 namespace Zuazo{
 
 class Image;
+class Window;
 
 class Surface{
 	friend Image;
+	friend Window;
 public:
 	enum class Blending{
 		NONE,
@@ -78,6 +80,7 @@ private:
 	void			toOrtho();
 	/*void			setBlending(Blending blending);
 	void			setActiveTexture(GLuint fill=0, GLuint key=0);
+	void			setActiveTexture(const Frame& all);
 	void			setActiveTexture(const Frame& fill, const Key& key=NULL);
 	void			stablishFence();*/
 
@@ -159,29 +162,6 @@ inline u_int32_t Surface::getHeight() const{
  */
 inline GLuint Surface::getTexture() const {
 	return m_texture;
-}
-
-/********************************
- *		PRIVATE FUNCTIONS		*
- ********************************/
-
-/*
- * A context needs to be active for the following functions:
- */
-
-inline void Surface::resize(const Resolution& res){
-	resize(res.width, res.height);
-}
-
-inline void Surface::resize(u_int32_t width, u_int32_t height){
-	if(m_res.width!=width || m_res.height!=height){
-		m_res={width, height}; //Update the size
-
-		//Resize the texture
-		glBindTexture(GL_TEXTURE_2D, m_texture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
 }
 
 }
