@@ -4,6 +4,7 @@
 #include <string>
 
 namespace Zuazo{
+
 class Shader {
 public:
 	Shader();

@@ -1,6 +1,9 @@
 #include "Surface.h"
 
+#include <stddef.h>
 #include <mutex>
+
+#include "Image.h"
 
 using namespace Zuazo;
 
@@ -46,7 +49,7 @@ Surface::Surface(const Image& image) : Surface(){
 	copy(image);
 }
 
-Surface::Surface(const ExtImage& extImage) : Surface(){
+Surface::Surface(const ImgBuffer& extImage) : Surface(){
 	copy(extImage);
 }
 
@@ -129,10 +132,10 @@ void Surface::copy(const Image& image){
 
 /*
  * @brief Copies an image from memory
- * @param extImage: a ExtImage structure filled with the size and a
+ * @param extImage: a ImgBuffer structure filled with the size and a
  *  				pointer to the images's data
  */
-void Surface::copy(const ExtImage& extImage){
+void Surface::copy(const ImgBuffer& extImage){
 	//Get a context
 	UniqueContext ctx(Context::mainCtx);
 
@@ -173,4 +176,9 @@ inline void Surface::resize(u_int32_t width, u_int32_t height){
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
+}
+
+inline void Surface::stablishFence(){
+	glDeleteSync(m_fence);
+	m_fence=glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 }

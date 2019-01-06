@@ -5,8 +5,9 @@
 #include <sys/types.h>
 #include <mutex>
 
-#include "Primitives.h"
 #include "Surface.h"
+#include "Utils/Resolution.h"
+#include "Utils/ImgBuffer.h"
 
 namespace Zuazo{
 
@@ -19,14 +20,14 @@ class Image {
 public:
 	Image();
 	Image(const Image& image);
-	Image(const ExtImage& extImage);
+	Image(const ImgBuffer& extImage);
 	Image(const Surface& surface);
 	~Image();
 
 	void						copy(const Image& image);
-	void						copy(const ExtImage& extImage);
+	void						copy(const ImgBuffer& extImage);
 	void						copy(const Surface& surface);
-	void						read(ExtImage * img);
+	void						read(ImgBuffer * img);
 private:
 	Resolution					m_res;
 	size_t						m_size;

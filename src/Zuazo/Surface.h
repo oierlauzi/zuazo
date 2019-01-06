@@ -1,12 +1,11 @@
 #pragma once
 
 #include <GL/glew.h>
-#include <stddef.h>
 #include <sys/types.h>
 
 #include "Context.h"
-#include "Image.h"
-#include "Primitives.h"
+#include "Utils/Resolution.h"
+#include "Utils/ImgBuffer.h"
 
 namespace Zuazo{
 
@@ -25,16 +24,11 @@ public:
 		SCREEN,
 	};
 
-	struct Camera{
-		Vec3		pos;
-		Vec3		rotation;
-	};
-
 	Surface(const Resolution& res);
 	Surface(u_int32_t width=0, u_int32_t height=0);
 	Surface(const Surface& frame);
 	Surface(const Image& image);
-	Surface(const ExtImage& extImage);
+	Surface(const ImgBuffer& extImage);
 	virtual ~Surface();
 
 	void			setRes(const Resolution& res);
@@ -49,7 +43,7 @@ public:
 
 	void			copy(const Surface& frame);
 	void			copy(const Image& image);
-	void			copy(const ExtImage& extImage);
+	void			copy(const ImgBuffer& extImage);
 	/* TODO
 	void			placeFrame(const Frame& frame, const Shapes::Base& area, Blending blend=Blending::NORMAL);
 	void			placeFrame(const Frame& frame, const Shapes::Base& area, const Key& key, Blending blend=Blending::NORMAL);
@@ -76,13 +70,14 @@ private:
 
 	void			resize(const Resolution& res);
 	void			resize(u_int32_t width, u_int32_t height);
-	void			toPerspective(const Camera& cam);
-	void			toOrtho();
-	/*void			setBlending(Blending blending);
-	void			setActiveTexture(GLuint fill=0, GLuint key=0);
-	void			setActiveTexture(const Frame& all);
-	void			setActiveTexture(const Frame& fill, const Key& key=NULL);
-	void			stablishFence();*/
+	//void			toPerspective(const Camera& cam) const;
+	void			toOrtho() const;
+	/*void			setBlending(Blending blending) const;
+	void			setActiveTexture(GLuint fill=0, GLuint key=0) const;
+	void			setActiveTexture(const Frame& all) const;
+	void			setActiveTexture(const Frame& fill, const Key& key=NULL) const;*/
+	void			stablishFence();
+	void			waitFence() const;
 
 };
 
@@ -162,6 +157,10 @@ inline u_int32_t Surface::getHeight() const{
  */
 inline GLuint Surface::getTexture() const {
 	return m_texture;
+}
+
+inline void	 Surface::waitFence() const{
+	glWaitSync(m_fence, 0, GL_TIMEOUT_IGNORED);
 }
 
 }

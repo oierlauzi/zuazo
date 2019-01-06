@@ -1,11 +1,13 @@
 #include "Window.h"
 
 #include <GLFW/glfw3.h>
+#include <cstdio>
 #include <map>
 #include <utility>
 
 #include "Context.h"
 #include "Shader.h"
+#include "Utils/Resolution.h"
 
 using namespace Zuazo;
 

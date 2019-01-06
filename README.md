@@ -1,2 +1,2 @@
 # Zuazo
-A hardware accelerated image manipulation library for C++
+A hardware accelerated real-time video manipulation library for C++

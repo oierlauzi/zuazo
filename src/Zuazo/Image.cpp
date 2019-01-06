@@ -26,7 +26,7 @@ Image::Image(const Image& image) : Image(){
 	copy(image);
 }
 
-Image::Image(const ExtImage& extImage) : Image(){
+Image::Image(const ImgBuffer& extImage) : Image(){
 	copy(extImage);
 }
 
@@ -67,7 +67,7 @@ void Image::copy(const Image& image){
 	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 }
 
-void Image::copy(const ExtImage& extImage) {
+void Image::copy(const ImgBuffer& extImage) {
 	std::lock_guard<std::mutex> lock(m_mutex);
 
 	resize(extImage.res);
@@ -108,7 +108,7 @@ void Image::copy(const Surface& surface){
 	//TODO
 }
 
-void Image::read(ExtImage * img){
+void Image::read(ImgBuffer * img){
 	std::lock_guard<std::mutex> lock(m_mutex);
 
 	if(m_res==img->res){

@@ -5,8 +5,9 @@
 #include <sys/types.h>
 #include <string>
 
-#include "../Primitives.h"
 #include "../Shader.h"
+#include "../Utils/Vec2.h"
+#include "../Utils/Vec3.h"
 
 namespace Zuazo::Shapes {
 

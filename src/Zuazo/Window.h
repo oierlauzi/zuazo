@@ -9,10 +9,12 @@
 #include <string>
 #include <thread>
 
+#include "Utils/Resolution.h"
+
 struct GLFWwindow;
 struct GLFWmonitor;
 
-#include "Primitives.h"
+#include "Utils/Rational.h"
 #include "Surface.h"
 #include "Image.h"
 

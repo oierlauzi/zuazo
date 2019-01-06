@@ -1,17 +1,18 @@
-#include <bits/types/FILE.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <cmath>
 #include <cstdio>
-#include <cstring>
-#include <math.h>
 
 #include "Zuazo/Image.h"
-#include "Zuazo/Primitives.h"
+#include "Zuazo/Surface.h"
+#include "Zuazo/Utils/ImgBuffer.h"
+#include "Zuazo/Utils/Color.h"
 #include "Zuazo/Window.h"
 #include "Zuazo/Zuazo.h"
 
-
 #define TEST1
+
 
 int main(void){
 	/*
@@ -25,7 +26,6 @@ int main(void){
 	 * 		TEST 1
 	 */
 
-
 	Zuazo::Window win(680, 480, "Ventana");
 	/*std::list<Zuazo::Window::Screen> screens=Zuazo::Window::getAvalibleScreens();
 
@@ -37,7 +37,7 @@ int main(void){
 	const u_int32_t width=1000;
 	const u_int32_t height=1000;
 
-	Zuazo::ExtImage extImg;
+	Zuazo::ImgBuffer extImg;
 	extImg.res={width, height};
 	extImg.data=(u_int8_t*)malloc(extImg.getSize());
 
