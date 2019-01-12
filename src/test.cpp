@@ -11,8 +11,8 @@
 #include "Zuazo/Window.h"
 #include "Zuazo/Zuazo.h"
 
-//#define TEST1
-#define TEST2
+#define TEST1
+//#define TEST2
 
 int main(void){
 	/*
@@ -84,16 +84,16 @@ int main(void){
 	double d1, d2;
 	printf("Double: ");
 	scanf("%lf", &d1);
-	printf("Double: ");
-	scanf("%lf", &d2);
+	//printf("Double: ");
+	//scanf("%lf", &d2);
 
 	Zuazo::Rational r1(d1);
-	Zuazo::Rational r2(d2);
-	Zuazo::Rational r3=r1*d2;
+	//Zuazo::Rational r2(d2);
+	//Zuazo::Rational r3=r1*d2;
 
-	printf("%d/%d\n", r1.num, r1.den);
-	printf("%d/%d\n", r2.num, r2.den);
-	printf("%d/%d\n", r3.num, r3.den);
+	printf("%ld/%ld\n", r1.num, r1.den);
+	//printf("%ld/%ld\n", r2.num, r2.den);
+	//printf("%ld/%ld\n", r3.num, r3.den);
 
 
 

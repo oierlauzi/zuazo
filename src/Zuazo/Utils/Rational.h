@@ -1,14 +1,11 @@
 #pragma once
 
-#include <sys/types.h>
+#include <bits/stdint-intn.h>
 #include <math.h>
+#include <algorithm>
 #include <limits>
 
 namespace Zuazo{
-
-#define CAN_CAST_TO_INT(a) ( \
-		a <= std::numeric_limits<int32_t>::max() && \
-		a >= std::numeric_limits<int32_t>::lowest())
 
 #define IS_FINITE_NUMBER(a) ( \
 		a < std::numeric_limits<double>::infinity() && \
@@ -18,8 +15,8 @@ namespace Zuazo{
  * Contains a rational number
  */
 struct Rational{
-	int32_t num;
-	int32_t den;
+	int64_t num;
+	int64_t den;
 
 	Rational(){
 		num=0;
@@ -35,19 +32,20 @@ struct Rational{
 
 	Rational(double number){
 		if(IS_FINITE_NUMBER(number)){
-			int64_t d=1.0;
+			int64_t d=1;
 
-			num=(int)number;
-			den=(int)d;
+			num=(int64_t)number;
+			den=(int64_t)d;
 
 			while(number != floor(number)){
-				d*=10;
-				number*=10;
+				number*=2;
+				d*=2;
 
-				if(CAN_CAST_TO_INT(d) && CAN_CAST_TO_INT(number)){
-					num=(int)number;
-					den=(int)d;
-				}else break; //Can't convert it into a fraction without losing precision
+				num=(int64_t)number;
+				den=(int64_t)d;
+
+				if(d > std::numeric_limits<int64_t>::max()/2)
+					break;
 			}
 
 			simplify();
@@ -58,6 +56,7 @@ struct Rational{
 	}
 
 	Rational(const Rational& rat)=default;
+
 
 	operator bool() const{
 		return num;
@@ -72,68 +71,90 @@ struct Rational{
 	}
 
     int operator==(const Rational& right)const{
-    	return operator bool() == right.operator double();
+    	return operator double() == right.operator double();
     }
 
     int operator!=(const Rational& right)const{
-    	return operator bool() != right.operator double();
+    	return operator double() != right.operator double();
     }
 
     int operator<(const Rational& right)const{
-    	return operator bool() < right.operator double();
+    	return operator double() < right.operator double();
     }
 
     int operator<=(const Rational& right)const{
-    	return operator bool() <= right.operator double();
+    	return operator double() <= right.operator double();
     }
 
     int operator>(const Rational& right)const{
-    	return operator bool() > right.operator double();
+    	return operator double() > right.operator double();
     }
 
     int operator>=(const Rational& right)const{
-    	return operator bool() >= right.operator double();
+    	return operator double() >= right.operator double();
     }
+
+    /*
+     * operator*
+     */
 
     Rational operator*(const Rational& right){
-    	Rational r(num*right.num, den*right.den);
-    	r.simplify();
-    	return r;
+    	return Rational(num*right.num, den*right.den);
     }
 
-    Rational operator/(const Rational& right){
-    	Rational r(num*right.den, den*right.num);
-    	r.simplify();
-    	return r;
+    Rational operator*(int right){
+    	return Rational(num*right, den);
+    }
+
+    friend Rational operator*(int left, const Rational& right){
+    	return Rational(left * right.num, right.den);
     }
 
     Rational operator*(double right){
     	return (*this) * Rational(right);
     }
 
+    friend Rational operator*(double left, const Rational& right){
+    	return Rational(left) * right;
+    }
+
+    /*
+     * operator/
+     */
+
+    Rational operator/(const Rational& right){
+    	return Rational (num*right.den, den*right.num);
+    }
+
+    friend Rational operator/(int left, const Rational& right){
+    	return Rational(left * right.den, right.num);
+    }
+
+    Rational operator/(int right){
+    	return Rational(num, den*right);
+    }
+
     Rational operator/(double right){
     	return (*this) / Rational(right);
     }
 
+    friend Rational operator/(double left, const Rational& right){
+    	return Rational(left) / right;
+    }
 
-	void simplify();
+
+private:
+    void simplify();
 };
 
 inline void Rational::simplify(){
 	if(den && num){
 		//Calcualte GCD
-		//Used algorithm: https://www.programiz.com/c-programming/examples/hcf-gcd
-		int32_t n1=num, n2=den;
-		while(n1!=n2){
-			if(n1 > n2)
-				n1 -= n2;
-			else
-				n2 -= n1;
-		}
+		int64_t gcd=std::__gcd(num, den);
 
 		//Simplify the fraction
-		num /= n1;
-		den /= n1;
+		num /= gcd;
+		den /= gcd;
 	}else if(den){
 		num=0;
 		den=1;
@@ -142,4 +163,5 @@ inline void Rational::simplify(){
 		den=0;
 	}
 }
+
 }

@@ -1,9 +1,14 @@
 #pragma once
 
-namespace Zuazo::Stream{
+#include "../Timing.h"
+
 template <typename T>
 
-class Source{
+namespace Zuazo::Stream{
+
+class Consumer;
+
+class Source : public Timing{
 public:
 
 protected:
@@ -11,5 +16,10 @@ protected:
 private:
 
 };
+
+
+
+
+
 
 }
