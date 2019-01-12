@@ -148,7 +148,7 @@ void Surface::copy(const ImgBuffer& extImage){
 	                    0, 0,
 	                    m_res.width, m_res.height,
 						GL_RGBA,  GL_UNSIGNED_BYTE,
-						extImage.data);
+						extImage.data.get());
 	    glBindTexture(GL_TEXTURE_2D, 0);
 	}
 }

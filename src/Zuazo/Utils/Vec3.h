@@ -35,6 +35,10 @@ struct Vec3 : Vec2{
     	return Vec3(x*right.x, y*right.y, z*right.z);
     }
 
+    Vec3 operator*(double right)const{
+    	return Vec3(x*right, y*right, z*right);
+    }
+
     static double crossProduct(const Vec3& vec1, const Vec3& vec2){
     	return vec1.x*vec2.x + vec1.y*vec2.y + vec1.z*vec2.z;
     }

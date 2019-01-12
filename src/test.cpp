@@ -11,8 +11,8 @@
 #include "Zuazo/Window.h"
 #include "Zuazo/Zuazo.h"
 
-#define TEST1
-
+//#define TEST1
+#define TEST2
 
 int main(void){
 	/*
@@ -37,9 +37,7 @@ int main(void){
 	const u_int32_t width=1000;
 	const u_int32_t height=1000;
 
-	Zuazo::ImgBuffer extImg;
-	extImg.res={width, height};
-	extImg.data=(u_int8_t*)malloc(extImg.getSize());
+	Zuazo::ImgBuffer extImg(Zuazo::Resolution(width, height));
 
 	Zuazo::Surface sfc;
 	double i=0;
@@ -69,14 +67,34 @@ int main(void){
 		sfc.copy(img);
 		win.show(sfc);
 		i+=0.01*M_PI;
-	}while(getchar()!='e');
-	//}while(true);
+	//}while(getchar()!='e');
+	}while(true);
 
 	#endif
 	#ifdef TEST2
 	/*
 	 * 		TEST 2
 	 */
+
+
+	/*
+	 * Test of the rational
+	 */
+
+	double d1, d2;
+	printf("Double: ");
+	scanf("%lf", &d1);
+	printf("Double: ");
+	scanf("%lf", &d2);
+
+	Zuazo::Rational r1(d1);
+	Zuazo::Rational r2(d2);
+	Zuazo::Rational r3=r1*d2;
+
+	printf("%d/%d\n", r1.num, r1.den);
+	printf("%d/%d\n", r2.num, r2.den);
+	printf("%d/%d\n", r3.num, r3.den);
+
 
 
 	#endif

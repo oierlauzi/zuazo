@@ -84,7 +84,7 @@ void Image::copy(const ImgBuffer& extImage) {
 	u_int8_t * glData=(u_int8_t*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
 	if(glData){
 		//Copy the content to it
-		memcpy(glData, extImage.data, m_size);
+		memcpy(glData, extImage.data.get(), m_size);
 		glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
 	}
 
@@ -120,7 +120,7 @@ void Image::read(ImgBuffer * img){
 		u_int8_t * glData=(u_int8_t*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
 		if(glData){
 			//Copy the content to it
-			memcpy(img->data, glData, m_size);
+			memcpy(img->data.get(), glData, m_size);
 			glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
 		}
 

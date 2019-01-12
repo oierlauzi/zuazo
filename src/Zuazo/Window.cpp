@@ -147,8 +147,7 @@ Window::Screen::Screen(const GLFWmonitor* monitor) {
 		const GLFWvidmode* vm=glfwGetVideoMode(mon);
 		res.width=vm->width;
 		res.height=vm->height;
-		frameRate.num=vm->refreshRate;
-		frameRate.den=1;
+		frameRate=Rational(vm->refreshRate);
 
 		//Check if it is in use
 		if(s_usedScreens.find(mon)==s_usedScreens.end())

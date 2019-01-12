@@ -24,10 +24,10 @@ class Window{
 public:
 	struct Screen{
 		friend Window;
-		std::string 	name="";
+		std::string 	name;
 		Resolution		res;
 		Rational		frameRate;
-		bool			isUsed=false;
+		bool			isUsed;
 	private:
 		Screen(const GLFWmonitor * monitor);
 		GLFWmonitor	*	mon=NULL;
