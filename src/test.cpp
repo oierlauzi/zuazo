@@ -10,9 +10,11 @@
 #include "Zuazo/Utils/Color.h"
 #include "Zuazo/Window.h"
 #include "Zuazo/Zuazo.h"
+#include "Zuazo/Timing.h"
 
-#define TEST1
+//#define TEST1
 //#define TEST2
+#define TEST3
 
 int main(void){
 	/*
@@ -23,7 +25,8 @@ int main(void){
 
 	#ifdef TEST1
 	/*
-	 * 		TEST 1
+	 * 		TEST 1:
+	 * 		General testing
 	 */
 
 	Zuazo::Window win(680, 480, "Ventana");
@@ -73,7 +76,8 @@ int main(void){
 	#endif
 	#ifdef TEST2
 	/*
-	 * 		TEST 2
+	 * 		TEST 2:
+	 * 		Rational number class test
 	 */
 
 
@@ -99,6 +103,31 @@ int main(void){
 
 	#endif
 
+#ifdef TEST3
+/*
+ * 		TEST 3:
+ *		Timing testing
+ */
+
+	class TimingExample : public Zuazo::Timing{
+	public:
+		TimingExample(Zuazo::Rational& a) : Zuazo::Timing(Zuazo::Rational(a)){
+
+		}
+
+		void update(const Zuazo::time_unit& elapsed){
+			printf("Elapsed: %ld\n", elapsed.count());
+		}
+	};
+
+	Zuazo::Rational r1(29.97);
+	printf("%d/%d\n", r1.num, r1.den);
+	Zuazo::Rational r2(30);
+	TimingExample t1(r1);
+	TimingExample t2(r2);
+	getchar();
+
+#endif
 	/*
 	 * 		TERMINATION
 	 */

@@ -1,42 +1,37 @@
 #include "Timing.h"
 
-#include <sys/time.h>
 #include <utility>
 
-using namespace Zuazo::Stream;
+#include "Utils/Rational.h"
 
-std::map<clock_t, std::set< Timing* > > Timing::s_timings;
+using namespace Zuazo;
 
-
-int init(){
-	return 0;
-}
-
-int end(){
-	return 0;
-}
-
-
+Timing::TimingTable	Timing::s_timings;
 
 Timing::Timing() {
-	setInterval(0);
+	//Does not get updated by the loop
 }
 
-Timing::Timing(const Rational& interval) {
-	setInterval(interval);
+Timing::Timing(const Rational& rate) {
+	setRate(rate);
 }
 
-Timing::Timing(const Timing& other) : Timing(other.m_updateInterval){}
+Timing::Timing(const Timing& other) : Timing(other.m_updateInterval){
+
+}
 
 Timing::~Timing() {
-	deleteTiming(this);
+	s_timings.deleteTiming(this);
 }
 
 
 
 void Timing::setInterval(const Rational& interval) {
 	m_updateInterval=interval;
-	addTiming(this, toClk(m_updateInterval));
+
+	time_unit cInterval=toTimeUnit(m_updateInterval);
+	if(cInterval.count() > 0)
+		s_timings.addTiming(this, cInterval);
 }
 
 void Timing::setRate(const Rational& rate){
@@ -44,33 +39,111 @@ void Timing::setRate(const Rational& rate){
 }
 
 
-inline clock_t	Timing::toClk(const Rational& rat){
-	return rat.num * CLOCKS_PER_SEC / rat.den;
+/*
+ *	TIMING TABLE
+ */
+
+Timing::TimingTable::TimingTable(){
+	m_exit=false;
+	m_thread=std::thread(&Timing::TimingTable::updateThreadFunc, this);
 }
-inline Zuazo::Rational Timing::toRat(clock_t clk){
-	return Rational(clk, CLOCKS_PER_SEC);
+
+Timing::TimingTable::~TimingTable(){
+	m_exit=true;
+	m_cond.notify_all();
+	m_thread.join();
 }
 
 
-inline void Timing::addTiming(Timing* element, clock_t interval){
+
+
+
+void Timing::TimingTable::addTiming(Timing* element, time_unit interval){
+	std::unique_lock<std::mutex> lock(m_mutex);
 	if(element){
-		deleteTiming(element);
-		if(interval){
+		if(interval.count()){
 			//Add the new timing to the table
-			if(s_timings.find(interval)==s_timings.end())
-				s_timings.emplace();
-			s_timings[interval].insert(element);
+			if(m_table.find(interval)==m_table.end()){
+				//Interval did not exist. Add it
+				m_table.emplace(std::make_pair(interval, TimingData()));
+
+				//Re-start all updates to synchronize them when possible
+				for(auto& timing : m_table)
+					timing.second.timeSinceLastUpdate=time_unit(0);
+			}
+			m_table[interval].elements.insert(element);
+
+			//Force update
+			m_cond.notify_all();
 		}
 	}
 }
 
-inline void Timing::deleteTiming(Timing* element){
-	for(auto ite=s_timings.begin(); ite!=s_timings.begin();){
-		ite->second.erase(element);
+void Timing::TimingTable::modifyTiming(Timing* element, time_unit interval){
+	deleteTiming(element);
+	addTiming(element, interval);
+}
 
-		if(ite->second.size()==0)
-			ite=s_timings.erase(ite);
+void Timing::TimingTable::deleteTiming(Timing* element){
+	std::unique_lock<std::mutex> lock(m_mutex);
+	for(auto ite=m_table.begin(); ite!=m_table.begin();){
+		ite->second.elements.erase(element);
+
+		if(ite->second.elements.size()==0)
+			ite=m_table.erase(ite);
 		else
 			ite++;
+	}
+}
+
+void Timing::TimingTable::updateThreadFunc(){
+	std::unique_lock<std::mutex> lock(m_mutex);
+
+	while(!m_exit){
+		if(m_table.size()){
+			std::chrono::time_point<std::chrono::steady_clock> start, end;
+			start=std::chrono::steady_clock::now();
+
+			time_unit timeForNextUpdate=time_unit::max();
+
+			//Update all the pending updates
+			for(auto& timing : m_table){
+				const time_unit& interval=timing.first;
+				TimingData& updateData=timing.second;
+
+				if(updateData.timeSinceLastUpdate >= interval){
+					//Members of this update interval need to be updated
+					for(Timing * element : updateData.elements)
+						element->update(updateData.timeSinceLastUpdate);
+
+					//Update timing information
+					updateData.timeSinceLastUpdate-=interval;
+				}
+
+				//Check if the next update for this interval is sooner than the previous one
+				const time_unit timeForNextIntervalUpdate=interval - updateData.timeSinceLastUpdate;
+				if(timeForNextIntervalUpdate < timeForNextUpdate){
+					timeForNextUpdate=timeForNextIntervalUpdate;
+				}
+			}
+
+			end=std::chrono::steady_clock::now();
+			time_unit elapsed=std::chrono::duration_cast<time_unit>(end - start);
+
+			if(elapsed < timeForNextUpdate){
+				// Increment timing values for each interval
+				for(auto& timing : m_table){
+					timing.second.timeSinceLastUpdate+=timeForNextUpdate;
+				}
+
+				//Wait until next update
+				m_cond.wait_for(lock, timeForNextUpdate-elapsed);
+			}else{
+				// Increment timing values for each interval
+				for(auto& timing : m_table)
+					timing.second.timeSinceLastUpdate+=elapsed;
+			}
+		}else
+			m_cond.wait(lock);
 	}
 }

@@ -2,8 +2,8 @@
 
 #include <bits/stdint-intn.h>
 #include <math.h>
-#include <algorithm>
 #include <limits>
+#include <boost/integer/common_factor_rt.hpp>
 
 namespace Zuazo{
 
@@ -11,12 +11,16 @@ namespace Zuazo{
 		a < std::numeric_limits<double>::infinity() && \
 		a > -std::numeric_limits<double>::infinity())
 
+#define CAN_CAST_TO_INT(a) ( \
+		a < std::numeric_limits<int32_t>::max() && \
+		a > std::numeric_limits<int32_t>::min())
+
 /*
  * Contains a rational number
  */
 struct Rational{
-	int64_t num;
-	int64_t den;
+	int32_t num;
+	int32_t den;
 
 	Rational(){
 		num=0;
@@ -34,19 +38,15 @@ struct Rational{
 		if(IS_FINITE_NUMBER(number)){
 			int64_t d=1;
 
-			num=(int64_t)number;
-			den=(int64_t)d;
+			do{
+				if(CAN_CAST_TO_INT(d) && CAN_CAST_TO_INT(number)){
+					num=(int32_t)number;
+					den=(int32_t)d;
+				}else break;
 
-			while(number != floor(number)){
 				number*=2;
 				d*=2;
-
-				num=(int64_t)number;
-				den=(int64_t)d;
-
-				if(d > std::numeric_limits<int64_t>::max()/2)
-					break;
-			}
+			}while(number != trunc(number));
 
 			simplify();
 		}else{
@@ -150,7 +150,7 @@ private:
 inline void Rational::simplify(){
 	if(den && num){
 		//Calcualte GCD
-		int64_t gcd=std::__gcd(num, den);
+		int32_t gcd=boost::integer::gcd(num, den);
 
 		//Simplify the fraction
 		num /= gcd;
