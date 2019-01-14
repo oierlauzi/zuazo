@@ -1,20 +1,14 @@
-#include <stddef.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <cmath>
+#include <chrono>
 #include <cstdio>
 
-#include "Zuazo/Image.h"
-#include "Zuazo/Surface.h"
-#include "Zuazo/Utils/ImgBuffer.h"
-#include "Zuazo/Utils/Color.h"
-#include "Zuazo/Window.h"
-#include "Zuazo/Zuazo.h"
+#include "Zuazo/Stream/Consumer.h"
 #include "Zuazo/Timing.h"
+#include "Zuazo/Zuazo.h"
 
 //#define TEST1
 //#define TEST2
-#define TEST3
+//#define TEST3
+#define TEST4
 
 int main(void){
 	/*
@@ -74,6 +68,7 @@ int main(void){
 	}while(true);
 
 	#endif
+
 	#ifdef TEST2
 	/*
 	 * 		TEST 2:
@@ -115,16 +110,66 @@ int main(void){
 
 		}
 
-		void update(const Zuazo::time_unit& elapsed){
+		void update(const Zuazo::time_unit& elapsed, const Zuazo::time_unit& ts){
 			printf("Elapsed: %ld\n", elapsed.count());
+			printf("Now: %ld\n", ts.count());
 		}
 	};
 
 	Zuazo::Rational r1(29.97);
-	printf("%d/%d\n", r1.num, r1.den);
 	Zuazo::Rational r2(30);
 	TimingExample t1(r1);
 	TimingExample t2(r2);
+	getchar();
+
+#endif
+
+#ifdef TEST4
+/*
+ * 		TEST 3:
+ *		Source / Consumer testing
+ */
+
+	class SourceExample : public Zuazo::Stream::Source<double>{
+		public:
+		SourceExample(double framerate) : Zuazo::Stream::Source<double>(Zuazo::Rational(framerate)){
+
+		}
+
+		virtual void update(const Zuazo::time_unit& elapsed, const Zuazo::time_unit& ts){
+			//printf("Source: %ld\n", elapsed.count());
+			std::unique_ptr<double> d(new double(0));
+			push(d);
+		}
+	};
+
+	class ConsumerExample : public Zuazo::Stream::Consumer<double>{
+		public:
+		ConsumerExample(double framerate) : Zuazo::Stream::Consumer<double>(Zuazo::Rational(framerate)){
+
+		}
+
+		virtual void update(const Zuazo::time_unit& elapsed, const Zuazo::time_unit& ts){
+			//printf("Consumer: %ld\n", elapsed.count());
+			std::shared_ptr<const Zuazo::Stream::StreamElement<double>> el=get();
+			if(el)
+				printf("On update: %g\n", *(el->element));
+			else
+				printf("On update: nullptr\n");
+
+		}
+
+		/*virtual void push(std::shared_ptr<const Zuazo::Stream::StreamElement<double>> element) override{
+			//Zuazo::Stream::Consumer<double>::push(element);
+			printf("On cbk: %g\n", *(element->element));
+		}*/
+	};
+
+	SourceExample src(30);
+	ConsumerExample cons(30);
+	cons<<src;
+
+
 	getchar();
 
 #endif

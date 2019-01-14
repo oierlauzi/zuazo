@@ -3,7 +3,6 @@
 #include <cstring>
 
 #include "Context.h"
-#include "Surface.h"
 
 using namespace Zuazo;
 
@@ -31,7 +30,7 @@ Image::Image(const ImgBuffer& extImage) : Image(){
 }
 
 Image::Image(const Surface& surface) : Image(){
-	copy(surface);
+	//copy(surface);
 }
 
 Image::~Image() {
@@ -92,7 +91,7 @@ void Image::copy(const ImgBuffer& extImage) {
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 }
 
-void Image::copy(const Surface& surface){
+/*void Image::copy(const Surface& surface){
 	std::lock_guard<std::mutex> lock(m_mutex);
 
 	resize(surface.m_res);
@@ -106,7 +105,7 @@ void Image::copy(const Surface& surface){
 	glBufferData(GL_PIXEL_UNPACK_BUFFER, m_size, 0, GL_STREAM_COPY);
 
 	//TODO
-}
+}*/
 
 void Image::read(ImgBuffer * img){
 	std::lock_guard<std::mutex> lock(m_mutex);

@@ -5,7 +5,6 @@
 #include <sys/types.h>
 #include <mutex>
 
-#include "Surface.h"
 #include "Utils/Resolution.h"
 #include "Utils/ImgBuffer.h"
 

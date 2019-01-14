@@ -15,7 +15,6 @@ struct GLFWwindow;
 struct GLFWmonitor;
 
 #include "Utils/Rational.h"
-#include "Surface.h"
 #include "Image.h"
 
 namespace Zuazo{

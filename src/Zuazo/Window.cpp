@@ -307,7 +307,7 @@ std::string	Window::getName(){
  * @brief Draws the given surface on screen
  * @param surface: The surface which is going to be drawn on screen
  */
-void Window::show(const Surface& surface) {
+/*void Window::show(const Surface& surface) {
 	std::unique_lock<std::mutex> lock(m_mutex);
 
 	//Evaluate whether resizing needs to be done
@@ -337,7 +337,7 @@ void Window::show(const Surface& surface) {
 
 	glfwMakeContextCurrent(NULL);
 	m_drawCond.notify_one();
-}
+}*/
 
 /*
  * @brief Draws the given image on screen

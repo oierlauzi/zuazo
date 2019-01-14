@@ -113,8 +113,11 @@ void Timing::TimingTable::updateThreadFunc(){
 
 				if(updateData.timeSinceLastUpdate >= interval){
 					//Members of this update interval need to be updated
-					for(Timing * element : updateData.elements)
-						element->update(updateData.timeSinceLastUpdate);
+					for(Timing * element : updateData.elements){
+						element->m_mutex.lock();
+						element->update(updateData.timeSinceLastUpdate, m_currTs);
+						element->m_mutex.unlock();
+					}
 
 					//Update timing information
 					updateData.timeSinceLastUpdate-=interval;
@@ -138,10 +141,18 @@ void Timing::TimingTable::updateThreadFunc(){
 
 				//Wait until next update
 				m_cond.wait_for(lock, timeForNextUpdate-elapsed);
+
+				//Update the current timestamp
+				std::unique_lock<std::mutex> lock(m_timeStampMutex);
+				m_currTs+=timeForNextUpdate;
 			}else{
 				// Increment timing values for each interval
 				for(auto& timing : m_table)
 					timing.second.timeSinceLastUpdate+=elapsed;
+
+				//Update the current timestamp
+				std::unique_lock<std::mutex> lock(m_timeStampMutex);
+				m_currTs+=elapsed;
 			}
 		}else
 			m_cond.wait(lock);
