@@ -10,12 +10,11 @@
 #include <thread>
 
 #include "Utils/Resolution.h"
+#include "Utils/Rational.h"
+#include "Image.h"
 
 struct GLFWwindow;
 struct GLFWmonitor;
-
-#include "Utils/Rational.h"
-#include "Image.h"
 
 namespace Zuazo{
 

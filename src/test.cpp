@@ -1,9 +1,11 @@
 #include <chrono>
 #include <cstdio>
 
-#include "Zuazo/Stream/Consumer.h"
 #include "Zuazo/Timing.h"
+#include "Zuazo/Utils/Rational.h"
 #include "Zuazo/Zuazo.h"
+#include "Zuazo/Stream/Source.h"
+#include "Zuazo/Stream/Consumer.h"
 
 //#define TEST1
 //#define TEST2
@@ -104,15 +106,14 @@ int main(void){
  *		Timing testing
  */
 
-	class TimingExample : public Zuazo::Timing{
+	class TimingExample : public Zuazo::Timing::Updateable{
 	public:
-		TimingExample(Zuazo::Rational& a) : Zuazo::Timing(Zuazo::Rational(a)){
+		TimingExample(Zuazo::Rational& a) : Zuazo::Timing::Updateable(Zuazo::Rational(a)){
 
 		}
 
-		void update(const Zuazo::time_unit& elapsed, const Zuazo::time_unit& ts){
+		void update(const Zuazo::Timing::time_unit& elapsed, const Zuazo::Timing::time_point& ts){
 			printf("Elapsed: %ld\n", elapsed.count());
-			printf("Now: %ld\n", ts.count());
 		}
 	};
 
@@ -136,10 +137,14 @@ int main(void){
 
 		}
 
-		virtual void update(const Zuazo::time_unit& elapsed, const Zuazo::time_unit& ts){
-			//printf("Source: %ld\n", elapsed.count());
-			std::unique_ptr<double> d(new double(0));
+		virtual void update(const Zuazo::Timing::time_unit& elapsed, const Zuazo::Timing::time_point& ts){
+			static double i=0;
+
+			i+=1;
+
+			std::unique_ptr<double> d(new double(i));
 			push(d);
+			Source<double>::update(elapsed, ts);
 		}
 	};
 
@@ -149,20 +154,15 @@ int main(void){
 
 		}
 
-		virtual void update(const Zuazo::time_unit& elapsed, const Zuazo::time_unit& ts){
+		virtual void update(const Zuazo::Timing::time_unit& elapsed, const Zuazo::Timing::time_point& ts){
 			//printf("Consumer: %ld\n", elapsed.count());
-			std::shared_ptr<const Zuazo::Stream::StreamElement<double>> el=get();
-			if(el)
-				printf("On update: %g\n", *(el->element));
+			std::shared_ptr<const double> ptr=get();
+			if(ptr)
+				printf("On update: %g\n", *ptr);
 			else
 				printf("On update: nullptr\n");
 
 		}
-
-		/*virtual void push(std::shared_ptr<const Zuazo::Stream::StreamElement<double>> element) override{
-			//Zuazo::Stream::Consumer<double>::push(element);
-			printf("On cbk: %g\n", *(element->element));
-		}*/
 	};
 
 	SourceExample src(30);

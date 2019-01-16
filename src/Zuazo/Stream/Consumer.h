@@ -7,8 +7,6 @@
 #include "../Utils/Rational.h"
 #include "../Timing.h"
 #include "Source.h"
-#include "StreamElement.h"
-#include "Operators.h"
 
 namespace Zuazo::Stream{
 
@@ -16,84 +14,86 @@ template <typename T>
 class Source;
 
 template <typename T>
-class Consumer : public Timing{
-	friend Consumer<T>& operator<< <>(Consumer<T>& cons,  Source<T>& src);
-	friend Consumer<T>& operator<< <>(Consumer<T>& cons,  Source<T>* src);
-	friend Source<T>& operator>> <>(Source<T>& src,  Consumer<T>& cons);
+class Consumer : public Timing::Updateable{
 	friend Source<T>;
 public:
 	Consumer();
-	Consumer(const Rational& rate);
+	Consumer(const Rational& rat);
 	Consumer(const Consumer<T>& other);
-	~Consumer();
+	virtual ~Consumer();
 
-	void									setSource(Source<T>* src=NULL);
-
-	virtual bool							isActive();
+	void						setSource(Source<T>* src);
+	Consumer<T>&				operator<<(Source<T>&);
+	Consumer<T>&				operator<<(std::nullptr_t ptr);
+	virtual bool 				isActive() const { return true; }
 protected:
-	std::shared_ptr<const StreamElement<T>> get();
+	std::shared_ptr<const T>	get();
 private:
-	Source<T>*									m_source;
-	std::shared_ptr<const StreamElement<T>> m_lastElement;
-
-	virtual void							push(std::shared_ptr<const StreamElement<T>> element);
+	Source<T>*					m_source;
 };
 
+/************************
+ * FUNCTION DEFINITIONS	*
+ ************************/
 /*
- * FUNCTION DEFINITIONS
+ * CONSTRUCTOR AND DESTRUCTOR
  */
 
 template <typename T>
-inline Consumer<T>::Consumer(){
-	m_source=NULL;
+inline Consumer<T>::Consumer() : Timing(){
+	m_source=nullptr;
 }
 
 template <typename T>
-inline Consumer<T>::Consumer(const Rational& rate) : Timing(rate){
-	m_source=NULL;
+inline Consumer<T>::Consumer(const Rational& rat) : Timing::Updateable(rat){
+	m_source=nullptr;
 }
 
 template <typename T>
-inline Consumer<T>::Consumer(const Consumer<T>& other) : Consumer(other.getRate()) {
+inline Consumer<T>::Consumer(const Consumer<T>& other) : Consumer<T>::Consumer(other.getRate()){
 	setSource(other.m_source);
 }
 
 template <typename T>
 inline Consumer<T>::~Consumer(){
-	setSource();
+	setSource(nullptr);
 }
 
+/*
+ * SOURCE MODIFERS
+ */
+
 template <typename T>
-inline void Consumer<T>::setSource(Source<T> * src){
-	std::unique_lock<std::mutex> lock(m_mutex);
-	//Release the old source
-	if(m_source){
-		std::unique_lock<std::mutex> lock(m_source->m_mutex);
+inline void Consumer<T>::setSource(Source<T>* src){
+	std::scoped_lock lock(m_mutex, src->m_mutex);
+	//Detach consumer form the previous source
+	if(m_source)
 		m_source->m_consumers.erase(this);
-	}
 
-	//Set the new source
+	//Attach the new consumer
 	m_source=src;
-	if(m_source){
-		std::unique_lock<std::mutex> lock(m_source->m_mutex);
-		m_lastElement=m_source->m_lastElement;
+	if(m_source)
 		m_source->m_consumers.insert(this);
-	}
 }
 
 template <typename T>
-inline bool Consumer<T>::isActive(){
-	return true; //Method should be modified by child classes
+inline Consumer<T>& Consumer<T>::operator<<(Source<T>& src){
+	setSource(&src);
+	return *this;
 }
 
 template <typename T>
-inline std::shared_ptr<const StreamElement<T>> Consumer<T>::get(){
-	return m_lastElement;
+inline Consumer<T>& Consumer<T>::operator<<(std::nullptr_t ptr){
+	setSource(nullptr);
+	return *this;
 }
 
 template <typename T>
-void Consumer<T>::push(std::shared_ptr<const StreamElement<T>> element){
-	std::unique_lock<std::mutex> lock(m_mutex);
-	m_lastElement=element;
+inline std::shared_ptr<const T>	Consumer<T>::get(){
+	if(m_source)
+		return m_source->get();
+	else
+		return std::shared_ptr<const T>(); //No source, return an empty ptr
 }
-}
+
+} /* namespace Zuazo */

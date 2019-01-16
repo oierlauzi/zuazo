@@ -5,6 +5,7 @@
 
 #include "Context.h"
 #include "Window.h"
+#include "Timing.h"
 
 namespace Zuazo{
 
@@ -45,6 +46,11 @@ Error init(){
     err=Window::init();
     if(err)
     	return Error::WINDOW_INIT;
+
+    //Initialize timing
+    err=Timing::init();
+    if(err)
+    	return Error::TIMING_INIT;
 
 //TODO
     /*err=Shapes::Base::init();

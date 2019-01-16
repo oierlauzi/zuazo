@@ -10,6 +10,7 @@ enum Error{
     GLEW_INIT,
 	CONTEX_INIT,
 	WINDOW_INIT,
+	TIMING_INIT,
     SHAPES_INIT,
     TEXT_INIT
 };
