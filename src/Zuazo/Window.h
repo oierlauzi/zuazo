@@ -11,7 +11,6 @@
 
 #include "Utils/Resolution.h"
 #include "Utils/Rational.h"
-#include "Image.h"
 
 struct GLFWwindow;
 struct GLFWmonitor;
@@ -55,8 +54,8 @@ public:
 	bool			getVSync() const;
 	std::string		getName();
 
-	void			show(const Surface& surface);
-	void			show(const Image& img);
+	/*void			show(const Surface& surface);
+	void			show(const Image& img);*/
 
 	static std::list<Screen> getScreens();
 	static std::list<Screen> getAvalibleScreens();

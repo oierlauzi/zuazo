@@ -14,7 +14,7 @@ template <typename T>
 class Source;
 
 template <typename T>
-class Consumer : public Timing::Updateable{
+class Consumer : public Updateable{
 	friend Source<T>;
 public:
 	Consumer();
@@ -40,12 +40,12 @@ private:
  */
 
 template <typename T>
-inline Consumer<T>::Consumer() : Timing(){
+inline Consumer<T>::Consumer() : Updateable(){
 	m_source=nullptr;
 }
 
 template <typename T>
-inline Consumer<T>::Consumer(const Rational& rat) : Timing::Updateable(rat){
+inline Consumer<T>::Consumer(const Rational& rat) : Updateable(rat){
 	m_source=nullptr;
 }
 

@@ -2,7 +2,7 @@
 
 #include "Context.h"
 
-using namespace Zuazo;
+using namespace Zuazo::Graphics;
 
 Shader::Shader() {
 	m_program=0;

@@ -6,6 +6,7 @@
 #include "Zuazo/Zuazo.h"
 #include "Zuazo/Stream/Source.h"
 #include "Zuazo/Stream/Consumer.h"
+#include "Zuazo/Utils/Vector.h"
 
 //#define TEST1
 //#define TEST2
@@ -106,14 +107,14 @@ int main(void){
  *		Timing testing
  */
 
-	class TimingExample : public Zuazo::Timing::Updateable{
+	class TimingExample : public Zuazo::Updateable{
 	public:
-		TimingExample(Zuazo::Rational& a) : Zuazo::Timing::Updateable(Zuazo::Rational(a)){
+		TimingExample(Zuazo::Rational& a) : Zuazo::Updateable(Zuazo::Rational(a)){
 
 		}
 
-		void update(const Zuazo::Timing::time_unit& elapsed, const Zuazo::Timing::time_point& ts){
-			printf("Elapsed: %ld\n", elapsed.count());
+		void update(){
+			printf("Updating\n");
 		}
 	};
 
@@ -131,20 +132,20 @@ int main(void){
  *		Source / Consumer testing
  */
 
-	class SourceExample : public Zuazo::Stream::Source<double>{
+	class SourceExample : public Zuazo::Stream::AsyncSource<double>{
 		public:
-		SourceExample(double framerate) : Zuazo::Stream::Source<double>(Zuazo::Rational(framerate)){
+		SourceExample(double framerate) : Zuazo::Stream::AsyncSource<double>(Zuazo::Rational(framerate)){
 
 		}
 
-		virtual void update(const Zuazo::Timing::time_unit& elapsed, const Zuazo::Timing::time_point& ts){
+		virtual void update(){
 			static double i=0;
-
-			i+=1;
 
 			std::unique_ptr<double> d(new double(i));
 			push(d);
-			Source<double>::update(elapsed, ts);
+			i+=1;
+
+			AsyncSource<double>::update();
 		}
 	};
 
@@ -154,7 +155,7 @@ int main(void){
 
 		}
 
-		virtual void update(const Zuazo::Timing::time_unit& elapsed, const Zuazo::Timing::time_point& ts){
+		virtual void update(){
 			//printf("Consumer: %ld\n", elapsed.count());
 			std::shared_ptr<const double> ptr=get();
 			if(ptr)
@@ -168,7 +169,6 @@ int main(void){
 	SourceExample src(30);
 	ConsumerExample cons(30);
 	cons<<src;
-
 
 	getchar();
 

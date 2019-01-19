@@ -8,8 +8,10 @@
 #include <vector>
 
 namespace Zuazo{
+	class Window;
+}
 
-class Window;
+namespace Zuazo::Graphics{
 
 /*
  *Context class
@@ -33,8 +35,8 @@ public:
 	static const Context* 		mainCtx;
 private:
 	GLFWwindow *				m_glfwCtx;
-	GLFWwindow *				m_prevGlfwCtx;
-	std::mutex					m_mutex;
+	mutable GLFWwindow *		m_prevGlfwCtx;
+	mutable std::mutex			m_mutex;
 
 	static GLFWwindow *			s_mainGlfwCtx;
 };
@@ -66,9 +68,7 @@ private:
  * @brief sets this context as active
  */
 inline void	Context::setActive() const{
-	Context * ncCtx=const_cast<Context*>(this);
-
-	ncCtx->m_prevGlfwCtx=glfwGetCurrentContext(); //Query the previous context
+	m_prevGlfwCtx=glfwGetCurrentContext(); //Query the previous context
 
 	if(m_glfwCtx!=m_prevGlfwCtx)
 		glfwMakeContextCurrent(m_glfwCtx); //This context is not active. Set it as active
@@ -86,9 +86,7 @@ inline void	Context::setPrevActive() const{
  * @brief Sets this context as active and locks it's mutex
  */
 inline void	Context::use()const{
-	Context * ncCtx=const_cast<Context*>(this);
-
-	ncCtx->m_mutex.lock(); //Wait until it can be used in this thread
+	m_mutex.lock(); //Wait until it can be used in this thread
 	setActive(); //Set this context as the current
 }
 
@@ -97,9 +95,7 @@ inline void	Context::use()const{
  * @return True if success, false if it is in use elsewhere
  */
 inline bool	Context::tryUse() const{
-	Context * ncCtx=const_cast<Context*>(this);
-
-	if(ncCtx->m_mutex.try_lock()){ //Try to lock the mutex
+	if(m_mutex.try_lock()){ //Try to lock the mutex
 		setActive(); //Set this context as the current
 		return true;
 	}else return false;
@@ -109,10 +105,8 @@ inline bool	Context::tryUse() const{
  * @brief unlocks context's mutex and restores the previous context
  */
 inline void Context::unuse() const{
-	Context * ncCtx=const_cast<Context*>(this);
-
 	setPrevActive();
-	ncCtx->m_mutex.unlock(); //Enable others to access this thread
+	m_mutex.unlock(); //Enable others to access this thread
 }
 
 
