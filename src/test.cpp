@@ -1,17 +1,13 @@
-#include <chrono>
-#include <cstdio>
+#include <iostream>
 
-#include "Zuazo/Timing.h"
-#include "Zuazo/Utils/Rational.h"
+#include "Zuazo/Utils/Color.h"
 #include "Zuazo/Zuazo.h"
-#include "Zuazo/Stream/Source.h"
-#include "Zuazo/Stream/Consumer.h"
-#include "Zuazo/Utils/Vector.h"
 
 //#define TEST1
 //#define TEST2
 //#define TEST3
-#define TEST4
+//#define TEST4
+#define TEST5
 
 int main(void){
 	/*
@@ -171,6 +167,18 @@ int main(void){
 	cons<<src;
 
 	getchar();
+
+#endif
+
+#ifdef TEST5
+/*
+ * 		TEST 5:
+ *		COLOR Testing
+ */
+
+	Zuazo::Color color("#abcdef12");
+
+	std::cout<<(std::string)color;
 
 #endif
 	/*

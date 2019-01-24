@@ -3,7 +3,7 @@
 #include <GL/glew.h>
 #include <string>
 
-namespace Zuazo::Graphics{
+namespace Zuazo::Graphics::GL{
 
 class Shader {
 public:

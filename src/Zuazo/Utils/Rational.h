@@ -5,7 +5,7 @@
 #include <limits>
 #include <boost/integer/common_factor_rt.hpp>
 
-namespace Zuazo{
+namespace Zuazo::Utils{
 
 #define IS_FINITE_NUMBER(a) ( \
 		a < std::numeric_limits<double>::infinity() && \

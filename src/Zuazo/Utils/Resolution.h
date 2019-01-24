@@ -2,7 +2,7 @@
 
 #include <sys/types.h>
 
-namespace Zuazo{
+namespace Zuazo::Utils{
 
 struct Resolution{
 	u_int32_t	width;
@@ -28,6 +28,32 @@ struct Resolution{
 
     int operator!=(const Resolution& right)const{
         return right.width!=width || right.height!=height;
+    }
+
+    int operator<(const Resolution& right)const{
+        int result;
+        if(width < right.width)
+        	result|=1<<0;
+        if(height < right.height)
+        	result|=0x2;
+        return result;
+    }
+
+    int operator<=(const Resolution& right)const{
+        int result;
+        if(width <= right.width)
+        	result|= 1<<0;
+        if(height <= right.height)
+        	result|= 0x2;
+        return result;
+    }
+
+    int operator>(const Resolution& right)const{
+    	return ~operator<=(right);
+    }
+
+    int operator>=(const Resolution& right)const{
+    	return ~operator<(right);
     }
 };
 

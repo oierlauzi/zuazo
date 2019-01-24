@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Zuazo::Graphics{
+namespace Zuazo::Graphics::GL{
 
 template<typename T>
 class UniqueBinding{

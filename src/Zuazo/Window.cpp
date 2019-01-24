@@ -5,8 +5,8 @@
 #include <map>
 #include <utility>
 
-#include "Graphics/Context.h"
-#include "Graphics/Shader.h"
+#include "Graphics/GL/Context.h"
+#include "Graphics/GL/Shader.h"
 #include "Utils/Resolution.h"
 
 using namespace Zuazo;
@@ -55,7 +55,7 @@ int Window::end(){
  ********************************/
 
 Window::Window(u_int32_t width, u_int32_t height, std::string name) {
-	m_ctx=glfwCreateWindow(width, height, name.c_str(), NULL, Graphics::Context::s_mainGlfwCtx);
+	m_ctx=glfwCreateWindow(width, height, name.c_str(), NULL, Graphics::GL::Context::s_mainGlfwCtx);
 	glfwSetWindowUserPointer(m_ctx, this);
 	glfwSetWindowSizeCallback(m_ctx, glfwResizeCbk);
 	glfwMakeContextCurrent(m_ctx);
@@ -63,7 +63,7 @@ Window::Window(u_int32_t width, u_int32_t height, std::string name) {
 	//Create the VAO and the VBO
 	glGenVertexArrays(1, &m_vao);
 	glGenBuffers(2, m_vbos);
-	m_shader=Graphics::Shader::create(VERT_SHADER.c_str(), FRAG_SHADER.c_str());
+	m_shader=Graphics::GL::Shader::create(VERT_SHADER.c_str(), FRAG_SHADER.c_str());
 
 	//Initialize  texture coordinates and vertices on the VAO
 	glBindVertexArray(m_vao);
@@ -127,7 +127,7 @@ Window::~Window() {
 	glfwMakeContextCurrent(m_ctx);
 	glDeleteVertexArrays(1, &m_vao);
 	glDeleteBuffers(2, m_vbos);
-	Graphics::Shader::destroy(m_shader);
+	Graphics::GL::Shader::destroy(m_shader);
 	glfwMakeContextCurrent(NULL);
 
 	//Terminate the drawing thread

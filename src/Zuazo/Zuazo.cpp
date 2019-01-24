@@ -3,7 +3,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "Graphics/Context.h"
+#include "Graphics/GL/Context.h"
 #include "Window.h"
 #include "Timing.h"
 
@@ -28,11 +28,11 @@ Error init(){
         return Error::GLFW_INIT;
 
     //Initialize context handling
-    err=Graphics::Context::init();
+    err=Graphics::GL::Context::init();
     if(err)
     	return Error::CONTEX_INIT;
 
-    Graphics::UniqueContext ctx(Graphics::Context::mainCtx);
+    Graphics::GL::UniqueContext ctx(Graphics::GL::Context::mainCtx);
 
     //Init GLEW
     err=glewInit();

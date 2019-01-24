@@ -1,6 +1,6 @@
 #include "Context.h"
 
-using namespace Zuazo::Graphics;
+using namespace Zuazo::Graphics::GL;
 
 //Holds the main context, which gets instanceated by init()
 const Context* Context::mainCtx;

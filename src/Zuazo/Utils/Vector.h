@@ -6,7 +6,7 @@
 #include <glm/detail/type_vec3.hpp>
 #include <glm/detail/type_vec4.hpp>
 
-namespace Zuazo{
+namespace Zuazo::Utils{
 
 template <typename T>
 using Vec2 = glm::tvec2<T>;

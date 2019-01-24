@@ -11,7 +11,7 @@ namespace Zuazo{
 	class Window;
 }
 
-namespace Zuazo::Graphics{
+namespace Zuazo::Graphics::GL{
 
 /*
  *Context class

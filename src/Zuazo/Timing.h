@@ -50,6 +50,9 @@ public:
 		operator Rational() const{
 			return Rational(count(), TIME_UNITS_PER_SECOND);
 		}
+		double seconds(){
+			return (double)count()/TIME_UNITS_PER_SECOND;
+		}
 
 		static const int64_t TIME_UNITS_PER_SECOND;
 	};
