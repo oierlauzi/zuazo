@@ -1,13 +1,16 @@
+#include <cstdio>
 #include <iostream>
+#include <memory>
 
-#include "Zuazo/Utils/Color.h"
+#include "Zuazo/Stream/Consumer.h"
+#include "Zuazo/Stream/Source.h"
 #include "Zuazo/Zuazo.h"
 
 //#define TEST1
 //#define TEST2
 //#define TEST3
-//#define TEST4
-#define TEST5
+#define TEST4
+//#define TEST5
 
 int main(void){
 	/*
@@ -128,9 +131,9 @@ int main(void){
  *		Source / Consumer testing
  */
 
-	class SourceExample : public Zuazo::Stream::AsyncSource<double>{
+	class SourceExample : public Zuazo::Stream::Source<double>{
 		public:
-		SourceExample(double framerate) : Zuazo::Stream::AsyncSource<double>(Zuazo::Rational(framerate)){
+		SourceExample(double framerate) : Zuazo::Stream::Source<double>(Zuazo::Utils::Rational(framerate)){
 
 		}
 
@@ -141,13 +144,13 @@ int main(void){
 			push(d);
 			i+=1;
 
-			AsyncSource<double>::update();
+			printf("Sending\n");
 		}
 	};
 
 	class ConsumerExample : public Zuazo::Stream::Consumer<double>{
 		public:
-		ConsumerExample(double framerate) : Zuazo::Stream::Consumer<double>(Zuazo::Rational(framerate)){
+		ConsumerExample(double framerate) : Zuazo::Stream::Consumer<double>(Zuazo::Utils::Rational(framerate)){
 
 		}
 
@@ -167,7 +170,6 @@ int main(void){
 	cons<<src;
 
 	getchar();
-
 #endif
 
 #ifdef TEST5
@@ -176,9 +178,9 @@ int main(void){
  *		COLOR Testing
  */
 
-	Zuazo::Color color("#abcdef12");
+	Zuazo::Utils::Color color("#abcdef12");
 
-	std::cout<<(std::string)color;
+	std::cout << (std::string)color << "\n";
 
 #endif
 	/*
@@ -186,4 +188,8 @@ int main(void){
 	 */
 
 	Zuazo::end();
+
+	std::cout << "End \n";
+
+	return 0;
 }

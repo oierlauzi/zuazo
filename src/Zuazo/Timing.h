@@ -33,7 +33,7 @@ public:
 	public:
 		using TIME_NAMESPACE::TIME_UNIT::TIME_DURATION; //Use default constructor/destructors
 
-		TimeUnit(const Rational& rat) : TIME_NAMESPACE::TIME_UNIT(
+		TimeUnit(const Utils::Rational& rat) : TIME_NAMESPACE::TIME_UNIT(
 				rat.den ? rat.num * TIME_UNITS_PER_SECOND / rat.den : 0
 		){}
 
@@ -47,8 +47,8 @@ public:
 
 		~TimeUnit()=default;
 
-		operator Rational() const{
-			return Rational(count(), TIME_UNITS_PER_SECOND);
+		operator Utils::Rational() const{
+			return Utils::Rational(count(), TIME_UNITS_PER_SECOND);
 		}
 		double seconds(){
 			return (double)count()/TIME_UNITS_PER_SECOND;
@@ -154,32 +154,34 @@ public:
 	};
 
 	Updateable();
-	Updateable(const Rational& rate);
+	Updateable(const Utils::Rational& rate);
 	Updateable(const Updateable& other);
 	virtual ~Updateable();
 	void								setBeforeUpdateCallback(Callback * cbk);
 	void								setAfterUpdateCallback(Callback * cbk);
 
-	const Rational& 					getInterval() const;
-	Rational							getRate() const;
+	const Utils::Rational& 				getInterval() const;
+	Utils::Rational						getRate() const;
 
 	bool								isOpen() const;
 protected:
-	mutable std::recursive_mutex		m_mutex;
+	mutable std::mutex					m_mutex;
 
-	void 								setInterval(const Rational& interval);
-	void								setRate(const Rational& rate);
+	void 								setInterval(const Utils::Rational& interval);
+	void								setRate(const Utils::Rational& rate);
 
 	virtual void						open();
 	virtual void						close();
 
 	virtual void						update()=0;
 private:
-	Rational							m_updateInterval;
+	Utils::Rational						m_updateInterval;
 	bool								m_isOpen;
 
 	Callback *							m_beforeCbk;
 	Callback *							m_afterCbk;
+
+	std::mutex							m_cbkMutex;
 
 	virtual void						perform();
 };
@@ -192,11 +194,11 @@ private:
  *  Timing::Updateable methods
  */
 
-inline const Rational& Updateable::getInterval() const {
+inline const Utils::Rational& Updateable::getInterval() const {
 	return m_updateInterval;
 }
 
-inline Rational Updateable::getRate() const {
+inline Utils::Rational Updateable::getRate() const {
 	return 1/m_updateInterval;
 }
 
@@ -204,25 +206,19 @@ inline bool Updateable::isOpen() const{
 	return m_isOpen;
 }
 
-inline void	Updateable::perform(){
-	std::lock_guard<std::recursive_mutex> lock(m_mutex);
-	if(m_beforeCbk)
-		m_beforeCbk->update();
-
-	update();
-
-	if(m_afterCbk)
-		m_afterCbk->update();
-}
-
 inline void Updateable::open(){
-	Timing::addTiming(this, Timing::TimeUnit(getInterval()));
-	m_isOpen=true;
+	if(!m_isOpen){
+		m_isOpen=true;
+		Timing::addTiming(this, Timing::TimeUnit(m_updateInterval));
+	}
 }
 
 inline void Updateable::close(){
-	Timing::deleteTiming(this);
-	m_isOpen=false;
+	std::lock_guard<std::mutex> lock(m_mutex);
+	if(m_isOpen){
+		Timing::deleteTiming(this);
+		m_isOpen=false;
+	}
 }
 
 /*

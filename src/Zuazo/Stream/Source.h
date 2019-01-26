@@ -19,11 +19,13 @@ class Source : public Updateable{
 	friend Consumer<T>;
 public:
 	Source();
-	Source(const Rational& rat);
+	Source(const Utils::Rational& rat);
 	Source(const Source<T>& other)=delete;
 	virtual ~Source();
 
 	virtual std::shared_ptr<const T>	get() const;
+
+	virtual void 						update() override=0;
 protected:
 	void								push();
 	void								push(std::shared_ptr<T>& element);
@@ -36,7 +38,10 @@ protected:
 private:
 	std::shared_ptr<T>					m_last;
 
-	std::set<Consumer<T> *>				m_consumers;
+	std::set<const Consumer<T> *>		m_consumers;
+
+	void								attach(const Consumer<T> * cons);
+	void								detach(const Consumer<T> * cons);
 };
 
 
@@ -48,7 +53,7 @@ class AsyncSource : public Source<T>{
 	using Source<T>::Updateable::m_mutex;
 public:
 	AsyncSource();
-	AsyncSource(const Rational& rat);
+	AsyncSource(const Utils::Rational& rat);
 	AsyncSource(const AsyncSource<T>& other)=delete;
 	virtual ~AsyncSource()=default;
 
@@ -88,17 +93,18 @@ private:
 
 template <typename T>
 inline Source<T>::Source() : Updateable(){
+
 }
 
 template <typename T>
-inline Source<T>::Source(const Rational& rat) : Updateable(rat){
+inline Source<T>::Source(const Utils::Rational& rat) : Updateable(rat){
 
 }
 
 template <typename T>
 inline Source<T>::~Source(){
-	for(Consumer<T> * cons : m_consumers)
-		cons->setSource(nullptr);
+	while(m_consumers.size())
+		const_cast<Consumer<T>*> ((*m_consumers.begin()))->setSource(nullptr);
 }
 
 /*
@@ -112,19 +118,16 @@ std::shared_ptr<const T> Source<T>::get() const{
 
 template <typename T>
 void Source<T>::push(){
-	std::lock_guard<std::recursive_mutex> lock(m_mutex);
 	m_last=std::shared_ptr<T>();
 }
 
 template <typename T>
 void Source<T>::push(std::unique_ptr<T>& element){
-	std::lock_guard<std::recursive_mutex> lock(m_mutex);
 	m_last=std::move(element);
 }
 
 template <typename T>
 void Source<T>::push(std::shared_ptr<T>& element){
-	std::lock_guard<std::recursive_mutex> lock(m_mutex);
 	m_last=element;
 }
 
@@ -137,6 +140,18 @@ template <typename T>
 void Source<T>::close(){
 	Updateable::close();
 	m_last=std::shared_ptr<T>();
+}
+
+template <typename T>
+void Source<T>::attach(const Consumer<T> * cons){
+	std::lock_guard<std::mutex> lock(m_mutex);
+	m_consumers.insert(cons);
+}
+
+template <typename T>
+void Source<T>::detach(const Consumer<T> * cons){
+	std::lock_guard<std::mutex> lock(m_mutex);
+	m_consumers.erase(cons);
 }
 
 /*
@@ -161,13 +176,15 @@ bool Source<T>::isActive() const{
 
 template <typename T>
 inline AsyncSource<T>::AsyncSource() : Source<T>::Source(){
+	std::lock_guard<std::mutex> lock(m_mutex);
 	m_maxBufferSize=DEFAULT_MAX_BUFFER_SIZE;
 	m_maxDropped=DEFAULT_MAX_DROPPED;
 	m_dropped=0;
 }
 
 template <typename T>
-inline AsyncSource<T>::AsyncSource(const Rational& rat) : Source<T>::Source(rat){
+inline AsyncSource<T>::AsyncSource(const Utils::Rational& rat) : Source<T>::Source(rat){
+	std::lock_guard<std::mutex> lock(m_mutex);
 	m_maxBufferSize=DEFAULT_MAX_BUFFER_SIZE;
 	m_maxDropped=DEFAULT_MAX_DROPPED;
 	m_dropped=0;
@@ -178,25 +195,25 @@ inline AsyncSource<T>::AsyncSource(const Rational& rat) : Source<T>::Source(rat)
  */
 template <typename T>
 inline void	AsyncSource<T>::setMaxDropped(u_int32_t max){
-	std::lock_guard<std::recursive_mutex> lock(m_mutex);
+	std::lock_guard<std::mutex> lock(m_mutex);
 	m_maxDropped=max;
 }
 
 template <typename T>
 inline u_int32_t AsyncSource<T>::getMaxDropped() const{
-	std::lock_guard<std::recursive_mutex> lock(m_mutex);
+	std::lock_guard<std::mutex> lock(m_mutex);
 	return m_maxDropped;
 }
 
 template <typename T>
 inline u_int32_t AsyncSource<T>::getDropped() const{
-	std::lock_guard<std::recursive_mutex> lock(m_mutex);
+	std::lock_guard<std::mutex> lock(m_mutex);
 	return m_dropped;
 }
 
 template <typename T>
 inline void AsyncSource<T>::resetDropped(){
-	std::lock_guard<std::recursive_mutex> lock(m_mutex);
+	std::lock_guard<std::mutex> lock(m_mutex);
 	m_dropped=0;
 }
 
@@ -205,25 +222,25 @@ inline void AsyncSource<T>::resetDropped(){
  */
 template <typename T>
 inline void	AsyncSource<T>::setMaxBufferSize(u_int32_t size){
-	std::lock_guard<std::recursive_mutex> lock(m_mutex);
+	std::lock_guard<std::mutex> lock(m_mutex);
 	m_maxBufferSize=size;
 }
 
 template <typename T>
 inline u_int32_t AsyncSource<T>::getMaxBufferSize() const{
-	std::lock_guard<std::recursive_mutex> lock(m_mutex);
+	std::lock_guard<std::mutex> lock(m_mutex);
 	return m_maxBufferSize;
 }
 
 template <typename T>
 inline u_int32_t AsyncSource<T>::getBufferSize() const{
-	std::lock_guard<std::recursive_mutex> lock(m_mutex);
+	std::lock_guard<std::mutex> lock(m_mutex);
 	return m_buffer.size();
 }
 
 template <typename T>
 inline void AsyncSource<T>::flushBuffer(){
-	std::lock_guard<std::recursive_mutex> lock(m_mutex);
+	std::lock_guard<std::mutex> lock(m_mutex);
 
 	while(m_buffer.size())
 		m_buffer.pop();
@@ -252,7 +269,7 @@ void AsyncSource<T>::update() {
 
 template <typename T>
 void AsyncSource<T>::push(std::unique_ptr<T>& element){
-	std::lock_guard<std::recursive_mutex> lock(m_mutex);
+	std::lock_guard<std::mutex> lock(m_mutex);
 	if(m_maxBufferSize>0){
 		//We are buffering the source
 		if(m_buffer.size()>=m_maxBufferSize){

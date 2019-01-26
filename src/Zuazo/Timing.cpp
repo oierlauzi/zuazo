@@ -47,7 +47,7 @@ Updateable::Updateable(){
 	m_isOpen=true;
 }
 
-Updateable::Updateable(const Rational& rate) : Updateable(){
+Updateable::Updateable(const Utils::Rational& rate) : Updateable(){
 	setRate(rate);
 }
 
@@ -58,54 +58,77 @@ Updateable::Updateable(const Updateable& other){
 }
 
 Updateable::~Updateable(){
-	setInterval(0);
+	Timing::deleteTiming(this);
 }
 
 void Updateable::setBeforeUpdateCallback(Callback * cbk){
+	std::lock_guard<std::mutex> lock(m_cbkMutex);
 	m_beforeCbk=cbk;
 }
 void Updateable::setAfterUpdateCallback(Callback * cbk){
+	std::lock_guard<std::mutex> lock(m_cbkMutex);
 	m_afterCbk=cbk;
 }
 
-void Updateable::setInterval(const Rational& interval){
+void Updateable::setInterval(const Utils::Rational& interval){
+	std::lock_guard<std::mutex> lock(m_mutex);
+	m_updateInterval=interval;
+
 	if(m_isOpen){
-		m_updateInterval=interval;
-		Timing::TimeUnit cInterval(m_updateInterval);
-		Timing::addTiming(this, cInterval);
+		Timing::TimeUnit tuInterval(m_updateInterval);
+		Timing::modifyTiming(this, tuInterval);
 	}
 }
 
-void Updateable::setRate(const Rational& rate){
+void Updateable::setRate(const Utils::Rational& rate){
 	if(rate)
 		setInterval(1/rate);
 	else
 		setInterval(0);
 }
 
+void Updateable::perform(){
+	{
+		std::lock_guard<std::mutex> lock(m_cbkMutex);
+		if(m_beforeCbk)
+			m_beforeCbk->update();
+	}
+
+	{
+		std::lock_guard<std::mutex> lock(m_mutex);
+		update();
+	}
+
+	{
+		std::lock_guard<std::mutex> lock(m_cbkMutex);
+		if(m_afterCbk)
+			m_afterCbk->update();
+	}
+}
+
+
 /*
  * Timing methods
  */
 
 void Timing::addTiming(Updateable* event, const TimeUnit& interval){
-	std::unique_lock<std::mutex> lock(s_mutex);
+	std::lock_guard<std::mutex> lock(s_mutex);
 
 	if(event && (interval.count() > 0)){
-		if(interval.count()){
-			//Add the new timing to the table
-			if(s_timings.find(interval)==s_timings.end()){
-				//Interval did not exist. Add it
-				s_timings.emplace(std::pair<TimeUnit, UpdateInterval>(interval, UpdateInterval(interval)));
+		//Add the new timing to the table
+		if(s_timings.find(interval)==s_timings.end()){
+			//Interval did not exist. Add it
+			s_timings.emplace(std::pair<TimeUnit, UpdateInterval>(interval, UpdateInterval(interval)));
 
-				//Re-start all updates to synchronize them when possible
-				for(auto& timing : s_timings)
-					timing.second.timeSinceLastUpdate=TimeUnit(timing.first);
+			//Re-start all updates to synchronize them when possible
+			for(auto& timing : s_timings)
+				timing.second.timeSinceLastUpdate=TimeUnit(timing.first);
 
-				//Force update
-				s_cond.notify_all();
-			}
-			s_timings[interval].updateables.insert(event);
+			//Force update
+			s_cond.notify_all();
 		}
+		//Insert the new element
+		s_timings[interval].updateables.insert(event);
 	}
 }
 
@@ -173,14 +196,14 @@ void Timing::updateThreadFunc(){
 				s_cond.wait_for(lock, timeForNextUpdate-elapsed);
 
 				//Update current time
-				//s_currTime+=timeForNextUpdate;
+				s_currTime+=timeForNextUpdate;
 			}else{
 				// Increment timing values for each interval
 				for(auto& timing : s_timings)
 					timing.second.timeSinceLastUpdate+=elapsed;
 
 				//Update current time
-				//s_currTime+=elapsed;
+				s_currTime+=elapsed;
 			}
 		}else
 			s_cond.wait(lock);

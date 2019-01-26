@@ -21,10 +21,10 @@ class Window{
 public:
 	struct Screen{
 		friend Window;
-		std::string 	name;
-		Resolution		res;
-		Rational		frameRate;
-		bool			isUsed;
+		std::string 		name;
+		Utils::Resolution	res;
+		Utils::Rational		frameRate;
+		bool				isUsed;
 	private:
 		Screen(const GLFWmonitor * monitor);
 		GLFWmonitor	*	mon=NULL;
@@ -38,38 +38,38 @@ public:
 	Window(const Window& window);
 	virtual ~Window();
 
-	void			setRes(const Resolution& res);
-	void			setRes(u_int32_t width, u_int32_t height);
-	void			setFullScreen(const Screen& screen);
-	bool			setFullScreen(const std::string name);
-	void			setWindowed();
-	void			setVSync(bool value);
-	void			setName(std::string name);
-	void			setResizeCbk(void(*resizeCbk)(u_int32_t width, u_int32_t height));
+	void						setRes(const Utils::Resolution& res);
+	void						setRes(u_int32_t width, u_int32_t height);
+	void						setFullScreen(const Screen& screen);
+	bool						setFullScreen(const std::string name);
+	void						setWindowed();
+	void						setVSync(bool value);
+	void						setName(std::string name);
+	void						setResizeCbk(void(*resizeCbk)(u_int32_t width, u_int32_t height));
 
-	Resolution		getRes() const;
-	void			getRes(u_int32_t* width, u_int32_t* height) const;
-	bool			isFullScreen() const;
-	Screen			getScreen() const;
-	bool			getVSync() const;
-	std::string		getName();
+	Utils::Resolution			getRes() const;
+	void						getRes(u_int32_t* width, u_int32_t* height) const;
+	bool						isFullScreen() const;
+	Screen						getScreen() const;
+	bool						getVSync() const;
+	std::string					getName();
 
 	/*void			show(const Surface& surface);
 	void			show(const Image& img);*/
 
-	static std::list<Screen> getScreens();
-	static std::list<Screen> getAvalibleScreens();
+	static std::list<Screen>	getScreens();
+	static std::list<Screen> 	getAvalibleScreens();
 private:
 	//Window Data
-	Resolution		m_res;
-	std::string		m_name;
-	bool			m_vSync;
+	Utils::Resolution			m_res;
+	std::string					m_name;
+	bool						m_vSync;
 
 	//Drawing thread options
-	std::thread		m_drawingThread;
-	std::mutex		m_mutex;
-	std::condition_variable m_drawCond;
-	bool			m_exit;
+	std::thread					m_drawingThread;
+	std::mutex					m_mutex;
+	std::condition_variable 	m_drawCond;
+	bool						m_exit;
 
 	//Window's state before it was full-screen (if applicable)
 	struct{

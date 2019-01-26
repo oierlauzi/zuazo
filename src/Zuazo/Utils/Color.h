@@ -100,6 +100,23 @@ struct Color{
 		return (*this);
 	}
 
+	Color operator+(const Color& other){
+		return Color(
+				r + other.r,
+				g + other.g,
+				b + other.b,
+				a + other.a
+		);
+	}
+
+	Color& operator+=(const Color& other){
+		r=normalize(r + other.r);
+		g=normalize(g + other.g);
+		b=normalize(b + other.b);
+		a=normalize(a + other.a);
+		return (*this);
+	}
+
 	operator std::string(){
 		std::stringstream ss;
 		ss << "#";

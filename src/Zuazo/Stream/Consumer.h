@@ -18,7 +18,7 @@ class Consumer : public Updateable{
 	friend Source<T>;
 public:
 	Consumer();
-	Consumer(const Rational& rat);
+	Consumer(const Utils::Rational& rat);
 	Consumer(const Consumer<T>& other);
 	virtual ~Consumer();
 
@@ -41,11 +41,13 @@ private:
 
 template <typename T>
 inline Consumer<T>::Consumer() : Updateable(){
+	std::lock_guard<std::mutex> lock(m_mutex);
 	m_source=nullptr;
 }
 
 template <typename T>
-inline Consumer<T>::Consumer(const Rational& rat) : Updateable(rat){
+inline Consumer<T>::Consumer(const Utils::Rational& rat) : Updateable(rat){
+	std::lock_guard<std::mutex> lock(m_mutex);
 	m_source=nullptr;
 }
 
@@ -65,15 +67,16 @@ inline Consumer<T>::~Consumer(){
 
 template <typename T>
 inline void Consumer<T>::setSource(Source<T>* src){
-	std::scoped_lock lock(m_mutex, src->m_mutex);
-	//Detach consumer form the previous source
+	std::lock_guard<std::mutex> lock(m_mutex);
+
+	//Detach consumer from the previous source
 	if(m_source)
-		m_source->m_consumers.erase(this);
+		m_source->detach(this);
 
 	//Attach the new consumer
 	m_source=src;
 	if(m_source)
-		m_source->m_consumers.insert(this);
+		m_source->attach(this);
 }
 
 template <typename T>

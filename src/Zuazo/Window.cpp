@@ -147,7 +147,7 @@ Window::Screen::Screen(const GLFWmonitor* monitor) {
 		const GLFWvidmode* vm=glfwGetVideoMode(mon);
 		res.width=vm->width;
 		res.height=vm->height;
-		frameRate=Rational(vm->refreshRate);
+		frameRate=Utils::Rational(vm->refreshRate);
 
 		//Check if it is in use
 		if(s_usedScreens.find(mon)==s_usedScreens.end())
@@ -161,7 +161,7 @@ Window::Screen::Screen(const GLFWmonitor* monitor) {
  *			SETS				*
  ********************************/
 
-void Window::setRes(const Resolution& res) {
+void Window::setRes(const Utils::Resolution& res) {
 	setRes(res.width, res.height);
 }
 
@@ -274,7 +274,7 @@ void Window::setResizeCbk(void(*resizeCbk)(u_int32_t width, u_int32_t height)){
  *			GETS				*
  ********************************/
 
-Resolution Window::getRes() const {
+Utils::Resolution Window::getRes() const {
 	return m_res;
 }
 
