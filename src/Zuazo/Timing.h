@@ -7,7 +7,6 @@
 #include <thread>
 
 #include "Utils/Rational.h"
-#include "Updateable.h"
 
 namespace Zuazo{
 
@@ -20,9 +19,19 @@ namespace Zuazo{
 /*
  * Class containing all the timing information
  */
+
+enum class UpdatePriority{
+	DONT_CARE,
+	INPUT,
+	CONSUMER
+};
+
+template <UpdatePriority TPriority>
+class Updateable;
+
+
 class Timing{
 public:
-
 	/*
 	 * Zuazo's time unit
 	 */
@@ -110,12 +119,19 @@ public:
 
 	static TimePoint					now();
 
-	static void 						addTiming(Updateable* event, const TimeUnit& interval);
-	static void 						deleteTiming(Updateable* event);
-	static void 						modifyTiming(Updateable* event, const TimeUnit& interval);
+	static void 						addTiming(Updateable<UpdatePriority::DONT_CARE>* event, const TimeUnit& interval){};
+	static void 						addTiming(Updateable<UpdatePriority::INPUT>* event, const TimeUnit& interval);
+	static void 						addTiming(Updateable<UpdatePriority::CONSUMER>* event, const TimeUnit& interval);
+	static void 						deleteTiming(Updateable<UpdatePriority::DONT_CARE>* event){};
+	static void 						deleteTiming(Updateable<UpdatePriority::INPUT>* event);
+	static void 						deleteTiming(Updateable<UpdatePriority::CONSUMER>* event);
+	static void 						modifyTiming(Updateable<UpdatePriority::DONT_CARE>* event, const TimeUnit& interval){};
+	static void 						modifyTiming(Updateable<UpdatePriority::INPUT>* event, const TimeUnit& interval);
+	static void 						modifyTiming(Updateable<UpdatePriority::CONSUMER>* event, const TimeUnit& interval);
 private:
 	struct UpdateInterval{
-		std::set<Updateable *>				updateables;
+		std::set<Updateable<UpdatePriority::INPUT>*>	inputs;
+		std::set<Updateable<UpdatePriority::CONSUMER>*>	outputs;
 		TimeUnit							timeSinceLastUpdate;
 
 		UpdateInterval()=default;
@@ -123,6 +139,9 @@ private:
 		UpdateInterval(const TimeUnit& interval) : timeSinceLastUpdate(interval){}
 		~UpdateInterval()=default;
 	};
+
+	static void							addInterval(const TimeUnit& interval);
+	static void 						delUnusedInterval();
 
 	static std::map<TimeUnit, UpdateInterval> s_timings;
 

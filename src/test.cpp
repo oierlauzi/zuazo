@@ -7,6 +7,7 @@
 #include "Zuazo/Stream/Delay.h"
 #include "Zuazo/Stream/Source.h"
 #include "Zuazo/Timing.h"
+#include "Zuazo/Updateable.h"
 #include "Zuazo/Utils/Rational.h"
 #include "Zuazo/Zuazo.h"
 
@@ -137,9 +138,9 @@ int main(void){
 
 	using DelayD=Zuazo::Stream::Delay<double>;
 
-	class SourceExample : public Zuazo::Stream::Source<double>, Zuazo::Updateable{
+	class SourceExample : public Zuazo::Stream::Source<double>, Zuazo::Updateable<Zuazo::UpdatePriority::INPUT>{
 		public:
-		SourceExample(double framerate) : Zuazo::Stream::Source<double>(), Zuazo::Updateable(Zuazo::Utils::Rational(framerate)){
+		SourceExample(double framerate) : Zuazo::Stream::Source<double>(), Zuazo::Updateable<Zuazo::UpdatePriority::INPUT>(Zuazo::Utils::Rational(framerate)){
 
 		}
 
@@ -154,9 +155,9 @@ int main(void){
 		}
 	};
 
-	class ConsumerExample : public Zuazo::Stream::Consumer<double>, Zuazo::Updateable{
+	class ConsumerExample : public Zuazo::Stream::Consumer<double>, Zuazo::Updateable<Zuazo::UpdatePriority::CONSUMER>{
 		public:
-		ConsumerExample(double framerate) : Zuazo::Stream::Consumer<double>(), Updateable(Zuazo::Utils::Rational(framerate)){
+		ConsumerExample(double framerate) : Zuazo::Stream::Consumer<double>(), Updateable<Zuazo::UpdatePriority::CONSUMER>(Zuazo::Utils::Rational(framerate)){
 
 		}
 
@@ -173,7 +174,7 @@ int main(void){
 
 	SourceExample src(30);
 	ConsumerExample cons(30);
-	DelayD	del(Zuazo::Timing::TimeUnit(33334));
+	DelayD	del(Zuazo::Timing::TimeUnit(0));
 	del<<src;
 	cons<<del;
 

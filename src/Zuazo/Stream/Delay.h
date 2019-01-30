@@ -1,12 +1,19 @@
 #pragma once
 
-#include "Source.h"
+#include <chrono>
+#include <memory>
+#include <mutex>
+#include <queue>
+
+#include "../Timing.h"
+#include "../Updateable.h"
 #include "Consumer.h"
+#include "Source.h"
 
 namespace Zuazo::Stream{
 
 template<typename T>
-class Delay : public Consumer<T>, public Source<T>, public Updateable{
+class Delay : public Consumer<T>, public Source<T>, public Updateable<UpdatePriority::DONT_CARE>{
 public:
 	Delay();
 	Delay(const Timing::TimeUnit& delay);

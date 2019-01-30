@@ -4,6 +4,8 @@
 #include <mutex>
 #include <utility>
 
+#include "Updateable.h"
+
 using namespace Zuazo;
 
 /*
@@ -41,43 +43,74 @@ int Timing::end(){
  * Timing methods
  */
 
-void Timing::addTiming(Updateable* event, const TimeUnit& interval){
+void Timing::addTiming(Updateable<UpdatePriority::INPUT>* event, const TimeUnit& interval){
 	std::lock_guard<std::mutex> lock(s_mutex);
 
 	if(event && interval.count()>0){
-		//Add the new timing to the table
-		if(s_timings.find(interval)==s_timings.end()){
-			//Interval did not exist. Add it
-			s_timings.emplace(std::pair<TimeUnit, UpdateInterval>(interval, UpdateInterval(interval)));
-
-			//Re-start all updates to synchronize them when possible
-			for(auto& timing : s_timings)
-				timing.second.timeSinceLastUpdate=TimeUnit(timing.first);
-
-			//Force update
-			s_cond.notify_all();
-		}
+		addInterval(interval);
 		//Insert the new element
-		s_timings[interval].updateables.insert(event);
+		s_timings[interval].inputs.insert(event);
 	}
 }
 
-void Timing::deleteTiming(Updateable* event){
+void Timing::addTiming(Updateable<UpdatePriority::CONSUMER>* event, const TimeUnit& interval){
+	std::lock_guard<std::mutex> lock(s_mutex);
+
+	if(event && interval.count()>0){
+		addInterval(interval);
+		//Insert the new element
+		s_timings[interval].outputs.insert(event);
+	}
+}
+
+void Timing::deleteTiming(Updateable<UpdatePriority::INPUT>* event){
 	std::unique_lock<std::mutex> lock(s_mutex);
 
-	for(auto ite=s_timings.begin(); ite!=s_timings.begin();){
-		ite->second.updateables.erase(event);
+	for(auto element : s_timings)
+		element.second.inputs.erase(event);
+	delUnusedInterval();
+}
 
-		if(ite->second.updateables.size()==0)
+void Timing::deleteTiming(Updateable<UpdatePriority::CONSUMER>* event){
+	std::unique_lock<std::mutex> lock(s_mutex);
+
+	for(auto element : s_timings)
+		element.second.outputs.erase(event);
+	delUnusedInterval();
+}
+
+void Timing::modifyTiming(Updateable<UpdatePriority::INPUT>* event, const TimeUnit& interval){
+	deleteTiming(event);
+	addTiming(event, interval);
+}
+
+void Timing::modifyTiming(Updateable<UpdatePriority::CONSUMER>* event, const TimeUnit& interval){
+	deleteTiming(event);
+	addTiming(event, interval);
+}
+
+void Timing::addInterval(const TimeUnit& interval){
+	//Add the new timing to the table
+	if(s_timings.find(interval)==s_timings.end()){
+		//Interval did not exist. Add it
+		s_timings.emplace(std::pair<TimeUnit, UpdateInterval>(interval, UpdateInterval(interval)));
+
+		//Re-start all updates to synchronize them when possible
+		for(auto& timing : s_timings)
+			timing.second.timeSinceLastUpdate=TimeUnit(timing.first);
+
+		//Force update
+		s_cond.notify_all();
+	}
+}
+
+void Timing::delUnusedInterval(){
+	for(auto ite=s_timings.begin(); ite!=s_timings.begin();){
+		if(ite->second.inputs.size()==0 && ite->second.outputs.size()==0)
 			ite=s_timings.erase(ite);
 		else
 			ite++;
 	}
-}
-
-void Timing::modifyTiming(Updateable* event, const TimeUnit& interval){
-	deleteTiming(event);
-	addTiming(event, interval);
 }
 
 void Timing::updateThreadFunc(){
@@ -97,7 +130,12 @@ void Timing::updateThreadFunc(){
 
 				while(updateData.timeSinceLastUpdate >= interval){
 					//Members of this update interval need to be updated at least once
-					for(Updateable * element : updateData.updateables){
+					for(Updateable<UpdatePriority::INPUT> * element : updateData.inputs){
+						//Update all elements, indicating the timestamp and elapsed time
+						element->perform();
+					}
+
+					for(Updateable<UpdatePriority::CONSUMER> * element : updateData.outputs){
 						//Update all elements, indicating the timestamp and elapsed time
 						element->perform();
 					}

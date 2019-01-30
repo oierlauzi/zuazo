@@ -2,12 +2,15 @@
 
 #include <sys/types.h>
 #include <memory>
+#include <mutex>
 #include <queue>
 #include <set>
 
-#include "../Utils/Rational.h"
 #include "../Timing.h"
+#include "../Updateable.h"
+#include "../Utils/Rational.h"
 #include "Consumer.h"
+
 
 namespace Zuazo::Stream{
 
@@ -52,7 +55,7 @@ private:
 
 
 template <typename T>
-class AsyncSource : public Source<T>, Updateable{
+class AsyncSource : public Source<T>, public Updateable<UpdatePriority::INPUT>{
 public:
 	AsyncSource();
 	AsyncSource(const Utils::Rational& rat);
@@ -186,7 +189,7 @@ inline AsyncSource<T>::AsyncSource() : Updateable(){
 }
 
 template <typename T>
-inline AsyncSource<T>::AsyncSource(const Utils::Rational& rat) : Updateable(rat){
+inline AsyncSource<T>::AsyncSource(const Utils::Rational& rat) : Updateable<UpdatePriority::INPUT>(rat){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_maxBufferSize=DEFAULT_MAX_BUFFER_SIZE;
 	m_maxDropped=DEFAULT_MAX_DROPPED;
@@ -292,12 +295,12 @@ void AsyncSource<T>::push(std::unique_ptr<const T>& element){
 template <typename T>
 void AsyncSource<T>::open(){
 	Source<T>::open();
-	Updateable::open();
+	Updateable<UpdatePriority::INPUT>::open();
 }
 
 template <typename T>
 void AsyncSource<T>::close(){
-	Updateable::close();
+	Updateable<UpdatePriority::INPUT>::close();
 	Source<T>::close();
 	flushBuffer();
 }

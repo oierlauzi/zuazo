@@ -2,6 +2,7 @@
 
 #include <mutex>
 
+#include "Timing.h"
 #include "Utils/Rational.h"
 
 namespace Zuazo{
@@ -11,6 +12,7 @@ class Timing;
 /*
  * Class which defines a periodical event
  */
+template <UpdatePriority TPriority>
 class Updateable{
 	friend Timing;
 public:
@@ -55,26 +57,122 @@ private:
 };
 
 /*
- * INLINE METHOD DEFINITIONS
+ * METHOD DEFINITIONS
  */
 
-inline const Utils::Rational& Updateable::getInterval() const {
+template <UpdatePriority TPriority>
+inline Updateable<TPriority>::Updateable(){
+	m_beforeCbk=nullptr;
+	m_afterCbk=nullptr;
+	m_isOpen=true;
+
+	setRate(0);
+}
+
+template <UpdatePriority TPriority>
+inline Updateable<TPriority>::Updateable(const Utils::Rational& rate){
+	m_beforeCbk=nullptr;
+	m_afterCbk=nullptr;
+	m_isOpen=true;
+
+	setRate(rate);
+}
+
+template <UpdatePriority TPriority>
+inline Updateable<TPriority>::Updateable(const Updateable& other){
+	m_beforeCbk=other.m_beforeCbk;
+	m_afterCbk=other.m_afterCbk;
+	m_isOpen=other.m_isOpen;
+
+	setInterval(other.m_updateInterval);
+}
+
+template <UpdatePriority TPriority>
+inline Updateable<TPriority>::~Updateable(){
+	Timing::deleteTiming(this);
+}
+
+template <UpdatePriority TPriority>
+inline void Updateable<TPriority>::setBeforeUpdateCallback(Callback * cbk){
+	std::lock_guard<std::mutex> lock(m_cbkMutex);
+	m_beforeCbk=cbk;
+}
+
+template <UpdatePriority TPriority>
+inline void Updateable<TPriority>::setAfterUpdateCallback(Callback * cbk){
+	std::lock_guard<std::mutex> lock(m_cbkMutex);
+	m_afterCbk=cbk;
+}
+
+template <UpdatePriority TPriority>
+inline const Utils::Rational& Updateable<TPriority>::getInterval() const {
 	return m_updateInterval;
 }
 
-inline Utils::Rational Updateable::getRate() const {
+template <UpdatePriority TPriority>
+inline Utils::Rational Updateable<TPriority>::getRate() const {
 	return 1/m_updateInterval;
 }
 
-inline bool Updateable::isOpen() const{
+template <UpdatePriority TPriority>
+inline bool Updateable<TPriority>::isOpen() const{
 	return m_isOpen;
 }
 
+template <UpdatePriority TPriority>
+inline void Updateable<TPriority>::setInterval(const Utils::Rational& interval){
+	std::lock_guard<std::mutex> lock(m_mutex);
+	m_updateInterval=interval;
 
+	if(m_isOpen){
+		Timing::TimeUnit tuInterval(m_updateInterval);
+		Timing::modifyTiming(this, tuInterval);
+	}
+}
 
+template <UpdatePriority TPriority>
+inline void Updateable<TPriority>::setRate(const Utils::Rational& rate){
+	if(rate)
+		setInterval(1/rate);
+	else
+		setInterval(0);
+}
 
+template <UpdatePriority TPriority>
+inline void Updateable<TPriority>::open(){
+	if(!m_isOpen){
+		m_isOpen=true;
+		Timing::addTiming(this, Timing::TimeUnit(m_updateInterval));
+	}
+}
 
+template <UpdatePriority TPriority>
+inline void Updateable<TPriority>::close(){
+	std::lock_guard<std::mutex> lock(m_mutex);
+	if(m_isOpen){
+		Timing::deleteTiming(this);
+		m_isOpen=false;
+	}
+}
 
+template <UpdatePriority TPriority>
+inline void Updateable<TPriority>::perform(){
+	{
+		std::lock_guard<std::mutex> lock(m_cbkMutex);
+		if(m_beforeCbk)
+			m_beforeCbk->update();
+	}
 
+	{
+		std::lock_guard<std::mutex> lock(m_mutex);
+		update();
+	}
+
+	{
+		std::lock_guard<std::mutex> lock(m_cbkMutex);
+		if(m_afterCbk)
+			m_afterCbk->update();
+	}
+}
 
 }
