@@ -15,30 +15,33 @@ template <typename T>
 class Consumer;
 
 template <typename T>
-class Source : public Updateable{
+class CallableConsumer;
+
+template <typename T>
+class Source{
 	friend Consumer<T>;
 public:
-	Source();
-	Source(const Utils::Rational& rat);
+	Source()=default;
 	Source(const Source<T>& other)=delete;
 	virtual ~Source();
 
 	virtual std::shared_ptr<const T>	get() const;
-
-	virtual void 						update() override=0;
+	virtual std::shared_ptr<const T>	get(Timing::TimePoint* ts) const;
 protected:
 	void								push();
-	void								push(std::shared_ptr<T>& element);
-	void								push(std::unique_ptr<T>& element);
+	void								push(std::shared_ptr<const T>& element);
+	void								push(std::unique_ptr<const T>& element);
 
-	virtual void						open() override;
-	virtual void						close() override;
+	void								open();
+	void								close();
 
 	bool								isActive() const;
 private:
-	std::shared_ptr<T>					m_last;
+	std::shared_ptr<const T>			m_last;
+	Timing::TimePoint					m_elementTs;
 
 	std::set<const Consumer<T> *>		m_consumers;
+	mutable std::mutex					m_mutex;
 
 	void								attach(const Consumer<T> * cons);
 	void								detach(const Consumer<T> * cons);
@@ -49,8 +52,7 @@ private:
 
 
 template <typename T>
-class AsyncSource : public Source<T>{
-	using Source<T>::Updateable::m_mutex;
+class AsyncSource : public Source<T>, Updateable{
 public:
 	AsyncSource();
 	AsyncSource(const Utils::Rational& rat);
@@ -70,9 +72,10 @@ public:
 	virtual void						open() override;
 	virtual void						close() override;
 
-	virtual void 						update() override;
 protected:
-	void								push(std::unique_ptr<T>& element);
+	void								push(std::unique_ptr<const T>& element);
+
+	virtual void 						update() override;
 private:
 	static const u_int32_t				DEFAULT_MAX_DROPPED=3;
 	static const u_int32_t				DEFAULT_MAX_BUFFER_SIZE=3;
@@ -81,7 +84,7 @@ private:
 	u_int32_t							m_dropped;
 
 	u_int32_t							m_maxBufferSize;
-	std::queue<std::unique_ptr<T>>		m_buffer;
+	std::queue<std::unique_ptr<const T>> m_buffer;
 };
 
 /********************************
@@ -90,16 +93,6 @@ private:
 /*
  * CONSTRUCTOR AND DESTRUCTOR
  */
-
-template <typename T>
-inline Source<T>::Source() : Updateable(){
-
-}
-
-template <typename T>
-inline Source<T>::Source(const Utils::Rational& rat) : Updateable(rat){
-
-}
 
 template <typename T>
 inline Source<T>::~Source(){
@@ -117,29 +110,38 @@ std::shared_ptr<const T> Source<T>::get() const{
 }
 
 template <typename T>
+std::shared_ptr<const T> Source<T>::get(Timing::TimePoint* ts) const{
+	*ts=m_elementTs;
+	return m_last;
+}
+
+template <typename T>
 void Source<T>::push(){
 	m_last=std::shared_ptr<T>();
+	m_elementTs=Timing::now();
 }
 
 template <typename T>
-void Source<T>::push(std::unique_ptr<T>& element){
+void Source<T>::push(std::unique_ptr<const T>& element){
 	m_last=std::move(element);
+	m_elementTs=Timing::now();
 }
 
 template <typename T>
-void Source<T>::push(std::shared_ptr<T>& element){
+void Source<T>::push(std::shared_ptr<const T>& element){
 	m_last=element;
+	m_elementTs=Timing::now();
 }
 
 template <typename T>
 void Source<T>::open(){
-	Updateable::open();
+
 }
 
 template <typename T>
 void Source<T>::close(){
-	Updateable::close();
 	m_last=std::shared_ptr<T>();
+	m_elementTs=Timing::TimePoint();
 }
 
 template <typename T>
@@ -160,6 +162,7 @@ void Source<T>::detach(const Consumer<T> * cons){
 
 template <typename T>
 bool Source<T>::isActive() const{
+	std::lock_guard<std::mutex> lock(m_mutex);
 	for(Consumer<T> * cons : m_consumers)
 		if(cons->isActive())
 			return true;
@@ -175,7 +178,7 @@ bool Source<T>::isActive() const{
  */
 
 template <typename T>
-inline AsyncSource<T>::AsyncSource() : Source<T>::Source(){
+inline AsyncSource<T>::AsyncSource() : Updateable(){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_maxBufferSize=DEFAULT_MAX_BUFFER_SIZE;
 	m_maxDropped=DEFAULT_MAX_DROPPED;
@@ -183,7 +186,7 @@ inline AsyncSource<T>::AsyncSource() : Source<T>::Source(){
 }
 
 template <typename T>
-inline AsyncSource<T>::AsyncSource(const Utils::Rational& rat) : Source<T>::Source(rat){
+inline AsyncSource<T>::AsyncSource(const Utils::Rational& rat) : Updateable(rat){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_maxBufferSize=DEFAULT_MAX_BUFFER_SIZE;
 	m_maxDropped=DEFAULT_MAX_DROPPED;
@@ -268,7 +271,7 @@ void AsyncSource<T>::update() {
 }
 
 template <typename T>
-void AsyncSource<T>::push(std::unique_ptr<T>& element){
+void AsyncSource<T>::push(std::unique_ptr<const T>& element){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	if(m_maxBufferSize>0){
 		//We are buffering the source
@@ -289,10 +292,12 @@ void AsyncSource<T>::push(std::unique_ptr<T>& element){
 template <typename T>
 void AsyncSource<T>::open(){
 	Source<T>::open();
+	Updateable::open();
 }
 
 template <typename T>
 void AsyncSource<T>::close(){
+	Updateable::close();
 	Source<T>::close();
 	flushBuffer();
 }

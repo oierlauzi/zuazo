@@ -14,12 +14,11 @@ template <typename T>
 class Source;
 
 template <typename T>
-class Consumer : public Updateable{
+class Consumer{
 	friend Source<T>;
 public:
 	Consumer();
-	Consumer(const Utils::Rational& rat);
-	Consumer(const Consumer<T>& other);
+	Consumer(const Consumer<T>& other)=default;
 	virtual ~Consumer();
 
 	void						setSource(Source<T>* src);
@@ -27,10 +26,14 @@ public:
 	Consumer<T>&				operator<<(std::nullptr_t ptr);
 	virtual bool 				isActive() const { return true; }
 protected:
-	std::shared_ptr<const T>	get();
+	std::shared_ptr<const T>	get() const;
+	std::shared_ptr<const T>	get(Timing::TimePoint* ts) const;
 private:
 	Source<T>*					m_source;
+
+	mutable std::mutex			m_mutex;
 };
+
 
 /************************
  * FUNCTION DEFINITIONS	*
@@ -40,20 +43,8 @@ private:
  */
 
 template <typename T>
-inline Consumer<T>::Consumer() : Updateable(){
-	std::lock_guard<std::mutex> lock(m_mutex);
+inline Consumer<T>::Consumer(){
 	m_source=nullptr;
-}
-
-template <typename T>
-inline Consumer<T>::Consumer(const Utils::Rational& rat) : Updateable(rat){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	m_source=nullptr;
-}
-
-template <typename T>
-inline Consumer<T>::Consumer(const Consumer<T>& other) : Consumer<T>::Consumer(other.getRate()){
-	setSource(other.m_source);
 }
 
 template <typename T>
@@ -92,9 +83,17 @@ inline Consumer<T>& Consumer<T>::operator<<(std::nullptr_t ptr){
 }
 
 template <typename T>
-inline std::shared_ptr<const T>	Consumer<T>::get(){
+inline std::shared_ptr<const T>	Consumer<T>::get() const{
 	if(m_source)
 		return m_source->get();
+	else
+		return std::shared_ptr<const T>(); //No source, return an empty ptr
+}
+
+template <typename T>
+inline std::shared_ptr<const T>	Consumer<T>::get(Timing::TimePoint* ts) const{
+	if(m_source)
+		return m_source->get(ts);
 	else
 		return std::shared_ptr<const T>(); //No source, return an empty ptr
 }

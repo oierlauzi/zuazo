@@ -1,7 +1,7 @@
 #include "Timing.h"
 
-#include "Utils/Rational.h"
-#include <type_traits>
+#include <bits/stdint-intn.h>
+#include <mutex>
 #include <utility>
 
 using namespace Zuazo;
@@ -38,83 +38,13 @@ int Timing::end(){
 }
 
 /*
- * Timing::Updateable methods
- */
-
-Updateable::Updateable(){
-	m_beforeCbk=nullptr;
-	m_afterCbk=nullptr;
-	m_isOpen=true;
-}
-
-Updateable::Updateable(const Utils::Rational& rate) : Updateable(){
-	setRate(rate);
-}
-
-Updateable::Updateable(const Updateable& other){
-	setInterval(other.m_updateInterval);
-	m_beforeCbk=other.m_beforeCbk;
-	m_afterCbk=other.m_afterCbk;
-}
-
-Updateable::~Updateable(){
-	Timing::deleteTiming(this);
-}
-
-void Updateable::setBeforeUpdateCallback(Callback * cbk){
-	std::lock_guard<std::mutex> lock(m_cbkMutex);
-	m_beforeCbk=cbk;
-}
-void Updateable::setAfterUpdateCallback(Callback * cbk){
-	std::lock_guard<std::mutex> lock(m_cbkMutex);
-	m_afterCbk=cbk;
-}
-
-void Updateable::setInterval(const Utils::Rational& interval){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	m_updateInterval=interval;
-
-	if(m_isOpen){
-		Timing::TimeUnit tuInterval(m_updateInterval);
-		Timing::modifyTiming(this, tuInterval);
-	}
-}
-
-void Updateable::setRate(const Utils::Rational& rate){
-	if(rate)
-		setInterval(1/rate);
-	else
-		setInterval(0);
-}
-
-void Updateable::perform(){
-	{
-		std::lock_guard<std::mutex> lock(m_cbkMutex);
-		if(m_beforeCbk)
-			m_beforeCbk->update();
-	}
-
-	{
-		std::lock_guard<std::mutex> lock(m_mutex);
-		update();
-	}
-
-	{
-		std::lock_guard<std::mutex> lock(m_cbkMutex);
-		if(m_afterCbk)
-			m_afterCbk->update();
-	}
-}
-
-
-/*
  * Timing methods
  */
 
 void Timing::addTiming(Updateable* event, const TimeUnit& interval){
 	std::lock_guard<std::mutex> lock(s_mutex);
 
-	if(event && (interval.count() > 0)){
+	if(event && interval.count()>0){
 		//Add the new timing to the table
 		if(s_timings.find(interval)==s_timings.end()){
 			//Interval did not exist. Add it

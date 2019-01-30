@@ -1,9 +1,13 @@
+#include <chrono>
 #include <cstdio>
 #include <iostream>
 #include <memory>
 
 #include "Zuazo/Stream/Consumer.h"
+#include "Zuazo/Stream/Delay.h"
 #include "Zuazo/Stream/Source.h"
+#include "Zuazo/Timing.h"
+#include "Zuazo/Utils/Rational.h"
 #include "Zuazo/Zuazo.h"
 
 //#define TEST1
@@ -131,16 +135,18 @@ int main(void){
  *		Source / Consumer testing
  */
 
-	class SourceExample : public Zuazo::Stream::Source<double>{
+	using DelayD=Zuazo::Stream::Delay<double>;
+
+	class SourceExample : public Zuazo::Stream::Source<double>, Zuazo::Updateable{
 		public:
-		SourceExample(double framerate) : Zuazo::Stream::Source<double>(Zuazo::Utils::Rational(framerate)){
+		SourceExample(double framerate) : Zuazo::Stream::Source<double>(), Zuazo::Updateable(Zuazo::Utils::Rational(framerate)){
 
 		}
 
 		virtual void update(){
 			static double i=0;
 
-			std::unique_ptr<double> d(new double(i));
+			std::unique_ptr<const double> d(new double(i));
 			push(d);
 			i+=1;
 
@@ -148,17 +154,17 @@ int main(void){
 		}
 	};
 
-	class ConsumerExample : public Zuazo::Stream::Consumer<double>{
+	class ConsumerExample : public Zuazo::Stream::Consumer<double>, Zuazo::Updateable{
 		public:
-		ConsumerExample(double framerate) : Zuazo::Stream::Consumer<double>(Zuazo::Utils::Rational(framerate)){
+		ConsumerExample(double framerate) : Zuazo::Stream::Consumer<double>(), Updateable(Zuazo::Utils::Rational(framerate)){
 
 		}
 
 		virtual void update(){
-			//printf("Consumer: %ld\n", elapsed.count());
-			std::shared_ptr<const double> ptr=get();
+			Zuazo::Timing::TimePoint ts;
+			std::shared_ptr<const double> ptr=get(&ts);
 			if(ptr)
-				printf("On update: %g\n", *ptr);
+				printf("On update: %g \tTime since epoch: %ld\n", *ptr, ts.time_since_epoch().count());
 			else
 				printf("On update: nullptr\n");
 
@@ -167,7 +173,9 @@ int main(void){
 
 	SourceExample src(30);
 	ConsumerExample cons(30);
-	cons<<src;
+	DelayD	del(Zuazo::Timing::TimeUnit(33334));
+	del<<src;
+	cons<<del;
 
 	getchar();
 #endif

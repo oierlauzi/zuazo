@@ -1,14 +1,13 @@
 #pragma once
 
-#include <bits/stdint-intn.h>
 #include <chrono>
 #include <map>
-#include <mutex>
-#include <thread>
-#include <condition_variable>
 #include <set>
+#include <condition_variable>
+#include <thread>
 
 #include "Utils/Rational.h"
+#include "Updateable.h"
 
 namespace Zuazo{
 
@@ -17,8 +16,6 @@ namespace Zuazo{
 #define TIME_CLOCK steady_clock
 #define TIME_UNIT microseconds
 #define TIME_POINT time_point
-
-class Updateable;
 
 /*
  * Class containing all the timing information
@@ -128,6 +125,7 @@ private:
 	};
 
 	static std::map<TimeUnit, UpdateInterval> s_timings;
+
 	static std::thread 					s_thread;
 	static bool							s_exit;
 	static std::mutex 					s_mutex;
@@ -138,88 +136,9 @@ private:
 	static void							updateThreadFunc();
 };
 
-
-/*
- * Class which defines a periodical event
- */
-class Updateable{
-	friend Timing;
-public:
-	/*
-	 * An update event's callback function
-	 */
-	class Callback{
-	public:
-		virtual void						update()=0;
-	};
-
-	Updateable();
-	Updateable(const Utils::Rational& rate);
-	Updateable(const Updateable& other);
-	virtual ~Updateable();
-	void								setBeforeUpdateCallback(Callback * cbk);
-	void								setAfterUpdateCallback(Callback * cbk);
-
-	const Utils::Rational& 				getInterval() const;
-	Utils::Rational						getRate() const;
-
-	bool								isOpen() const;
-protected:
-	mutable std::mutex					m_mutex;
-
-	void 								setInterval(const Utils::Rational& interval);
-	void								setRate(const Utils::Rational& rate);
-
-	virtual void						open();
-	virtual void						close();
-
-	virtual void						update()=0;
-private:
-	Utils::Rational						m_updateInterval;
-	bool								m_isOpen;
-
-	Callback *							m_beforeCbk;
-	Callback *							m_afterCbk;
-
-	std::mutex							m_cbkMutex;
-
-	virtual void						perform();
-};
-
 /*
  * INLINE METHOD DEFINITIONS
  */
-
-/*
- *  Timing::Updateable methods
- */
-
-inline const Utils::Rational& Updateable::getInterval() const {
-	return m_updateInterval;
-}
-
-inline Utils::Rational Updateable::getRate() const {
-	return 1/m_updateInterval;
-}
-
-inline bool Updateable::isOpen() const{
-	return m_isOpen;
-}
-
-inline void Updateable::open(){
-	if(!m_isOpen){
-		m_isOpen=true;
-		Timing::addTiming(this, Timing::TimeUnit(m_updateInterval));
-	}
-}
-
-inline void Updateable::close(){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	if(m_isOpen){
-		Timing::deleteTiming(this);
-		m_isOpen=false;
-	}
-}
 
 /*
  * Chronometer methods
