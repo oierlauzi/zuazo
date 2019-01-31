@@ -35,9 +35,6 @@ protected:
 	void								push(std::shared_ptr<const T>& element);
 	void								push(std::unique_ptr<const T>& element);
 
-	void								open();
-	void								close();
-
 	bool								isActive() const;
 private:
 	std::shared_ptr<const T>			m_last;
@@ -60,7 +57,7 @@ public:
 	AsyncSource();
 	AsyncSource(const Utils::Rational& rat);
 	AsyncSource(const AsyncSource<T>& other)=delete;
-	virtual ~AsyncSource()=default;
+	virtual ~AsyncSource();
 
 	void								setMaxDropped(u_int32_t max);
 	u_int32_t							getMaxDropped() const;
@@ -74,7 +71,6 @@ public:
 
 	virtual void						open() override;
 	virtual void						close() override;
-
 protected:
 	void								push(std::unique_ptr<const T>& element);
 
@@ -137,17 +133,6 @@ void Source<T>::push(std::shared_ptr<const T>& element){
 }
 
 template <typename T>
-void Source<T>::open(){
-
-}
-
-template <typename T>
-void Source<T>::close(){
-	m_last=std::shared_ptr<T>();
-	m_elementTs=Timing::TimePoint();
-}
-
-template <typename T>
 void Source<T>::attach(const Consumer<T> * cons){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_consumers.insert(cons);
@@ -194,6 +179,11 @@ inline AsyncSource<T>::AsyncSource(const Utils::Rational& rat) : Updateable<Upda
 	m_maxBufferSize=DEFAULT_MAX_BUFFER_SIZE;
 	m_maxDropped=DEFAULT_MAX_DROPPED;
 	m_dropped=0;
+}
+
+template <typename T>
+inline AsyncSource<T>::~AsyncSource(){
+	close();
 }
 
 /*
@@ -294,14 +284,13 @@ void AsyncSource<T>::push(std::unique_ptr<const T>& element){
 
 template <typename T>
 void AsyncSource<T>::open(){
-	Source<T>::open();
 	Updateable<UpdatePriority::INPUT>::open();
 }
 
 template <typename T>
 void AsyncSource<T>::close(){
 	Updateable<UpdatePriority::INPUT>::close();
-	Source<T>::close();
 	flushBuffer();
+	Source<T>::push();
 }
 } /* namespace Zuazo */

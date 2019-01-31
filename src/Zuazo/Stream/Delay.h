@@ -18,7 +18,7 @@ public:
 	Delay();
 	Delay(const Timing::TimeUnit& delay);
 	Delay(const Delay& delay)=default;
-	virtual ~Delay()=default;
+	virtual ~Delay();
 
 	void								setDelay(const Timing::TimeUnit& delay);
 	Timing::TimeUnit					getDelay();
@@ -27,6 +27,9 @@ public:
 	virtual std::shared_ptr<const T>	get(Timing::TimePoint* ts) const override;
 
 	virtual void						update() override;
+
+	virtual void						open() override;
+	virtual void						close() override;
 private:
 	struct QueueElement{
 		std::shared_ptr<const T>			element;
@@ -47,6 +50,11 @@ inline Delay<T>::Delay(){
 template<typename T>
 inline Delay<T>::Delay(const Timing::TimeUnit& delay){
 	setDelay(delay);
+}
+
+template<typename T>
+inline Delay<T>::~Delay(){
+	close();
 }
 
 template<typename T>
@@ -94,6 +102,21 @@ inline void Delay<T>::update(){
 		//Simply forward the element
 		m_lastElement.element=Consumer<T>::get(&m_lastElement.ts);
 	}
+}
+
+template<typename T>
+inline void Delay<T>::open(){
+	Updateable<UpdatePriority::DONT_CARE>::open();
+}
+
+template<typename T>
+inline void Delay<T>::close(){
+	Updateable<UpdatePriority::DONT_CARE>::close();
+
+	//Reset all
+	while(m_queue.size())
+		m_queue.pop();
+	m_lastElement=QueueElement();
 }
 
 }

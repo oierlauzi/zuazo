@@ -34,6 +34,11 @@ public:
 	const Utils::Rational& 				getInterval() const;
 	Utils::Rational						getRate() const;
 
+	void								lock() const;
+	void								unlock() const;
+
+	virtual void						open();
+	virtual void						close();
 	bool								isOpen() const;
 protected:
 	mutable std::mutex					m_mutex;
@@ -41,19 +46,15 @@ protected:
 	void 								setInterval(const Utils::Rational& interval);
 	void								setRate(const Utils::Rational& rate);
 
-	virtual void						open();
-	virtual void						close();
-
 	virtual void						update()=0;
 	virtual void						perform();
 private:
 	Utils::Rational						m_updateInterval;
 	bool								m_isOpen;
+	mutable std::mutex					m_updateMutex;
 
 	Callback *							m_beforeCbk;
 	Callback *							m_afterCbk;
-
-	std::mutex							m_cbkMutex;
 };
 
 /*
@@ -94,13 +95,13 @@ inline Updateable<TPriority>::~Updateable(){
 
 template <UpdatePriority TPriority>
 inline void Updateable<TPriority>::setBeforeUpdateCallback(Callback * cbk){
-	std::lock_guard<std::mutex> lock(m_cbkMutex);
+	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_beforeCbk=cbk;
 }
 
 template <UpdatePriority TPriority>
 inline void Updateable<TPriority>::setAfterUpdateCallback(Callback * cbk){
-	std::lock_guard<std::mutex> lock(m_cbkMutex);
+	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_afterCbk=cbk;
 }
 
@@ -112,6 +113,32 @@ inline const Utils::Rational& Updateable<TPriority>::getInterval() const {
 template <UpdatePriority TPriority>
 inline Utils::Rational Updateable<TPriority>::getRate() const {
 	return 1/m_updateInterval;
+}
+
+template <UpdatePriority TPriority>
+inline void Updateable<TPriority>::lock() const{
+	m_updateMutex.lock();
+}
+
+template <UpdatePriority TPriority>
+inline void Updateable<TPriority>::unlock() const{
+	m_updateMutex.unlock();
+}
+
+template <UpdatePriority TPriority>
+inline void Updateable<TPriority>::open(){
+	if(!m_isOpen){
+		m_isOpen=true;
+		Timing::addTiming(this, Timing::TimeUnit(m_updateInterval));
+	}
+}
+
+template <UpdatePriority TPriority>
+inline void Updateable<TPriority>::close(){
+	if(m_isOpen){
+		Timing::deleteTiming(this);
+		m_isOpen=false;
+	}
 }
 
 template <UpdatePriority TPriority>
@@ -139,40 +166,18 @@ inline void Updateable<TPriority>::setRate(const Utils::Rational& rate){
 }
 
 template <UpdatePriority TPriority>
-inline void Updateable<TPriority>::open(){
-	if(!m_isOpen){
-		m_isOpen=true;
-		Timing::addTiming(this, Timing::TimeUnit(m_updateInterval));
-	}
-}
-
-template <UpdatePriority TPriority>
-inline void Updateable<TPriority>::close(){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	if(m_isOpen){
-		Timing::deleteTiming(this);
-		m_isOpen=false;
-	}
-}
-
-template <UpdatePriority TPriority>
 inline void Updateable<TPriority>::perform(){
-	{
-		std::lock_guard<std::mutex> lock(m_cbkMutex);
-		if(m_beforeCbk)
-			m_beforeCbk->update();
-	}
+	std::lock_guard<std::mutex> lock(m_updateMutex);
+	if(m_beforeCbk)
+		m_beforeCbk->update();
 
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 		update();
 	}
 
-	{
-		std::lock_guard<std::mutex> lock(m_cbkMutex);
-		if(m_afterCbk)
-			m_afterCbk->update();
-	}
+	if(m_afterCbk)
+		m_afterCbk->update();
 }
 
 }
