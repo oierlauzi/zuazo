@@ -128,20 +128,18 @@ void Timing::updateThreadFunc(){
 				const TimeUnit& interval=timing.first;
 				UpdateInterval& updateData=timing.second;
 
-				while(updateData.timeSinceLastUpdate >= interval){
+				if(updateData.timeSinceLastUpdate >= interval){
 					//Members of this update interval need to be updated at least once
 					for(Updateable<UpdatePriority::INPUT> * element : updateData.inputs){
-						//Update all elements, indicating the timestamp and elapsed time
 						element->perform();
 					}
 
 					for(Updateable<UpdatePriority::CONSUMER> * element : updateData.outputs){
-						//Update all elements, indicating the timestamp and elapsed time
 						element->perform();
 					}
 
 					//Update timing information
-					updateData.timeSinceLastUpdate-=interval;
+					updateData.timeSinceLastUpdate%=interval;
 				}
 
 				//Check if the next update for this interval is sooner than the previous one

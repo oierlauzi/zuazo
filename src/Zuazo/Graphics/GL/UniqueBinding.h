@@ -12,6 +12,12 @@ private:
 	const T&	m_target;
 };
 
+class Bindable{
+public:
+	void bind() const=0;
+	void unbind() const=0;
+};
+
 template<typename T>
 inline UniqueBinding<T>::UniqueBinding(const T& bindable) : m_target(bindable){
 	m_target.bind();
