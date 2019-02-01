@@ -37,14 +37,15 @@ protected:
 
 	bool								isActive() const;
 private:
+	mutable std::mutex					m_mutex;
+
 	std::shared_ptr<const T>			m_last;
 	Timing::TimePoint					m_elementTs;
 
-	std::set<const Consumer<T> *>		m_consumers;
-	mutable std::mutex					m_mutex;
+	std::set<Consumer<T> *>				m_consumers;
 
-	void								attach(const Consumer<T> * cons);
-	void								detach(const Consumer<T> * cons);
+	void								attach(Consumer<T> * cons);
+	void								detach(Consumer<T> * cons);
 };
 
 
@@ -96,7 +97,7 @@ private:
 template <typename T>
 inline Source<T>::~Source(){
 	while(m_consumers.size())
-		const_cast<Consumer<T>*> ((*m_consumers.begin()))->setSource(nullptr);
+		(*m_consumers.begin())->setSource(nullptr);
 }
 
 /*
@@ -105,41 +106,49 @@ inline Source<T>::~Source(){
 
 template <typename T>
 std::shared_ptr<const T> Source<T>::get() const{
+	std::lock_guard<std::mutex> lock(m_mutex);
+
 	return m_last;
 }
 
 template <typename T>
 std::shared_ptr<const T> Source<T>::get(Timing::TimePoint* ts) const{
+	std::lock_guard<std::mutex> lock(m_mutex);
+
 	*ts=m_elementTs;
 	return m_last;
 }
 
 template <typename T>
 void Source<T>::push(){
-	m_last=std::shared_ptr<T>();
-	m_elementTs=Timing::now();
+	push(std::shared_ptr<const T>());
 }
 
 template <typename T>
 void Source<T>::push(std::unique_ptr<const T>& element){
-	m_last=std::move(element);
-	m_elementTs=Timing::now();
+	std::shared_ptr<const T> newEl=std::move(element);
+	push(newEl);
 }
 
 template <typename T>
 void Source<T>::push(std::shared_ptr<const T>& element){
+	std::lock_guard<std::mutex> lock(m_mutex);
+
 	m_last=element;
 	m_elementTs=Timing::now();
+
+	for(Consumer<T> * cons : m_consumers)
+		cons->sourceUpdate();
 }
 
 template <typename T>
-void Source<T>::attach(const Consumer<T> * cons){
+void Source<T>::attach(Consumer<T> * cons){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_consumers.insert(cons);
 }
 
 template <typename T>
-void Source<T>::detach(const Consumer<T> * cons){
+void Source<T>::detach(Consumer<T> * cons){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_consumers.erase(cons);
 }

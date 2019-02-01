@@ -28,10 +28,12 @@ public:
 protected:
 	std::shared_ptr<const T>	get() const;
 	std::shared_ptr<const T>	get(Timing::TimePoint* ts) const;
-private:
-	Source<T>*					m_source;
 
+	virtual	void				sourceUpdate(){};
+private:
 	mutable std::mutex			m_mutex;
+
+	Source<T>*					m_source;
 };
 
 

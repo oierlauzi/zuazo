@@ -41,7 +41,7 @@ public:
 	virtual void						close();
 	bool								isOpen() const;
 protected:
-	mutable std::mutex					m_mutex;
+	mutable std::mutex					m_updateMutex;
 
 	void 								setInterval(const Utils::Rational& interval);
 	void								setRate(const Utils::Rational& rate);
@@ -49,9 +49,10 @@ protected:
 	virtual void						update()=0;
 	virtual void						perform();
 private:
+	mutable std::mutex					m_mutex;
+
 	Utils::Rational						m_updateInterval;
 	bool								m_isOpen;
-	mutable std::mutex					m_updateMutex;
 
 	Callback *							m_beforeCbk;
 	Callback *							m_afterCbk;
@@ -95,13 +96,13 @@ inline Updateable<TPriority>::~Updateable(){
 
 template <UpdatePriority TPriority>
 inline void Updateable<TPriority>::setBeforeUpdateCallback(Callback * cbk){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
+	std::lock_guard<std::mutex> lock(m_mutex);
 	m_beforeCbk=cbk;
 }
 
 template <UpdatePriority TPriority>
 inline void Updateable<TPriority>::setAfterUpdateCallback(Callback * cbk){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
+	std::lock_guard<std::mutex> lock(m_mutex);
 	m_afterCbk=cbk;
 }
 
@@ -117,12 +118,12 @@ inline Utils::Rational Updateable<TPriority>::getRate() const {
 
 template <UpdatePriority TPriority>
 inline void Updateable<TPriority>::lock() const{
-	m_updateMutex.lock();
+	m_mutex.lock();
 }
 
 template <UpdatePriority TPriority>
 inline void Updateable<TPriority>::unlock() const{
-	m_updateMutex.unlock();
+	m_mutex.unlock();
 }
 
 template <UpdatePriority TPriority>
@@ -148,7 +149,6 @@ inline bool Updateable<TPriority>::isOpen() const{
 
 template <UpdatePriority TPriority>
 inline void Updateable<TPriority>::setInterval(const Utils::Rational& interval){
-	std::lock_guard<std::mutex> lock(m_mutex);
 	m_updateInterval=interval;
 
 	if(m_isOpen){
@@ -167,13 +167,13 @@ inline void Updateable<TPriority>::setRate(const Utils::Rational& rate){
 
 template <UpdatePriority TPriority>
 inline void Updateable<TPriority>::perform(){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
+	std::lock_guard<std::mutex> lock(m_mutex);
 	if(m_beforeCbk)
 		m_beforeCbk->update();
 
 	{
-		std::lock_guard<std::mutex> lock(m_mutex);
-		update();
+	std::lock_guard<std::mutex> lock(m_updateMutex);
+	update();
 	}
 
 	if(m_afterCbk)

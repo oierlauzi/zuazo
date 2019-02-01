@@ -59,7 +59,7 @@ inline Delay<T>::~Delay(){
 
 template<typename T>
 inline void	Delay<T>::setDelay(const Timing::TimeUnit& delay){
-	std::lock_guard<std::mutex> lock(m_mutex);
+	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_delay=delay;
 
 	if(m_delay.count()==0) //Delay is disabled, empty the queue
