@@ -1,11 +1,11 @@
 #pragma once
 
-#include <stddef.h>
+#include <cstddef>
 #include <memory>
 #include <mutex>
 
-#include "../Utils/Rational.h"
 #include "../Timing.h"
+#include "CallableConsumer.h"
 #include "Source.h"
 
 namespace Zuazo::Stream{
@@ -16,12 +16,13 @@ class Source;
 template <typename T>
 class Consumer{
 	friend Source<T>;
+	friend CallableConsumer<T>;
 public:
 	Consumer();
 	Consumer(const Consumer<T>& other)=default;
 	virtual ~Consumer();
 
-	void						setSource(Source<T>* src);
+	virtual void				setSource(Source<T>* src);
 	Consumer<T>&				operator<<(Source<T>&);
 	Consumer<T>&				operator<<(std::nullptr_t ptr);
 	virtual bool 				isActive() const { return true; }
@@ -29,13 +30,11 @@ protected:
 	std::shared_ptr<const T>	get() const;
 	std::shared_ptr<const T>	get(Timing::TimePoint* ts) const;
 
-	virtual	void				sourceUpdate(){};
 private:
 	mutable std::mutex			m_mutex;
 
 	Source<T>*					m_source;
 };
-
 
 /************************
  * FUNCTION DEFINITIONS	*
@@ -86,6 +85,7 @@ inline Consumer<T>& Consumer<T>::operator<<(std::nullptr_t ptr){
 
 template <typename T>
 inline std::shared_ptr<const T>	Consumer<T>::get() const{
+	std::lock_guard<std::mutex> lock(m_mutex);
 	if(m_source)
 		return m_source->get();
 	else
@@ -94,6 +94,7 @@ inline std::shared_ptr<const T>	Consumer<T>::get() const{
 
 template <typename T>
 inline std::shared_ptr<const T>	Consumer<T>::get(Timing::TimePoint* ts) const{
+	std::lock_guard<std::mutex> lock(m_mutex);
 	if(m_source)
 		return m_source->get(ts);
 	else

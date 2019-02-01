@@ -138,9 +138,9 @@ int main(void){
 
 	using DelayD=Zuazo::Stream::Delay<double>;
 
-	class SourceExample : public Zuazo::Stream::Source<double>, public Zuazo::Updateable<Zuazo::UpdatePriority::INPUT>{
+	class SourceExample : public Zuazo::Stream::Source<double>, public Zuazo::Timing::Periodic<Zuazo::Timing::UpdatePriority::INPUT>{
 		public:
-		SourceExample(double framerate) : Zuazo::Stream::Source<double>(), Zuazo::Updateable<Zuazo::UpdatePriority::INPUT>(Zuazo::Utils::Rational(framerate)){
+		SourceExample(double framerate) : Zuazo::Stream::Source<double>(), Zuazo::Timing::Periodic<Zuazo::Timing::UpdatePriority::INPUT>(Zuazo::Utils::Rational(framerate)){
 
 		}
 
@@ -155,9 +155,9 @@ int main(void){
 		}
 	};
 
-	class ConsumerExample : public Zuazo::Stream::Consumer<double>, public Zuazo::Updateable<Zuazo::UpdatePriority::CONSUMER>{
+	class ConsumerExample : public Zuazo::Stream::Consumer<double>, public Zuazo::Timing::Periodic<Zuazo::Timing::UpdatePriority::CONSUMER>{
 		public:
-		ConsumerExample(double framerate) : Zuazo::Stream::Consumer<double>(), Updateable<Zuazo::UpdatePriority::CONSUMER>(Zuazo::Utils::Rational(framerate)){
+		ConsumerExample(double framerate) : Zuazo::Stream::Consumer<double>(), Zuazo::Timing::Periodic<Zuazo::Timing::UpdatePriority::CONSUMER>(Zuazo::Utils::Rational(framerate)){
 
 		}
 
@@ -178,11 +178,10 @@ int main(void){
 	del<<src;
 	cons<<del;
 
-	{
-		getchar();
-		std::lock_guard<SourceExample> lock(src);
-		getchar();
-	}
+	getchar();
+	cons<<nullptr;
+	getchar();
+	cons<<del;
 	getchar();
 #endif
 

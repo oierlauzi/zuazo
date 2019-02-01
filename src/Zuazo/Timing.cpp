@@ -43,7 +43,7 @@ int Timing::end(){
  * Timing methods
  */
 
-void Timing::addTiming(Updateable<UpdatePriority::INPUT>* event, const TimeUnit& interval){
+void Timing::addTiming(Periodic<UpdatePriority::INPUT>* event, const TimeUnit& interval){
 	std::lock_guard<std::mutex> lock(s_mutex);
 
 	if(event && interval.count()>0){
@@ -53,7 +53,7 @@ void Timing::addTiming(Updateable<UpdatePriority::INPUT>* event, const TimeUnit&
 	}
 }
 
-void Timing::addTiming(Updateable<UpdatePriority::CONSUMER>* event, const TimeUnit& interval){
+void Timing::addTiming(Periodic<UpdatePriority::CONSUMER>* event, const TimeUnit& interval){
 	std::lock_guard<std::mutex> lock(s_mutex);
 
 	if(event && interval.count()>0){
@@ -63,7 +63,7 @@ void Timing::addTiming(Updateable<UpdatePriority::CONSUMER>* event, const TimeUn
 	}
 }
 
-void Timing::deleteTiming(Updateable<UpdatePriority::INPUT>* event){
+void Timing::deleteTiming(Periodic<UpdatePriority::INPUT>* event){
 	std::unique_lock<std::mutex> lock(s_mutex);
 
 	for(auto element : s_timings)
@@ -71,7 +71,7 @@ void Timing::deleteTiming(Updateable<UpdatePriority::INPUT>* event){
 	delUnusedInterval();
 }
 
-void Timing::deleteTiming(Updateable<UpdatePriority::CONSUMER>* event){
+void Timing::deleteTiming(Periodic<UpdatePriority::CONSUMER>* event){
 	std::unique_lock<std::mutex> lock(s_mutex);
 
 	for(auto element : s_timings)
@@ -79,12 +79,12 @@ void Timing::deleteTiming(Updateable<UpdatePriority::CONSUMER>* event){
 	delUnusedInterval();
 }
 
-void Timing::modifyTiming(Updateable<UpdatePriority::INPUT>* event, const TimeUnit& interval){
+void Timing::modifyTiming(Periodic<UpdatePriority::INPUT>* event, const TimeUnit& interval){
 	deleteTiming(event);
 	addTiming(event, interval);
 }
 
-void Timing::modifyTiming(Updateable<UpdatePriority::CONSUMER>* event, const TimeUnit& interval){
+void Timing::modifyTiming(Periodic<UpdatePriority::CONSUMER>* event, const TimeUnit& interval){
 	deleteTiming(event);
 	addTiming(event, interval);
 }
@@ -130,11 +130,11 @@ void Timing::updateThreadFunc(){
 
 				if(updateData.timeSinceLastUpdate >= interval){
 					//Members of this update interval need to be updated at least once
-					for(Updateable<UpdatePriority::INPUT> * element : updateData.inputs){
+					for(Periodic<UpdatePriority::INPUT> * element : updateData.inputs){
 						element->perform();
 					}
 
-					for(Updateable<UpdatePriority::CONSUMER> * element : updateData.outputs){
+					for(Periodic<UpdatePriority::CONSUMER> * element : updateData.outputs){
 						element->perform();
 					}
 

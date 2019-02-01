@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <thread>
 
+#include "Updateable.h"
 #include "Utils/Rational.h"
 
 namespace Zuazo{
@@ -19,15 +20,6 @@ namespace Zuazo{
 /*
  * Class containing all the timing information
  */
-
-enum class UpdatePriority{
-	DONT_CARE,
-	INPUT,
-	CONSUMER
-};
-
-template <UpdatePriority TPriority>
-class Updateable;
 
 
 class Timing{
@@ -110,6 +102,32 @@ public:
 		TimePoint							m_end;
 	};
 
+	enum class UpdatePriority{
+		INPUT,
+		CONSUMER
+	};
+
+	template <UpdatePriority TPriority>
+	class Periodic : Updateable{
+		friend Timing;
+	public:
+		Periodic();
+		Periodic(const Utils::Rational& rate);
+		Periodic(const Periodic& other);
+		virtual ~Periodic();
+
+		const Utils::Rational& 				getInterval() const;
+		Utils::Rational						getRate() const;
+
+		virtual void						open() override;
+		virtual void						close() override;
+	protected:
+		void 								setInterval(const Utils::Rational& interval);
+		void								setRate(const Utils::Rational& rate);
+	private:
+		Utils::Rational						m_updateInterval;
+	};
+
 	Timing()=delete;
 	Timing(const Timing&)=delete;
 	~Timing()=delete;
@@ -119,19 +137,16 @@ public:
 
 	static TimePoint					now();
 
-	static void 						addTiming(Updateable<UpdatePriority::DONT_CARE>* event, const TimeUnit& interval){};
-	static void 						addTiming(Updateable<UpdatePriority::INPUT>* event, const TimeUnit& interval);
-	static void 						addTiming(Updateable<UpdatePriority::CONSUMER>* event, const TimeUnit& interval);
-	static void 						deleteTiming(Updateable<UpdatePriority::DONT_CARE>* event){};
-	static void 						deleteTiming(Updateable<UpdatePriority::INPUT>* event);
-	static void 						deleteTiming(Updateable<UpdatePriority::CONSUMER>* event);
-	static void 						modifyTiming(Updateable<UpdatePriority::DONT_CARE>* event, const TimeUnit& interval){};
-	static void 						modifyTiming(Updateable<UpdatePriority::INPUT>* event, const TimeUnit& interval);
-	static void 						modifyTiming(Updateable<UpdatePriority::CONSUMER>* event, const TimeUnit& interval);
+	static void 						addTiming(Periodic<UpdatePriority::INPUT>* event, const TimeUnit& interval);
+	static void 						addTiming(Periodic<UpdatePriority::CONSUMER>* event, const TimeUnit& interval);
+	static void 						deleteTiming(Periodic<UpdatePriority::INPUT>* event);
+	static void 						deleteTiming(Periodic<UpdatePriority::CONSUMER>* event);
+	static void 						modifyTiming(Periodic<UpdatePriority::INPUT>* event, const TimeUnit& interval);
+	static void 						modifyTiming(Periodic<UpdatePriority::CONSUMER>* event, const TimeUnit& interval);
 private:
 	struct UpdateInterval{
-		std::set<Updateable<UpdatePriority::INPUT>*>	inputs;
-		std::set<Updateable<UpdatePriority::CONSUMER>*>	outputs;
+		std::set<Periodic<UpdatePriority::INPUT>*>	inputs;
+		std::set<Periodic<UpdatePriority::CONSUMER>*>	outputs;
 		TimeUnit							timeSinceLastUpdate;
 
 		UpdateInterval()=default;
@@ -182,6 +197,74 @@ inline const Timing::TimePoint& Timing::Chronometer::getStart() const{
 inline const Timing::TimePoint& Timing::Chronometer::getEnd() const{
 	return m_end;
 }
+
+/*
+ * Periodic methods
+ */
+
+template <Timing::UpdatePriority TPriority>
+inline Timing::Periodic<TPriority>::Periodic() : Updateable(){
+
+}
+
+template <Timing::UpdatePriority TPriority>
+inline Timing::Periodic<TPriority>::Periodic(const Utils::Rational& rate) : Updateable(){
+	setRate(rate);
+}
+
+template <Timing::UpdatePriority TPriority>
+inline Timing::Periodic<TPriority>::Periodic(const Periodic& other) : Updateable(other){
+	setInterval(other.m_updateInterval);
+}
+
+template <Timing::UpdatePriority TPriority>
+inline Timing::Periodic<TPriority>::~Periodic(){
+	Timing::deleteTiming(this);
+}
+
+
+
+template <Timing::UpdatePriority TPriority>
+inline const Utils::Rational& Timing::Periodic<TPriority>::getInterval() const {
+	return m_updateInterval;
+}
+
+template <Timing::UpdatePriority TPriority>
+inline Utils::Rational Timing::Periodic<TPriority>::getRate() const {
+	return 1/m_updateInterval;
+}
+
+
+template <Timing::UpdatePriority TPriority>
+inline void Timing::Periodic<TPriority>::open(){
+	Updateable::open();
+	Timing::addTiming(this, m_updateInterval);
+}
+
+template <Timing::UpdatePriority TPriority>
+inline void Timing::Periodic<TPriority>::close(){
+	Timing::deleteTiming(this);
+	Updateable::close();
+}
+
+template <Timing::UpdatePriority TPriority>
+inline void Timing::Periodic<TPriority>::setInterval(const Utils::Rational& interval){
+	m_updateInterval=interval;
+
+	if(isOpen()){
+		Timing::TimeUnit tuInterval(m_updateInterval);
+		Timing::modifyTiming(this, tuInterval);
+	}
+}
+
+template <Timing::UpdatePriority TPriority>
+inline void Timing::Periodic<TPriority>::setRate(const Utils::Rational& rate){
+	if(rate)
+		setInterval(1/rate);
+	else
+		setInterval(0);
+}
+
 
 /*
  * Other methods
