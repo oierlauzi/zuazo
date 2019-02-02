@@ -4,7 +4,8 @@
 #include <mutex>
 #include <set>
 
-#include "../Timing.h"
+#include "../Timing/TimePoint.h"
+#include "../Timing/Timing.h"
 #include "CallableConsumer.h"
 #include "Consumer.h"
 
@@ -92,7 +93,7 @@ void Source<T>::push(std::unique_ptr<const T>& element){
 template <typename T>
 void Source<T>::push(std::shared_ptr<const T>& element){
 	m_last=element;
-	m_elementTs=Timing::now();
+	m_elementTs=Timing::timings->now();
 
 	for(CallableConsumer<T> * cons : m_cbkConsumers)
 		cons->onSourceUpdate();

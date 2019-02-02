@@ -2,13 +2,7 @@
 
 #include <mutex>
 
-#include "Timing.h"
-#include "Utils/Rational.h"
-
 namespace Zuazo{
-
-class Timing;
-
 /*
  * Class which defines a periodical event
  */

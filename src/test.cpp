@@ -6,7 +6,7 @@
 #include "Zuazo/Stream/Consumer.h"
 #include "Zuazo/Stream/Delay.h"
 #include "Zuazo/Stream/Source.h"
-#include "Zuazo/Timing.h"
+#include "Zuazo/Timing/TimingTable.h"
 #include "Zuazo/Updateable.h"
 #include "Zuazo/Utils/Rational.h"
 #include "Zuazo/Zuazo.h"
@@ -138,9 +138,9 @@ int main(void){
 
 	using DelayD=Zuazo::Stream::Delay<double>;
 
-	class SourceExample : public Zuazo::Stream::Source<double>, public Zuazo::Timing::Periodic<Zuazo::Timing::UpdatePriority::INPUT>{
+	class SourceExample : public Zuazo::Stream::Source<double>, public Zuazo::Timing::TimingTable::Periodic<Zuazo::Timing::TimingTable::UpdatePriority::INPUT>{
 		public:
-		SourceExample(double framerate) : Zuazo::Stream::Source<double>(), Zuazo::Timing::Periodic<Zuazo::Timing::UpdatePriority::INPUT>(Zuazo::Utils::Rational(framerate)){
+		SourceExample(double framerate) : Zuazo::Stream::Source<double>(), Zuazo::Timing::TimingTable::Periodic<Zuazo::Timing::TimingTable::UpdatePriority::INPUT>(Zuazo::Utils::Rational(framerate)){
 
 		}
 
@@ -155,9 +155,9 @@ int main(void){
 		}
 	};
 
-	class ConsumerExample : public Zuazo::Stream::Consumer<double>, public Zuazo::Timing::Periodic<Zuazo::Timing::UpdatePriority::CONSUMER>{
+	class ConsumerExample : public Zuazo::Stream::Consumer<double>, public Zuazo::Timing::TimingTable::Periodic<Zuazo::Timing::TimingTable::UpdatePriority::CONSUMER>{
 		public:
-		ConsumerExample(double framerate) : Zuazo::Stream::Consumer<double>(), Zuazo::Timing::Periodic<Zuazo::Timing::UpdatePriority::CONSUMER>(Zuazo::Utils::Rational(framerate)){
+		ConsumerExample(double framerate) : Zuazo::Stream::Consumer<double>(), Zuazo::Timing::TimingTable::Periodic<Zuazo::Timing::TimingTable::UpdatePriority::CONSUMER>(Zuazo::Utils::Rational(framerate)){
 
 		}
 
@@ -172,8 +172,8 @@ int main(void){
 		}
 	};
 
-	SourceExample src(30);
 	ConsumerExample cons(30);
+	SourceExample src(30);
 	DelayD	del(Zuazo::Timing::TimeUnit(0));
 	del<<src;
 	cons<<del;

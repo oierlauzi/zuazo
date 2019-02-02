@@ -4,7 +4,6 @@
 #include <memory>
 #include <mutex>
 
-#include "../Timing.h"
 #include "CallableConsumer.h"
 #include "Source.h"
 

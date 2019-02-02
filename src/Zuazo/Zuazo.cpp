@@ -5,7 +5,7 @@
 
 #include "Graphics/GL/Context.h"
 #include "Window.h"
-#include "Timing.h"
+#include "Timing/Timing.h"
 
 namespace Zuazo{
 
@@ -72,6 +72,7 @@ Error init(){
  **/
 Error end(){
 	Window::end();
+	Timing::end();
     return Error::NONE; //TODO
 }
 

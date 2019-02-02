@@ -189,15 +189,15 @@ inline u_int32_t Color::parseColor(std::string str){
 
 
 
-const Color Color::RED=		Color(0xff0000ff);
-const Color Color::GREEN=	Color(0x00ff00ff);
-const Color Color::BLUE=	Color(0x0000ffff);
-const Color Color::CYAN=	Color(0x00ffffff);
-const Color Color::PURPLE=	Color(0xff00ffff);
-const Color Color::YELLOW=	Color(0xffff00ff);
-const Color Color::ORANGE=	Color(0xff4500ff);
-const Color Color::WHITE=	Color(0xffffffff);
-const Color Color::GRAY=	Color(0x7f7f7fff);
-const Color Color::BLACK=	Color(0x000000ff);
+inline const Color Color::RED=		Color(0xff0000ff);
+inline const Color Color::GREEN=	Color(0x00ff00ff);
+inline const Color Color::BLUE=	Color(0x0000ffff);
+inline const Color Color::CYAN=	Color(0x00ffffff);
+inline const Color Color::PURPLE=	Color(0xff00ffff);
+inline const Color Color::YELLOW=	Color(0xffff00ff);
+inline const Color Color::ORANGE=	Color(0xff4500ff);
+inline const Color Color::WHITE=	Color(0xffffffff);
+inline const Color Color::GRAY=	Color(0x7f7f7fff);
+inline const Color Color::BLACK=	Color(0x000000ff);
 
 }

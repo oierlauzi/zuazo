@@ -5,7 +5,9 @@
 #include <mutex>
 #include <queue>
 
-#include "../Timing.h"
+#include "../Timing/TimePoint.h"
+#include "../Timing/TimeUnit.h"
+#include "../Timing/Timing.h"
 #include "CallableConsumer.h"
 #include "Consumer.h"
 #include "LazySource.h"
@@ -75,7 +77,7 @@ inline void Delay<T>::update(){
 	//Advance the queue until we arrive to the element with the desired timestamp
 	std::shared_ptr<const T> lastElement;
 	while(m_queue.size()){
-		if(m_queue.front().ts <= Timing::now() - m_delay){
+		if(m_queue.front().ts <= Timing::timings->now() - m_delay){
 			lastElement=m_queue.front().element;
 			m_queue.pop();
 		}else
