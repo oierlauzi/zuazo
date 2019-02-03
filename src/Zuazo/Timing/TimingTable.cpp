@@ -15,6 +15,7 @@ using namespace Zuazo::Timing;
 
 TimingTable::TimingTable(){
 	m_exit=false;
+	m_currTime=TimePoint::now();
 	m_thread=std::thread(&TimingTable::updateThreadFunc, this);
 }
 
@@ -143,11 +144,12 @@ void TimingTable::updateThreadFunc(){
 					timing.second.timeSinceLastUpdate+=timeForNextUpdate;
 				}
 
-				//Wait until next update
-				m_cond.wait_for(lock, timeForNextUpdate-elapsed);
-
 				//Update current time
 				m_currTime+=timeForNextUpdate;
+
+
+				//Wait until next update
+				m_cond.wait_until(lock, m_currTime);
 			}else{
 				// Increment timing values for each interval
 				for(auto& timing : m_timings)
@@ -156,6 +158,11 @@ void TimingTable::updateThreadFunc(){
 				//Update current time
 				m_currTime+=elapsed;
 			}
+
+#ifdef ENABLE_LOAD_DEBUG
+			printf("Elapsed: %ldus\n", elapsed.count());
+#endif
+
 		}else
 			m_cond.wait(lock);
 	}

@@ -11,6 +11,7 @@
 #include "TimePoint.h"
 #include "TimeUnit.h"
 
+#define ENABLE_LOAD_DEBUG
 
 namespace Zuazo::Timing{
 
@@ -107,7 +108,8 @@ inline TimingTable::Periodic<TPriority>::Periodic(const Periodic& other) : Updat
 
 template <TimingTable::UpdatePriority TPriority>
 inline TimingTable::Periodic<TPriority>::~Periodic(){
-	timings->deleteTiming(this);
+	if(timings)
+		timings->deleteTiming(this);
 }
 
 
