@@ -4,7 +4,6 @@
 #include <memory>
 #include <mutex>
 
-#include "CallableConsumer.h"
 #include "Source.h"
 
 namespace Zuazo::Stream{
@@ -15,7 +14,6 @@ class Source;
 template <typename T>
 class Consumer{
 	friend Source<T>;
-	friend CallableConsumer<T>;
 public:
 	Consumer();
 	Consumer(const Consumer<T>& other)=default;

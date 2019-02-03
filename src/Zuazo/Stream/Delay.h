@@ -8,7 +8,6 @@
 #include "../Timing/TimePoint.h"
 #include "../Timing/TimeUnit.h"
 #include "../Timing/Timing.h"
-#include "CallableConsumer.h"
 #include "Consumer.h"
 #include "LazySource.h"
 #include "Source.h"
@@ -16,7 +15,11 @@
 namespace Zuazo::Stream{
 
 template<typename T>
-class Delay : public CallableConsumer<T>, public LazySource<T>{
+class Delay :
+		public Consumer<T>,
+		public Source<T>,
+		public Timing::TimingTable::RegularEvent<Timing::TimingTable::UpdatePriority::LAST>
+{
 public:
 	Delay();
 	Delay(const Timing::TimeUnit& delay);
@@ -27,7 +30,6 @@ public:
 	Timing::TimeUnit					getDelay();
 
 	virtual void						update() override;
-	virtual void						onSourceUpdate() override;
 
 	virtual void						open() override;
 	virtual void						close() override;
@@ -54,7 +56,7 @@ inline Delay<T>::Delay(const Timing::TimeUnit& delay){
 
 template<typename T>
 inline Delay<T>::~Delay(){
-	close();
+
 }
 
 template<typename T>
@@ -74,39 +76,40 @@ inline Timing::TimeUnit	Delay<T>::getDelay(){
 
 template<typename T>
 inline void Delay<T>::update(){
-	//Advance the queue until we arrive to the element with the desired timestamp
 	std::shared_ptr<const T> lastElement;
-	while(m_queue.size()){
-		if(m_queue.front().ts <= Timing::timings->now() - m_delay){
-			lastElement=m_queue.front().element;
-			m_queue.pop();
-		}else
-			break;
+
+	if(m_delay.count()){
+		//The delay is active
+		//Insert an element into the queue
+		m_queue.emplace();
+		m_queue.back().element=Consumer<T>::get(&m_queue.back().ts); //A bit ugly
+
+		//Advance the queue until an element with the desired time-stamp is found
+		while(m_queue.size()){
+			if(m_queue.front().ts <= Timing::timings->now() - m_delay){
+				lastElement=m_queue.front().element;
+				m_queue.pop();
+			}else
+				break;
+		}
+	}else{
+		//There is no delay
+		lastElement=Consumer<T>::get();
 	}
-
-	if(lastElement)
-		Source<T>::push(lastElement);
-}
-
-template<typename T>
-inline void Delay<T>::onSourceUpdate(){
-	std::lock_guard<std::mutex> lock(Updateable::m_updateMutex);
-
-	//Insert new element on the queue
-	m_queue.emplace();
-	QueueElement& newEl=m_queue.back();
-	newEl.element=CallableConsumer<T>::get(&newEl.ts);
-	update();
+	//Push the new element
+	Source<T>::push(lastElement);
 }
 
 template<typename T>
 inline void Delay<T>::open(){
-	LazySource<T>::open();
+	Timing::TimingTable::RegularEvent<Timing::TimingTable::UpdatePriority::LAST>::open();
 }
 
 template<typename T>
 inline void Delay<T>::close(){
-	LazySource<T>::close();
+	//TODO lock timing
+	Timing::TimingTable::RegularEvent<Timing::TimingTable::UpdatePriority::LAST>::close();
+	Source<T>::push();
 
 	//Reset all
 	while(m_queue.size())

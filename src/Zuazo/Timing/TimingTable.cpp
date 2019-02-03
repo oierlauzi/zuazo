@@ -29,60 +29,80 @@ TimingTable::~TimingTable(){
  * Timing methods
  */
 
-void TimingTable::addTiming(Periodic<UpdatePriority::INPUT>* event, const TimeUnit& interval){
+void TimingTable::addTiming(PeriodicEvent<UpdatePriority::FIRST>* event, const TimeUnit& interval){
 	std::lock_guard<std::mutex> lock(m_mutex);
 
 	if(event && interval.count()>0){
 		addInterval(interval);
 		//Insert the new element
-		m_timings[interval].inputs.insert(event);
+		m_periodicTimings[interval].first.insert(event);
 	}
 }
 
-void TimingTable::addTiming(Periodic<UpdatePriority::CONSUMER>* event, const TimeUnit& interval){
+void TimingTable::addTiming(PeriodicEvent<UpdatePriority::LAST>* event, const TimeUnit& interval){
 	std::lock_guard<std::mutex> lock(m_mutex);
 
 	if(event && interval.count()>0){
 		addInterval(interval);
 		//Insert the new element
-		m_timings[interval].outputs.insert(event);
+		m_periodicTimings[interval].last.insert(event);
 	}
 }
 
-void TimingTable::deleteTiming(Periodic<UpdatePriority::INPUT>* event){
+void TimingTable::addTiming(RegularEvent<UpdatePriority::FIRST>* event){
+	std::lock_guard<std::mutex> lock(m_mutex);
+	m_regularTimings.first.insert(event);
+}
+
+void TimingTable::addTiming(RegularEvent<UpdatePriority::LAST>* event){
+	std::lock_guard<std::mutex> lock(m_mutex);
+	m_regularTimings.last.insert(event);
+}
+
+void TimingTable::deleteTiming(PeriodicEvent<UpdatePriority::FIRST>* event){
 	std::unique_lock<std::mutex> lock(m_mutex);
 
-	for(auto element : m_timings)
-		element.second.inputs.erase(event);
+	for(auto element : m_periodicTimings)
+		element.second.first.erase(event);
 	delUnusedInterval();
 }
 
-void TimingTable::deleteTiming(Periodic<UpdatePriority::CONSUMER>* event){
+void TimingTable::deleteTiming(PeriodicEvent<UpdatePriority::LAST>* event){
 	std::unique_lock<std::mutex> lock(m_mutex);
 
-	for(auto element : m_timings)
-		element.second.outputs.erase(event);
+	for(auto element : m_periodicTimings)
+		element.second.last.erase(event);
 	delUnusedInterval();
 }
 
-void TimingTable::modifyTiming(Periodic<UpdatePriority::INPUT>* event, const TimeUnit& interval){
+void TimingTable::deleteTiming(RegularEvent<UpdatePriority::FIRST>* event){
+	std::lock_guard<std::mutex> lock(m_mutex);
+	m_regularTimings.first.erase(event);
+}
+
+void TimingTable::deleteTiming(RegularEvent<UpdatePriority::LAST>* event){
+	std::lock_guard<std::mutex> lock(m_mutex);
+	m_regularTimings.last.erase(event);
+}
+
+void TimingTable::modifyTiming(PeriodicEvent<UpdatePriority::FIRST>* event, const TimeUnit& interval){
 	deleteTiming(event);
 	addTiming(event, interval);
 }
 
-void TimingTable::modifyTiming(Periodic<UpdatePriority::CONSUMER>* event, const TimeUnit& interval){
+void TimingTable::modifyTiming(PeriodicEvent<UpdatePriority::LAST>* event, const TimeUnit& interval){
 	deleteTiming(event);
 	addTiming(event, interval);
 }
 
 void TimingTable::addInterval(const TimeUnit& interval){
 	//Add the new timing to the table
-	if(m_timings.find(interval)==m_timings.end()){
+	if(m_periodicTimings.find(interval)==m_periodicTimings.end()){
 		//Interval did not exist. Add it
-		m_timings.emplace(interval, UpdateInterval());
+		m_periodicTimings.emplace(interval, UpdateInterval());
 
 		//Re-start all updates to synchronize them when possible
-		for(auto& timing : m_timings)
+		for(auto& timing : m_periodicTimings)
 			timing.second.timeSinceLastUpdate=TimeUnit(timing.first);
 
 		//Force update
@@ -91,9 +111,9 @@ void TimingTable::addInterval(const TimeUnit& interval){
 }
 
 void TimingTable::delUnusedInterval(){
-	for(auto ite=m_timings.begin(); ite!=m_timings.begin();){
-		if(ite->second.inputs.size()==0 && ite->second.outputs.size()==0)
-			ite=m_timings.erase(ite);
+	for(auto ite=m_periodicTimings.begin(); ite!=m_periodicTimings.begin();){
+		if(ite->second.first.size()==0 && ite->second.last.size()==0)
+			ite=m_periodicTimings.erase(ite);
 		else
 			ite++;
 	}
@@ -103,66 +123,72 @@ void TimingTable::updateThreadFunc(){
 	std::unique_lock<std::mutex> lock(m_mutex);
 
 	while(!m_exit){
-		if(m_timings.size()){
+		if(m_periodicTimings.size()){
+
+#ifdef ENABLE_LOAD_DEBUG
 			Chronometer chrono;
 			chrono.start();
+#endif
+			//Get all the intervals that will need an update and schedule the next update
+			std::set<UpdateInterval*>  intervalsToUpdate;
+			TimeUnit soonestIntervalUpdate=TimeUnit::max();
 
-			TimeUnit timeForNextUpdate=TimeUnit::max();
-
-			//Update all the pending events
-			for(auto& timing : m_timings){
+			for(auto& timing : m_periodicTimings){
 				const TimeUnit& interval=timing.first;
-				UpdateInterval& updateData=timing.second;
+				UpdateInterval& periodicEvents=timing.second;
 
-				if(updateData.timeSinceLastUpdate >= interval){
-					//Members of this update interval need to be updated at least once
-					for(Periodic<UpdatePriority::INPUT> * element : updateData.inputs){
-						element->perform();
-					}
-
-					for(Periodic<UpdatePriority::CONSUMER> * element : updateData.outputs){
-						element->perform();
-					}
-
-					//Update timing information
-					updateData.timeSinceLastUpdate%=interval;
+				if(periodicEvents.timeSinceLastUpdate >= interval){
+					//This interval needs to be updated
+					intervalsToUpdate.insert(&periodicEvents);
+					//Update the timing information
+					periodicEvents.timeSinceLastUpdate%=interval;
 				}
 
-				//Check if the next update for this interval is sooner than the previous one
-				const TimeUnit timeForNextIntervalUpdate=interval - updateData.timeSinceLastUpdate;
-				if(timeForNextIntervalUpdate < timeForNextUpdate){
-					timeForNextUpdate=timeForNextIntervalUpdate;
+				const TimeUnit timeForNextUpdate=interval - periodicEvents.timeSinceLastUpdate;
+				if(timeForNextUpdate < soonestIntervalUpdate){
+					//This interval's update is the soonest one
+					soonestIntervalUpdate=timeForNextUpdate;
 				}
 			}
 
-			chrono.end();
-			TimeUnit elapsed=chrono.getElapsed();
 
-			if(elapsed < timeForNextUpdate){
-				// Increment timing values for each interval
-				for(auto& timing : m_timings){
-					timing.second.timeSinceLastUpdate+=timeForNextUpdate;
+			//Do all regular updates with first priority
+			for(auto& regularEvent : m_regularTimings.first){
+				regularEvent->perform();
+			}
+
+			//Do all peridodic updates with first priority
+			for(auto& interval : intervalsToUpdate){
+				for(auto& periodicEvent : interval->first){
+					periodicEvent->perform();
 				}
+			}
 
-				//Update current time
-				m_currTime+=timeForNextUpdate;
+			//Do all regular updates with last priority
+			for(auto& regularEvent : m_regularTimings.last){
+				regularEvent->perform();
+			}
 
+			//Do all peridodic updates with last priority
+			for(auto& interval : intervalsToUpdate){
+				for(auto& periodicEvent : interval->last){
+					periodicEvent->perform();
+				}
+			}
 
-				//Wait until next update
-				m_cond.wait_until(lock, m_currTime);
-			}else{
-				// Increment timing values for each interval
-				for(auto& timing : m_timings)
-					timing.second.timeSinceLastUpdate+=elapsed;
-
-				//Update current time
-				m_currTime+=elapsed;
+			// Increment timing values for each interval and for currTime
+			m_currTime+=soonestIntervalUpdate;
+			for(auto& timing : m_periodicTimings){
+				timing.second.timeSinceLastUpdate+=soonestIntervalUpdate;
 			}
 
 #ifdef ENABLE_LOAD_DEBUG
-			printf("Elapsed: %ldus\n", elapsed.count());
+			chrono.end();
+			printf("Elapsed: %ldus\n", chrono.getElapsed().count());
 #endif
 
+			//Wait until next update
+			m_cond.wait_until(lock, m_currTime);
 		}else
 			m_cond.wait(lock);
 	}

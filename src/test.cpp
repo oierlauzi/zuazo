@@ -138,9 +138,9 @@ int main(void){
 
 	using DelayD=Zuazo::Stream::Delay<double>;
 
-	class SourceExample : public Zuazo::Stream::Source<double>, public Zuazo::Timing::TimingTable::Periodic<Zuazo::Timing::TimingTable::UpdatePriority::INPUT>{
+	class SourceExample : public Zuazo::Stream::Source<double>, public Zuazo::Timing::TimingTable::PeriodicEvent<Zuazo::Timing::TimingTable::UpdatePriority::FIRST>{
 		public:
-		SourceExample(double framerate) : Zuazo::Stream::Source<double>(), Zuazo::Timing::TimingTable::Periodic<Zuazo::Timing::TimingTable::UpdatePriority::INPUT>(Zuazo::Utils::Rational(framerate)){
+		SourceExample(double framerate) : Zuazo::Stream::Source<double>(), Zuazo::Timing::TimingTable::PeriodicEvent<Zuazo::Timing::TimingTable::UpdatePriority::FIRST>(Zuazo::Utils::Rational(framerate)){
 
 		}
 
@@ -155,9 +155,9 @@ int main(void){
 		}
 	};
 
-	class ConsumerExample : public Zuazo::Stream::Consumer<double>, public Zuazo::Timing::TimingTable::Periodic<Zuazo::Timing::TimingTable::UpdatePriority::CONSUMER>{
+	class ConsumerExample : public Zuazo::Stream::Consumer<double>, public Zuazo::Timing::TimingTable::PeriodicEvent<Zuazo::Timing::TimingTable::UpdatePriority::LAST>{
 		public:
-		ConsumerExample(double framerate) : Zuazo::Stream::Consumer<double>(), Zuazo::Timing::TimingTable::Periodic<Zuazo::Timing::TimingTable::UpdatePriority::CONSUMER>(Zuazo::Utils::Rational(framerate)){
+		ConsumerExample(double framerate) : Zuazo::Stream::Consumer<double>(), Zuazo::Timing::TimingTable::PeriodicEvent<Zuazo::Timing::TimingTable::UpdatePriority::LAST>(Zuazo::Utils::Rational(framerate)){
 
 		}
 

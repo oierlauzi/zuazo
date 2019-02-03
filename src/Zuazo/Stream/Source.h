@@ -6,7 +6,6 @@
 
 #include "../Timing/TimePoint.h"
 #include "../Timing/Timing.h"
-#include "CallableConsumer.h"
 #include "Consumer.h"
 
 
@@ -21,7 +20,6 @@ class CallableConsumer;
 template <typename T>
 class Source{
 	friend Consumer<T>;
-	friend CallableConsumer<T>;
 public:
 	Source()=default;
 	Source(const Source<T>& other)=delete;
@@ -42,12 +40,9 @@ private:
 	Timing::TimePoint					m_elementTs;
 
 	std::set<Consumer<T> *>				m_consumers;
-	std::set<CallableConsumer<T> *>		m_cbkConsumers;
 
 	void								attach(Consumer<T> * cons);
 	void								detach(Consumer<T> * cons);
-	void								attach(CallableConsumer<T> * cons);
-	void								detach(CallableConsumer<T> * cons);
 };
 
 /********************************
@@ -94,9 +89,6 @@ template <typename T>
 void Source<T>::push(std::shared_ptr<const T>& element){
 	m_last=element;
 	m_elementTs=Timing::timings->now();
-
-	for(CallableConsumer<T> * cons : m_cbkConsumers)
-		cons->onSourceUpdate();
 }
 
 template <typename T>
@@ -109,20 +101,6 @@ template <typename T>
 void Source<T>::detach(Consumer<T> * cons){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_consumers.erase(cons);
-}
-
-template <typename T>
-void Source<T>::attach(CallableConsumer<T> * cons){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	m_consumers.insert(cons);
-	m_cbkConsumers.insert(cons);
-}
-
-template <typename T>
-void Source<T>::detach(CallableConsumer<T> * cons){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	m_consumers.erase(cons);
-	m_cbkConsumers.erase(cons);
 }
 
 /*
