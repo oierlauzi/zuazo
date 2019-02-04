@@ -5,11 +5,12 @@
 #include <mutex>
 #include <queue>
 
+#include "../Timing/RegularUpdate.h"
 #include "../Timing/TimePoint.h"
 #include "../Timing/TimeUnit.h"
-#include "../Timing/Timing.h"
+#include "../Timing/TimingTable.h"
+#include "../Timing/UpdateOrder.h"
 #include "Consumer.h"
-#include "LazySource.h"
 #include "Source.h"
 
 namespace Zuazo::Stream{
@@ -18,7 +19,7 @@ template<typename T>
 class Delay :
 		public Consumer<T>,
 		public Source<T>,
-		public Timing::TimingTable::RegularEvent<Timing::TimingTable::UpdatePriority::LAST>
+		public Timing::RegularUpdate<Timing::UpdateOrder::LAST>
 {
 public:
 	Delay();
@@ -45,12 +46,14 @@ private:
 };
 
 template<typename T>
-inline Delay<T>::Delay(){
+inline Delay<T>::Delay() :
+Timing::RegularUpdate<Timing::UpdateOrder::LAST>(){
 	setDelay(Timing::TimeUnit(0));
 }
 
 template<typename T>
-inline Delay<T>::Delay(const Timing::TimeUnit& delay){
+inline Delay<T>::Delay(const Timing::TimeUnit& delay) :
+Timing::RegularUpdate<Timing::UpdateOrder::LAST>(){
 	setDelay(delay);
 }
 
@@ -102,13 +105,13 @@ inline void Delay<T>::update(){
 
 template<typename T>
 inline void Delay<T>::open(){
-	Timing::TimingTable::RegularEvent<Timing::TimingTable::UpdatePriority::LAST>::open();
+	Timing::RegularUpdate<Timing::UpdateOrder::LAST>::open();
 }
 
 template<typename T>
 inline void Delay<T>::close(){
 	//TODO lock timing
-	Timing::TimingTable::RegularEvent<Timing::TimingTable::UpdatePriority::LAST>::close();
+	Timing::RegularUpdate<Timing::UpdateOrder::LAST>::close();
 	Source<T>::push();
 
 	//Reset all

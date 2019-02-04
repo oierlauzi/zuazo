@@ -1,10 +1,12 @@
 #include "TimingTable.h"
 
 #include <chrono>
-#include <initializer_list>
+#include <cstdio>
 #include <utility>
 
 #include "Chronometer.h"
+#include "PeriodicUpdate.h"
+#include "RegularUpdate.h"
 
 using namespace Zuazo::Timing;
 
@@ -29,37 +31,41 @@ TimingTable::~TimingTable(){
  * Timing methods
  */
 
-void TimingTable::addTiming(PeriodicEvent<UpdatePriority::FIRST>* event, const TimeUnit& interval){
+void TimingTable::addTiming(Timing::PeriodicUpdate<UpdateOrder::FIRST>* event){
+	TimeUnit interval=event->getInterval();
+
 	std::lock_guard<std::mutex> lock(m_mutex);
 
-	if(event && interval.count()>0){
+	if(interval.count()>0){
 		addInterval(interval);
 		//Insert the new element
 		m_periodicTimings[interval].first.insert(event);
 	}
 }
 
-void TimingTable::addTiming(PeriodicEvent<UpdatePriority::LAST>* event, const TimeUnit& interval){
+void TimingTable::addTiming(Timing::PeriodicUpdate<UpdateOrder::LAST>* event){
+	TimeUnit interval=event->getInterval();
+
 	std::lock_guard<std::mutex> lock(m_mutex);
 
-	if(event && interval.count()>0){
+	if(interval.count()>0){
 		addInterval(interval);
 		//Insert the new element
 		m_periodicTimings[interval].last.insert(event);
 	}
 }
 
-void TimingTable::addTiming(RegularEvent<UpdatePriority::FIRST>* event){
+void TimingTable::addTiming(Timing::RegularUpdate<UpdateOrder::FIRST>* event){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_regularTimings.first.insert(event);
 }
 
-void TimingTable::addTiming(RegularEvent<UpdatePriority::LAST>* event){
+void TimingTable::addTiming(Timing::RegularUpdate<UpdateOrder::LAST>* event){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_regularTimings.last.insert(event);
 }
 
-void TimingTable::deleteTiming(PeriodicEvent<UpdatePriority::FIRST>* event){
+void TimingTable::deleteTiming(Timing::PeriodicUpdate<UpdateOrder::FIRST>* event){
 	std::unique_lock<std::mutex> lock(m_mutex);
 
 	for(auto element : m_periodicTimings)
@@ -67,7 +73,7 @@ void TimingTable::deleteTiming(PeriodicEvent<UpdatePriority::FIRST>* event){
 	delUnusedInterval();
 }
 
-void TimingTable::deleteTiming(PeriodicEvent<UpdatePriority::LAST>* event){
+void TimingTable::deleteTiming(Timing::PeriodicUpdate<UpdateOrder::LAST>* event){
 	std::unique_lock<std::mutex> lock(m_mutex);
 
 	for(auto element : m_periodicTimings)
@@ -75,24 +81,24 @@ void TimingTable::deleteTiming(PeriodicEvent<UpdatePriority::LAST>* event){
 	delUnusedInterval();
 }
 
-void TimingTable::deleteTiming(RegularEvent<UpdatePriority::FIRST>* event){
+void TimingTable::deleteTiming(Timing::RegularUpdate<UpdateOrder::FIRST>* event){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_regularTimings.first.erase(event);
 }
 
-void TimingTable::deleteTiming(RegularEvent<UpdatePriority::LAST>* event){
+void TimingTable::deleteTiming(Timing::RegularUpdate<UpdateOrder::LAST>* event){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_regularTimings.last.erase(event);
 }
 
-void TimingTable::modifyTiming(PeriodicEvent<UpdatePriority::FIRST>* event, const TimeUnit& interval){
+void TimingTable::modifyTiming(Timing::PeriodicUpdate<UpdateOrder::FIRST>* event){
 	deleteTiming(event);
-	addTiming(event, interval);
+	addTiming(event);
 }
 
-void TimingTable::modifyTiming(PeriodicEvent<UpdatePriority::LAST>* event, const TimeUnit& interval){
+void TimingTable::modifyTiming(Timing::PeriodicUpdate<UpdateOrder::LAST>* event){
 	deleteTiming(event);
-	addTiming(event, interval);
+	addTiming(event);
 }
 
 void TimingTable::addInterval(const TimeUnit& interval){

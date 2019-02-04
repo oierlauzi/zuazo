@@ -10,7 +10,7 @@ int init(){
 }
 
 int end(){
-	timings.reset();
+	timings=std::unique_ptr<TimingTable>();
 	return 0;
 }
 

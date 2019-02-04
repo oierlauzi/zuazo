@@ -5,14 +5,15 @@
 #include <mutex>
 #include <queue>
 
-#include "../Timing/TimingTable.h"
+#include "../Timing/PeriodicUpdate.h"
+#include "../Timing/UpdateOrder.h"
 #include "../Utils/Rational.h"
 #include "Source.h"
 
 namespace Zuazo::Stream{
 
 template <typename T>
-class AsyncSource : public Source<T>, public Timing::TimingTable::PeriodicEvent<Timing::TimingTable::UpdatePriority::FIRST>{
+class AsyncSource : public Source<T>, public Timing::PeriodicUpdate<Timing::UpdateOrder::FIRST>{
 public:
 	AsyncSource();
 	AsyncSource(const Utils::Rational& rat);
@@ -62,7 +63,8 @@ inline AsyncSource<T>::AsyncSource() : Updateable(){
 }
 
 template <typename T>
-inline AsyncSource<T>::AsyncSource(const Utils::Rational& rat) : Timing::TimingTable::PeriodicEvent<Timing::TimingTable::UpdatePriority::FIRST>(rat){
+inline AsyncSource<T>::AsyncSource(const Utils::Rational& rat) :
+Timing::PeriodicUpdate<Timing::UpdateOrder::FIRST>(rat){
 	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_maxBufferSize=DEFAULT_MAX_BUFFER_SIZE;
 	m_maxDropped=DEFAULT_MAX_DROPPED;
@@ -166,12 +168,12 @@ void AsyncSource<T>::push(std::unique_ptr<const T>& element){
 
 template <typename T>
 void AsyncSource<T>::open(){
-	Timing::TimingTable::PeriodicEvent<Timing::TimingTable::UpdatePriority::FIRST>::open();
+	Timing::PeriodicUpdate<Timing::UpdateOrder::FIRST>::open();
 }
 
 template <typename T>
 void AsyncSource<T>::close(){
-	Timing::TimingTable::PeriodicEvent<Timing::TimingTable::UpdatePriority::LAST>::close();
+	Timing::PeriodicUpdate<Timing::UpdateOrder::LAST>::close();
 	flushBuffer();
 	Source<T>::push();
 }
