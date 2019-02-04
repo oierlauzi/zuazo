@@ -1,16 +1,10 @@
 #pragma once
 
-#include <condition_variable>
 #include <map>
-#include <mutex>
 #include <set>
-#include <thread>
 
-#include "TimePoint.h"
 #include "TimeUnit.h"
 #include "UpdateOrder.h"
-
-#define ENABLE_LOAD_DEBUG
 
 namespace Zuazo::Timing{
 
@@ -22,24 +16,30 @@ class RegularUpdate;
 
 class TimingTable{
 public:
-	struct UpdateInterval{
-		std::set<PeriodicUpdate<UpdateOrder::FIRST>*> first;
+	struct RegularUpdates{
+		std::set<RegularUpdate<UpdateOrder::FIRST>*>	first;
+		std::set<RegularUpdate<UpdateOrder::LAST>*>		last;
+	};
+
+	struct PeriodicUpdates{
+		std::set<PeriodicUpdate<UpdateOrder::FIRST>*>	first;
 		std::set<PeriodicUpdate<UpdateOrder::LAST>*>	last;
+	};
+
+	struct UpdateInterval{
+		PeriodicUpdates									updates;
 		TimeUnit										timeSinceLastUpdate;
 	};
 
-	using PeriodicTimings=std::map<TimeUnit, UpdateInterval>;
-
-	struct RegularTimings{
-		std::set<RegularUpdate<UpdateOrder::FIRST>*>	first;
-		std::set<RegularUpdate<UpdateOrder::LAST>*>	last;
+	struct PendingUpdates{
+		TimeUnit										timeForNextUpdate;
+		const RegularUpdates&							regularUpdates;
+		PeriodicUpdates									periodicUpdates;
 	};
 
-	TimingTable();
-	TimingTable(const TimingTable&)=delete;
-	~TimingTable();
-
-	TimePoint									now();
+	TimingTable()=default;
+	TimingTable(const TimingTable&)=default;
+	~TimingTable()=default;
 
 	void 										addTiming(PeriodicUpdate<UpdateOrder::FIRST>* event);
 	void 										addTiming(PeriodicUpdate<UpdateOrder::LAST>* event);
@@ -49,32 +49,31 @@ public:
 	void 										deleteTiming(PeriodicUpdate<UpdateOrder::LAST>* event);
 	void 										deleteTiming(RegularUpdate<UpdateOrder::FIRST>* event);
 	void 										deleteTiming(RegularUpdate<UpdateOrder::LAST>* event);
-	void 										modifyTiming(PeriodicUpdate<UpdateOrder::FIRST>* event);
-	void 										modifyTiming(PeriodicUpdate<UpdateOrder::LAST>* event);
 
+	PendingUpdates								getPendingUpdates();
+	void										addTime(const TimeUnit& t);
 private:
+	using RegularTimings=RegularUpdates;
+	using PeriodicTimings=std::map<TimeUnit, UpdateInterval>;
+
 	void										addInterval(const TimeUnit& interval);
 	void 										delUnusedInterval();
 
 	PeriodicTimings								m_periodicTimings;
 	RegularTimings								m_regularTimings;
 
-	TimePoint									m_currTime;
-
-	std::thread 								m_thread;
-	bool										m_exit;
-	std::mutex 									m_mutex;
-	std::condition_variable						m_cond;
-
-	void										updateThreadFunc();
 };
 
 /*
- * INLINE METHOD DEFINITIONS
+ * Inline function definitions
  */
 
-inline TimePoint TimingTable::now(){
-	return m_currTime;
+inline void	TimingTable::addTime(const TimeUnit& t){
+	//Add the time to the events
+	for(auto& timing : m_periodicTimings){
+		timing.second.timeSinceLastUpdate+=t;
+	}
 }
+
 } /* namespace Zuazo::Timing*/
 

@@ -5,16 +5,16 @@
 #include "../Updateable.h"
 #include "../Utils/Rational.h"
 #include "TimeUnit.h"
-#include "TimingTable.h"
+#include "Timing.h"
 #include "UpdateOrder.h"
 
 namespace Zuazo::Timing{
 
-extern std::unique_ptr<TimingTable> timings;
+extern std::unique_ptr<Timings> timings;
 
 template <UpdateOrder TPriority>
 class PeriodicUpdate : public Updateable{
-	friend TimingTable;
+	friend Timings;
 public:
 	PeriodicUpdate();
 	PeriodicUpdate(const Utils::Rational& rate);

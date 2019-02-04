@@ -3,16 +3,16 @@
 #include <memory>
 
 #include "../Updateable.h"
-#include "TimingTable.h"
+#include "Timing.h"
 #include "UpdateOrder.h"
 
 namespace Zuazo::Timing{
 
-extern std::unique_ptr<TimingTable> timings;
+extern std::unique_ptr<Timings> timings;
 
 template <UpdateOrder TPriority>
 class RegularUpdate : public Updateable{
-	friend TimingTable;
+	friend Timings;
 public:
 	RegularUpdate();
 	RegularUpdate(const RegularUpdate& other);
