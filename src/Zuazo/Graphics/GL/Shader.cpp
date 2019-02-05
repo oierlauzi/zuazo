@@ -8,17 +8,13 @@ Shader::Shader() {
 	m_program=0;
 }
 
-Shader::Shader(const std::string&  vertSrc, const std::string& fragSrc) : Shader(vertSrc.c_str(), fragSrc.c_str()){}
-
-Shader::Shader(const char*  vertSrc, const char* fragSrc){
-	UniqueContext ctx(Context::mainCtx);
-	m_program=create(vertSrc, fragSrc);
+Shader::Shader(const std::string&  vertSrc, const std::string& fragSrc){
+	m_program=create(vertSrc.c_str(), fragSrc.c_str());
 }
 
 
 Shader::~Shader() {
 	if(m_program){
-		UniqueContext ctx(Context::mainCtx);
 		destroy(m_program);
 	}
 }

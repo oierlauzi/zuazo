@@ -2,8 +2,8 @@
 
 namespace Zuazo{
 
-//Errors that initialization and terminating can produce
-enum Error{
+//s that initialization and terminating can produce
+enum class Errors{
     OK			=0,
     NONE        =0,
     GLFW_INIT,
@@ -16,7 +16,7 @@ enum Error{
 };
 
 
-Error				init();
-Error 				end();
+Errors				init();
+Errors 				end();
 
 }

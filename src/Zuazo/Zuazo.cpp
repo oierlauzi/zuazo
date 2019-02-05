@@ -17,7 +17,7 @@ namespace Zuazo{
 	@brief initializes Zuazo
 	@return Error generated initializing Error::NONE for all OK
  **/
-Error init(){
+Errors init(){
     int err;
 
     //TODO: logging
@@ -25,19 +25,19 @@ Error init(){
     //Init GLFW
     err=glfwInit();
     if(err!=GLFW_TRUE)
-        return Error::GLFW_INIT;
+        return Errors::GLFW_INIT;
 
     //Initialize context handling
     err=Graphics::GL::Context::init();
     if(err)
-    	return Error::CONTEX_INIT;
+    	return Errors::CONTEX_INIT;
 
     Graphics::GL::UniqueContext ctx(Graphics::GL::Context::mainCtx);
 
     //Init GLEW
     err=glewInit();
     if(err!=GLEW_OK)
-        return Error::GLEW_INIT;
+        return Errors::GLEW_INIT;
 
     //Enable all needed features
     glEnable(GL_TEXTURE_2D);
@@ -46,12 +46,12 @@ Error init(){
     //Initialize window class
     err=Window::init();
     if(err)
-    	return Error::WINDOW_INIT;
+    	return Errors::WINDOW_INIT;
 
     //Initialize timing
     err=Timing::init();
     if(err)
-    	return Error::TIMING_INIT;
+    	return Errors::TIMING_INIT;
 
 //TODO
     /*err=Shapes::Base::init();
@@ -63,17 +63,17 @@ Error init(){
     if(err!=OK)
         return Error::TEXT_INIT;*/
 
-    return Error::NONE;
+    return Errors::NONE;
 }
 
 /**
 	@brief ends Zuazo. No more zuazo functions can be called
 	@return Error generated destroying Error::NONE for all OK
  **/
-Error end(){
+Errors end(){
 	Window::end();
 	Timing::end();
-    return Error::NONE; //TODO
+    return Errors::NONE; //TODO
 }
 
 }

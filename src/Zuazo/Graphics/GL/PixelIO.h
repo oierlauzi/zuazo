@@ -4,18 +4,12 @@
 #include <sys/types.h>
 
 #include "../../Utils/Resolution.h"
+#include "PixelTypes.h"
 
 namespace Zuazo::Graphics::GL{
 
-enum class PixelType{
-	RGB		=1<<0,
-	A		=1<<1,
-	RGBA	=RGB | A,
-};
-
 struct PixelBuffer{
 	Utils::Resolution	res;
-	PixelType			pixelType;
 	const u_int8_t *	data;
 };
 
@@ -24,6 +18,8 @@ public:
 	PixelUnpackBuffer();
 	PixelUnpackBuffer(const PixelUnpackBuffer& other);
 	~PixelUnpackBuffer();
+
+	void				upload(const PixelBuffer& pix);
 private:
 	GLuint				m_pbo;
 };
