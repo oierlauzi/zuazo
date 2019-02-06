@@ -18,6 +18,10 @@ struct Resolution{
 		this->height=height;
 	}
 
+	size_t	getSize(size_t pixSize){
+		return width* height* pixSize;
+	}
+
 	operator bool() const{
 		return width && height;
 	}

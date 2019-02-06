@@ -63,7 +63,9 @@ Window::Window(u_int32_t width, u_int32_t height, std::string name) {
 	//Create the VAO and the VBO
 	glGenVertexArrays(1, &m_vao);
 	glGenBuffers(2, m_vbos);
-	m_shader=Graphics::GL::Shader::create(VERT_SHADER.c_str(), FRAG_SHADER.c_str());
+	m_shader=std::unique_ptr<Graphics::GL::Shader>(
+	new Graphics::GL::Shader(VERT_SHADER, FRAG_SHADER)
+	);
 
 	//Initialize  texture coordinates and vertices on the VAO
 	glBindVertexArray(m_vao);
@@ -127,7 +129,6 @@ Window::~Window() {
 	glfwMakeContextCurrent(m_ctx);
 	glDeleteVertexArrays(1, &m_vao);
 	glDeleteBuffers(2, m_vbos);
-	Graphics::GL::Shader::destroy(m_shader);
 	glfwMakeContextCurrent(NULL);
 
 	//Terminate the drawing thread
@@ -309,32 +310,23 @@ std::string	Window::getName(){
  */
 /*void Window::show(const Surface& surface) {
 	std::unique_lock<std::mutex> lock(m_mutex);
-
 	//Evaluate whether resizing needs to be done
 	if(surface.m_res != m_res){
 		glfwSetWindowSize(m_ctx, surface.m_res.width, surface.m_res.height);
 		m_resizeCond.wait(lock); //Wait until resizing has finished
 	}
-
 	glfwMakeContextCurrent(m_ctx);
-
 	//Clear
 	glClearColor(0,0,0,0);
 	glClear(GL_COLOR_BUFFER_BIT);
-
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, surface.getTexture());
 	glBindVertexArray(m_vao);
-
 	glUseProgram(m_shader);
-
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
 	glUseProgram(0);
-
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindVertexArray(0);
-
 	glfwMakeContextCurrent(NULL);
 	m_drawCond.notify_one();
 }*/
@@ -345,26 +337,20 @@ std::string	Window::getName(){
  */
 /*void Window::show(const Image& img){
 	std::unique_lock<std::mutex> lock(m_mutex);
-
 	//Evaluate whether resizing needs to be done
 	if(img.m_res != m_res){
 		glfwSetWindowSize(m_ctx, img.m_res.width, img.m_res.height);
 		m_resizeCond.wait(lock); //Wait until resizing has finished
 	}
-
 	glfwMakeContextCurrent(m_ctx);
-
 	//Clear
 	glClearColor(0,0,0,0);
 	glClear(GL_COLOR_BUFFER_BIT);
-
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, img.m_pbo);
 	glDrawPixels(	img.m_res.width, img.m_res.height,
 					GL_RGBA, GL_UNSIGNED_BYTE, 0);
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-
 	glfwMakeContextCurrent(NULL);
-
 	m_drawCond.notify_one();
 }*/
 

@@ -9,7 +9,7 @@ public:
 	UniqueBinding(const UniqueBinding& other)=delete;
 	~UniqueBinding();
 private:
-	const T&	m_target;
+	const T& 						m_target;
 };
 
 class Bindable{
@@ -23,12 +23,10 @@ public:
 };
 
 
-
 template<typename T>
 inline UniqueBinding<T>::UniqueBinding(const T& bindable) : m_target(bindable){
 	m_target.bind();
 }
-
 template<typename T>
 inline UniqueBinding<T>::~UniqueBinding(){
 	m_target.unbind();

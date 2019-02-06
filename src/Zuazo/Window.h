@@ -8,9 +8,11 @@
 #include <set>
 #include <string>
 #include <thread>
+#include <memory>
 
 #include "Utils/Resolution.h"
 #include "Utils/Rational.h"
+#include "Graphics/GL/Shader.h"
 
 struct GLFWwindow;
 struct GLFWmonitor;
@@ -87,7 +89,7 @@ private:
 	//VBO, VAO and Shader for the surface drawing
 	GLuint			m_vbos[2];
 	GLuint			m_vao;
-	GLuint			m_shader;
+	std::unique_ptr<Graphics::GL::Shader> m_shader;
 
 	std::condition_variable m_resizeCond;
 

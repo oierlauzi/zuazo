@@ -1,9 +1,9 @@
 #pragma once
 
-#include <bits/stdint-intn.h>
-#include <math.h>
-#include <limits>
 #include <boost/integer/common_factor_rt.hpp>
+#include <math.h>
+#include <cstdint>
+#include <limits>
 
 namespace Zuazo::Utils{
 

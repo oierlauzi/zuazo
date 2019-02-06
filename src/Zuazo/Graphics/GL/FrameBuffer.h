@@ -25,8 +25,10 @@ public:
 	void			bind() const override;
 	void			unbind() const override;
 
-	void			attach(Texture2D& tex);
-	void			detach(Texture2D& tex);
+	template <Utils::PixelTypes type, u_int32_t no=0>
+	void			attach(Texture2D<type>& tex);
+	template <Utils::PixelTypes type, u_int32_t no=0>
+	void			detach(Texture2D<type>& tex);
 private:
 	GLuint			m_fbo;
 };
@@ -42,18 +44,15 @@ private:
 	T&				m_target;
 };
 
-template <typename T, u_int32_t no>
-class UniqueAttachment<T>;
-
 /*
  * FrameBuffer's inline methods
  */
 
 inline FrameBuffer::FrameBuffer(){
-	glCreateFramebuffers(1, &m_fbo);
+	glGenFramebuffers(1, &m_fbo);
 }
 
-inline FrameBuffer::FrameBuffer(){
+inline FrameBuffer::~FrameBuffer(){
 	glDeleteFramebuffers(1, &m_fbo);
 }
 
@@ -74,30 +73,28 @@ inline void FrameBuffer::unbind() const{
 	unbind(Target::BOTH);
 }
 
-inline void FrameBuffer::attach(Texture2D& tex){
-	bind(Target::BOTH);
+template <Utils::PixelTypes type, u_int32_t no>
+inline void FrameBuffer::attach(Texture2D<type>& tex){
+	UniqueBinding<FrameBuffer> binding(*this);
 
 	glFramebufferTexture2D(
 			(GLenum)Target::BOTH,
-			GL_COLOR_ATTACHMENT0,
+			GL_COLOR_ATTACHMENT0 + no,
 			GL_TEXTURE_2D,
-			tex.m_tex,
+			tex.m_texture,
 			0);
-
-	unbind(Target::BOTH);
 }
 
-inline void FrameBuffer::detach(Texture2D& tex){
-	bind(Target::BOTH);
+template <Utils::PixelTypes type, u_int32_t no>
+inline void FrameBuffer::detach(Texture2D<type>& tex){
+	UniqueBinding<FrameBuffer> binding(*this);
 
 	glFramebufferTexture2D(
 			(GLenum)Target::BOTH,
-			GL_COLOR_ATTACHMENT0,
+			GL_COLOR_ATTACHMENT0 + no,
 			GL_TEXTURE_2D,
 			0,
 			0);
-
-	unbind(Target::BOTH);
 }
 
 /*
@@ -113,23 +110,9 @@ inline UniqueAttachment<T>::UniqueAttachment(FrameBuffer& fbo, T& trgt) :
 
 }
 
-template <typename T, u_int32_t no>
-inline UniqueAttachment<T>::UniqueAttachment(FrameBuffer& fbo, T& trgt) :
-		m_fbo(fbo),
-		m_target(trgt){
-
-	m_fbo.attach(m_target, no);
-
-}
-
 template <typename T>
 inline UniqueAttachment<T>::~UniqueAttachment(){
 	m_fbo.detach(m_target);
-}
-
-template <typename T, u_int32_t no>
-inline UniqueAttachment<T>::~UniqueAttachment(){
-	m_fbo.detach(m_target, no);
 }
 
 }

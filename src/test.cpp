@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <iostream>
 #include <memory>
+#include <string>
 
 #include "Zuazo/Stream/Consumer.h"
 #include "Zuazo/Stream/Delay.h"
@@ -9,14 +10,18 @@
 #include "Zuazo/Timing/PeriodicUpdate.h"
 #include "Zuazo/Timing/TimePoint.h"
 #include "Zuazo/Timing/UpdateOrder.h"
+#include "Zuazo/Utils/Color.h"
 #include "Zuazo/Utils/Rational.h"
 #include "Zuazo/Zuazo.h"
+#include "Zuazo/Timing/TimeUnit.h"
+#include "Zuazo/Graphics/GL/FrameBuffer.h"
 
 //#define TEST1
 //#define TEST2
 //#define TEST3
-#define TEST4
+//#define TEST4
 //#define TEST5
+#define TEST6
 
 int main(void){
 	/*
@@ -31,13 +36,13 @@ int main(void){
 	 * 		General testing
 	 */
 
-	Zuazo::Window win(680, 480, "Ventana");
+	//Zuazo::Window win(680, 480, "Ventana");
 	/*std::list<Zuazo::Window::Screen> screens=Zuazo::Window::getAvalibleScreens();
 
 	for(Zuazo::Window::Screen& scr : screens)
 		std::cout<<scr.name <<std::endl;*/
 
-	Zuazo::Image img;
+	/*Zuazo::Image img;
 
 	const u_int32_t width=1000;
 	const u_int32_t height=1000;
@@ -73,7 +78,7 @@ int main(void){
 		win.show(sfc);
 		i+=0.01*M_PI;
 	//}while(getchar()!='e');
-	}while(true);
+	}while(true);*/
 
 	#endif
 
@@ -91,16 +96,16 @@ int main(void){
 	double d1, d2;
 	printf("Double: ");
 	scanf("%lf", &d1);
-	//printf("Double: ");
-	//scanf("%lf", &d2);
+	printf("Double: ");
+	scanf("%lf", &d2);
 
-	Zuazo::Rational r1(d1);
-	//Zuazo::Rational r2(d2);
-	//Zuazo::Rational r3=r1*d2;
+	Zuazo::Utils::Rational r1(d1);
+	Zuazo::Utils::Rational r2(d2);
+	Zuazo::Utils::Rational r3=r1*d2;
 
-	printf("%ld/%ld\n", r1.num, r1.den);
-	//printf("%ld/%ld\n", r2.num, r2.den);
-	//printf("%ld/%ld\n", r3.num, r3.den);
+	printf("%ud/%ud\n", r1.num, r1.den);
+	printf("%ud/%ud\n", r2.num, r2.den);
+	printf("%ud/%ud\n", r3.num, r3.den);
 
 
 
@@ -112,9 +117,10 @@ int main(void){
  *		Timing testing
  */
 
-	class TimingExample : public Zuazo::Updateable{
+	class TimingExample : public Zuazo::Timing::PeriodicUpdate<Zuazo::Timing::UpdateOrder::FIRST>{
 	public:
-		TimingExample(Zuazo::Rational& a) : Zuazo::Updateable(Zuazo::Rational(a)){
+		TimingExample(Zuazo::Utils::Rational& a) :
+			Zuazo::Timing::PeriodicUpdate<Zuazo::Timing::UpdateOrder::FIRST>(Zuazo::Utils::Rational(a)){
 
 		}
 
@@ -123,10 +129,10 @@ int main(void){
 		}
 	};
 
-	Zuazo::Rational r1(29.97);
-	Zuazo::Rational r2(30);
-	TimingExample t1(r1);
-	TimingExample t2(r2);
+	Zuazo::Utils::Rational r4(29.97);
+	Zuazo::Utils::Rational r5(30);
+	TimingExample t4(r2);
+	TimingExample t5(r3);
 	getchar();
 
 #endif
@@ -203,6 +209,20 @@ int main(void){
 	Zuazo::Utils::Color color("#abcdef12");
 
 	std::cout << (std::string)color << "\n";
+
+#endif
+
+
+#ifdef TEST6
+/*
+ * 		TEST 6:
+ *		GL Testing
+ */
+
+	Zuazo::Graphics::GL::FrameBuffer fbo;
+	Zuazo::Graphics::GL::Texture2D<Zuazo::Utils::PixelTypes::RGBA> tex;
+	Zuazo::Graphics::GL::UniqueAttachment<Zuazo::Graphics::GL::Texture2D<Zuazo::Utils::PixelTypes::RGBA> >(fbo, tex);
+	getchar();
 
 #endif
 	/*

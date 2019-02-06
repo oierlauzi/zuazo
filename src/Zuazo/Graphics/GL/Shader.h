@@ -5,6 +5,8 @@
 
 #include "UniqueBinding.h"
 
+#define ENABLE_SHADER_LOG
+
 namespace Zuazo::Graphics::GL{
 
 class Shader : public Bindable{
@@ -14,19 +16,27 @@ public:
 	Shader(const std::string&  vertSrc, const std::string& fragSrc);
 	~Shader();
 
-	void			bind() const override;
-	void			unbind() const override;
+	void				bind() const override;
+	void				unbind() const override;
 
-	GLint			getUniformLoc(const std::string& name) const;
-	GLint			getAttributeLoc(const std::string& name) const;
-	GLint			getProgram() const;
+	GLint				getUniformLoc(const std::string& name) const;
+	GLint				getAttributeLoc(const std::string& name) const;
+	GLint				getProgram() const;
 
-	static GLuint 	create(const char*  vertSrc, const char* fragSrc);
-	static void		destroy(GLuint shader);
+#ifdef ENABLE_SHADER_LOG
+	const std::string 	getLog();
+#endif
+
 private:
-	int				m_program;
+	int					m_program;
 
-	static int 		compile(GLuint shader, const char* src);
+#ifdef ENABLE_SHADER_LOG
+	std::string 		m_log;
+#endif
+	static int 			compile(GLuint shader, const char* src);
+	static int			link(GLuint program, GLuint vertShader, GLuint fragShader);
+	static std::string 	getCompilationLog(GLuint shader);
+	static std::string 	getLinkLog(GLuint program);
 };
 
 /*
@@ -44,4 +54,10 @@ inline void Shader::unbind() const{
 inline GLint Shader::getProgram() const{
 	return m_program;
 }
+
+#ifdef ENABLE_SHADER_LOG
+inline const std::string Shader::getLog(){
+	return m_log;
+}
+#endif
 }

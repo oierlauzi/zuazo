@@ -2,7 +2,7 @@
 
 namespace Zuazo{
 
-//s that initialization and terminating can produce
+//Errors that initialization and terminating can produce
 enum class Errors{
     OK			=0,
     NONE        =0,
