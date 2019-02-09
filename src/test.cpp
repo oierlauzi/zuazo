@@ -15,6 +15,7 @@
 #include "Zuazo/Zuazo.h"
 #include "Zuazo/Timing/TimeUnit.h"
 #include "Zuazo/Graphics/GL/FrameBuffer.h"
+#include "Zuazo/Graphics/GL/Context.h"
 
 //#define TEST1
 //#define TEST2
@@ -219,9 +220,44 @@ int main(void){
  *		GL Testing
  */
 
-	Zuazo::Graphics::GL::FrameBuffer fbo;
-	Zuazo::Graphics::GL::Texture2D<Zuazo::Utils::PixelTypes::RGBA> tex;
-	Zuazo::Graphics::GL::UniqueAttachment<Zuazo::Graphics::GL::Texture2D<Zuazo::Utils::PixelTypes::RGBA> >(fbo, tex);
+	//Definition of constants
+	const u_int32_t width=1920;
+	const u_int32_t height=1080;
+	const Zuazo::Utils::PixelTypes pixtype=Zuazo::Utils::PixelTypes::RGBA;
+	const size_t size=width * height * Zuazo::Utils::PIXEL_SIZE<pixtype>;
+
+
+	Zuazo::Graphics::GL::UniqueContext ctx(Zuazo::Graphics::GL::Context::mainCtx); //Get a context
+
+	u_int8_t data[size];
+
+	//Set some values
+	for(size_t i=0; i<size; i+=4){
+		data[i + 0]=abs(sin(i * 1 * M_PI/(width*4))) * 0xff;
+		data[i + 1]=abs(sin(i * 2 * M_PI/(width*4))) * 0xff;
+		data[i + 2]=abs(sin(i * 3 * M_PI/(width*4))) * 0xff;
+		data[i + 3]=0xff;
+	}
+
+	//Create a pixel buffer with the data
+	Zuazo::Graphics::GL::PixelBuffer<pixtype> pixbuff={
+			Zuazo::Utils::Resolution(width, height),
+			data
+	};
+
+	Zuazo::Graphics::GL::PixelUnpackBuffer<pixtype> pbo(pixbuff); //Upload the data
+	Zuazo::Graphics::GL::Texture2D<pixtype> tex(pbo); //Create a texture
+
+	printf("Error: %d\n", glGetError());
+
+	//Dowload the texture
+	tex.getImage(&pixbuff);
+
+	//Write to disk
+	FILE * f_salida=fopen("Prueba.rgba", "w+");
+	fwrite(pixbuff.data, size, 1, f_salida);
+	fclose(f_salida);
+
 	getchar();
 
 #endif

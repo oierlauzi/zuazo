@@ -2,6 +2,8 @@
 
 #include <sys/types.h>
 
+#include "PixelTypes.h"
+
 namespace Zuazo::Utils{
 
 struct Resolution{
@@ -20,6 +22,11 @@ struct Resolution{
 
 	size_t	getSize(size_t pixSize){
 		return width* height* pixSize;
+	}
+
+	template<PixelTypes type>
+	size_t	getSize(){
+		return getSize(PIXEL_SIZE<type>);
 	}
 
 	operator bool() const{

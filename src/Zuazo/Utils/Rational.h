@@ -22,19 +22,19 @@ struct Rational{
 	int32_t num;
 	int32_t den;
 
-	Rational(){
-		num=0;
-		den=0;
+	constexpr Rational():
+			num(0),
+			den(0){
+
 	}
 
-	Rational(int32_t num, int32_t den){
-		this->num=num;
-		this->den=den;
-
+	constexpr Rational(int32_t num, int32_t den):
+			num(num),
+			den(den){
 		simplify();
 	}
 
-	Rational(double number){
+	constexpr Rational(double number) : Rational(){
 		if(IS_FINITE_NUMBER(number)){
 			int64_t d=1;
 
@@ -55,42 +55,42 @@ struct Rational{
 		}
 	}
 
-	Rational(const Rational& rat)=default;
+	constexpr Rational(const Rational& rat)=default;
 
 
-	operator bool() const{
+	constexpr operator bool() const{
 		return num;
 	}
 
-	operator int() const{
+	constexpr operator int() const{
 		return num/den;
 	}
 
-	operator double() const{
+	constexpr operator double() const{
 		return (double)num/den;
 	}
 
-    int operator==(const Rational& right)const{
+	constexpr int operator==(const Rational& right)const{
     	return operator double() == right.operator double();
     }
 
-    int operator!=(const Rational& right)const{
+	constexpr int operator!=(const Rational& right)const{
     	return operator double() != right.operator double();
     }
 
-    int operator<(const Rational& right)const{
+	constexpr int operator<(const Rational& right)const{
     	return operator double() < right.operator double();
     }
 
-    int operator<=(const Rational& right)const{
+	constexpr int operator<=(const Rational& right)const{
     	return operator double() <= right.operator double();
     }
 
-    int operator>(const Rational& right)const{
+	constexpr int operator>(const Rational& right)const{
     	return operator double() > right.operator double();
     }
 
-    int operator>=(const Rational& right)const{
+	constexpr int operator>=(const Rational& right)const{
     	return operator double() >= right.operator double();
     }
 
@@ -98,23 +98,23 @@ struct Rational{
      * operator*
      */
 
-    Rational operator*(const Rational& right){
+	constexpr Rational operator*(const Rational& right){
     	return Rational(num*right.num, den*right.den);
     }
 
-    Rational operator*(int right){
+	constexpr Rational operator*(int right){
     	return Rational(num*right, den);
     }
 
-    friend Rational operator*(int left, const Rational& right){
+    friend constexpr Rational operator*(int left, const Rational& right){
     	return Rational(left * right.num, right.den);
     }
 
-    Rational operator*(double right){
+    constexpr Rational operator*(double right){
     	return (*this) * Rational(right);
     }
 
-    friend Rational operator*(double left, const Rational& right){
+    friend constexpr Rational operator*(double left, const Rational& right){
     	return Rational(left) * right;
     }
 
@@ -122,32 +122,32 @@ struct Rational{
      * operator/
      */
 
-    Rational operator/(const Rational& right){
+    constexpr Rational operator/(const Rational& right){
     	return Rational (num*right.den, den*right.num);
     }
 
-    friend Rational operator/(int left, const Rational& right){
+    friend constexpr Rational operator/(int left, const Rational& right){
     	return Rational(left * right.den, right.num);
     }
 
-    Rational operator/(int right){
+    constexpr Rational operator/(int right){
     	return Rational(num, den*right);
     }
 
-    Rational operator/(double right){
+    constexpr Rational operator/(double right){
     	return (*this) / Rational(right);
     }
 
-    friend Rational operator/(double left, const Rational& right){
+    friend constexpr Rational operator/(double left, const Rational& right){
     	return Rational(left) / right;
     }
 
 
 private:
-    void simplify();
+    constexpr void simplify();
 };
 
-inline void Rational::simplify(){
+constexpr void Rational::simplify(){
 	if(den && num){
 		//Calcualte GCD
 		int32_t gcd=boost::integer::gcd(num, den);

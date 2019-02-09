@@ -19,7 +19,8 @@ public:
 	Texture2D(const Utils::Resolution& res);
 	Texture2D(const PixelBuffer<type>& buf);
 	Texture2D(const PixelUnpackBuffer<type>& buf);
-	Texture2D(const Texture2D& other);
+	Texture2D(const Texture2D& other)=delete;
+	Texture2D(Texture2D&& other);
 	virtual ~Texture2D();
 
 	void						bind() const override;
@@ -30,7 +31,10 @@ public:
 
 	void						subImage(const PixelBuffer<type>& buf);
 	void						subImage(const PixelUnpackBuffer<type>& buf);
-protected:
+
+	void						getImage(PixelBuffer<type>* buf) const;
+	void						getImage(PixelPackBuffer<type>* buf) const;
+private:
 	GLuint						m_texture;
 	Utils::Resolution			m_resolution;
 };
@@ -50,13 +54,30 @@ inline Texture2D<type>::Texture2D(const Utils::Resolution& res) : Texture2D(){
 }
 
 template <Utils::PixelTypes type>
-inline Texture2D<type>::Texture2D(const Texture2D<type>& other){
-	//TODO
+inline Texture2D<type>::Texture2D(const PixelBuffer<type>& buf) : Texture2D(){
+	subImage(buf);
+}
+
+template <Utils::PixelTypes type>
+inline Texture2D<type>::Texture2D(const PixelUnpackBuffer<type>& buf) : Texture2D(){
+	subImage(buf);
+}
+
+template <Utils::PixelTypes type>
+inline Texture2D<type>::Texture2D(Texture2D&& other){
+	//Copy values
+	m_texture=other.m_texture;
+	m_resolution=other.m_resolution;
+
+	//Delete other's values
+	other.m_texture=0;
+	other.m_resolution=Utils::Resolution();
 }
 
 template <Utils::PixelTypes type>
 inline Texture2D<type>::~Texture2D(){
-	glDeleteTextures(1, &m_texture);
+	if(m_texture)
+		glDeleteTextures(1, &m_texture);
 }
 
 
@@ -87,8 +108,8 @@ inline void	Texture2D<type>::setRes(const Utils::Resolution& res){
 				m_resolution.width,		//width
 				m_resolution.height,	//height
 				0,						//border (must be 0)
-				0,						//format
-				0,						//data type
+				(GLenum)type,			//format
+				GL_UNSIGNED_BYTE,		//data type
 				NULL					//data
 		);
 
@@ -142,9 +163,9 @@ inline void	Texture2D<type>::subImage(const PixelUnpackBuffer<type>& buf){
 	UniqueBinding<Texture2D<type>> texBinding(*this);
 	UniqueBinding<PixelUnpackBuffer<type>> bufBinding(buf);
 
-	if(m_resolution!=buf.res){
+	if(m_resolution!=buf.getRes()){
 		//Resolution has changed
-		m_resolution=buf.res;
+		m_resolution=buf.getRes();
 
 		//Resize the GL texture and upload data
 		glTexImage2D(
@@ -173,6 +194,36 @@ inline void	Texture2D<type>::subImage(const PixelUnpackBuffer<type>& buf){
 		);
 	}
 }
+
+template <Utils::PixelTypes type>
+inline void	Texture2D<type>::getImage(PixelBuffer<type>* buf) const{
+	UniqueBinding<Texture2D<type>> texBinding(*this);
+
+	//Just copy the content
+	glGetTexImage(
+			GL_TEXTURE_2D,				//target
+			0,							//mip-map level
+			(GLenum)type,				//format
+            GL_UNSIGNED_BYTE,			//data type
+			buf->data					//data
+	);
+}
+/*
+template <Utils::PixelTypes type>
+inline void	Texture2D<type>::getImage(PixelPackBuffer<type>* buf) const{
+	UniqueBinding<Texture2D<type>> texBinding(*this);
+	UniqueBinding<PixelPackBuffer<type>> bufBinding(*buf);
+
+	//Just copy the content
+	glGetTexImage(
+			GL_TEXTURE_2D,				//target
+			0,							//mip-map level
+			(GLenum)type,				//format
+            GL_UNSIGNED_BYTE,			//data type
+			nullptr						//data
+	);
+}
+*/
 
 
 }

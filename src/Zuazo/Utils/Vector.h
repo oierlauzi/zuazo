@@ -9,12 +9,12 @@
 namespace Zuazo::Utils{
 
 template <typename T>
-using Vec2 = glm::tvec2<T>;
+using Vec2 = glm::vec<2, T, glm::qualifier::defaultp>;
 
 template <typename T>
-using Vec3 = glm::tvec3<T>;
+using Vec3 = glm::vec<3, T, glm::qualifier::defaultp>;
 
 template <typename T>
-using Vec4 = glm::tvec4<T>;
+using Vec4 = glm::vec<4, T, glm::qualifier::defaultp>;
 
 }

@@ -24,22 +24,22 @@ enum class PixelTypes{
  * assuming 1 byte per component
  */
 template<PixelTypes type>
-size_t PIXEL_SIZE=1;
+constexpr size_t PIXEL_SIZE=1;
 template<>
-size_t PIXEL_SIZE<PixelTypes::RED>			=1 * sizeof(u_int8_t);
+constexpr size_t PIXEL_SIZE<PixelTypes::RED>			=1 * sizeof(u_int8_t);
 template<>
-size_t PIXEL_SIZE<PixelTypes::GREEN>			=1 * sizeof(u_int8_t);
+constexpr size_t PIXEL_SIZE<PixelTypes::GREEN>		=1 * sizeof(u_int8_t);
 template<>
-size_t PIXEL_SIZE<PixelTypes::BLUE>			=1 * sizeof(u_int8_t);
+constexpr size_t PIXEL_SIZE<PixelTypes::BLUE>			=1 * sizeof(u_int8_t);
 template<>
-size_t PIXEL_SIZE<PixelTypes::ALPHA>			=1 * sizeof(u_int8_t);
+constexpr size_t PIXEL_SIZE<PixelTypes::ALPHA>		=1 * sizeof(u_int8_t);
 template<>
-size_t PIXEL_SIZE<PixelTypes::RGB>			=3 * sizeof(u_int8_t);
+constexpr size_t PIXEL_SIZE<PixelTypes::RGB>			=3 * sizeof(u_int8_t);
 template<>
-size_t PIXEL_SIZE<PixelTypes::RGBA>			=4 * sizeof(u_int8_t);
+constexpr size_t PIXEL_SIZE<PixelTypes::RGBA>			=4 * sizeof(u_int8_t);
 template<>
-size_t PIXEL_SIZE<PixelTypes::LUMA>			=1 * sizeof(u_int8_t);
+constexpr size_t PIXEL_SIZE<PixelTypes::LUMA>			=1 * sizeof(u_int8_t);
 template<>
-size_t PIXEL_SIZE<PixelTypes::LUMA_ALPHA>	=2 * sizeof(u_int8_t);
+constexpr size_t PIXEL_SIZE<PixelTypes::LUMA_ALPHA>	=2 * sizeof(u_int8_t);
 
 }
