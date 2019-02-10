@@ -19,7 +19,7 @@ public:
 	Texture2D(const Utils::Resolution& res);
 	Texture2D(const PixelBuffer<type>& buf);
 	Texture2D(const PixelUnpackBuffer<type>& buf);
-	Texture2D(const Texture2D& other)=delete;
+	Texture2D(const Texture2D& other);
 	Texture2D(Texture2D&& other);
 	virtual ~Texture2D();
 
@@ -31,6 +31,7 @@ public:
 
 	void						subImage(const PixelBuffer<type>& buf);
 	void						subImage(const PixelUnpackBuffer<type>& buf);
+	void						subImage(const Texture2D<type>& buf);
 
 	void						getImage(PixelBuffer<type>* buf) const;
 	void						getImage(PixelPackBuffer<type>* buf) const;
@@ -61,6 +62,11 @@ inline Texture2D<type>::Texture2D(const PixelBuffer<type>& buf) : Texture2D(){
 template <Utils::PixelTypes type>
 inline Texture2D<type>::Texture2D(const PixelUnpackBuffer<type>& buf) : Texture2D(){
 	subImage(buf);
+}
+
+template <Utils::PixelTypes type>
+inline Texture2D<type>::Texture2D(const Texture2D<type>& other) : Texture2D(){
+	subImage(other);
 }
 
 template <Utils::PixelTypes type>
@@ -193,6 +199,14 @@ inline void	Texture2D<type>::subImage(const PixelUnpackBuffer<type>& buf){
 				NULL					//data
 		);
 	}
+}
+
+template <Utils::PixelTypes type>
+inline void	Texture2D<type>::subImage(const Texture2D<type>& other){
+	//Resize if needed
+	setRes(other.m_resolution);
+
+	//TODO
 }
 
 template <Utils::PixelTypes type>
