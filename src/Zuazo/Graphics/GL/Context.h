@@ -6,6 +6,7 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace Zuazo{
 	class Window;
@@ -26,8 +27,6 @@ public:
 	Context(const Context& ctx)=delete;
 	~Context();
 
-	void 						setActive() const;
-	void 						setPrevActive() const;
 	void						use()const;
 	bool						tryUse() const;
 	void 						unuse() const;
@@ -56,7 +55,7 @@ private:
 
 	const Context* m_ctx;
 
-	static std::vector<Context*> s_sharedContexts;
+	static std::vector<std::unique_ptr<Context>> s_sharedContexts;
 };
 
 
@@ -65,29 +64,16 @@ private:
  */
 
 /*
- * @brief sets this context as active
- */
-inline void	Context::setActive() const{
-	m_prevGlfwCtx=glfwGetCurrentContext(); //Query the previous context
-
-	if(m_glfwCtx!=m_prevGlfwCtx)
-		glfwMakeContextCurrent(m_glfwCtx); //This context is not active. Set it as active
-}
-
-/*
- * @brief Sets the previous context as active
- */
-inline void	Context::setPrevActive() const{
-	if(m_glfwCtx!=m_prevGlfwCtx)
-		glfwMakeContextCurrent(m_prevGlfwCtx); //The context has hanged. Set the previous active
-}
-
-/*
  * @brief Sets this context as active and locks it's mutex
  */
 inline void	Context::use()const{
-	m_mutex.lock(); //Wait until it can be used in this thread
-	setActive(); //Set this context as the current
+	m_prevGlfwCtx=glfwGetCurrentContext(); //Query the previous context
+
+	if(m_glfwCtx!=m_prevGlfwCtx){
+		//This context is not active. Set it as active
+		m_mutex.lock();
+		glfwMakeContextCurrent(m_glfwCtx);
+	}
 }
 
 /*
@@ -95,17 +81,24 @@ inline void	Context::use()const{
  * @return True if success, false if it is in use elsewhere
  */
 inline bool	Context::tryUse() const{
-	if(m_mutex.try_lock()){ //Try to lock the mutex
-		setActive(); //Set this context as the current
-		return true;
-	}else return false;
+	m_prevGlfwCtx=glfwGetCurrentContext(); //Query the previous context
+
+	if(m_glfwCtx!=m_prevGlfwCtx){
+		//This context is not active. Try to set it active
+		if(m_mutex.try_lock()){
+			glfwMakeContextCurrent(m_glfwCtx);
+			return true;
+		} else return false; //Could not lock the mutex
+	} else return true;
 }
 
 /*
  * @brief unlocks context's mutex and restores the previous context
  */
 inline void Context::unuse() const{
-	setPrevActive();
+	if(m_glfwCtx!=m_prevGlfwCtx)
+		glfwMakeContextCurrent(m_prevGlfwCtx); //The context has hanged. Set the previous active
+
 	m_mutex.unlock(); //Enable others to access this thread
 }
 
@@ -120,10 +113,10 @@ inline UniqueContext::UniqueContext(){
 	do{
 		if(s_sharedContexts.size()<=i && i< MAX_SHARED_CONTEXTS){
 			//All the available contexts are in use but we can still create a new context
-			s_sharedContexts.emplace_back(new Context());
+			s_sharedContexts.emplace_back(std::unique_ptr<Context>(new Context()));
 		}
 
-		m_ctx=s_sharedContexts[i];
+		m_ctx=&*s_sharedContexts[i];
 
 		i=(i + 1) % MAX_SHARED_CONTEXTS;
 	}while(!m_ctx->tryUse());

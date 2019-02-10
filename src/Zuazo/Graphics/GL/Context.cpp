@@ -9,7 +9,7 @@ const Context* Context::mainCtx;
 GLFWwindow* Context::s_mainGlfwCtx=NULL;
 
 //Stores all the available unique contexts
-std::vector<Context*> UniqueContext::s_sharedContexts;
+std::vector<std::unique_ptr<Context>> UniqueContext::s_sharedContexts;
 
 
 /*

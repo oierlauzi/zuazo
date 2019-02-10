@@ -10,19 +10,22 @@
 #include "Zuazo/Timing/PeriodicUpdate.h"
 #include "Zuazo/Timing/TimePoint.h"
 #include "Zuazo/Timing/UpdateOrder.h"
+#include "Zuazo/Timing/Chronometer.h"
 #include "Zuazo/Utils/Color.h"
 #include "Zuazo/Utils/Rational.h"
 #include "Zuazo/Zuazo.h"
 #include "Zuazo/Timing/TimeUnit.h"
 #include "Zuazo/Graphics/GL/FrameBuffer.h"
 #include "Zuazo/Graphics/GL/Context.h"
+#include "Zuazo/Graphics/Frame.h"
 
 //#define TEST1
 //#define TEST2
 //#define TEST3
 //#define TEST4
 //#define TEST5
-#define TEST6
+//#define TEST6
+#define TEST7
 
 int main(void){
 	/*
@@ -252,6 +255,83 @@ int main(void){
 
 	//Dowload the texture
 	tex.getImage(&pixbuff);
+
+	//Write to disk
+	FILE * f_salida=fopen("Prueba.rgba", "w+");
+	fwrite(pixbuff.data, size, 1, f_salida);
+	fclose(f_salida);
+
+	getchar();
+
+#endif
+
+#ifdef TEST7
+/*
+ * 		TEST 7:
+ *		Graphics testing
+ */
+
+	//Definition of constants
+	constexpr u_int32_t width=1920;
+	constexpr u_int32_t height=1080;
+	constexpr Zuazo::Utils::PixelTypes pixtype=Zuazo::Utils::PixelTypes::RGBA;
+	constexpr size_t size=width * height * Zuazo::Utils::PIXEL_SIZE<pixtype>;
+	constexpr size_t noFrames=100;
+
+
+	Zuazo::Graphics::GL::UniqueContext ctx(Zuazo::Graphics::GL::Context::mainCtx); //Get a context
+
+	u_int8_t data[size];
+
+	//Set some values
+	for(size_t i=0; i<size; i+=4){
+		data[i + 0]=abs(sin(i * 1 * M_PI/(width*4))) * 0xff;
+		data[i + 1]=abs(sin(i * 2 * M_PI/(width*4))) * 0xff;
+		data[i + 2]=abs(sin(i * 3 * M_PI/(width*4))) * 0xff;
+		data[i + 3]=0xff;
+	}
+
+	//Create a pixel buffer with the data
+	Zuazo::Graphics::GL::PixelBuffer<pixtype> pixbuff={
+			Zuazo::Utils::Resolution(width, height),
+			data
+	};
+
+
+
+	Zuazo::Graphics::Frame<pixtype>* fr[noFrames];
+
+	printf("*********************\n");
+	printf("*    FIRST ROUND    *\n");
+	printf("*********************\n");
+	for(size_t i=0; i<noFrames; i++){
+		Zuazo::Timing::Chronometer chrono;
+		chrono.start();
+		fr[i]=new Zuazo::Graphics::Frame<pixtype>(pixbuff);
+		chrono.end();
+		printf("Elapsed: %ld\n", chrono.getElapsed().count());
+	}
+
+	for(size_t i=0; i<noFrames; i++){
+		delete fr[i];
+	}
+
+	printf("*********************\n");
+	printf("*   SECOND ROUND    *\n");
+	printf("*********************\n");
+	for(size_t i=0; i<noFrames; i++){
+		Zuazo::Timing::Chronometer chrono;
+		chrono.start();
+		fr[i]=new Zuazo::Graphics::Frame<pixtype>(pixbuff);
+		chrono.end();
+		printf("Elapsed: %ld\n", chrono.getElapsed().count());
+	}
+
+	for(size_t i=0; i<size; i++){
+		data[i]=0x00;
+	}
+
+	fr[0]->getTexture().getImage(&pixbuff);
 
 	//Write to disk
 	FILE * f_salida=fopen("Prueba.rgba", "w+");

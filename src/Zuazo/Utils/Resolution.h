@@ -42,18 +42,18 @@ struct Resolution{
     }
 
     int operator<(const Resolution& right)const{
-        int result;
+        int result=0;
         if(width < right.width)
-        	result|=1<<0;
+        	result|=0x1;
         if(height < right.height)
         	result|=0x2;
         return result;
     }
 
     int operator<=(const Resolution& right)const{
-        int result;
+        int result=0;
         if(width <= right.width)
-        	result|= 1<<0;
+        	result|= 0x1;
         if(height <= right.height)
         	result|= 0x2;
         return result;
