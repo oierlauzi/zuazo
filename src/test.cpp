@@ -357,7 +357,7 @@ int main(void){
 	fwrite(pixbuff.data, size, 1, f_salida);
 	fclose(f_salida);
 
-	getchar();
+	//getchar();
 
 #endif
 	/*
