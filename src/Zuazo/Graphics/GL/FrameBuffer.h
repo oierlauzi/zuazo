@@ -3,7 +3,7 @@
 #include <GL/glew.h>
 #include <sys/types.h>
 
-#include "Texture2D.h"
+#include "Texture.h"
 #include "UniqueBinding.h"
 
 namespace Zuazo::Graphics::GL{
@@ -25,10 +25,10 @@ public:
 	void			bind() const override;
 	void			unbind() const override;
 
-	template <Utils::PixelTypes type, u_int32_t no=0>
-	void			attach(Texture2D<type>& tex);
-	template <Utils::PixelTypes type, u_int32_t no=0>
-	void			detach(Texture2D<type>& tex);
+	template <u_int32_t no=0>
+	void			attach(Texture& tex);
+	template <u_int32_t no=0>
+	void			detach(Texture& tex);
 private:
 	GLuint			m_fbo;
 };
@@ -73,8 +73,8 @@ inline void FrameBuffer::unbind() const{
 	unbind(Target::BOTH);
 }
 
-template <Utils::PixelTypes type, u_int32_t no>
-inline void FrameBuffer::attach(Texture2D<type>& tex){
+template <u_int32_t no>
+inline void FrameBuffer::attach(Texture& tex){
 	UniqueBinding<FrameBuffer> binding(*this);
 
 	glFramebufferTexture2D(
@@ -85,8 +85,8 @@ inline void FrameBuffer::attach(Texture2D<type>& tex){
 			0);
 }
 
-template <Utils::PixelTypes type, u_int32_t no>
-inline void FrameBuffer::detach(Texture2D<type>& tex){
+template <u_int32_t no>
+inline void FrameBuffer::detach(Texture& tex){
 	UniqueBinding<FrameBuffer> binding(*this);
 
 	glFramebufferTexture2D(

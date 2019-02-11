@@ -272,10 +272,12 @@ int main(void){
  */
 
 	//Definition of constants
-	constexpr u_int32_t width=1920;
-	constexpr u_int32_t height=1080;
-	constexpr Zuazo::Utils::PixelTypes pixtype=Zuazo::Utils::PixelTypes::RGBA;
-	constexpr size_t size=width * height * Zuazo::Utils::PIXEL_SIZE<pixtype>;
+	constexpr Zuazo::Utils::ImageAttributes imgAtt(
+			Zuazo::Utils::Resolution(1920, 1080),
+			Zuazo::Utils::PixelTypes::RGBA
+	);
+	constexpr size_t size=imgAtt.size();
+
 	constexpr size_t noFrames=100;
 
 
@@ -285,21 +287,21 @@ int main(void){
 
 	//Set some values
 	for(size_t i=0; i<size; i+=4){
-		data[i + 0]=abs(sin(i * 1 * M_PI/(width*4))) * 0xff;
-		data[i + 1]=abs(sin(i * 2 * M_PI/(width*4))) * 0xff;
-		data[i + 2]=abs(sin(i * 3 * M_PI/(width*4))) * 0xff;
+		data[i + 0]=abs(sin(i * 1 * M_PI/(imgAtt.res.width*4))) * 0xff;
+		data[i + 1]=abs(sin(i * 2 * M_PI/(imgAtt.res.width*4))) * 0xff;
+		data[i + 2]=abs(sin(i * 3 * M_PI/(imgAtt.res.width*4))) * 0xff;
 		data[i + 3]=0xff;
 	}
 
 	//Create a pixel buffer with the data
-	Zuazo::Graphics::GL::PixelBuffer<pixtype> pixbuff={
-			Zuazo::Utils::Resolution(width, height),
+	Zuazo::Utils::ImageBuffer pixbuff={
+			imgAtt,
 			data
 	};
 
 
 
-	Zuazo::Graphics::Frame<pixtype>* fr[noFrames];
+	Zuazo::Graphics::Frame* fr[noFrames];
 
 	printf("*********************\n");
 	printf("*    FIRST ROUND    *\n");
@@ -307,9 +309,17 @@ int main(void){
 	for(size_t i=0; i<noFrames; i++){
 		Zuazo::Timing::Chronometer chrono;
 		chrono.start();
-		fr[i]=new Zuazo::Graphics::Frame<pixtype>(pixbuff);
+		fr[i]=new Zuazo::Graphics::Frame(pixbuff);
 		chrono.end();
-		printf("Elapsed: %ld\n", chrono.getElapsed().count());
+		printf("Uploading... Elapsed: %ld\n", chrono.getElapsed().count());
+	}
+
+	for(size_t i=0; i<noFrames; i++){
+		Zuazo::Timing::Chronometer chrono;
+		chrono.start();
+		fr[i]->getTexture();
+		chrono.end();
+		printf("Texturing... Elapsed: %ld\n", chrono.getElapsed().count());
 	}
 
 	for(size_t i=0; i<noFrames; i++){
@@ -317,15 +327,24 @@ int main(void){
 	}
 
 	printf("*********************\n");
-	printf("*   SECOND ROUND    *\n");
+	printf("*    SECOND ROUND   *\n");
 	printf("*********************\n");
 	for(size_t i=0; i<noFrames; i++){
 		Zuazo::Timing::Chronometer chrono;
 		chrono.start();
-		fr[i]=new Zuazo::Graphics::Frame<pixtype>(pixbuff);
+		fr[i]=new Zuazo::Graphics::Frame(pixbuff);
 		chrono.end();
-		printf("Elapsed: %ld\n", chrono.getElapsed().count());
+		printf("Uploading... Elapsed: %ld\n", chrono.getElapsed().count());
 	}
+
+	for(size_t i=0; i<noFrames; i++){
+		Zuazo::Timing::Chronometer chrono;
+		chrono.start();
+		fr[i]->getTexture();
+		chrono.end();
+		printf("Texturing... Elapsed: %ld\n", chrono.getElapsed().count());
+	}
+
 
 	for(size_t i=0; i<size; i++){
 		data[i]=0x00;

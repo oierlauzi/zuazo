@@ -4,7 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #include "Graphics/GL/Context.h"
-#include "Window.h"
+//#include "Window.h"
 #include "Timing/Timing.h"
 
 namespace Zuazo{
@@ -44,7 +44,7 @@ Errors init(){
     glEnable(GL_BLEND);
 
     //Initialize window class
-    err=Window::init();
+    //err=Window::init();
     if(err)
     	return Errors::WINDOW_INIT;
 
@@ -71,7 +71,7 @@ Errors init(){
 	@return Error generated destroying Error::NONE for all OK
  **/
 Errors end(){
-	Window::end();
+	//Window::end();
 	Timing::end();
     return Errors::NONE; //TODO
 }

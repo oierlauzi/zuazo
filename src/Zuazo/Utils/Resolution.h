@@ -10,38 +10,35 @@ struct Resolution{
 	u_int32_t	width;
 	u_int32_t	height;
 
-	Resolution(){
-		width=0;
-		height=0;
+	constexpr Resolution():
+		width(0),
+		height(0)
+	{
 	}
 
-	Resolution(u_int32_t width, u_int32_t height){
-		this->width=width;
-		this->height=height;
+	constexpr Resolution(u_int32_t width, u_int32_t height) :
+		width(width),
+		height(height)
+	{
 	}
 
-	size_t	getSize(size_t pixSize){
-		return width* height* pixSize;
+	constexpr size_t size(size_t pixSize=1) const{
+		return width * height * pixSize;
 	}
 
-	template<PixelTypes type>
-	size_t	getSize(){
-		return getSize(PIXEL_SIZE<type>);
-	}
-
-	operator bool() const{
+	constexpr operator bool() const{
 		return width && height;
 	}
 
-    int operator==(const Resolution& right)const{
+	constexpr int operator==(const Resolution& right)const{
         return right.width==width && right.height==height;
     }
 
-    int operator!=(const Resolution& right)const{
+	constexpr int operator!=(const Resolution& right)const{
         return right.width!=width || right.height!=height;
     }
 
-    int operator<(const Resolution& right)const{
+	constexpr int operator<(const Resolution& right)const{
         int result=0;
         if(width < right.width)
         	result|=0x1;
@@ -50,7 +47,7 @@ struct Resolution{
         return result;
     }
 
-    int operator<=(const Resolution& right)const{
+	constexpr int operator<=(const Resolution& right)const{
         int result=0;
         if(width <= right.width)
         	result|= 0x1;
@@ -59,11 +56,11 @@ struct Resolution{
         return result;
     }
 
-    int operator>(const Resolution& right)const{
+	constexpr int operator>(const Resolution& right)const{
     	return ~operator<=(right);
     }
 
-    int operator>=(const Resolution& right)const{
+	constexpr int operator>=(const Resolution& right)const{
     	return ~operator<(right);
     }
 };

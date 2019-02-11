@@ -5,39 +5,43 @@
 #include <cstring>
 
 #include "UniqueBinding.h"
-#include "../../Utils/Resolution.h"
-#include "../../Utils/PixelTypes.h"
+#include "../../Utils/ImageAttributes.h"
+#include "../../Utils/ImageBuffer.h"
+#include "Pool.h"
 
 namespace Zuazo::Graphics::GL{
 
-template <Utils::PixelTypes type>
-struct PixelBuffer{
-	Utils::Resolution			res;
-	u_int8_t *					data;
-};
 
-template <Utils::PixelTypes type>
 class PixelUnpackBuffer : public Bindable{
 public:
 	PixelUnpackBuffer();
-	PixelUnpackBuffer(const PixelBuffer<type>& pix);
-	PixelUnpackBuffer(const PixelUnpackBuffer<type>& other);
+	PixelUnpackBuffer(const Utils::ImageBuffer& pix);
+	PixelUnpackBuffer(const PixelUnpackBuffer& other);
 	PixelUnpackBuffer(PixelUnpackBuffer&& other);
 	~PixelUnpackBuffer();
 
-	void						bind() const override;
-	void						unbind() const override;
+	void							bind() const override;
+	void							unbind() const override;
 
-	const Utils::Resolution& 	getRes() const;
+	const Utils::Resolution& 		getRes() const;
+	Utils::PixelTypes 				getPixelType() const;
+	const Utils::ImageAttributes& 	getAttributes() const;
+	size_t							getSize() const;
 
-	void						sub(const PixelBuffer<type>& buf);
-	void						sub(const PixelUnpackBuffer<type>& buf);
+
+	void							sub(const Utils::ImageBuffer& buf);
+	void							sub(const PixelUnpackBuffer& buf);
 private:
-	Utils::Resolution			m_resolution;
-	GLuint						m_pbo;
+	Utils::ImageAttributes			m_attributes;
+
+	GLuint							m_pbo;
 };
 
-template <Utils::PixelTypes type>
+/**
+ * @brief PixelUnpackBuffer pool, organized by buffer's size
+ */
+extern MultiPool<size_t, PixelUnpackBuffer> pboPool;
+
 class PixelPackBuffer : public Bindable{
 public:
 
@@ -50,59 +54,72 @@ private:
  * PIXEL UNPACK BUFFER METOHDS
  */
 
-template <Utils::PixelTypes type>
-inline PixelUnpackBuffer<type>::PixelUnpackBuffer(){
+
+inline PixelUnpackBuffer::PixelUnpackBuffer(){
 	glGenBuffers(1, &m_pbo);
 }
 
-template <Utils::PixelTypes type>
-inline PixelUnpackBuffer<type>::PixelUnpackBuffer(const PixelUnpackBuffer<type>& other) : PixelUnpackBuffer(){
+
+inline PixelUnpackBuffer::PixelUnpackBuffer(const PixelUnpackBuffer& other) : PixelUnpackBuffer(){
 	sub(other);
 }
 
-template <Utils::PixelTypes type>
-inline PixelUnpackBuffer<type>::PixelUnpackBuffer(const PixelBuffer<type>& buf) : PixelUnpackBuffer(){
+
+inline PixelUnpackBuffer::PixelUnpackBuffer(const Utils::ImageBuffer& buf) : PixelUnpackBuffer(){
 	sub(buf);
 }
 
-template <Utils::PixelTypes type>
-inline PixelUnpackBuffer<type>::PixelUnpackBuffer(PixelUnpackBuffer&& other){
+
+inline PixelUnpackBuffer::PixelUnpackBuffer(PixelUnpackBuffer&& other){
 	//Copy values
 	m_pbo=other.m_pbo;
-	m_resolution=other.m_resolution;
+	m_attributes=other.m_attributes;
 
 	//Delete other's values
 	other.m_pbo=0;
-	other.m_resolution=Utils::Resolution();
+	other.m_attributes=Utils::ImageAttributes();
 }
 
-template <Utils::PixelTypes type>
-inline PixelUnpackBuffer<type>::~PixelUnpackBuffer(){
+
+inline PixelUnpackBuffer::~PixelUnpackBuffer(){
 	if(m_pbo)
 		glDeleteBuffers(1, &m_pbo);
 }
 
-template <Utils::PixelTypes type>
-inline void PixelUnpackBuffer<type>::bind() const{
+
+inline void PixelUnpackBuffer::bind() const{
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_pbo);
 }
 
-template <Utils::PixelTypes type>
-inline void PixelUnpackBuffer<type>::unbind() const{
+
+inline void PixelUnpackBuffer::unbind() const{
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 }
 
-template <Utils::PixelTypes type>
-inline const Utils::Resolution& PixelUnpackBuffer<type>::getRes() const{
-	return m_resolution;
+
+inline const Utils::Resolution& PixelUnpackBuffer::getRes() const{
+	return m_attributes.res;
 }
 
-template <Utils::PixelTypes type>
-inline void PixelUnpackBuffer<type>::sub(const PixelBuffer<type>& buf){
-	UniqueBinding<PixelUnpackBuffer<type>> bind(*this);
+inline Utils::PixelTypes PixelUnpackBuffer::getPixelType()  const{
+	return m_attributes.pixType;
+}
 
-	m_resolution=buf.res;
-	size_t dataSize=m_resolution.getSize(Utils::PIXEL_SIZE<type>);
+inline const Utils::ImageAttributes& PixelUnpackBuffer::getAttributes() const{
+	return m_attributes;
+}
+
+inline size_t PixelUnpackBuffer::getSize() const{
+	return m_attributes.size();
+}
+
+
+
+inline void PixelUnpackBuffer::sub(const Utils::ImageBuffer& buf){
+	UniqueBinding<PixelUnpackBuffer> bind(*this);
+
+	m_attributes=buf.att;
+	size_t dataSize=m_attributes.size();
 
 	//Reallocate data
 	glBufferData(
@@ -121,15 +138,15 @@ inline void PixelUnpackBuffer<type>::sub(const PixelBuffer<type>& buf){
 	}
 }
 
-template <Utils::PixelTypes type>
-inline void PixelUnpackBuffer<type>::sub(const PixelUnpackBuffer<type>& buf){
+
+inline void PixelUnpackBuffer::sub(const PixelUnpackBuffer& buf){
 	//Bind buffers. Not using RAII due to the need of binding the
 	//source as GL_PIXEL_PACK_BUFFER instead of GL_PIXEL_UNPACK_BUFFER
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_pbo);
 	glBindBuffer(GL_PIXEL_PACK_BUFFER, buf.m_pbo);
 
-	m_resolution=buf.m_resolution;
-	size_t dataSize=m_resolution.getSize(Utils::PIXEL_SIZE<type>);
+	m_attributes=buf.m_attributes;
+	size_t dataSize=m_attributes.size();
 
 	//Reallocate data
 	glBufferData(
