@@ -9,15 +9,21 @@
 
 namespace Zuazo::Graphics{
 
-class Frame{
+enum class FrameTypes{
+	FILL		=0,
+	ALPHA		=1,
+	FILL_ALPHA
+};
+
+class FrameBase{
 public:
-	Frame()=default;
-	Frame(const Utils::ImageBuffer& buf);
-	Frame(std::unique_ptr<GL::PixelUnpackBuffer>& pbo);
-	Frame(std::unique_ptr<GL::Texture>& tex);
-	Frame(const Frame& other);
-	Frame(Frame&& other);
-	~Frame();
+	FrameBase()=default;
+	FrameBase(const Utils::ImageBuffer& buf);
+	FrameBase(std::unique_ptr<GL::PixelUnpackBuffer>& pbo);
+	FrameBase(std::unique_ptr<GL::Texture>& tex);
+	FrameBase(const FrameBase& other);
+	FrameBase(FrameBase&& other);
+	virtual ~FrameBase();
 
 	const GL::Texture& 								getTexture() const;
 
@@ -29,33 +35,89 @@ private:
 	mutable std::unique_ptr<GL::PixelUnpackBuffer>	m_pbo;
 };
 
+template<FrameTypes type>
+class Frame :
+		public virtual FrameBase,
+		public virtual GL::Bindable
+{
+public:
+	using FrameBase::FrameBase; //Inherit constructors
+
+	void bind() const override{
+		glActiveTexture(GL_TEXTURE0 + static_cast<int>(type));
+		getTexture().bind();
+	}
+
+	void unbind() const override{
+		glActiveTexture(GL_TEXTURE0 + static_cast<int>(type));
+		getTexture().unbind();
+	}
+};
+
+template<>
+class Frame<FrameTypes::FILL_ALPHA> :
+	public Frame<FrameTypes::FILL>,
+	public Frame<FrameTypes::ALPHA>,
+	public virtual FrameBase,
+	public virtual GL::Bindable
+{
+public:
+	using FrameBase::FrameBase; //Inherit constructors
+
+	void bindFill() const{
+		Frame<FrameTypes::FILL>::bind();
+	}
+
+	void unbindFill() const{
+		Frame<FrameTypes::FILL>::unbind();
+	}
+
+	void bindAlpha() const{
+		Frame<FrameTypes::ALPHA>::bind();
+	}
+
+	void unbindAlpha() const{
+		Frame<FrameTypes::ALPHA>::unbind();
+	}
+
+	void bind() const override{
+		bindFill();
+		bindAlpha();
+	}
+
+	void unbind() const override{
+		unbindFill();
+		unbindAlpha();
+	}
+};
+
 /*
  * INLINE METHOD DEFINITIONS
  */
 
-inline Frame::Frame(const Utils::ImageBuffer& buf){
+inline FrameBase::FrameBase(const Utils::ImageBuffer& buf){
 	m_pbo=GL::pboPool.pop(buf.att.size());
 	m_pbo->sub(buf);
 }
 
-inline Frame::Frame(std::unique_ptr<GL::PixelUnpackBuffer>& pbo){
+inline FrameBase::FrameBase(std::unique_ptr<GL::PixelUnpackBuffer>& pbo){
 	m_pbo=std::move(pbo);
 }
 
-inline Frame::Frame(std::unique_ptr<GL::Texture>& tex){
+inline FrameBase::FrameBase(std::unique_ptr<GL::Texture>& tex){
 	m_texture=std::move(tex);
 }
 
-inline Frame::Frame(const Frame& other){
+inline FrameBase::FrameBase(const FrameBase& other){
 	m_texture=std::unique_ptr<GL::Texture>(new GL::Texture(other.getTexture()));
 }
 
-inline Frame::Frame(Frame&& other){
+inline FrameBase::FrameBase(FrameBase&& other){
 	m_texture=std::move(other.m_texture);
 	m_pbo=std::move(other.m_pbo);
 }
 
-inline Frame::~Frame(){
+inline FrameBase::~FrameBase(){
 	//You should always recycle, its good for the planet
 	//Therefore recycle textures and PBOs
 	if(m_texture){
@@ -73,7 +135,7 @@ inline Frame::~Frame(){
 	}
 }
 
-inline const typename GL::Texture& Frame::getTexture() const{
+inline const typename GL::Texture& FrameBase::getTexture() const{
 	if(m_texture){
 		return *m_texture;
 	}else if(m_pbo){
@@ -86,15 +148,15 @@ inline const typename GL::Texture& Frame::getTexture() const{
 	}
 }
 
-inline const Utils::Resolution& Frame::getRes() const{
+inline const Utils::Resolution& FrameBase::getRes() const{
 	return getAttributes().res;
 }
 
-inline Utils::PixelTypes Frame::getPixelType() const{
+inline Utils::PixelTypes FrameBase::getPixelType() const{
 	return getAttributes().pixType;
 }
 
-inline const Utils::ImageAttributes& Frame::getAttributes() const{
+inline const Utils::ImageAttributes& FrameBase::getAttributes() const{
 	if(m_texture){
 		return m_texture->getAttributes();
 	}else if(m_pbo){

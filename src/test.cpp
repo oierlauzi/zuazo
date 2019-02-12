@@ -300,8 +300,8 @@ int main(void){
 	};
 
 
-
-	Zuazo::Graphics::Frame* fr[noFrames];
+	using Frame=Zuazo::Graphics::Frame<Zuazo::Graphics::FrameTypes::FILL_ALPHA>;
+	Frame* fr[noFrames];
 
 	printf("*********************\n");
 	printf("*    FIRST ROUND    *\n");
@@ -309,7 +309,7 @@ int main(void){
 	for(size_t i=0; i<noFrames; i++){
 		Zuazo::Timing::Chronometer chrono;
 		chrono.start();
-		fr[i]=new Zuazo::Graphics::Frame(pixbuff);
+		fr[i]=new Frame(pixbuff);
 		chrono.end();
 		printf("Uploading... Elapsed: %ld\n", chrono.getElapsed().count());
 	}
@@ -332,7 +332,7 @@ int main(void){
 	for(size_t i=0; i<noFrames; i++){
 		Zuazo::Timing::Chronometer chrono;
 		chrono.start();
-		fr[i]=new Zuazo::Graphics::Frame(pixbuff);
+		fr[i]=new Frame(pixbuff);
 		chrono.end();
 		printf("Uploading... Elapsed: %ld\n", chrono.getElapsed().count());
 	}
