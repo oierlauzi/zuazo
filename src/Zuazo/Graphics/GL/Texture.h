@@ -12,7 +12,7 @@
 namespace Zuazo::Graphics::GL{
 class FrameBuffer;
 
-class Texture : public Bindable{
+class Texture{
 	friend FrameBuffer;
 public:
 	Texture();
@@ -23,8 +23,10 @@ public:
 	Texture(Texture&& other);
 	virtual ~Texture();
 
-	void							bind() const override;
-	void							unbind() const override;
+	template<int binding=0>
+	void							bind() const;
+	template<int binding=0>
+	void							unbind() const;
 
 	void							setRes(const Utils::Resolution& res);
 	void							setPixelType(Utils::PixelTypes pixType);
@@ -55,12 +57,15 @@ extern MultiPool<Utils::ImageAttributes, Texture> texturePool;
  * Method implementations
  */
 
+template<int binding>
 inline void	Texture::bind() const{
+	glActiveTexture(GL_TEXTURE0 + binding);
 	glBindTexture(GL_TEXTURE_2D, m_texture);
 }
 
-
+template<int binding>
 inline void	Texture::unbind() const{
+	glActiveTexture(GL_TEXTURE0 + binding);
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 

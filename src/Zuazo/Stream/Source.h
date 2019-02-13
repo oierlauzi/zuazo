@@ -39,10 +39,10 @@ private:
 	std::shared_ptr<const T>			m_last;
 	Timing::TimePoint					m_elementTs;
 
-	std::set<Consumer<T> *>				m_consumers;
+	mutable std::set<Consumer<T> *>		m_consumers;
 
-	void								attach(Consumer<T> * cons);
-	void								detach(Consumer<T> * cons);
+	void								attach(Consumer<T> * cons) const;
+	void								detach(Consumer<T> * cons) const;
 };
 
 /********************************
@@ -92,13 +92,13 @@ void Source<T>::push(std::shared_ptr<const T>& element){
 }
 
 template <typename T>
-void Source<T>::attach(Consumer<T> * cons){
+void Source<T>::attach(Consumer<T> * cons) const{
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_consumers.insert(cons);
 }
 
 template <typename T>
-void Source<T>::detach(Consumer<T> * cons){
+void Source<T>::detach(Consumer<T> * cons) const{
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_consumers.erase(cons);
 }

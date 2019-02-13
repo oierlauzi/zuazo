@@ -19,8 +19,8 @@ public:
 	Consumer(const Consumer<T>& other)=default;
 	virtual ~Consumer();
 
-	virtual void				setSource(Source<T>* src);
-	Consumer<T>&				operator<<(Source<T>&);
+	void						setSource(const Source<T>* src);
+	Consumer<T>&				operator<<(const Source<T>& src);
 	Consumer<T>&				operator<<(std::nullptr_t ptr);
 	virtual bool 				isActive() const { return true; }
 protected:
@@ -30,7 +30,7 @@ protected:
 private:
 	mutable std::mutex			m_mutex;
 
-	Source<T>*					m_source;
+	const Source<T>*			m_source;
 };
 
 /************************
@@ -55,7 +55,7 @@ inline Consumer<T>::~Consumer(){
  */
 
 template <typename T>
-inline void Consumer<T>::setSource(Source<T>* src){
+inline void Consumer<T>::setSource(const Source<T>* src){
 	std::lock_guard<std::mutex> lock(m_mutex);
 
 	//Detach consumer from the previous source
@@ -69,7 +69,7 @@ inline void Consumer<T>::setSource(Source<T>* src){
 }
 
 template <typename T>
-inline Consumer<T>& Consumer<T>::operator<<(Source<T>& src){
+inline Consumer<T>& Consumer<T>::operator<<(const Source<T>& src){
 	setSource(&src);
 	return *this;
 }
