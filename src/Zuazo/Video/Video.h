@@ -37,29 +37,4 @@ typedef Stream::Consumer<Graphics::Frame> VideoConsumer;
  */
 typedef Stream::Delay<Graphics::Frame> VideoDelay;
 
-/**
- * @brief //TODO
- */
-class IndependentVideoConsumer{
-public:
-	IndependentVideoConsumer()=default;
-	IndependentVideoConsumer(const IndependentVideoConsumer& other)=default;
-	~IndependentVideoConsumer()=default;
-
-	VideoConsumer fill;
-	VideoConsumer key;
-
-	IndependentVideoConsumer& operator<<(const VideoSource& src){
-		fill.setSource(&src);
-		key.setSource(&src);
-		return *this;
-	}
-
-	IndependentVideoConsumer& operator<<(std::nullptr_t ptr){
-		fill.setSource(nullptr);
-		key.setSource(nullptr);
-		return *this;
-	}
-};
-
 }
