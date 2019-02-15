@@ -28,11 +28,11 @@ public:
 
 	struct UpdateInterval{
 		PeriodicUpdates									updates;
-		TimeUnit										timeSinceLastUpdate;
+		TimeInterval										timeSinceLastUpdate;
 	};
 
 	struct PendingUpdates{
-		TimeUnit										timeForNextUpdate;
+		TimeInterval										timeForNextUpdate;
 		const RegularUpdates&							regularUpdates;
 		PeriodicUpdates									periodicUpdates;
 	};
@@ -51,12 +51,12 @@ public:
 	void 										deleteTiming(RegularUpdate<UpdateOrder::LAST>* event);
 
 	PendingUpdates								getPendingUpdates();
-	void										addTime(const TimeUnit& t);
+	void										addTime(const TimeInterval& t);
 private:
 	using RegularTimings=RegularUpdates;
-	using PeriodicTimings=std::map<TimeUnit, UpdateInterval>;
+	using PeriodicTimings=std::map<TimeInterval, UpdateInterval>;
 
-	void										addInterval(const TimeUnit& interval);
+	void										addInterval(const TimeInterval& interval);
 	void 										delUnusedInterval();
 
 	PeriodicTimings								m_periodicTimings;
@@ -68,7 +68,7 @@ private:
  * Inline function definitions
  */
 
-inline void	TimingTable::addTime(const TimeUnit& t){
+inline void	TimingTable::addTime(const TimeInterval& t){
 	//Add the time to the events
 	for(auto& timing : m_periodicTimings){
 		timing.second.timeSinceLastUpdate+=t;

@@ -14,14 +14,14 @@ public:
 
 	void								start();
 	void								end();
-	const TimeUnit&						getElapsed() const;
+	const TimeInterval&						getElapsed() const;
 	const TimePoint&					getStart() const;
 	const TimePoint&					getEnd() const;
 
 private:
 	TimePoint							m_start;
 	TimePoint							m_end;
-	TimeUnit							m_elapsed;
+	TimeInterval							m_elapsed;
 };
 
 
@@ -38,7 +38,7 @@ inline void Timing::Chronometer::end(){
 	m_elapsed=m_end - m_start;
 }
 
-inline const TimeUnit&	 Timing::Chronometer::getElapsed() const{
+inline const TimeInterval&	 Timing::Chronometer::getElapsed() const{
 	return m_elapsed;
 }
 

@@ -7,7 +7,7 @@
 
 #include "../Timing/RegularUpdate.h"
 #include "../Timing/TimePoint.h"
-#include "../Timing/TimeUnit.h"
+#include "../Timing/TimeInterval.h"
 #include "../Timing/TimingTable.h"
 #include "../Timing/UpdateOrder.h"
 #include "Consumer.h"
@@ -23,12 +23,12 @@ class Delay :
 {
 public:
 	Delay();
-	Delay(const Timing::TimeUnit& delay);
+	Delay(const Timing::TimeInterval& delay);
 	Delay(const Delay& delay)=default;
 	virtual ~Delay();
 
-	void								setDelay(const Timing::TimeUnit& delay);
-	Timing::TimeUnit					getDelay();
+	void								setDelay(const Timing::TimeInterval& delay);
+	Timing::TimeInterval				getDelay();
 
 	virtual void						update() override;
 
@@ -40,7 +40,7 @@ private:
 		Timing::TimePoint					ts;
 	};
 
-	Timing::TimeUnit 					m_delay;
+	Timing::TimeInterval 					m_delay;
 
 	mutable std::queue<QueueElement>	m_queue;
 };
@@ -48,11 +48,11 @@ private:
 template<typename T>
 inline Delay<T>::Delay() :
 Timing::RegularUpdate<Timing::UpdateOrder::LAST>(){
-	setDelay(Timing::TimeUnit(0));
+	setDelay(Timing::TimeInterval(0));
 }
 
 template<typename T>
-inline Delay<T>::Delay(const Timing::TimeUnit& delay) :
+inline Delay<T>::Delay(const Timing::TimeInterval& delay) :
 Timing::RegularUpdate<Timing::UpdateOrder::LAST>(){
 	setDelay(delay);
 }
@@ -63,7 +63,7 @@ inline Delay<T>::~Delay(){
 }
 
 template<typename T>
-inline void	Delay<T>::setDelay(const Timing::TimeUnit& delay){
+inline void	Delay<T>::setDelay(const Timing::TimeInterval& delay){
 	std::lock_guard<std::mutex> lock(Updateable::m_updateMutex);
 	m_delay=delay;
 
@@ -73,7 +73,7 @@ inline void	Delay<T>::setDelay(const Timing::TimeUnit& delay){
 }
 
 template<typename T>
-inline Timing::TimeUnit	Delay<T>::getDelay(){
+inline Timing::TimeInterval	Delay<T>::getDelay(){
 	return m_delay;
 }
 
@@ -105,14 +105,16 @@ inline void Delay<T>::update(){
 
 template<typename T>
 inline void Delay<T>::open(){
+	Source<T>::open();
+	Consumer<T>::open();
 	Timing::RegularUpdate<Timing::UpdateOrder::LAST>::open();
 }
 
 template<typename T>
 inline void Delay<T>::close(){
-	//TODO lock timing
 	Timing::RegularUpdate<Timing::UpdateOrder::LAST>::close();
-	Source<T>::push();
+	Source<T>::close();
+	Consumer<T>::close();
 
 	//Reset all
 	while(m_queue.size())

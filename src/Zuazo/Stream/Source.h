@@ -6,6 +6,7 @@
 
 #include "../Timing/TimePoint.h"
 #include "../Timing/Timing.h"
+#include "../Updateable.h"
 #include "Consumer.h"
 
 
@@ -18,7 +19,9 @@ template <typename T>
 class CallableConsumer;
 
 template <typename T>
-class Source{
+class Source :
+		public virtual Updateable
+{
 	friend Consumer<T>;
 public:
 	Source()=default;
@@ -32,10 +35,11 @@ protected:
 	void								push(std::shared_ptr<const T>& element);
 	void								push(std::unique_ptr<const T>& element);
 
+	virtual void						open() override;
+	virtual void						close() override;
+
 	bool								isActive() const;
 private:
-	mutable std::mutex					m_mutex;
-
 	std::shared_ptr<const T>			m_last;
 	Timing::TimePoint					m_elementTs;
 
@@ -92,14 +96,26 @@ void Source<T>::push(std::shared_ptr<const T>& element){
 }
 
 template <typename T>
+void Source<T>::open(){
+	Updateable::open();
+}
+
+template <typename T>
+void Source<T>::close(){
+	m_last=std::shared_ptr<const T>();
+	m_elementTs=Timing::TimePoint();
+	Updateable::close();
+}
+
+template <typename T>
 void Source<T>::attach(Consumer<T> * cons) const{
-	std::lock_guard<std::mutex> lock(m_mutex);
+	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_consumers.insert(cons);
 }
 
 template <typename T>
 void Source<T>::detach(Consumer<T> * cons) const{
-	std::lock_guard<std::mutex> lock(m_mutex);
+	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_consumers.erase(cons);
 }
 
@@ -109,7 +125,6 @@ void Source<T>::detach(Consumer<T> * cons) const{
 
 template <typename T>
 bool Source<T>::isActive() const{
-	std::lock_guard<std::mutex> lock(m_mutex);
 	for(Consumer<T> * cons : m_consumers)
 		if(cons->isActive())
 			return true;

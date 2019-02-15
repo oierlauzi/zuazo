@@ -7,7 +7,7 @@
 #include "Chronometer.h"
 #include "PeriodicUpdate.h"
 #include "RegularUpdate.h"
-#include "TimeUnit.h"
+#include "TimeInterval.h"
 
 namespace Zuazo::Timing{
 

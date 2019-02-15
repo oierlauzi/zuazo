@@ -8,23 +8,23 @@
 
 namespace Zuazo::Timing{
 
-class TimeUnit : public std::chrono::TIME_UNIT{
+class TimeInterval : public std::chrono::TIME_UNIT{
 public:
 	using std::chrono::TIME_UNIT::duration; //Use default constructor/destructors
 
-	TimeUnit(const Utils::Rational& rat) : std::chrono::TIME_UNIT(
+	TimeInterval(const Utils::Rational& rat) : std::chrono::TIME_UNIT(
 			rat.den ? rat.num * TIME_UNITS_PER_SECOND / rat.den : 0
 	){}
 
-	TimeUnit(const TimeUnit& other) : std::chrono::TIME_UNIT(
+	TimeInterval(const TimeInterval& other) : std::chrono::TIME_UNIT(
 			static_cast<std::chrono::TIME_UNIT>(other)
 	){}
 
-	TimeUnit(const std::chrono::TIME_UNIT& other) : std::chrono::TIME_UNIT(other){
+	TimeInterval(const std::chrono::TIME_UNIT& other) : std::chrono::TIME_UNIT(other){
 
 	}
 
-	~TimeUnit()=default;
+	~TimeInterval()=default;
 
 	operator Utils::Rational() const{
 		return Utils::Rational(count(), TIME_UNITS_PER_SECOND);

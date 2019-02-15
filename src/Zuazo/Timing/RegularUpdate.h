@@ -11,7 +11,9 @@ namespace Zuazo::Timing{
 extern std::unique_ptr<Timings> timings;
 
 template <UpdateOrder TPriority>
-class RegularUpdate : public Updateable{
+class RegularUpdate :
+		public virtual Updateable
+{
 	friend Timings;
 public:
 	RegularUpdate();

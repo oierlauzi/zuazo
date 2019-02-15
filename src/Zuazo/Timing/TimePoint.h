@@ -3,7 +3,7 @@
 #include <chrono>
 #include <type_traits>
 
-#include "TimeUnit.h"
+#include "TimeInterval.h"
 
 #define TIME_CLOCK steady_clock
 
@@ -23,7 +23,7 @@ public:
 
 	~TimePoint()=default;
 
-	TimeUnit operator -(const TimePoint& other) const{
+	TimeInterval operator -(const TimePoint& other) const{
 		return std::chrono::duration_cast<std::chrono::TIME_UNIT>(
 				static_cast<std::chrono::TIME_CLOCK::time_point> (*this) - static_cast<std::chrono::TIME_CLOCK::time_point> (other)
 				);

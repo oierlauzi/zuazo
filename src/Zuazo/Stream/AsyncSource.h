@@ -13,7 +13,10 @@
 namespace Zuazo::Stream{
 
 template <typename T>
-class AsyncSource : public Source<T>, public Timing::PeriodicUpdate<Timing::UpdateOrder::FIRST>{
+class AsyncSource :
+		public Source<T>,
+		public Timing::PeriodicUpdate<Timing::UpdateOrder::FIRST>
+{
 public:
 	AsyncSource();
 	AsyncSource(const Utils::Rational& rat);
@@ -55,7 +58,7 @@ private:
  */
 
 template <typename T>
-inline AsyncSource<T>::AsyncSource() : Updateable(){
+inline AsyncSource<T>::AsyncSource(){
 	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_maxBufferSize=DEFAULT_MAX_BUFFER_SIZE;
 	m_maxDropped=DEFAULT_MAX_DROPPED;
@@ -168,6 +171,7 @@ void AsyncSource<T>::push(std::unique_ptr<const T>& element){
 
 template <typename T>
 void AsyncSource<T>::open(){
+	Source<T>::open();
 	Timing::PeriodicUpdate<Timing::UpdateOrder::FIRST>::open();
 }
 
@@ -175,6 +179,6 @@ template <typename T>
 void AsyncSource<T>::close(){
 	Timing::PeriodicUpdate<Timing::UpdateOrder::LAST>::close();
 	flushBuffer();
-	Source<T>::push();
+	Source<T>::close();
 }
 }

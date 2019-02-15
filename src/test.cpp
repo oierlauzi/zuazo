@@ -172,7 +172,7 @@ int main(void){
 
 	ConsumerExample cons(30);
 	SourceExample src(30);
-	DelayD	del(Zuazo::Timing::TimeUnit(0));
+	DelayD	del(Zuazo::Timing::TimeInterval(0));
 	del<<src;
 	cons<<del;
 

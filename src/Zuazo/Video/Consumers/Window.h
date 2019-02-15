@@ -12,6 +12,7 @@
 
 #include "../../Utils/Resolution.h"
 #include "../../Utils/Rational.h"
+#include "../../Utils/VideoMode.h"
 #include "../../Utils/Vector.h"
 #include "../Video/Video.h"
 #include "../../Timing/PeriodicUpdate.h"
@@ -32,7 +33,8 @@ public:
 	static int init();
 	static int end();
 
-	Window(const Utils::Resolution& res=Utils::Resolution(640, 480), std::string name="");
+	Window();
+	Window(const Utils::VideoMode& mode, std::string name="");
 	Window(const Window& win);
 	virtual ~Window();
 

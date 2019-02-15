@@ -12,7 +12,9 @@ template <typename T>
 class Source;
 
 template <typename T>
-class Consumer{
+class Consumer :
+	public virtual Updateable
+{
 	friend Source<T>;
 public:
 	Consumer();
@@ -23,13 +25,14 @@ public:
 	Consumer<T>&				operator<<(const Source<T>& src);
 	Consumer<T>&				operator<<(std::nullptr_t ptr);
 	virtual bool 				isActive() const { return true; }
+
+	virtual void				open() override;
+	virtual void				close() override;
 protected:
 	std::shared_ptr<const T>	get() const;
 	std::shared_ptr<const T>	get(Timing::TimePoint* ts) const;
 
 private:
-	mutable std::mutex			m_mutex;
-
 	const Source<T>*			m_source;
 };
 
@@ -81,8 +84,17 @@ inline Consumer<T>& Consumer<T>::operator<<(std::nullptr_t ptr){
 }
 
 template <typename T>
+void Consumer<T>::open(){
+	Updateable::open();
+}
+
+template <typename T>
+void Consumer<T>::close(){
+	Updateable::close();
+}
+
+template <typename T>
 inline std::shared_ptr<const T>	Consumer<T>::get() const{
-	std::lock_guard<std::mutex> lock(m_mutex);
 	if(m_source)
 		return m_source->get();
 	else
@@ -91,7 +103,6 @@ inline std::shared_ptr<const T>	Consumer<T>::get() const{
 
 template <typename T>
 inline std::shared_ptr<const T>	Consumer<T>::get(Timing::TimePoint* ts) const{
-	std::lock_guard<std::mutex> lock(m_mutex);
 	if(m_source)
 		return m_source->get(ts);
 	else

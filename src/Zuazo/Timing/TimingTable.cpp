@@ -14,7 +14,7 @@ using namespace Zuazo::Timing;
  */
 
 void TimingTable::addTiming(Timing::PeriodicUpdate<UpdateOrder::FIRST>* event){
-	TimeUnit interval=event->getInterval();
+	TimeInterval interval=event->getInterval();
 
 	if(interval.count()>0){
 		addInterval(interval);
@@ -24,7 +24,7 @@ void TimingTable::addTiming(Timing::PeriodicUpdate<UpdateOrder::FIRST>* event){
 }
 
 void TimingTable::addTiming(Timing::PeriodicUpdate<UpdateOrder::LAST>* event){
-	TimeUnit interval=event->getInterval();
+	TimeInterval interval=event->getInterval();
 
 	if(interval.count()>0){
 		addInterval(interval);
@@ -64,13 +64,13 @@ void TimingTable::deleteTiming(Timing::RegularUpdate<UpdateOrder::LAST>* event){
 
 TimingTable::PendingUpdates	TimingTable::getPendingUpdates(){
 	PendingUpdates pend={
-			TimeUnit::max(),
+			TimeInterval::max(),
 			m_regularTimings,
 			PeriodicUpdates()
 	};
 
 	for(auto& timing : m_periodicTimings){
-		const TimeUnit& interval=timing.first;
+		const TimeInterval& interval=timing.first;
 		UpdateInterval& periodicUpdates=timing.second;
 
 		if(periodicUpdates.timeSinceLastUpdate >= interval){
@@ -87,7 +87,7 @@ TimingTable::PendingUpdates	TimingTable::getPendingUpdates(){
 			periodicUpdates.timeSinceLastUpdate%=interval;
 		}
 
-		const TimeUnit timeForNextUpdate=interval - periodicUpdates.timeSinceLastUpdate;
+		const TimeInterval timeForNextUpdate=interval - periodicUpdates.timeSinceLastUpdate;
 		if(timeForNextUpdate < pend.timeForNextUpdate){
 			//This interval's update is the soonest one
 			pend.timeForNextUpdate=timeForNextUpdate;
@@ -100,7 +100,7 @@ TimingTable::PendingUpdates	TimingTable::getPendingUpdates(){
  * Private methods
  */
 
-void TimingTable::addInterval(const TimeUnit& interval){
+void TimingTable::addInterval(const TimeInterval& interval){
 	//Add the new timing to the table
 	if(m_periodicTimings.find(interval)==m_periodicTimings.end()){
 		//Interval did not exist. Add it
@@ -108,7 +108,7 @@ void TimingTable::addInterval(const TimeUnit& interval){
 
 		//Re-start all updates to synchronize them when possible
 		for(auto& timing : m_periodicTimings)
-			timing.second.timeSinceLastUpdate=TimeUnit(timing.first);
+			timing.second.timeSinceLastUpdate=TimeInterval(timing.first);
 	}
 }
 

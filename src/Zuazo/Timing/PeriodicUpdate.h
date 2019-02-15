@@ -4,7 +4,7 @@
 
 #include "../Updateable.h"
 #include "../Utils/Rational.h"
-#include "TimeUnit.h"
+#include "TimeInterval.h"
 #include "Timing.h"
 #include "UpdateOrder.h"
 
@@ -13,7 +13,9 @@ namespace Zuazo::Timing{
 extern std::unique_ptr<Timings> timings;
 
 template <UpdateOrder TPriority>
-class PeriodicUpdate : public Updateable{
+class PeriodicUpdate :
+		public virtual Updateable
+{
 	friend Timings;
 public:
 	PeriodicUpdate();
