@@ -13,7 +13,7 @@ public:
 	 */
 	class Callback{
 	public:
-		virtual void						update()=0;
+		virtual void						update() const=0;
 	};
 
 	Updateable();
@@ -31,8 +31,8 @@ public:
 protected:
 	mutable std::mutex					m_updateMutex;
 
-	virtual void						update()=0;
-	void								perform();
+	virtual void						update() const=0;
+	void								perform() const;
 private:
 	mutable std::mutex					m_mutex;
 
@@ -102,7 +102,7 @@ inline bool Updateable::isOpen() const{
 	return m_isOpen;
 }
 
-inline void Updateable::perform(){
+inline void Updateable::perform() const{
 	std::lock_guard<std::mutex> lock(m_mutex);
 	if(m_beforeCbk)
 		m_beforeCbk->update();

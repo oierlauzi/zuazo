@@ -38,16 +38,16 @@ public:
 protected:
 	void								push(std::unique_ptr<const T>& element);
 
-	virtual void 						update() override;
+	virtual void 						update() const override;
 private:
-	static const u_int32_t				DEFAULT_MAX_DROPPED=3;
-	static const u_int32_t				DEFAULT_MAX_BUFFER_SIZE=3;
+	static constexpr u_int32_t			DEFAULT_MAX_DROPPED=3;
+	static constexpr u_int32_t			DEFAULT_MAX_BUFFER_SIZE=3;
 
 	u_int32_t							m_maxDropped;
-	u_int32_t							m_dropped;
+	mutable u_int32_t					m_dropped;
 
 	u_int32_t							m_maxBufferSize;
-	std::queue<std::unique_ptr<const T>> m_buffer;
+	mutable std::queue<std::unique_ptr<const T>> m_buffer;
 };
 
 /************************
@@ -141,7 +141,7 @@ inline void AsyncSource<T>::flushBuffer(){
  */
 
 template <typename T>
-void AsyncSource<T>::update() {
+void AsyncSource<T>::update() const{
 	if(m_buffer.size()){
 		//There is at least an element at the buffer. Push it into the source
 		Source<T>::push(m_buffer.front());

@@ -52,7 +52,7 @@ inline std::shared_ptr<const T>	LazySource<T>::get(Timing::TimePoint* ts) const{
 	//Only update if it is not being updated (to avoid mutex deadlocks and endless loops)
 	if(!m_updateInProgress){
 		m_updateInProgress=true;
-		perform();
+		Updateable::perform();
 		m_updateInProgress=false;
 	}
 	return Source<T>::get(ts);

@@ -19,7 +19,7 @@
 #include "Zuazo/Graphics/GL/VertexArray.h"
 #include "Zuazo/Graphics/GL/Context.h"
 #include "Zuazo/Graphics/Frame.h"
-//#include "Zuazo/Video/Video.h"
+#include "Zuazo/Video/Video.h"
 
 //#define TEST1
 //#define TEST2

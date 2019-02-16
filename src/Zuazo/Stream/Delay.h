@@ -30,7 +30,7 @@ public:
 	void								setDelay(const Timing::TimeInterval& delay);
 	Timing::TimeInterval				getDelay();
 
-	virtual void						update() override;
+	virtual void						update() const override;
 
 	virtual void						open() override;
 	virtual void						close() override;
@@ -42,7 +42,7 @@ private:
 
 	Timing::TimeInterval 					m_delay;
 
-	mutable std::queue<QueueElement>	m_queue;
+	mutable std::queue<QueueElement>		m_queue;
 };
 
 template<typename T>
@@ -78,7 +78,7 @@ inline Timing::TimeInterval	Delay<T>::getDelay(){
 }
 
 template<typename T>
-inline void Delay<T>::update(){
+inline void Delay<T>::update() const{
 	std::shared_ptr<const T> lastElement;
 
 	if(m_delay.count()){
