@@ -3,13 +3,9 @@
 #include "../../Utils/ImageBuffer.h"
 #include "../../Utils/Resolution.h"
 #include "UniqueBinding.h"
+#include "Types.h"
 
 using namespace Zuazo::Graphics::GL;
-
-/*
- * POOL DEFINITION
- */
-MultiPool<Zuazo::Utils::ImageAttributes, Texture>  Zuazo::Graphics::GL::texturePool;
 
 /*
  * METHOD DEFINITIONS
@@ -37,7 +33,7 @@ Texture::Texture(const Utils::ImageBuffer& buf) : Texture(){
 }
 
 
-Texture::Texture(const PixelUnpackBuffer& buf) : Texture(){
+Texture::Texture(const Buffers::PixelUnpackBuffer& buf) : Texture(){
 	subImage(buf);
 }
 
@@ -77,11 +73,11 @@ void Texture::setAttributes(const Utils::ImageAttributes& att){
 		glTexImage2D(
 				GL_TEXTURE_2D,					//target
 				0,								//mip-map level
-				(GLenum)m_attributes.pixType,	//internal format
+				toGLenum(m_attributes.pixType),	//internal format
 				m_attributes.res.width,			//width
 				m_attributes.res.height,		//height
 				0,								//border (must be 0)
-				(GLenum)m_attributes.pixType,	//format
+				toGLenum(m_attributes.pixType),	//format
 				GL_UNSIGNED_BYTE,				//data type
 				nullptr							//data
 		);
@@ -102,11 +98,11 @@ void Texture::subImage(const Utils::ImageBuffer& buf){
 		glTexImage2D(
 				GL_TEXTURE_2D,					//target
 				0,								//mip-map level
-				(GLenum)m_attributes.pixType,	//internal format
+				toGLenum(m_attributes.pixType),	//internal format
 				m_attributes.res.width,			//width
 				m_attributes.res.height,		//height
 				0,								//border (must be 0)
-				(GLenum)m_attributes.pixType,	//format
+				toGLenum(m_attributes.pixType),	//format
 				GL_UNSIGNED_BYTE,				//data type
 				buf.data						//data
 		);
@@ -119,7 +115,7 @@ void Texture::subImage(const Utils::ImageBuffer& buf){
 				0,								//y offset
 				m_attributes.res.width,			//width
 				m_attributes.res.height,		//height
-				(GLenum)m_attributes.pixType,	//format
+				toGLenum(m_attributes.pixType),	//format
 				GL_UNSIGNED_BYTE,				//data type
 				buf.data						//data
 		);
@@ -127,9 +123,9 @@ void Texture::subImage(const Utils::ImageBuffer& buf){
 }
 
 
-void Texture::subImage(const PixelUnpackBuffer& buf){
+void Texture::subImage(const Buffers::PixelUnpackBuffer& buf){
 	UniqueBinding<Texture> texBinding(*this);
-	UniqueBinding<PixelUnpackBuffer> bufBinding(buf);
+	UniqueBinding<Buffers::PixelUnpackBuffer> bufBinding(buf);
 
 	if(m_attributes != buf.getAttributes()){
 		//Resolution has changed
@@ -139,11 +135,11 @@ void Texture::subImage(const PixelUnpackBuffer& buf){
 		glTexImage2D(
 				GL_TEXTURE_2D,					//target
 				0,								//mip-map level
-				(GLenum)m_attributes.pixType,	//internal format
+				toGLenum(m_attributes.pixType),	//internal format
 				m_attributes.res.width,			//width
 				m_attributes.res.height,		//height
 				0,								//border (must be 0)
-				(GLenum)m_attributes.pixType,	//format
+				toGLenum(m_attributes.pixType),	//format
 				GL_UNSIGNED_BYTE,				//data type
 				nullptr							//data
 		);
@@ -156,7 +152,7 @@ void Texture::subImage(const PixelUnpackBuffer& buf){
 				0,								//y offset
 				m_attributes.res.width,			//width
 				m_attributes.res.height,		//height
-				(GLenum)m_attributes.pixType,	//format
+				toGLenum(m_attributes.pixType),	//format
 				GL_UNSIGNED_BYTE,				//data type
 				nullptr							//data
 		);
@@ -179,7 +175,7 @@ void Texture::getImage(Utils::ImageBuffer* buf) const{
 	glGetTexImage(
 			GL_TEXTURE_2D,						//target
 			0,									//mip-map level
-			(GLenum)m_attributes.pixType,		//format
+			toGLenum(m_attributes.pixType),		//format
             GL_UNSIGNED_BYTE,					//data type
 			buf->data							//data
 	);

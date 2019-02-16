@@ -5,9 +5,9 @@
 #include <map>
 #include <utility>
 
-#include "Graphics/GL/Context.h"
-#include "Graphics/GL/Shader.h"
-#include "Utils/Resolution.h"
+#include "../../Graphics/GL/Context.h"
+#include "../../Graphics/GL/Shader.h"
+#include "../../Utils/Resolution.h"
 
 using namespace Zuazo::Video::Consumers;
 

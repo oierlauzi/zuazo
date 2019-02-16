@@ -5,9 +5,9 @@
 #include <memory>
 #include <mutex>
 
-#include "Context.h"
+#include "GL/Context.h"
 
-namespace Zuazo::Graphics::GL{
+namespace Zuazo::Graphics{
 
 /**
  * @brief A template for creating pools of GL resources
@@ -20,7 +20,7 @@ public:
 	~Pool()=default;
 
 	std::unique_ptr<T>					pop();
-	void								push(std::unique_ptr<T>& el);
+	void								push(std::unique_ptr<T> el);
 
 	size_t								size() const;
 	void								decrement(u_int32_t no=1);
@@ -40,7 +40,7 @@ public:
 	~MultiPool()=default;
 
 	std::unique_ptr<T>					pop(const Q& ref);
-	void								push(const Q& ref, std::unique_ptr<T>& el);
+	void								push(const Q& ref, std::unique_ptr<T> el);
 
 	size_t								size() const;
 	void								decrement(u_int32_t no=1);
@@ -72,7 +72,7 @@ inline std::unique_ptr<T> Pool<T, maxElements>::pop(){
 }
 
 template<typename T, int maxElements>
-inline void Pool<T, maxElements>::push(std::unique_ptr<T>& el){
+inline void Pool<T, maxElements>::push(std::unique_ptr<T> el){
 	std::lock_guard<std::mutex> lock(m_mutex);
 
 	if(m_elements.size() < maxElements){
@@ -124,9 +124,9 @@ inline std::unique_ptr<T> MultiPool<Q, T, maxElements>::pop(const Q& ref){
 }
 
 template<typename Q, typename T, int maxElements>
-inline void MultiPool<Q, T, maxElements>::push(const Q& ref, std::unique_ptr<T>& el){
+inline void MultiPool<Q, T, maxElements>::push(const Q& ref, std::unique_ptr<T> el){
 	std::lock_guard<std::mutex> lock(m_mutex);
-	m_elements[ref].push(el);
+	m_elements[ref].push(std::move(el));
 }
 
 template<typename Q, typename T, int maxElements>

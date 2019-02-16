@@ -3,7 +3,7 @@
 #include <map>
 #include <set>
 
-#include "TimeUnit.h"
+#include "TimeInterval.h"
 #include "UpdateOrder.h"
 
 namespace Zuazo::Timing{

@@ -5,9 +5,7 @@
 
 #include "../../Utils/ImageAttributes.h"
 #include "../../Utils/PixelTypes.h"
-#include "PixelIO.h"
-#include "Pool.h"
-
+#include "Buffers/PixelUnpackBuffer.h"
 
 namespace Zuazo::Graphics::GL{
 class FrameBuffer;
@@ -18,7 +16,7 @@ public:
 	Texture();
 	Texture(const Utils::ImageAttributes& att);
 	Texture(const Utils::ImageBuffer& buf);
-	Texture(const PixelUnpackBuffer& buf);
+	Texture(const Buffers::PixelUnpackBuffer& buf);
 	Texture(const Texture& other);
 	Texture(Texture&& other);
 	virtual ~Texture();
@@ -38,7 +36,7 @@ public:
 	size_t							getSize() const;
 
 	void							subImage(const Utils::ImageBuffer& buf);
-	void							subImage(const PixelUnpackBuffer& buf);
+	void							subImage(const Buffers::PixelUnpackBuffer& buf);
 	void							subImage(const Texture& buf);
 
 	void							getImage(Utils::ImageBuffer* buf) const;
@@ -47,11 +45,6 @@ private:
 
 	GLuint							m_texture;
 };
-
-/**
- * @brief Texture pool, organized by ImageAttributes
- */
-extern MultiPool<Utils::ImageAttributes, Texture> texturePool;
 
 /*
  * Method implementations

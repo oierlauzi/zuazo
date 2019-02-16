@@ -32,7 +32,7 @@ protected:
 	mutable std::mutex					m_updateMutex;
 
 	virtual void						update()=0;
-	virtual void						perform();
+	void								perform();
 private:
 	mutable std::mutex					m_mutex;
 

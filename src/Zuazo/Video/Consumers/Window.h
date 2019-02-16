@@ -14,9 +14,9 @@
 #include "../../Utils/Rational.h"
 #include "../../Utils/VideoMode.h"
 #include "../../Utils/Vector.h"
-#include "../Video/Video.h"
+#include "../Video.h"
 #include "../../Timing/PeriodicUpdate.h"
-#include "Graphics/GL/Shader.h"
+#include "../../Graphics/GL/Shader.h"
 
 struct GLFWwindow;
 struct GLFWmonitor;
