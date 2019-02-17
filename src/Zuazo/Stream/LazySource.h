@@ -23,7 +23,7 @@ public:
 	virtual void						open() override;
 	virtual void						close() override;
 private:
-	bool								m_updateInProgress;
+	mutable bool						m_updateInProgress;
 };
 
 /*
@@ -43,7 +43,12 @@ inline LazySource<T>::~LazySource(){
 
 template <typename T>
 inline std::shared_ptr<const T>	LazySource<T>::get() const{
-	const_cast<LazySource<T>*>(this)->perform();
+	//Only update if it is not being updated (to avoid mutex deadlocks and endless loops)
+	if(!m_updateInProgress){
+		m_updateInProgress=true;
+		Updateable::perform();
+		m_updateInProgress=false;
+	}
 	return Source<T>::get();
 }
 

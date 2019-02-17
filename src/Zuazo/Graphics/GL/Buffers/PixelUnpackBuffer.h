@@ -5,7 +5,7 @@
 
 namespace Zuazo::Graphics::GL::Buffers{
 
-class PixelUnpackBuffer : public UploadBuffer<GL_PIXEL_UNPACK_BUFFER>{
+class PixelUnpackBuffer : public BufferBase<GL_PIXEL_UNPACK_BUFFER>{
 public:
 	PixelUnpackBuffer()=default;
 	PixelUnpackBuffer(const Utils::ImageBuffer& pix);
@@ -26,12 +26,14 @@ private:
  * INLINE METHOD DEFINITIONS
  */
 
-inline PixelUnpackBuffer::PixelUnpackBuffer(const Utils::ImageBuffer& pix) : UploadBuffer(){
-	upload(pix);
+inline PixelUnpackBuffer::PixelUnpackBuffer(const Utils::ImageBuffer& pix) : BufferBase(){
+	m_attributes=pix.att;
+	BufferBase<GL_PIXEL_UNPACK_BUFFER>::allocate(pix.att.size(), GL_STATIC_DRAW);
+	BufferBase<GL_PIXEL_UNPACK_BUFFER>::write(pix.data);
 }
 
 inline PixelUnpackBuffer::PixelUnpackBuffer(PixelUnpackBuffer&& other) :
-		UploadBuffer(static_cast<UploadBuffer&&>(other))
+		BufferBase(static_cast<BufferBase<GL_PIXEL_UNPACK_BUFFER>&&>(other))
 {
 	m_attributes=other.m_attributes;
 	other.m_attributes=Utils::ImageAttributes();
@@ -51,6 +53,7 @@ inline const Utils::ImageAttributes& PixelUnpackBuffer::getAttributes() const{
 
 inline void	PixelUnpackBuffer::upload(const Utils::ImageBuffer& buf){
 	m_attributes=buf.att;
-	UploadBuffer<GL_PIXEL_UNPACK_BUFFER>::upload(buf.data, buf.att.size());
+	BufferBase<GL_PIXEL_UNPACK_BUFFER>::allocate(buf.att.size(), GL_STREAM_DRAW);
+	BufferBase<GL_PIXEL_UNPACK_BUFFER>::write(buf.data);
 }
 }

@@ -9,6 +9,8 @@
 #include "RegularUpdate.h"
 #include "TimeInterval.h"
 
+#include "../Graphics/Context.h"
+
 namespace Zuazo::Timing{
 
 /*
@@ -47,6 +49,7 @@ void Timings::threadFunc(){
 
 		if(updates.periodicUpdates.first.size() || updates.periodicUpdates.last.size()){
 			//Make all the needed updates
+			Graphics::UniqueContext ctx(Graphics::Context::mainCtx);
 
 			//Do all regular updates with first priority
 			for(auto& regularEvent : updates.regularUpdates.first){

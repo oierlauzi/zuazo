@@ -17,17 +17,18 @@
 #include "Zuazo/Timing/TimeInterval.h"
 #include "Zuazo/Graphics/GL/FrameBuffer.h"
 #include "Zuazo/Graphics/GL/VertexArray.h"
-#include "Zuazo/Graphics/GL/Context.h"
+#include "Zuazo/Graphics/Context.h"
 #include "Zuazo/Graphics/Frame.h"
 #include "Zuazo/Video/Video.h"
+#include "Zuazo/Video/Consumers/Window.h"
 
-//#define TEST1
+#define TEST1
 //#define TEST2
 //#define TEST3
 //#define TEST4
 //#define TEST5
 //#define TEST6
-#define TEST7
+//#define TEST7
 
 int main(void){
 	/*
@@ -42,29 +43,42 @@ int main(void){
 	 * 		General testing
 	 */
 
-	class VideoSrcTest : public Zuazo::Video::VideoSource{
-	public:
-		void push(){
-			std::unique_ptr<const Zuazo::Graphics::Frame> fr(new Zuazo::Graphics::Frame());
-			Zuazo::Video::VideoSource::push(fr);
+	class VideoSrcTest : public Zuazo::Video::VideoLazySource{
+	protected:
+		void update() const{
+			Zuazo::Utils::ImageAttributes att=Zuazo::Utils::ImageAttributes(Zuazo::Utils::Resolution(1920, 1080), Zuazo::Utils::PixelTypes::RGBA);
+			size_t size=att.size();
+			Zuazo::Utils::ImageBuffer pix={
+					pix.att=att,
+					pix.data=(u_int8_t*)malloc(size)
+			};
+
+			for(size_t i=0; i<size; i++){
+				pix.data[i]=rand();
+			}
+
+			std::unique_ptr<Zuazo::Graphics::GL::Buffers::PixelUnpackBuffer> buf=Zuazo::Graphics::Frame::newPixelUnpackBuffer(size);
+			buf->upload(pix);
+			free(pix.data);
+			std::shared_ptr<const Zuazo::Graphics::Frame> frame=std::shared_ptr<Zuazo::Graphics::Frame>(new Zuazo::Graphics::Frame(std::move(buf)));
+			Zuazo::Video::VideoLazySource::push(frame);
 		}
 	};
 
-	class VideoConTest : public Zuazo::Video::VideoConsumer{
-	public:
-		std::shared_ptr<const Zuazo::Graphics::Frame> get(){
-			return Zuazo::Video::VideoConsumer::get();
-		}
-	};
+	VideoSrcTest src;
 
-	/*VideoSrcTest src;
-	VideoConTest con;
-	con<<src;
+	Zuazo::Video::Consumers::Window win(
+			Zuazo::Utils::Resolution(1280, 720),
+			Zuazo::Utils::Rational(30, 1),
+			"Window Test"
+	);
 
-	src.push();
-	printf("%p\n", con.get().get());
+	win<<src;
 
-*/
+	getchar();
+
+
+
 	#endif
 
 	#ifdef TEST2
@@ -80,7 +94,7 @@ int main(void){
 
 	double d1, d2;
 	printf("Double: ");
-	scanf("%lf", &d1);
+	scanf("%lf", &d1);VideoSrcTest
 	printf("Double: ");
 	scanf("%lf", &d2);
 
@@ -124,7 +138,7 @@ int main(void){
 
 #ifdef TEST4
 /*
- * 		TEST 3:
+ * 		TEST 4:
  *		Source / Consumer testing
  */
 
@@ -140,7 +154,17 @@ int main(void){
 
 		}
 
-		virtual void update(){
+		void open() override{
+			Zuazo::Stream::Source<double>::open();
+			Zuazo::Timing::PeriodicUpdate<Zuazo::Timing::UpdateOrder::FIRST>::open();
+		}
+
+		void close() override{
+			Zuazo::Stream::Source<double>::close();
+			Zuazo::Timing::PeriodicUpdate<Zuazo::Timing::UpdateOrder::FIRST>::close();
+		}
+
+		virtual void update() const{
 			static double i=0;
 
 			std::unique_ptr<const double> d(new double(i));
@@ -161,7 +185,17 @@ int main(void){
 
 		}
 
-		virtual void update(){
+		void open() override{
+			Zuazo::Stream::Consumer<double>::open();
+			Zuazo::Timing::PeriodicUpdate<Zuazo::Timing::UpdateOrder::LAST>::open();
+		}
+
+		void close() override{
+			Zuazo::Stream::Consumer<double>::close();
+			Zuazo::Timing::PeriodicUpdate<Zuazo::Timing::UpdateOrder::LAST>::close();
+		}
+
+		virtual void update() const{
 			Zuazo::Timing::TimePoint ts;
 			std::shared_ptr<const double> ptr=get(&ts);
 			if(ptr)
@@ -226,7 +260,7 @@ int main(void){
 	constexpr size_t noFrames=100;
 
 
-	Zuazo::Graphics::GL::UniqueContext ctx(Zuazo::Graphics::GL::Context::mainCtx); //Get a context
+	Zuazo::Graphics::UniqueContext ctx(Zuazo::Graphics::Context::mainCtx); //Get a context
 
 	u_int8_t data[size];
 

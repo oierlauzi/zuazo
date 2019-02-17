@@ -1,6 +1,6 @@
 #include "Context.h"
 
-using namespace Zuazo::Graphics::GL;
+using namespace Zuazo::Graphics;
 
 //Holds the main context, which gets instanceated by init()
 const Context* Context::mainCtx;
@@ -33,6 +33,7 @@ int Context::init() {
  */
 int Context::end() {
 	delete mainCtx;
+	s_mainGlfwCtx=nullptr;
 	return 0;
 }
 
@@ -42,6 +43,8 @@ Context::Context() {
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     m_glfwCtx=glfwCreateWindow(640, 480, "", NULL, s_mainGlfwCtx);
     glfwDefaultWindowHints();
+
+    glEnable(GL_TEXTURE_2D);
 
     m_prevGlfwCtx=NULL;
 }

@@ -17,6 +17,7 @@ class Frame{
 public:
 	Frame()=default;
 	Frame(const Utils::ImageBuffer& buf);
+	Frame(const GL::Buffers::PixelUnpackBuffer& buf);
 	Frame(std::unique_ptr<GL::Buffers::PixelUnpackBuffer> pbo);
 	Frame(std::unique_ptr<GL::Texture> tex);
 	Frame(const Frame& other);
@@ -54,6 +55,11 @@ private:
 inline Frame::Frame(const Utils::ImageBuffer& buf){
 	m_pbo=newPixelUnpackBuffer(buf.att.size());
 	m_pbo->upload(buf);
+}
+
+inline Frame::Frame(const GL::Buffers::PixelUnpackBuffer& buf){
+	m_texture=newTexture(buf.getAttributes());
+	m_texture->subImage(buf);
 }
 
 inline Frame::Frame(std::unique_ptr<GL::Buffers::PixelUnpackBuffer> pbo){

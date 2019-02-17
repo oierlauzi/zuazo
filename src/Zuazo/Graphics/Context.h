@@ -8,17 +8,17 @@
 #include <vector>
 #include <memory>
 
-namespace Zuazo{
+namespace Zuazo::Video::Consumers{
 	class Window;
 }
 
-namespace Zuazo::Graphics::GL{
+namespace Zuazo::Graphics{
 
 /*
  *Context class
  */
 class Context{
-	friend Window;
+	friend Video::Consumers::Window;
 public:
 	static int init();
 	static int end();

@@ -1,7 +1,5 @@
 #include "Shader.h"
 
-#include "Context.h"
-
 using namespace Zuazo::Graphics::GL;
 
 Shader::Shader() {

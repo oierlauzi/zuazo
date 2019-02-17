@@ -5,7 +5,7 @@
 #include <memory>
 #include <mutex>
 
-#include "GL/Context.h"
+#include "Context.h"
 
 namespace Zuazo::Graphics{
 
@@ -64,7 +64,7 @@ inline std::unique_ptr<T> Pool<T, maxElements>::pop(){
 		m_elements.pop();
 	}else{
 		//Requested element does not exist -> construct it
-		GL::UniqueContext ctx(GL::Context::mainCtx);
+		UniqueContext ctx(Context::mainCtx);
 		result=std::unique_ptr<T>(new T());
 	}
 
@@ -116,7 +116,7 @@ inline std::unique_ptr<T> MultiPool<Q, T, maxElements>::pop(const Q& ref){
 		}
 	}else{
 		//Requested element does not exist, construct it
-		GL::UniqueContext ctx(GL::Context::mainCtx);
+		UniqueContext ctx(Context::mainCtx);
 		result=std::unique_ptr<T>(new T());
 	}
 

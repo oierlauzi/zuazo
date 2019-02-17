@@ -12,27 +12,29 @@
 namespace Zuazo::Graphics::GL::Buffers{
 
 template<typename T>
-class VertexBuffer : public UploadBuffer<GL_ARRAY_BUFFER>{
+class VertexBuffer : public BufferBase<GL_ARRAY_BUFFER>{
 public:
 	VertexBuffer();
 
-	template<u_int32_t dim>
+	template<int dim>
 	VertexBuffer(const Utils::Vec<dim, T>* vert, u_int32_t nVert);
-	template<u_int32_t dim>
+
+	template<int dim>
 	VertexBuffer(const std::vector<Utils::Vec<dim, T>>& vert);
-	template<u_int32_t dim, u_int32_t n>
+
+	template<int dim, size_t n>
 	VertexBuffer(const std::array<Utils::Vec<dim, T>, n>& vert);
-	VertexBuffer(const VertexBuffer<T>& other)=delete;
-	VertexBuffer(VertexBuffer<T>&& other);
+
+	VertexBuffer(const VertexBuffer& other)=delete;
+	VertexBuffer(VertexBuffer&& other);
 	~VertexBuffer()=default;
 
-	template<u_int32_t dim>
+	template<int dim>
 	void				upload(const Utils::Vec<dim, T>* vert, u_int32_t nVert);
-	template<u_int32_t dim>
+	template<int dim>
 	void				upload(const std::vector<Utils::Vec<dim, T>>& vert);
-	template<u_int32_t dim, u_int32_t n>
+	template<int dim, size_t n>
 	void				upload(const std::array<Utils::Vec<dim, T>, n>& vert);
-	void 				upload(const void* data, size_t size)=delete;
 
 	u_int32_t			getVertNo() const;
 	u_int32_t			getVertDim() const;
@@ -46,31 +48,38 @@ private:
  */
 
 template<typename T>
-inline VertexBuffer<T>::VertexBuffer() : UploadBuffer(){
+inline VertexBuffer<T>::VertexBuffer() : BufferBase<GL_ARRAY_BUFFER>(){
 	m_nVert=0;
 	m_nDim=0;
 }
 
 template<typename T>
-template<u_int32_t dim>
+template<int dim>
 inline VertexBuffer<T>::VertexBuffer(const Utils::Vec<dim, T>* vert, u_int32_t nVert) : VertexBuffer(){
-	upload(vert, nVert);
+	m_nVert=nVert;
+	m_nDim=dim;
+	size_t size=m_nVert * m_nDim * sizeof(T);
+
+	BufferBase<GL_ARRAY_BUFFER>::allocate(size, GL_STATIC_DRAW);
+	BufferBase<GL_ARRAY_BUFFER>::write(vert);
 }
 
 template<typename T>
-template<u_int32_t dim>
-inline VertexBuffer<T>::VertexBuffer(const std::vector<Utils::Vec<dim, T>>& vert) : VertexBuffer(){
+template<int dim>
+inline VertexBuffer<T>::VertexBuffer(const std::vector<Utils::Vec<dim, T>>& vert) : VertexBuffer(&(vert[0]), vert.size()){
 	upload(vert);
 }
 
 template<typename T>
-template<u_int32_t dim, u_int32_t n>
-inline VertexBuffer<T>::VertexBuffer(const std::array<Utils::Vec<dim, T>, n>& vert) : VertexBuffer(){
+template<int dim, size_t n>
+inline VertexBuffer<T>::VertexBuffer(const std::array<Utils::Vec<dim, T>, n>& vert) : VertexBuffer(&(vert[0]), vert.size()){
 	upload(vert);
 }
 
 template<typename T>
-inline VertexBuffer<T>::VertexBuffer(VertexBuffer<T>&& other) : UploadBuffer(other){
+inline VertexBuffer<T>::VertexBuffer(VertexBuffer&& other) :
+	BufferBase<GL_ARRAY_BUFFER>(static_cast<BufferBase<GL_ARRAY_BUFFER>&&>(other))
+{
 	m_nVert=other.m_nVert;
 	m_nDim=other.m_nDim;
 
@@ -79,21 +88,26 @@ inline VertexBuffer<T>::VertexBuffer(VertexBuffer<T>&& other) : UploadBuffer(oth
 }
 
 template<typename T>
-template<u_int32_t dim>
+template<int dim>
 inline void VertexBuffer<T>::upload(const Utils::Vec<dim, T>* vert, u_int32_t nVert){
-	//TODO
+	m_nVert=nVert;
+	m_nDim=dim;
+	size_t size=m_nVert * m_nDim * sizeof(T);
+
+	BufferBase<GL_ARRAY_BUFFER>::allocate(size, GL_STREAM_DRAW);
+	BufferBase<GL_ARRAY_BUFFER>::write(vert);
 }
 
 template<typename T>
-template<u_int32_t dim>
+template<int dim>
 inline void VertexBuffer<T>::upload(const std::vector<Utils::Vec<dim, T>>& vert){
-	upload(&vert[0], vert.size());
+	upload(&(vert[0]), vert.size());
 }
 
 template<typename T>
-template<u_int32_t dim, u_int32_t n>
+template<int dim, size_t n>
 inline void VertexBuffer<T>::upload(const std::array<Utils::Vec<dim, T>, n>& vert){
-	upload(&vert[0], n);
+	upload(&(vert[0]), vert.size());
 }
 
 template<typename T>

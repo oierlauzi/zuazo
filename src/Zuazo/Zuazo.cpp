@@ -3,8 +3,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "Graphics/GL/Context.h"
-//#include "Window.h"
+#include "Graphics/Context.h"
+#include "Video/Consumers/Window.h"
 #include "Timing/Timing.h"
 
 namespace Zuazo{
@@ -28,11 +28,11 @@ Errors init(){
         return Errors::GLFW_INIT;
 
     //Initialize context handling
-    err=Graphics::GL::Context::init();
+    err=Graphics::Context::init();
     if(err)
     	return Errors::CONTEX_INIT;
 
-    Graphics::GL::UniqueContext ctx(Graphics::GL::Context::mainCtx);
+    Graphics::UniqueContext ctx(Graphics::Context::mainCtx);
 
     //Init GLEW
     err=glewInit();
@@ -44,7 +44,7 @@ Errors init(){
     glEnable(GL_BLEND);
 
     //Initialize window class
-    //err=Window::init();
+    err=Video::Consumers::Window::init();
     if(err)
     	return Errors::WINDOW_INIT;
 
@@ -71,7 +71,7 @@ Errors init(){
 	@return Error generated destroying Error::NONE for all OK
  **/
 Errors end(){
-	//Window::end();
+	Video::Consumers::Window::end();
 	Timing::end();
     return Errors::NONE; //TODO
 }

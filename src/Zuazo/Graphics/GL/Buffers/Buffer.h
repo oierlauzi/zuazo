@@ -12,52 +12,50 @@ namespace Zuazo::Graphics::GL::Buffers{
  * @brief Templated class representing a generic OpenGL buffer
  */
 template<GLenum type>
-class Buffer : public Bindable{
+class BufferBase : public Bindable{
 public:
-	Buffer();
-	Buffer(const void* data, size_t size);
-	Buffer(const Buffer<type>& buf)=delete;
-	Buffer(Buffer<type>&& buf);
-	virtual ~Buffer();
+	BufferBase();
+	BufferBase(const BufferBase<type>& buf)=delete;
+	BufferBase(BufferBase<type>&& buf);
+	virtual ~BufferBase();
 
 	void				bind() const override;
 	void				unbind() const override;
 
 	size_t				getSize() const;
+
 protected:
+	void				allocate(size_t size, GLenum usage);
+	void				write(const void* data);
+	void				read(void* data);
+	template<GLenum otherType>
+	void				copy(const BufferBase<otherType>& buf);
+private:
 	GLuint				m_glBuffer;
 	size_t				m_size;
 };
 
-/*
- * @brief Templated class representing a generic OpenGL buffer that can be used to upload data
- */
 template<GLenum type>
-class UploadBuffer : public Buffer<type>{
+class Buffer : public BufferBase<type>{
 public:
-	UploadBuffer()=default;
-	UploadBuffer(const void* data, size_t size);
-	UploadBuffer(const UploadBuffer<type>& buf)=delete;
-	UploadBuffer(UploadBuffer<type>&& buf);
-	virtual ~UploadBuffer()=default;
-
-	virtual void 		upload(const void* data, size_t size);
-protected:
-	using Buffer<type>::m_size;
+	using BufferBase<type>::BufferBase;
+	using BufferBase<type>::allocate;
+	using BufferBase<type>::write;
+	using BufferBase<type>::read;
 };
 
 /*
- * BUFFER METHOD DEFINITIONS
+ * METHOD DEFINITIONS
  */
 
 template<GLenum type>
-inline Buffer<type>::Buffer(){
+inline BufferBase<type>::BufferBase(){
 	glGenBuffers(1, &m_glBuffer);
 	m_size=0;
 }
 
 template<GLenum type>
-inline Buffer<type>::Buffer(Buffer<type>&& buf){
+inline BufferBase<type>::BufferBase(BufferBase<type>&& buf){
 	m_glBuffer=buf.m_glBuffer;
 	m_size=buf.m_size;
 
@@ -66,60 +64,83 @@ inline Buffer<type>::Buffer(Buffer<type>&& buf){
 }
 
 template<GLenum type>
-inline Buffer<type>::~Buffer(){
+inline BufferBase<type>::~BufferBase(){
 	glDeleteBuffers(1, &m_glBuffer);
 }
 
 template<GLenum type>
-inline void Buffer<type>::bind() const{
+inline void BufferBase<type>::bind() const{
 	glBindBuffer(type, m_glBuffer);
 }
 
 template<GLenum type>
-inline void Buffer<type>::unbind() const{
+inline void BufferBase<type>::unbind() const{
 	glBindBuffer(type, 0);
 }
 
 template<GLenum type>
-inline size_t Buffer<type>::getSize() const{
+inline size_t BufferBase<type>::getSize() const{
 	return m_size;
 }
 
-/*
- * UPLOAD BUFFER METHOD DEFINITIONS
- */
-
 template<GLenum type>
-inline UploadBuffer<type>::UploadBuffer(const void* data, size_t size){
-	upload(data, size);
-}
-
-template<GLenum type>
-inline UploadBuffer<type>::UploadBuffer(UploadBuffer<type>&& buf) :
-Buffer<type>(static_cast<Buffer<type>&&>(buf)){
-
-}
-
-template<GLenum type>
-inline void UploadBuffer<type>::upload(const void* data, size_t size){
-	UniqueBinding<UploadBuffer<type>> buf(*this);
-
+inline void BufferBase<type>::allocate(size_t size, GLenum usage){
+	UniqueBinding<BufferBase<type>> binding(*this);
 	m_size=size;
 
 	//Reallocate data
 	glBufferData(
-			type,											//target
-			m_size,											//buffer size
-			nullptr,										//data
-			GL_STREAM_DRAW									//usage
+			type,						//target
+			m_size,						//buffer size
+			nullptr,					//data
+			usage						//usage
 	);
+}
 
-	//Map buffer's data onto memory
+template<GLenum type>
+inline void BufferBase<type>::write(const void* data){
+	UniqueBinding<BufferBase<type>> binding(*this);
+
+	//Map the contents onto memory
 	void* glData=glMapBuffer(type, GL_WRITE_ONLY);
 	if(glData){
 		//Copy the data
 		memcpy(glData, data, m_size);
 		glUnmapBuffer(type);
 	}
+}
+
+template<GLenum type>
+inline void BufferBase<type>::read(void* data){
+	UniqueBinding<BufferBase<type>> binding(*this);
+
+	//Map the contents onto memory
+	const void* glData=glMapBuffer(type, GL_READ_ONLY);
+	if(glData){
+		//Copy the data
+		memcpy(data, glData, m_size);
+		glUnmapBuffer(type);
+	}
+}
+
+template<GLenum type>
+template<GLenum otherType>
+inline void BufferBase<type>::copy(const BufferBase<otherType>& other){
+	//Bind the buffers. Not using RAII style because only one
+	// buffer can be bound to the same target
+	glBindBuffer(GL_COPY_READ_BUFFER, other.m_glBuffer);
+	glBindBuffer(GL_COPY_WRITE_BUFFER, m_glBuffer);
+
+	glCopyBufferSubData(
+			GL_COPY_READ_BUFFER,		//read target
+			GL_COPY_WRITE_BUFFER,		//write target
+			0,							//read offset
+			0,							//write offset
+			m_size						//size
+	);
+
+	//Unbind the buffers
+	glBindBuffer(GL_COPY_READ_BUFFER, 0);
+	glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
 }
 }
