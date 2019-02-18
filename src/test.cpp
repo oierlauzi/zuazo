@@ -82,13 +82,13 @@ int main(void){
 
 	win<<src;
 
-	auto screens=Zuazo::Video::Consumers::Window::Screen::getScreens();
+	/*auto screens=Zuazo::Video::Consumers::Window::Screen::getScreens();
 	sleep(2);
 	printf("Setting fullscreen\n");
 	win.setFullScreen(*(screens.begin()));
 	sleep(2);
 	printf("Setting windowed\n");
-	win.setWindowed();
+	win.setWindowed();*/
 
 	getchar();
 	}

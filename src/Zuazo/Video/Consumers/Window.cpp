@@ -89,7 +89,7 @@ Window::Window(const Utils::Resolution& res, const Utils::Rational& rate, std::s
 		m_resolution(res)
 {
 	//Set up the GLFW window
-	m_glfwWindow=glfwCreateWindow(res.width, res.height, name.c_str(), NULL, Graphics::Context::s_mainGlfwCtx);
+	m_glfwWindow=glfwCreateWindow(res.width, res.height, name.c_str(), nullptr, Graphics::Context::s_mainGlfwCtx);
 	glfwSetWindowUserPointer(m_glfwWindow, this);
 	glfwSetWindowSizeCallback(m_glfwWindow, glfwResizeCbk);
 	glfwMakeContextCurrent(m_glfwWindow);
@@ -214,23 +214,36 @@ void Window::draw() const{
 }
 
 void Window::update() const{
-	Graphics::Context::mainCtx->unuse();
-	glfwMakeContextCurrent(m_glfwWindow);
-
-	//Clear
-	glClearColor(0.0, 0.0, 0.0, 0.0);
-	glClear(GL_COLOR_BUFFER_BIT);
-
 	std::shared_ptr<const Graphics::Frame> frame=VideoConsumer::get();
+
 	if(frame){
-		Graphics::GL::UniqueBinding<Graphics::Frame> frameBinding(*frame);
+		const Graphics::GL::Texture& tex=frame->getTexture();
+
+		Graphics::Context::getMainCtx().unuse();
+		glfwMakeContextCurrent(m_glfwWindow);
+
+		//Clear
+		glClearColor(0.0, 0.0, 0.0, 0.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		Graphics::GL::UniqueBinding<Graphics::GL::Texture> textureBinding(tex);
 		Graphics::GL::UniqueBinding<Graphics::GL::Shader> shaderBinding(m_glResources->shader);
 		Graphics::GL::UniqueBinding<Graphics::GL::VertexArray<float>> vertexBinding(m_glResources->vao);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	}
 
-	glfwMakeContextCurrent(nullptr);
-	Graphics::Context::mainCtx->use();
+	/*
+	glColor4f(1.0, 0.0, 1.0, 1.0);
+	glBegin(GL_QUADS);
+		glVertex2f(-0.5, -0.5);
+		glVertex2f(-0.5, +0.5);
+		glVertex2f(+0.5, +0.5);
+		glVertex2f(+0.5, -0.5);
+	glEnd();
+	*/
+
+
+		Graphics::Context::getMainCtx().use();
+	}
 	draw();
 }
 

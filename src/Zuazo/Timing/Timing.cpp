@@ -46,7 +46,7 @@ void Timings::threadFunc(){
 
 		if(updates.updateables.size()){
 			//Make all the needed updates
-			Graphics::UniqueContext ctx(Graphics::Context::mainCtx);
+			Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
 
 			//Sort by update priority
 			//std::sort(updates.updateables.begin(), updates.updateables.end());

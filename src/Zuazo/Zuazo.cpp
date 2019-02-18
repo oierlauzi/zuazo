@@ -32,7 +32,7 @@ Errors init(){
     if(err)
     	return Errors::CONTEX_INIT;
 
-    Graphics::UniqueContext ctx(Graphics::Context::mainCtx);
+    Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
 
     //Init GLEW
     err=glewInit();

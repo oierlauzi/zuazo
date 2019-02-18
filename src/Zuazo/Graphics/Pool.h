@@ -64,7 +64,7 @@ inline std::unique_ptr<T> Pool<T, maxElements>::pop(){
 		m_elements.pop();
 	}else{
 		//Requested element does not exist -> construct it
-		UniqueContext ctx(Context::mainCtx);
+		UniqueContext ctx(Context::getMainCtx());
 		result=std::unique_ptr<T>(new T());
 	}
 
@@ -116,7 +116,7 @@ inline std::unique_ptr<T> MultiPool<Q, T, maxElements>::pop(const Q& ref){
 		}
 	}else{
 		//Requested element does not exist, construct it
-		UniqueContext ctx(Context::mainCtx);
+		UniqueContext ctx(Context::getMainCtx());
 		result=std::unique_ptr<T>(new T());
 	}
 
