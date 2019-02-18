@@ -9,7 +9,7 @@
 #include "../Timing/TimePoint.h"
 #include "../Timing/TimeInterval.h"
 #include "../Timing/TimingTable.h"
-#include "../Timing/UpdateOrder.h"
+#include "../UpdateOrder.h"
 #include "Consumer.h"
 #include "Source.h"
 
@@ -19,7 +19,7 @@ template<typename T>
 class Delay :
 		public Consumer<T>,
 		public Source<T>,
-		public Timing::RegularUpdate<Timing::UpdateOrder::LAST>
+		public Timing::RegularUpdate<UpdateOrder::DELAY>
 {
 public:
 	Delay();
@@ -47,13 +47,13 @@ private:
 
 template<typename T>
 inline Delay<T>::Delay() :
-Timing::RegularUpdate<Timing::UpdateOrder::LAST>(){
+Timing::RegularUpdate<UpdateOrder::DELAY>(){
 	setDelay(Timing::TimeInterval(0));
 }
 
 template<typename T>
 inline Delay<T>::Delay(const Timing::TimeInterval& delay) :
-Timing::RegularUpdate<Timing::UpdateOrder::LAST>(){
+Timing::RegularUpdate<UpdateOrder::DELAY>(){
 	setDelay(delay);
 }
 
@@ -107,12 +107,12 @@ template<typename T>
 inline void Delay<T>::open(){
 	Source<T>::open();
 	Consumer<T>::open();
-	Timing::RegularUpdate<Timing::UpdateOrder::LAST>::open();
+	Timing::RegularUpdate<UpdateOrder::DELAY>::open();
 }
 
 template<typename T>
 inline void Delay<T>::close(){
-	Timing::RegularUpdate<Timing::UpdateOrder::LAST>::close();
+	Timing::RegularUpdate<UpdateOrder::DELAY>::close();
 	Source<T>::close();
 	Consumer<T>::close();
 

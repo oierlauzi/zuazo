@@ -73,6 +73,7 @@ Errors init(){
 Errors end(){
 	Video::Consumers::Window::end();
 	Timing::end();
+	Graphics::Context::end();
     return Errors::NONE; //TODO
 }
 

@@ -6,7 +6,7 @@
 #include <queue>
 
 #include "../Timing/PeriodicUpdate.h"
-#include "../Timing/UpdateOrder.h"
+#include "../UpdateOrder.h"
 #include "../Utils/Rational.h"
 #include "Source.h"
 
@@ -15,7 +15,7 @@ namespace Zuazo::Stream{
 template <typename T>
 class AsyncSource :
 		public Source<T>,
-		public Timing::PeriodicUpdate<Timing::UpdateOrder::FIRST>
+		public Timing::PeriodicUpdate<UpdateOrder::INPUT>
 {
 public:
 	AsyncSource();
@@ -67,7 +67,7 @@ inline AsyncSource<T>::AsyncSource(){
 
 template <typename T>
 inline AsyncSource<T>::AsyncSource(const Utils::Rational& rat) :
-Timing::PeriodicUpdate<Timing::UpdateOrder::FIRST>(rat){
+Timing::PeriodicUpdate<UpdateOrder::INPUT>(rat){
 	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_maxBufferSize=DEFAULT_MAX_BUFFER_SIZE;
 	m_maxDropped=DEFAULT_MAX_DROPPED;
@@ -172,12 +172,12 @@ void AsyncSource<T>::push(std::unique_ptr<const T>& element){
 template <typename T>
 void AsyncSource<T>::open(){
 	Source<T>::open();
-	Timing::PeriodicUpdate<Timing::UpdateOrder::FIRST>::open();
+	Timing::PeriodicUpdate<UpdateOrder::INPUT>::open();
 }
 
 template <typename T>
 void AsyncSource<T>::close(){
-	Timing::PeriodicUpdate<Timing::UpdateOrder::LAST>::close();
+	Timing::PeriodicUpdate<UpdateOrder::INPUT>::close();
 	flushBuffer();
 	Source<T>::close();
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <GL/glew.h>
+#include <glm/detail/type_vec2.hpp>
 #include <GLFW/glfw3.h>
 #include <array>
 #include <condition_variable>
@@ -13,8 +14,6 @@
 #include "../../Graphics/GL/Buffers/VertexBuffer.h"
 #include "../../Graphics/GL/Shader.h"
 #include "../../Graphics/GL/VertexArray.h"
-#include "../../Timing/PeriodicUpdate.h"
-#include "../../Timing/UpdateOrder.h"
 #include "../../Utils/Rational.h"
 #include "../../Utils/Resolution.h"
 #include "../../Utils/Vector.h"
@@ -23,8 +22,7 @@
 namespace Zuazo::Video::Consumers{
 
 class Window :
-	public VideoConsumer,
-	public Timing::PeriodicUpdate<Timing::UpdateOrder::LAST>
+	public VideoOutput
 {
 public:
 	class Screen{
@@ -211,13 +209,12 @@ inline std::set<std::shared_ptr<Window::Screen>> Window::Screen::getScreens(){
  */
 
 inline void Window::open(){
-	VideoConsumer::open();
-	Timing::PeriodicUpdate<Timing::UpdateOrder::LAST>::open();
 	//TODO
+	VideoOutput::open();
 }
 inline void Window::close(){
-	Timing::PeriodicUpdate<Timing::UpdateOrder::LAST>::close();
-	VideoConsumer::close();
+	//TODO
+	VideoOutput::close();
 }
 
 /********************************

@@ -1,22 +1,18 @@
 #pragma once
 
+#include <sys/types.h>
 #include <memory>
 
 #include "../Updateable.h"
 #include "../Utils/Rational.h"
-#include "TimeInterval.h"
 #include "Timing.h"
-#include "UpdateOrder.h"
 
 namespace Zuazo::Timing{
 
-extern std::unique_ptr<Timings> timings;
-
-template <UpdateOrder TPriority>
+template <u_int32_t order>
 class PeriodicUpdate :
 		public virtual Updateable
 {
-	friend Timings;
 public:
 	PeriodicUpdate();
 	PeriodicUpdate(const Utils::Rational& rate);
@@ -39,54 +35,54 @@ private:
  * METHOD DEFINITIONS
  */
 
-template <UpdateOrder TPriority>
-inline PeriodicUpdate<TPriority>::PeriodicUpdate() : Updateable(){
+template <u_int32_t order>
+inline PeriodicUpdate<order>::PeriodicUpdate() : Updateable(){
 
 }
 
-template <UpdateOrder TPriority>
-inline PeriodicUpdate<TPriority>::PeriodicUpdate(const Utils::Rational& rate) : PeriodicUpdate(){
+template <u_int32_t order>
+inline PeriodicUpdate<order>::PeriodicUpdate(const Utils::Rational& rate) : PeriodicUpdate(){
 	setRate(rate);
 }
 
-template <UpdateOrder TPriority>
-inline PeriodicUpdate<TPriority>::PeriodicUpdate(const PeriodicUpdate& other) : Updateable(other){
+template <u_int32_t order>
+inline PeriodicUpdate<order>::PeriodicUpdate(const PeriodicUpdate& other) : Updateable(other){
 	setInterval(other.m_updateInterval);
 }
 
-template <UpdateOrder TPriority>
-inline PeriodicUpdate<TPriority>::~PeriodicUpdate(){
+template <u_int32_t order>
+inline PeriodicUpdate<order>::~PeriodicUpdate(){
 	if(timings)
 		timings->deleteTiming(this);
 }
 
 
 
-template <UpdateOrder TPriority>
-inline const Utils::Rational& PeriodicUpdate<TPriority>::getInterval() const {
+template <u_int32_t order>
+inline const Utils::Rational& PeriodicUpdate<order>::getInterval() const {
 	return m_updateInterval;
 }
 
-template <UpdateOrder TPriority>
-inline Utils::Rational PeriodicUpdate<TPriority>::getRate() const {
+template <u_int32_t order>
+inline Utils::Rational PeriodicUpdate<order>::getRate() const {
 	return 1/m_updateInterval;
 }
 
 
-template <UpdateOrder TPriority>
-inline void PeriodicUpdate<TPriority>::open(){
+template <u_int32_t order>
+inline void PeriodicUpdate<order>::open(){
 	Updateable::open();
 	timings->addTiming(this);
 }
 
-template <UpdateOrder TPriority>
-inline void PeriodicUpdate<TPriority>::close(){
+template <u_int32_t order>
+inline void PeriodicUpdate<order>::close(){
 	timings->deleteTiming(this);
 	Updateable::close();
 }
 
-template <UpdateOrder TPriority>
-inline void PeriodicUpdate<TPriority>::setInterval(const Utils::Rational& interval){
+template <u_int32_t order>
+inline void PeriodicUpdate<order>::setInterval(const Utils::Rational& interval){
 	m_updateInterval=interval;
 
 	if(isOpen()){
@@ -94,8 +90,8 @@ inline void PeriodicUpdate<TPriority>::setInterval(const Utils::Rational& interv
 	}
 }
 
-template <UpdateOrder TPriority>
-inline void PeriodicUpdate<TPriority>::setRate(const Utils::Rational& rate){
+template <u_int32_t order>
+inline void PeriodicUpdate<order>::setRate(const Utils::Rational& rate){
 	if(rate)
 		setInterval(1/rate);
 	else

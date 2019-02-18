@@ -1,20 +1,17 @@
 #pragma once
 
+#include <sys/types.h>
 #include <memory>
 
 #include "../Updateable.h"
 #include "Timing.h"
-#include "UpdateOrder.h"
 
 namespace Zuazo::Timing{
 
-extern std::unique_ptr<Timings> timings;
-
-template <UpdateOrder TPriority>
+template <u_int32_t order>
 class RegularUpdate :
 		public virtual Updateable
 {
-	friend Timings;
 public:
 	RegularUpdate();
 	RegularUpdate(const RegularUpdate& other);
@@ -28,30 +25,30 @@ public:
  * METHOD DEFINITIONS
  */
 
-template <UpdateOrder TPriority>
-inline RegularUpdate<TPriority>::RegularUpdate(){
+template <u_int32_t order>
+inline RegularUpdate<order>::RegularUpdate(){
 	timings->addTiming(this);
 }
 
-template <UpdateOrder TPriority>
-inline RegularUpdate<TPriority>::RegularUpdate(const RegularUpdate& other){
+template <u_int32_t order>
+inline RegularUpdate<order>::RegularUpdate(const RegularUpdate& other){
 	timings->addTiming(this);
 }
 
-template <UpdateOrder TPriority>
-inline RegularUpdate<TPriority>::~RegularUpdate(){
+template <u_int32_t order>
+inline RegularUpdate<order>::~RegularUpdate(){
 	if(timings) //Timings might have been destroyed (called end() before going out of scope)
 		timings->deleteTiming(this);
 }
 
-template <UpdateOrder TPriority>
-inline void RegularUpdate<TPriority>::open(){
+template <u_int32_t order>
+inline void RegularUpdate<order>::open(){
 	Updateable::open();
 	timings->addTiming(this);
 }
 
-template <UpdateOrder TPriority>
-inline void RegularUpdate<TPriority>::close(){
+template <u_int32_t order>
+inline void RegularUpdate<order>::close(){
 	timings->deleteTiming(this);
 	Updateable::close();
 }

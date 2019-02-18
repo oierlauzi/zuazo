@@ -1,5 +1,8 @@
 #pragma once
 
+#include <bits/stdint-uintn.h>
+#include <glm/detail/qualifier.hpp>
+
 #define GLM_HAS_ONLY_XYZW
 
 #include <glm/detail/type_vec2.hpp>

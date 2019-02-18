@@ -1,17 +1,22 @@
 #pragma once
 
+#include <sys/types.h>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <thread>
 
-#include "TimingTable.h"
 #include "TimePoint.h"
-#include "UpdateOrder.h"
+#include "TimingTable.h"
 
 //#define ENABLE_LOAD_DEBUG
 
 namespace Zuazo::Timing{
+
+template <u_int32_t order>
+class PeriodicUpdate;
+template <u_int32_t order>
+class RegularUpdate;
 
 class Timings{
 public:
@@ -25,16 +30,16 @@ public:
 	void										unlock();
 	bool										try_lock();
 
-	void 										addTiming(PeriodicUpdate<UpdateOrder::FIRST>* event);
-	void 										addTiming(PeriodicUpdate<UpdateOrder::LAST>* event);
-	void 										addTiming(RegularUpdate<UpdateOrder::FIRST>* event);
-	void 										addTiming(RegularUpdate<UpdateOrder::LAST>* event);
-	void 										deleteTiming(PeriodicUpdate<UpdateOrder::FIRST>* event);
-	void 										deleteTiming(PeriodicUpdate<UpdateOrder::LAST>* event);
-	void 										deleteTiming(RegularUpdate<UpdateOrder::FIRST>* event);
-	void 										deleteTiming(RegularUpdate<UpdateOrder::LAST>* event);
-	void 										modifyTiming(PeriodicUpdate<UpdateOrder::FIRST>* event);
-	void 										modifyTiming(PeriodicUpdate<UpdateOrder::LAST>* event);
+	template <u_int32_t order>
+	void 										addTiming(const PeriodicUpdate<order>* event);
+	template <u_int32_t order>
+	void 										addTiming(const RegularUpdate<order>* event);
+	template <u_int32_t order>
+	void 										deleteTiming(const PeriodicUpdate<order>* event);
+	template <u_int32_t order>
+	void 										deleteTiming(const RegularUpdate<order>* event);
+	template <u_int32_t order>
+	void 										modifyTiming(const PeriodicUpdate<order>* event);
 private:
 	TimingTable									m_timingTable;
 
@@ -79,57 +84,33 @@ inline bool Timings::try_lock(){
 
 
 
-
-inline void Timings::addTiming(PeriodicUpdate<UpdateOrder::FIRST>* event){
+template <u_int32_t order>
+inline void Timings::addTiming(const PeriodicUpdate<order>* event){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_timingTable.addTiming(event);
 	m_cond.notify_one();
 }
 
-inline void Timings::addTiming(PeriodicUpdate<UpdateOrder::LAST>* event){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	m_timingTable.addTiming(event);
-	m_cond.notify_one();
-}
-
-inline void Timings::addTiming(RegularUpdate<UpdateOrder::FIRST>* event){
+template <u_int32_t order>
+inline void Timings::addTiming(const RegularUpdate<order>* event){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_timingTable.addTiming(event);
 }
 
-inline void Timings::addTiming(RegularUpdate<UpdateOrder::LAST>* event){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	m_timingTable.addTiming(event);
-}
-
-inline void Timings::deleteTiming(PeriodicUpdate<UpdateOrder::FIRST>* event){
+template <u_int32_t order>
+inline void Timings::deleteTiming(const PeriodicUpdate<order>* event){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_timingTable.deleteTiming(event);
 }
 
-inline void Timings::deleteTiming(PeriodicUpdate<UpdateOrder::LAST>* event){
+template <u_int32_t order>
+inline void Timings::deleteTiming(const RegularUpdate<order>* event){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_timingTable.deleteTiming(event);
 }
 
-inline void Timings::deleteTiming(RegularUpdate<UpdateOrder::FIRST>* event){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	m_timingTable.deleteTiming(event);
-}
-
-inline void Timings::deleteTiming(RegularUpdate<UpdateOrder::LAST>* event){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	m_timingTable.deleteTiming(event);
-}
-
-inline void Timings::modifyTiming(PeriodicUpdate<UpdateOrder::FIRST>* event){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	m_timingTable.deleteTiming(event);
-	m_timingTable.addTiming(event);
-	m_cond.notify_one();
-}
-
-inline void Timings::modifyTiming(PeriodicUpdate<UpdateOrder::LAST>* event){
+template <u_int32_t order>
+inline void Timings::modifyTiming(const PeriodicUpdate<order>* event){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_timingTable.deleteTiming(event);
 	m_timingTable.addTiming(event);

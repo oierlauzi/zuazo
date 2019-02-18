@@ -9,7 +9,7 @@
 #include "Zuazo/Stream/Source.h"
 #include "Zuazo/Timing/PeriodicUpdate.h"
 #include "Zuazo/Timing/TimePoint.h"
-#include "Zuazo/Timing/UpdateOrder.h"
+#include "Zuazo/UpdateOrder.h"
 #include "Zuazo/Timing/Chronometer.h"
 #include "Zuazo/Utils/Color.h"
 #include "Zuazo/Utils/Rational.h"
@@ -43,8 +43,10 @@ int main(void){
 	 * 		General testing
 	 */
 
-	class VideoSrcTest : public Zuazo::Video::VideoLazySource{
+	class VideoSrcTest : public Zuazo::Video::LazyVideoSource{
 	protected:
+		mutable double time=0;
+
 		void update() const{
 			Zuazo::Utils::ImageAttributes att=Zuazo::Utils::ImageAttributes(Zuazo::Utils::Resolution(1920, 1080), Zuazo::Utils::PixelTypes::RGBA);
 			size_t size=att.size();
@@ -53,18 +55,23 @@ int main(void){
 					pix.data=(u_int8_t*)malloc(size)
 			};
 
+			u_int8_t bright=abs(sin(time))*0xff;
+			time+=0.1;
+
 			for(size_t i=0; i<size; i++){
-				pix.data[i]=rand();
+				pix.data[i]=bright;
 			}
 
 			std::unique_ptr<Zuazo::Graphics::GL::Buffers::PixelUnpackBuffer> buf=Zuazo::Graphics::Frame::newPixelUnpackBuffer(size);
 			buf->upload(pix);
 			free(pix.data);
-			std::shared_ptr<const Zuazo::Graphics::Frame> frame=std::shared_ptr<Zuazo::Graphics::Frame>(new Zuazo::Graphics::Frame(std::move(buf)));
-			Zuazo::Video::VideoLazySource::push(frame);
+			std::shared_ptr<const Zuazo::Graphics::Frame> frame=std::shared_ptr<Zuazo::Graphics::Frame>(
+					new Zuazo::Graphics::Frame(std::move(buf))
+			);
+			Zuazo::Video::LazyVideoSource::push(frame);
 		}
 	};
-
+	{
 	VideoSrcTest src;
 
 	Zuazo::Video::Consumers::Window win(
@@ -76,6 +83,7 @@ int main(void){
 	win<<src;
 
 	getchar();
+	}
 
 
 
@@ -116,22 +124,22 @@ int main(void){
  *		Timing testing
  */
 
-	class TimingExample : public Zuazo::Timing::PeriodicUpdate<Zuazo::Timing::UpdateOrder::FIRST>{
+	class TimingExample : public Zuazo::Timing::PeriodicUpdate<Zuazo::UpdateOrder::INPUT>{
 	public:
 		TimingExample(Zuazo::Utils::Rational& a) :
-			Zuazo::Timing::PeriodicUpdate<Zuazo::Timing::UpdateOrder::FIRST>(Zuazo::Utils::Rational(a)){
+			Zuazo::Timing::PeriodicUpdate<Zuazo::UpdateOrder::INPUT>(Zuazo::Utils::Rational(a)){
 
 		}
 
-		void update(){
+		void update() const{
 			printf("Updating\n");
 		}
 	};
 
 	Zuazo::Utils::Rational r4(29.97);
 	Zuazo::Utils::Rational r5(30);
-	TimingExample t4(r2);
-	TimingExample t5(r3);
+	TimingExample t4(r4);
+	TimingExample t5(r5);
 	getchar();
 
 #endif

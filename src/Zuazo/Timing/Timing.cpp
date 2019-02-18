@@ -1,15 +1,12 @@
 #include "Timing.h"
 
+#include <algorithm>
 #include <chrono>
-#include <cstdio>
-#include <set>
-
-#include "Chronometer.h"
-#include "PeriodicUpdate.h"
-#include "RegularUpdate.h"
-#include "TimeInterval.h"
+#include <map>
 
 #include "../Graphics/Context.h"
+#include "../Updateable.h"
+#include "TimePoint.h"
 
 namespace Zuazo::Timing{
 
@@ -47,37 +44,31 @@ void Timings::threadFunc(){
 
 		TimingTable::PendingUpdates updates=m_timingTable.getPendingUpdates();
 
-		if(updates.periodicUpdates.first.size() || updates.periodicUpdates.last.size()){
+		if(updates.updateables.size()){
 			//Make all the needed updates
 			Graphics::UniqueContext ctx(Graphics::Context::mainCtx);
 
-			//Do all regular updates with first priority
-			for(auto& regularEvent : updates.regularUpdates.first){
-				regularEvent->perform();
-			}
+			//Sort by update priority
+			//std::sort(updates.updateables.begin(), updates.updateables.end());
+			/*
+			 * No need, its actually sorted by default
+			 */
 
-			//Do all peridodic updates with first priority
-			for(auto& periodicEvent : updates.periodicUpdates.first){
-				periodicEvent->perform();
+			//Update all
+			for(auto ite=updates.updateables.begin(); ite!=updates.updateables.end(); ++ite){
+				for(const Updateable * updateable : ite->second){
+					updateable->perform();
+				}
 			}
-
-			//Do all regular updates with last priority
-			for(auto& regularEvent : updates.regularUpdates.last){
-				regularEvent->perform();
-			}
-
-			//Do all peridodic updates with last priority
-			for(auto& periodicEvent : updates.periodicUpdates.last){
-				periodicEvent->perform();
-			}
-
 
 			// Increment timing values for each interval and for currTime
 			m_currTime+=updates.timeForNextUpdate;
-			m_timingTable.addTime(updates.timeForNextUpdate);
+			m_timingTable.incrTime(updates.timeForNextUpdate);
 
 			//Wait until next update
-			m_cond.wait_until(lock, m_currTime);
+			lock.unlock();
+			std::this_thread::sleep_until(m_currTime);
+			lock.lock();
 		}else{
 			m_cond.wait(lock);
 		}

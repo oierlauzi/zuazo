@@ -85,10 +85,12 @@ Window::Window(const Utils::Resolution& res, const Utils::Rational& rate, std::s
 
 	glfwMakeContextCurrent(NULL);
 
-	Timing::PeriodicUpdate<Timing::UpdateOrder::LAST>::setRate(rate);
+	VideoOutput::setRate(rate);
 }
 
 Window::~Window() {
+	VideoOutput::setInterval(0);
+
 	//Terminate the drawing thread
 	m_exit=true;
 	m_drawCond.notify_one();
@@ -126,6 +128,7 @@ void Window::update() const{
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	}
 
+	glfwMakeContextCurrent(nullptr);
 	Graphics::Context::mainCtx->use();
 	draw();
 }

@@ -1,12 +1,18 @@
 #pragma once
 
+#include <memory>
 #include <mutex>
+
+namespace Zuazo::Timing{
+class Timings;
+}
 
 namespace Zuazo{
 /*
  * Class which defines a periodical event
  */
 class Updateable{
+	friend Timing::Timings;
 public:
 	/*
 	 * An update event's callback function
