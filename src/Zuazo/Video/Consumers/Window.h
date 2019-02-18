@@ -34,22 +34,21 @@ public:
 
 		std::string									getName() const;
 		Utils::Resolution 							getRes() const;
-		Utils::Vec2<int>							getSize() const;
-		Utils::Vec2<int>							getPos() const;
+		Utils::Vec2i								getSize() const;
+		Utils::Vec2i								getPos() const;
 		Utils::Rational								getRate() const;
 		bool										isAvalible() const;
 
 		static std::set<std::shared_ptr<Screen>> 	getScreens();
 	private:
-		Screen(const GLFWmonitor * monitor);
+		Screen(GLFWmonitor * monitor);
 
-		GLFWmonitor	*								m_monitor;
+		GLFWmonitor	*								m_glfwMonitor;
 
 		static std::set<std::shared_ptr<Screen>>	s_screens;
 		static std::mutex							s_cbkMutex;
 
-		static void 								monitorCbk(GLFWmonitor * mon, int event);
-
+		static void 								glfwMonitorCbk(GLFWmonitor * mon, int event);
 	};
 
 	static int init();
@@ -64,7 +63,7 @@ public:
 	void										close() override;
 
 	void										setRes(const Utils::Resolution& res);
-	void										setFullScreen(const Screen& screen);
+	void										setFullScreen(const std::shared_ptr<Screen>& screen);
 	void										setWindowed();
 	void										setVSync(bool value);
 	void										setName(const std::string& name);
@@ -78,8 +77,9 @@ protected:
 	void										update() const override;
 private:
 	struct WindowedParams{
-		Utils::Resolution 							res;
+		Utils::Vec2<int> 							res;
 		Utils::Vec2<int>							pos;
+		Utils::Rational								rate;
 	};
 
 	struct WindowResources{
@@ -144,8 +144,8 @@ private:
 inline std::string Window::Screen::getName() const{
 	std::lock_guard<std::mutex> lock(s_cbkMutex);
 
-	if(m_monitor){
-		return std::string(glfwGetMonitorName(m_monitor));
+	if(m_glfwMonitor){
+		return std::string(glfwGetMonitorName(m_glfwMonitor));
 	}else
 		return "";
 }
@@ -153,8 +153,8 @@ inline std::string Window::Screen::getName() const{
 inline Utils::Resolution Window::Screen::getRes() const{
 	std::lock_guard<std::mutex> lock(s_cbkMutex);
 
-	if(m_monitor){
-		const GLFWvidmode* videoMode=glfwGetVideoMode(m_monitor);
+	if(m_glfwMonitor){
+		const GLFWvidmode* videoMode=glfwGetVideoMode(m_glfwMonitor);
 		return Utils::Resolution(videoMode->width, videoMode->height);
 	}else
 		return Utils::Resolution();
@@ -163,9 +163,9 @@ inline Utils::Resolution Window::Screen::getRes() const{
 inline Utils::Vec2<int> Window::Screen::getSize() const{
 	std::lock_guard<std::mutex> lock(s_cbkMutex);
 
-	if(m_monitor){
+	if(m_glfwMonitor){
 		int width, height;
-		glfwGetMonitorPhysicalSize(m_monitor, &width, &height);
+		glfwGetMonitorPhysicalSize(m_glfwMonitor, &width, &height);
 		return Utils::Vec2<int>(width, height);
 	}else
 		return Utils::Vec2<int>(-1, -1);
@@ -174,9 +174,9 @@ inline Utils::Vec2<int> Window::Screen::getSize() const{
 inline Utils::Vec2<int> Window::Screen::getPos() const{
 	std::lock_guard<std::mutex> lock(s_cbkMutex);
 
-	if(m_monitor){
+	if(m_glfwMonitor){
 		int x, y;
-		glfwGetMonitorPos(m_monitor, &x, &y);
+		glfwGetMonitorPos(m_glfwMonitor, &x, &y);
 		return Utils::Vec2<int>(x, y);
 	}else
 		return Utils::Vec2<int>(-1, -1);
@@ -185,8 +185,8 @@ inline Utils::Vec2<int> Window::Screen::getPos() const{
 inline Utils::Rational Window::Screen::getRate() const{
 	std::lock_guard<std::mutex> lock(s_cbkMutex);
 
-	if(m_monitor){
-		const GLFWvidmode* videoMode=glfwGetVideoMode(m_monitor);
+	if(m_glfwMonitor){
+		const GLFWvidmode* videoMode=glfwGetVideoMode(m_glfwMonitor);
 		return Utils::Rational(videoMode->refreshRate, 1);
 	}else
 		return Utils::Rational();
@@ -195,7 +195,7 @@ inline Utils::Rational Window::Screen::getRate() const{
 inline bool Window::Screen::isAvalible() const{
 	std::lock_guard<std::mutex> lock(s_cbkMutex);
 
-	return m_monitor != nullptr;
+	return m_glfwMonitor != nullptr;
 }
 
 inline std::set<std::shared_ptr<Window::Screen>> Window::Screen::getScreens(){
@@ -227,28 +227,6 @@ inline void Window::setRes(const Utils::Resolution& res) {
 	}
 }
 
-/*
- * @brief sets this window as windowed if it was full-screen.
- * Otherwise it leaves it untouched
- */
-inline void Window::setVSync(bool value) {
-	if(m_vSync != value){
-		std::lock_guard<std::mutex> lock(m_updateMutex);
-
-		//vSync setting needs to be changed
-		glfwMakeContextCurrent(m_glfwWindow);
-		if(value){
-			//Turn vSync ON
-			glfwSwapInterval(1);
-			m_vSync=true;
-		}else{
-			//Turn vSyinc OFF
-			glfwSwapInterval(0);
-			m_vSync=false;
-		}
-	}
-}
-
 inline void Window::setName(const std::string& name){
 	glfwSetWindowTitle(m_glfwWindow, name.c_str());
 }
@@ -267,6 +245,14 @@ inline bool Window::getVSync() const {
 
 inline std::string	Window::getName() const{
 	return m_name;
+}
+
+inline bool Window::isFullScreen() const{
+	return !m_screen.use_count();
+}
+
+inline std::shared_ptr<Window::Screen> Window::getScreen() const{
+	return m_screen.lock();
 }
 
 }

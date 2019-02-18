@@ -1,5 +1,7 @@
 #include "Window.h"
 
+#include <algorithm>
+
 #include "../../Graphics/Context.h"
 #include "../../Graphics/Frame.h"
 #include "../../Graphics/GL/UniqueBinding.h"
@@ -39,6 +41,12 @@ std::thread Window::s_eventThread;
  */
 bool Window::s_exit;
 
+
+
+
+std::set<std::shared_ptr<Window::Screen>> Window::Screen::s_screens;
+std::mutex Window::Screen::s_cbkMutex;
+
 /********************************
  *	INITIALIZER / TERMINATOR	*
  ********************************/
@@ -46,6 +54,18 @@ bool Window::s_exit;
 int Window::init(){
 	s_exit=false;
 	s_eventThread=std::thread(eventThreadFunc);
+
+	Screen::s_screens.erase(Screen::s_screens.begin(), Screen::s_screens.end());
+
+	//Get all the avalible sceens
+	int count;
+	GLFWmonitor** monitors = glfwGetMonitors(&count);
+	for(int i=0; i<count; i++){
+		Screen::s_screens.emplace(new Screen(monitors[i]));
+	}
+
+	glfwSetMonitorCallback(Screen::glfwMonitorCbk);
+
 	return 0;
 }
 
@@ -53,6 +73,10 @@ int Window::end(){
 	s_exit=true;
 	glfwPostEmptyEvent(); //Indicate to the event thread that it should finish
 	s_eventThread.join();
+
+	glfwSetMonitorCallback(nullptr);
+	Screen::s_screens.erase(Screen::s_screens.begin(), Screen::s_screens.end());
+
 	return 0;
 }
 
@@ -103,6 +127,83 @@ Window::~Window() {
 
 	//Destroy the window
 	glfwDestroyWindow(m_glfwWindow);
+}
+
+void Window::setFullScreen(const std::shared_ptr<Screen>& screen){
+	//Get windowed prameters
+	std::unique_ptr<WindowedParams> windowedParams=std::unique_ptr<WindowedParams>(new WindowedParams);
+	glfwGetWindowPos(m_glfwWindow, &windowedParams->pos.x, &windowedParams->pos.y);
+	glfwGetWindowSize(m_glfwWindow, &windowedParams->res.x, &windowedParams->res.y);
+	windowedParams->rate=getRate();
+
+	//Set the window fullscreen
+	Utils::Resolution res=screen->getRes();
+	Utils::Rational rate=screen->getRate();
+	glfwSetWindowMonitor(
+			m_glfwWindow,							//Window
+			screen->m_glfwMonitor,					//Screen
+			0,										//Position: x (ignored for fullscreen)
+			0,										//Position: y (ignored for fullscreen)
+			res.width,								//Width
+			res.height,								//Height
+			static_cast<int>(rate) 					//Refresh-rate
+	);
+
+	//Update data on the window class
+	m_windowed=std::move(windowedParams);
+	m_screen=screen;
+
+}
+
+void Window::setWindowed(){
+	if(m_windowed){
+		//Release the screen
+		glfwSetWindowMonitor(
+				m_glfwWindow,						//Window
+				nullptr,							//Screen
+				m_windowed->pos.x,					//Position: x
+				m_windowed->pos.y,					//Position: y
+				m_windowed->res.x,					//Width
+				m_windowed->res.y,					//Height
+				static_cast<int>(m_windowed->rate) 	//Refresh-rate
+		);
+
+		m_windowed.reset();
+		m_screen.reset();
+	}else{
+		//No data is provided (should not happen)
+		glfwSetWindowMonitor(
+				m_glfwWindow,						//Window
+				nullptr,							//Screen
+				0,									//Position: x
+				0,									//Position: y
+				640,								//Width
+				480,								//Height
+				GLFW_DONT_CARE 						//Refresh-rate
+		);
+	}
+}
+
+/*
+ * @brief sets this window as windowed if it was full-screen.
+ * Otherwise it leaves it untouched
+ */
+void Window::setVSync(bool value) {
+	if(m_vSync != value){
+		std::lock_guard<std::mutex> lock(m_updateMutex);
+
+		//vSync setting needs to be changed
+		glfwMakeContextCurrent(m_glfwWindow);
+		if(value){
+			//Turn vSync ON
+			glfwSwapInterval(1);
+			m_vSync=true;
+		}else{
+			//Turn vSyinc OFF
+			glfwSwapInterval(0);
+			m_vSync=false;
+		}
+	}
 }
 
 /********************************
@@ -177,4 +278,30 @@ void Window::glfwResizeCbk(GLFWwindow * win, int width, int height){
 	Window * window=(Window *)glfwGetWindowUserPointer(win);
 	if(window)
 		window->resize(Utils::Resolution(width, height));
+}
+
+void Window::Screen::glfwMonitorCbk(GLFWmonitor * mon, int event){
+	std::lock_guard<std::mutex> lock(s_cbkMutex);
+
+	if(event == GLFW_CONNECTED){
+		//There is a new screen available
+		//Insert it
+		s_screens.emplace(new Screen(mon));
+	}else if(event == GLFW_DISCONNECTED){
+		//A screen has been disconnected
+		//Find it and erase it
+		auto ite=s_screens.begin();
+		while(ite != s_screens.end()){
+			if((*ite)->m_glfwMonitor == mon){
+				//Found it!
+				ite=s_screens.erase(ite);
+			}else{
+				++ite;
+			}
+		}
+	}
+}
+
+Window::Screen::Screen(GLFWmonitor * monitor){
+	m_glfwMonitor=monitor;
 }
