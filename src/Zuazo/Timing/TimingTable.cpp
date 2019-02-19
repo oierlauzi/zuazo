@@ -47,7 +47,7 @@ void TimingTable::cleanUnusedIntervals(){
 		bool intervalIsEmpty=true;
 
 		for(auto& updateOrder : ite->second.updateables){
-			if(updateOrder.second.size()){
+			if(updateOrder.second.size() == 0){
 				//There is something
 				intervalIsEmpty=false;
 				break;

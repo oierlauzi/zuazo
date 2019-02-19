@@ -14,10 +14,10 @@ class PeriodicUpdate :
 		public virtual Updateable
 {
 public:
-	PeriodicUpdate();
+	PeriodicUpdate()=default;
 	PeriodicUpdate(const Utils::Rational& rate);
 	PeriodicUpdate(const PeriodicUpdate& other);
-	virtual ~PeriodicUpdate();
+	virtual ~PeriodicUpdate()=default;
 
 	const Utils::Rational& 				getInterval() const;
 	Utils::Rational						getRate() const;
@@ -34,29 +34,17 @@ private:
 /*
  * METHOD DEFINITIONS
  */
-
 template <u_int32_t order>
-inline PeriodicUpdate<order>::PeriodicUpdate() : Updateable(){
-
+inline PeriodicUpdate<order>::PeriodicUpdate(const Utils::Rational& rate) :
+	m_updateInterval(1 / rate)
+{
 }
 
 template <u_int32_t order>
-inline PeriodicUpdate<order>::PeriodicUpdate(const Utils::Rational& rate) : PeriodicUpdate(){
-	setRate(rate);
+inline PeriodicUpdate<order>::PeriodicUpdate(const PeriodicUpdate& other) :
+	m_updateInterval(other.m_updateInterval)
+{
 }
-
-template <u_int32_t order>
-inline PeriodicUpdate<order>::PeriodicUpdate(const PeriodicUpdate& other) : Updateable(other){
-	setInterval(other.m_updateInterval);
-}
-
-template <u_int32_t order>
-inline PeriodicUpdate<order>::~PeriodicUpdate(){
-	if(timings)
-		timings->deleteTiming(this);
-}
-
-
 
 template <u_int32_t order>
 inline const Utils::Rational& PeriodicUpdate<order>::getInterval() const {
@@ -77,7 +65,8 @@ inline void PeriodicUpdate<order>::open(){
 
 template <u_int32_t order>
 inline void PeriodicUpdate<order>::close(){
-	timings->deleteTiming(this);
+	if(timings) //It might have been deleted
+		timings->deleteTiming(this);
 	Updateable::close();
 }
 

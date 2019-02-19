@@ -55,11 +55,18 @@ int main(void){
 					pix.data=(u_int8_t*)malloc(size)
 			};
 
-			u_int8_t bright=abs(sin(time))*0xff;
+			u_int8_t rgb[3];
+			rgb[0]=abs(sin(time)) * 0xff;
+			rgb[1]=abs(cos(time)) * 0xff;
+			rgb[2]=abs(sin(time)) * 0xff;
+
 			time+=0.1;
 
-			for(size_t i=0; i<size; i++){
-				pix.data[i]=bright;
+			for(size_t i=0; i<size; i+=4){
+				pix.data[i + 0]=rgb[0];
+				pix.data[i + 1]=rgb[1];
+				pix.data[i + 2]=rgb[2];
+				pix.data[i + 3]=0xff;
 			}
 
 			std::unique_ptr<Zuazo::Graphics::GL::Buffers::PixelUnpackBuffer> buf=Zuazo::Graphics::Frame::newPixelUnpackBuffer(size);
@@ -90,6 +97,8 @@ int main(void){
 	printf("Setting windowed\n");
 	win.setWindowed();*/
 
+	getchar();
+	win.open();
 	getchar();
 	}
 

@@ -85,74 +85,125 @@ int Window::end(){
  ********************************/
 
 Window::Window(const Utils::Resolution& res, const Utils::Rational& rate, std::string name) :
+		SyncVideoConsumer(rate),
 		m_name(name),
 		m_resolution(res)
 {
+	m_glfwWindow=nullptr;
+	m_exit=true;
+	m_vSync=true;
+
+	open();
+}
+
+Window::~Window(){
+	close();
+}
+
+void Window::open(){
+	//Ensure nothing is open
+	close();
+
+	//Check if it is fullscreen
+	std::lock_guard<std::mutex> lock(Screen::s_cbkMutex);
+	GLFWmonitor* monitor=nullptr;
+	std::shared_ptr<Screen> screen=m_screen.lock();
+	if(screen)
+		monitor=screen->m_glfwMonitor;
+
 	//Set up the GLFW window
-	m_glfwWindow=glfwCreateWindow(res.width, res.height, name.c_str(), nullptr, Graphics::Context::s_mainGlfwCtx);
+	m_glfwWindow=glfwCreateWindow(
+			m_resolution.width,							//Width
+			m_resolution.height,						//Height
+			m_name.c_str(),								//Name
+			monitor,									//Monitor
+			Graphics::Context::s_mainGlfwCtx			//Share objects with
+
+	);
+
+	//Set up callbacks for the window
 	glfwSetWindowUserPointer(m_glfwWindow, this);
 	glfwSetWindowSizeCallback(m_glfwWindow, glfwResizeCbk);
+	glfwSetWindowCloseCallback(m_glfwWindow, glfwCloseCbk);
+
+	//Set the window's context as current
+	GLFWwindow* previousCtx=glfwGetCurrentContext();
 	glfwMakeContextCurrent(m_glfwWindow);
+
+	//Enable the OpenGL features that will be needed
+	glEnable(GL_TEXTURE_2D);
 
 	//Initialize the OpenGL resources
 	m_glResources=std::unique_ptr<WindowResources>(new WindowResources);
 
-	//Turn vSync on
-	glfwSwapInterval(1);
-	m_vSync=true;
+	//Turn v-sync on/off
+	if(m_vSync)
+		glfwSwapInterval(1);
+	else
+		glfwSwapInterval(0);
 
-	 glEnable(GL_TEXTURE_2D);
+	//Return to the previous context
+	glfwMakeContextCurrent(previousCtx);
 
 	//Initialize the thread
 	m_exit=false;
 	m_drawingThread=std::thread(&Window::drawThread, this);
 
-	glfwMakeContextCurrent(NULL);
-
-	VideoOutput::setRate(rate);
+	//Open the consumer so updates are called
+	SyncVideoConsumer::open();
 }
-
-Window::~Window() {
-	VideoOutput::setInterval(0);
+void Window::close(){
+	//Close the sync consumer -> no more updates will be requested
+	SyncVideoConsumer::close();
 
 	//Terminate the drawing thread
 	m_exit=true;
 	m_drawCond.notify_one();
-	m_drawingThread.join();
 
-	//Release OpenGL resources
-	glfwMakeContextCurrent(m_glfwWindow);
-	m_glResources.reset();
-	glfwMakeContextCurrent(NULL);
+	//Wait for termination...
+	if(m_drawingThread.joinable()){
+		m_drawingThread.join();
+	}
 
-	//Destroy the window
-	glfwDestroyWindow(m_glfwWindow);
+	if(m_glfwWindow){
+		//Release OpenGL resources
+		GLFWwindow* previousCtx=glfwGetCurrentContext();
+		glfwMakeContextCurrent(m_glfwWindow);
+		m_glResources.reset();
+		glfwMakeContextCurrent(previousCtx);
+
+		//Destroy the window
+		glfwDestroyWindow(m_glfwWindow);
+		m_glfwWindow=nullptr;
+	}
 }
 
 void Window::setFullScreen(const std::shared_ptr<Screen>& screen){
-	//Get windowed prameters
-	std::unique_ptr<WindowedParams> windowedParams=std::unique_ptr<WindowedParams>(new WindowedParams);
-	glfwGetWindowPos(m_glfwWindow, &windowedParams->pos.x, &windowedParams->pos.y);
-	glfwGetWindowSize(m_glfwWindow, &windowedParams->res.x, &windowedParams->res.y);
-	windowedParams->rate=getRate();
+	std::lock_guard<std::mutex> lock(Screen::s_cbkMutex);
+	if(screen->m_glfwMonitor){
+		//Get windowed prameters
+		std::unique_ptr<WindowedParams> windowedParams=std::unique_ptr<WindowedParams>(new WindowedParams);
+		glfwGetWindowPos(m_glfwWindow, &windowedParams->pos.x, &windowedParams->pos.y);
+		glfwGetWindowSize(m_glfwWindow, &windowedParams->res.x, &windowedParams->res.y);
+		windowedParams->rate=getRate();
 
-	//Set the window fullscreen
-	Utils::Resolution res=screen->getRes();
-	Utils::Rational rate=screen->getRate();
-	glfwSetWindowMonitor(
-			m_glfwWindow,							//Window
-			screen->m_glfwMonitor,					//Screen
-			0,										//Position: x (ignored for fullscreen)
-			0,										//Position: y (ignored for fullscreen)
-			res.width,								//Width
-			res.height,								//Height
-			static_cast<int>(rate) 					//Refresh-rate
-	);
+		//Set the window fullscreen
+		Utils::Resolution res=screen->getRes();
+		Utils::Rational rate=screen->getRate();
+		glfwSetWindowMonitor(
+				m_glfwWindow,							//Window
+				screen->m_glfwMonitor,					//Screen
+				0,										//Position: x (ignored for fullscreen)
+				0,										//Position: y (ignored for fullscreen)
+				res.width,								//Width
+				res.height,								//Height
+				static_cast<int>(rate) 					//Refresh-rate
+		);
 
-	//Update data on the window class
-	m_windowed=std::move(windowedParams);
-	m_screen=screen;
-
+		//Update data on the window class
+		m_windowed=std::move(windowedParams);
+		m_screen=screen;
+	}
 }
 
 void Window::setWindowed(){
@@ -214,12 +265,12 @@ void Window::draw() const{
 }
 
 void Window::update() const{
-	std::shared_ptr<const Graphics::Frame> frame=VideoConsumer::get();
+	std::shared_ptr<const Graphics::Frame> frame=SyncVideoConsumer::get();
 
 	if(frame){
 		const Graphics::GL::Texture& tex=frame->getTexture();
 
-		Graphics::Context::getMainCtx().unuse();
+		GLFWwindow* previousCtx=glfwGetCurrentContext();
 		glfwMakeContextCurrent(m_glfwWindow);
 
 		//Clear
@@ -231,18 +282,16 @@ void Window::update() const{
 		Graphics::GL::UniqueBinding<Graphics::GL::VertexArray<float>> vertexBinding(m_glResources->vao);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-	/*
-	glColor4f(1.0, 0.0, 1.0, 1.0);
-	glBegin(GL_QUADS);
-		glVertex2f(-0.5, -0.5);
-		glVertex2f(-0.5, +0.5);
-		glVertex2f(+0.5, +0.5);
-		glVertex2f(+0.5, -0.5);
-	glEnd();
-	*/
-
-
-		Graphics::Context::getMainCtx().use();
+		/*
+		glColor4f(1.0, 0.0, 1.0, 1.0);
+		glBegin(GL_QUADS);
+			glVertex2f(-0.5, -0.5);
+			glVertex2f(-0.5, +0.5);
+			glVertex2f(+0.5, +0.5);
+			glVertex2f(+0.5, -0.5);
+		glEnd();
+		*/
+		glfwMakeContextCurrent(previousCtx);
 	}
 	draw();
 }
@@ -291,6 +340,12 @@ void Window::glfwResizeCbk(GLFWwindow * win, int width, int height){
 	Window * window=(Window *)glfwGetWindowUserPointer(win);
 	if(window)
 		window->resize(Utils::Resolution(width, height));
+}
+
+void Window::glfwCloseCbk(GLFWwindow * win){
+	Window * window=(Window *)glfwGetWindowUserPointer(win);
+	if(window)
+		window->close();
 }
 
 void Window::Screen::glfwMonitorCbk(GLFWmonitor * mon, int event){

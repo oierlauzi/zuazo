@@ -24,7 +24,7 @@ public:
 
 	Updateable();
 	Updateable(const Updateable& other);
-	virtual ~Updateable();
+	virtual ~Updateable()=default;
 	void								setBeforeUpdateCallback(const std::shared_ptr<Callback>& cbk);
 	void								setAfterUpdateCallback(const std::shared_ptr<Callback>& cbk);
 
@@ -56,7 +56,7 @@ private:
 inline Updateable::Updateable(){
 	m_beforeCbk=nullptr;
 	m_afterCbk=nullptr;
-	m_isOpen=true;
+	m_isOpen=false;
 }
 
 
@@ -65,12 +65,6 @@ inline Updateable::Updateable(const Updateable& other){
 	m_afterCbk=other.m_afterCbk;
 	m_isOpen=other.m_isOpen;
 }
-
-
-inline Updateable::~Updateable(){
-
-}
-
 
 inline void Updateable::setBeforeUpdateCallback(const std::shared_ptr<Callback>& cbk){
 	std::lock_guard<std::mutex> lock(m_mutex);

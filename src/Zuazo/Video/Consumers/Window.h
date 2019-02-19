@@ -22,7 +22,7 @@
 namespace Zuazo::Video::Consumers{
 
 class Window :
-	public VideoOutput
+	public SyncVideoConsumer
 {
 public:
 	class Screen{
@@ -135,6 +135,7 @@ private:
 
 	static void									eventThreadFunc();
 	static void									glfwResizeCbk(GLFWwindow * win, int width, int height);
+	static void									glfwCloseCbk(GLFWwindow * win);
 };
 
 /*
@@ -207,15 +208,6 @@ inline std::set<std::shared_ptr<Window::Screen>> Window::Screen::getScreens(){
 /*
  * WINDOW INLINE METHOD DEFINITIONS
  */
-
-inline void Window::open(){
-	//TODO
-	VideoOutput::open();
-}
-inline void Window::close(){
-	//TODO
-	VideoOutput::close();
-}
 
 /********************************
  *			SETS				*
