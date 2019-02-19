@@ -7,7 +7,7 @@ enum class Errors{
     OK			=0,
     NONE        =0,
     GLFW_INIT,
-    GLEW_INIT,
+    GLAD_INIT,
 	CONTEX_INIT,
 	WINDOW_INIT,
 	TIMING_INIT,

@@ -3,12 +3,12 @@ CC := g++ # This is the main compiler
 SRCDIR := src
 BUILDDIR := build
 TARGET := test
- 
-SRCEXT := cpp
+
+SRCEXT     := cpp
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS :=-Wall -std=c++17 -g
-LIB := -lpthread -lGL -lGLU -lGLEW -lglfw -lavformat -lavcodec -lavutil -lswscale -ltinyxml2 -lfreetype -ljpeg
+LIB := -lpthread -lGL -lGLU -lglfw -lavformat -lavcodec -lavutil -lswscale -ltinyxml2 -lfreetype -ljpeg -ldl
 INC := -I/usr/include/freetype2 -Iinclude
 
 $(TARGET): $(OBJECTS)

@@ -51,8 +51,6 @@ Context::Context() {
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     m_glfwCtx=glfwCreateWindow(640, 480, "", NULL, s_mainGlfwCtx);
     glfwDefaultWindowHints();
-
-    glEnable(GL_TEXTURE_2D);
 }
 
 Context::~Context() {

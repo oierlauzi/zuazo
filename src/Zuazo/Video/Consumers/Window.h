@@ -1,6 +1,6 @@
 #pragma once
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <glm/detail/type_vec2.hpp>
 #include <GLFW/glfw3.h>
 #include <array>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <stddef.h>
 #include <sys/types.h>
 #include <array>

@@ -35,7 +35,12 @@ int main(void){
 	 * 		INITIALIZATION
 	 */
 
-	Zuazo::init();
+	if(Zuazo::init() != Zuazo::Errors::OK){
+		printf("Error initializing\n");
+		std::terminate();
+	}
+
+	printf("OpenGL: %d.%d", GLVersion.major, GLVersion.minor);
 
 	#ifdef TEST1
 	/*

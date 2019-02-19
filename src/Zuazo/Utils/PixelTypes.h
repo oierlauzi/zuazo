@@ -1,6 +1,6 @@
 #pragma once
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <sys/types.h>
 
 namespace Zuazo::Utils{
@@ -15,8 +15,6 @@ enum class PixelTypes{
 	ALPHA,
 	RGB,
 	RGBA,
-	LUMA,
-	LUMA_ALPHA,
 };
 
 /**
@@ -37,9 +35,5 @@ template<>
 constexpr size_t PIXEL_SIZE<PixelTypes::RGB>			=3 * sizeof(u_int8_t);
 template<>
 constexpr size_t PIXEL_SIZE<PixelTypes::RGBA>			=4 * sizeof(u_int8_t);
-template<>
-constexpr size_t PIXEL_SIZE<PixelTypes::LUMA>			=1 * sizeof(u_int8_t);
-template<>
-constexpr size_t PIXEL_SIZE<PixelTypes::LUMA_ALPHA>		=2 * sizeof(u_int8_t);
 
 }

@@ -1,6 +1,6 @@
 #include "Zuazo.h"
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include "Graphics/Context.h"
@@ -24,6 +24,9 @@ Errors init(){
 
     //Init GLFW
     err=glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     if(err!=GLFW_TRUE)
         return Errors::GLFW_INIT;
 
@@ -34,14 +37,9 @@ Errors init(){
 
     Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
 
-    //Init GLEW
-    err=glewInit();
-    if(err!=GLEW_OK)
-        return Errors::GLEW_INIT;
-
-    //Enable all needed features
-    glEnable(GL_TEXTURE_2D);
-    glEnable(GL_BLEND);
+    //Init GLAD
+    if(!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
+        return Errors::GLAD_INIT;
 
     //Initialize window class
     err=Video::Consumers::Window::init();

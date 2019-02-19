@@ -62,14 +62,6 @@ struct ImageAttributes{
 		case PixelTypes::RGBA:
 			pixSize=PIXEL_SIZE<PixelTypes::RGBA>;
 			break;
-
-		case PixelTypes::LUMA:
-			pixSize=PIXEL_SIZE<PixelTypes::LUMA>;
-			break;
-
-		case PixelTypes::LUMA_ALPHA:
-			pixSize=PIXEL_SIZE<PixelTypes::LUMA_ALPHA>;
-			break;
 		}
 
 		return res.size(pixSize);

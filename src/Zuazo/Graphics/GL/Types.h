@@ -1,7 +1,7 @@
 #pragma once
 
 #include <bits/stdint-intn.h>
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <sys/types.h>
 
 #include "../../Utils/PixelTypes.h"
@@ -39,12 +39,8 @@ template <>
 constexpr GLenum GLPixel<Utils::PixelTypes::RGB> 		=GL_RGB;
 template <>
 constexpr GLenum GLPixel<Utils::PixelTypes::RGBA> 		=GL_RGBA;
-template <>
-constexpr GLenum GLPixel<Utils::PixelTypes::LUMA> 		=GL_LUMINANCE;
-template <>
-constexpr GLenum GLPixel<Utils::PixelTypes::LUMA_ALPHA>	=GL_LUMINANCE_ALPHA;
 
-constexpr GLenum toGLenum(Utils::PixelTypes type){
+constexpr GLenum toGL(const Utils::PixelTypes& type){
 	GLenum result=0;
 	switch(type){
 	case Utils::PixelTypes::RED:
@@ -64,12 +60,6 @@ constexpr GLenum toGLenum(Utils::PixelTypes type){
 		break;
 	case Utils::PixelTypes::RGBA:
 		result=GLPixel<Utils::PixelTypes::RGBA>;
-		break;
-	case Utils::PixelTypes::LUMA:
-		result=GLPixel<Utils::PixelTypes::LUMA>;
-		break;
-	case Utils::PixelTypes::LUMA_ALPHA:
-		result=GLPixel<Utils::PixelTypes::LUMA_ALPHA>;
 		break;
 	default:
 		result=GL_NONE;
