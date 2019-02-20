@@ -1,9 +1,8 @@
 #pragma once
 
-#include <glad/glad.h>
 #include <glm/detail/type_vec2.hpp>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <array>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
@@ -11,9 +10,7 @@
 #include <string>
 #include <thread>
 
-#include "../../Graphics/GL/Buffers/VertexBuffer.h"
 #include "../../Graphics/GL/Shader.h"
-#include "../../Graphics/GL/VertexArray.h"
 #include "../../Graphics/Shapes/Rectangle.h"
 #include "../../Utils/Rational.h"
 #include "../../Utils/Resolution.h"

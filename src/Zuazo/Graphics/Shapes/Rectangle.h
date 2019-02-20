@@ -1,6 +1,7 @@
+#pragma once
 
-#include "../../Utils/ScalingModes.h"
-#include "../../Utils/Resolution.h"
+#include <array>
+
 #include "../../Utils/Vector.h"
 #include "Quads.h"
 #include "Shape.h"
@@ -40,8 +41,6 @@ public:
 	void 							upload(const RectangleTexCoords& texCoords);
 	void 							upload(const RectangleData& data, const RectangleTexCoords& texCoords);
 	void 							upload(const RectangleVertices& vertices, const RectangleTexCoords& texCoords);
-
-	static RectangleTexCoords		scaleFrame(const Utils::Resolution& srcRes, const Utils::Resolution& dstRes, Utils::ScalingModes scaling);
 private:
 	static Quads<2>::Vertices		getVertices(const RectangleData& data);
 	static Quads<2>::Vertices 		getVertices(const RectangleVertices& vertices);

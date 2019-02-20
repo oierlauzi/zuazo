@@ -7,9 +7,11 @@
 #include "../Utils/ImageAttributes.h"
 #include "../Utils/ImageBuffer.h"
 #include "../Utils/PixelTypes.h"
+#include "../Utils/ScalingModes.h"
 #include "GL/Buffers/PixelUnpackBuffer.h"
 #include "GL/Texture.h"
 #include "Pool.h"
+#include "Shapes/Rectangle.h"
 
 namespace Zuazo::Graphics{
 
@@ -35,6 +37,8 @@ public:
 	const Utils::Resolution&								getRes() const;
 	Utils::PixelTypes 										getPixelType() const;
 	const Utils::ImageAttributes& 							getAttributes() const;
+	Shapes::Rectangle::RectangleTexCoords					scaleFrame(const Utils::Resolution& dstRes, Utils::ScalingModes scaling) const;
+
 
 	static std::unique_ptr<GL::Buffers::PixelUnpackBuffer>	newPixelUnpackBuffer(size_t size);
 	static std::unique_ptr<GL::Texture>						newTexture(const Utils::ImageAttributes& attrib);

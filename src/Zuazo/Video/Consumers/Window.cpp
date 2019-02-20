@@ -1,10 +1,16 @@
 #include "Window.h"
 
 #include <algorithm>
+#include <map>
+#include <utility>
 
 #include "../../Graphics/Context.h"
 #include "../../Graphics/Frame.h"
+#include "../../Graphics/GL/Texture.h"
 #include "../../Graphics/GL/UniqueBinding.h"
+#include "../../Graphics/Shapes/Quads.h"
+#include "../../Stream/SyncConsumer.h"
+#include "../../Utils/ScalingModes.h"
 
 using namespace Zuazo::Video::Consumers;
 
@@ -271,11 +277,10 @@ void Window::update() const{
 		Graphics::GL::UniqueBinding<Graphics::GL::Texture> textureBinding(tex);
 		Graphics::GL::UniqueBinding<Graphics::GL::Shader> shaderBinding(m_glResources->shader);
 
-		m_glResources->rectangle.upload(Graphics::Shapes::Rectangle::scaleFrame(
-				frame->getRes(),
+		m_glResources->rectangle.upload(frame->scaleFrame(
 				m_resolution,
-				Utils::ScalingModes::Cropped
-				));
+				Utils::ScalingModes::ClampVert
+		));
 		m_glResources->rectangle.draw();
 
 		/*
