@@ -14,6 +14,7 @@
 #include "../../Graphics/GL/Buffers/VertexBuffer.h"
 #include "../../Graphics/GL/Shader.h"
 #include "../../Graphics/GL/VertexArray.h"
+#include "../../Graphics/Shapes/Rectangle.h"
 #include "../../Utils/Rational.h"
 #include "../../Utils/Resolution.h"
 #include "../../Utils/Vector.h"
@@ -85,27 +86,18 @@ private:
 	struct WindowResources{
 		WindowResources() :
 			shader(vertexShader, fragmentShader),
-			vertVbo(vertices),
-			texVbo(textureCoords)
+			rectangle(screenVertices)
 		{
-			vao.enableAttrib(0);
-			vao.enableAttrib(1);
-			vao.setAttribPtr(vertVbo, 0);
-			vao.setAttribPtr(texVbo, 1);
 		}
 		WindowResources(const WindowResources& other)=delete;
 		~WindowResources()=default;
 
 		Graphics::GL::Shader						shader;
-		Graphics::GL::Buffers::VertexBuffer<float> 	vertVbo;
-		Graphics::GL::Buffers::VertexBuffer<float> 	texVbo;
-		Graphics::GL::VertexArray<float> 			vao;
+		Graphics::Shapes::Rectangle					rectangle;
 	private:
-		static const std::array<Utils::Vec2f, 4>	vertices;
-		static const std::array<Utils::Vec2f, 4>	textureCoords;
 		static const std::string					vertexShader;
 		static const std::string					fragmentShader;
-
+		static const Graphics::Shapes::Rectangle::RectangleData screenVertices;
 	};
 
  	//The GLFW window

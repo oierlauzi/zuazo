@@ -25,7 +25,7 @@ public:
 	template<int dim, size_t n>
 	VertexBuffer(const std::array<Utils::Vec<dim, T>, n>& vert);
 
-	VertexBuffer(const VertexBuffer& other)=delete;
+	VertexBuffer(const VertexBuffer& other)=delete; //TODO
 	VertexBuffer(VertexBuffer&& other);
 	~VertexBuffer()=default;
 

@@ -8,18 +8,9 @@
 
 using namespace Zuazo::Video::Consumers;
 
-const std::array<Zuazo::Utils::Vec2f, 4> Window::WindowResources::vertices={
+const Zuazo::Graphics::Shapes::Rectangle::RectangleData Window::WindowResources::screenVertices={
 		Zuazo::Utils::Vec2f(-1.0, 	-1.0),
-		Zuazo::Utils::Vec2f(-1.0, 	+1.0),
-		Zuazo::Utils::Vec2f(+1.0, 	-1.0),
-		Zuazo::Utils::Vec2f(+1.0, 	+1.0)
-};
-
-const std::array<Zuazo::Utils::Vec2f, 4> Window::WindowResources::textureCoords={
-		Zuazo::Utils::Vec2f(0.0, 	0.0),
-		Zuazo::Utils::Vec2f(0.0, 	1.0),
-		Zuazo::Utils::Vec2f(1.0, 	0.0),
-		Zuazo::Utils::Vec2f(1.0, 	1.0)
+		Zuazo::Utils::Vec2f(+2.0, 	+2.0)
 };
 
 const std::string Window::WindowResources::vertexShader=
@@ -279,8 +270,13 @@ void Window::update() const{
 
 		Graphics::GL::UniqueBinding<Graphics::GL::Texture> textureBinding(tex);
 		Graphics::GL::UniqueBinding<Graphics::GL::Shader> shaderBinding(m_glResources->shader);
-		Graphics::GL::UniqueBinding<Graphics::GL::VertexArray<float>> vertexBinding(m_glResources->vao);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+		m_glResources->rectangle.upload(Graphics::Shapes::Rectangle::scaleFrame(
+				frame->getRes(),
+				m_resolution,
+				Utils::ScalingModes::Cropped
+				));
+		m_glResources->rectangle.draw();
 
 		/*
 		glColor4f(1.0, 0.0, 1.0, 1.0);
