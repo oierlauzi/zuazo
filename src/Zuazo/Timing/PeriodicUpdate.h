@@ -19,14 +19,14 @@ public:
 	PeriodicUpdate(const PeriodicUpdate& other);
 	virtual ~PeriodicUpdate()=default;
 
-	const Utils::Rational& 				getInterval() const;
+	virtual void 						setInterval(const Utils::Rational& interval);
+	virtual void						setRate(const Utils::Rational& rate);
+
+	Utils::Rational 					getInterval() const;
 	Utils::Rational						getRate() const;
 
 	virtual void						open() override;
 	virtual void						close() override;
-protected:
-	void 								setInterval(const Utils::Rational& interval);
-	void								setRate(const Utils::Rational& rate);
 private:
 	Utils::Rational						m_updateInterval;
 };
@@ -47,7 +47,24 @@ inline PeriodicUpdate<order>::PeriodicUpdate(const PeriodicUpdate& other) :
 }
 
 template <u_int32_t order>
-inline const Utils::Rational& PeriodicUpdate<order>::getInterval() const {
+inline void PeriodicUpdate<order>::setInterval(const Utils::Rational& interval){
+	m_updateInterval=interval;
+
+	if(isOpen()){
+		timings->modifyTiming(this);
+	}
+}
+
+template <u_int32_t order>
+inline void PeriodicUpdate<order>::setRate(const Utils::Rational& rate){
+	if(rate)
+		setInterval(1/rate);
+	else
+		setInterval(0);
+}
+
+template <u_int32_t order>
+inline Utils::Rational PeriodicUpdate<order>::getInterval() const {
 	return m_updateInterval;
 }
 
@@ -68,23 +85,6 @@ inline void PeriodicUpdate<order>::close(){
 	if(timings) //It might have been deleted
 		timings->deleteTiming(this);
 	Updateable::close();
-}
-
-template <u_int32_t order>
-inline void PeriodicUpdate<order>::setInterval(const Utils::Rational& interval){
-	m_updateInterval=interval;
-
-	if(isOpen()){
-		timings->modifyTiming(this);
-	}
-}
-
-template <u_int32_t order>
-inline void PeriodicUpdate<order>::setRate(const Utils::Rational& rate){
-	if(rate)
-		setInterval(1/rate);
-	else
-		setInterval(0);
 }
 
 }

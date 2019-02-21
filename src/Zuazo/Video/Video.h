@@ -39,4 +39,15 @@ typedef Stream::SyncConsumer<Graphics::Frame> SyncVideoConsumer;
  * @brief //TODO
  */
 typedef Stream::Delay<Graphics::Frame> VideoDelay;
+
+class Resizeable{
+public:
+	virtual ~Resizeable()=default;
+
+	virtual void setRes(const Utils::Resolution& res)=0;
+	virtual Utils::Resolution getRes() const=0;
+};
+
+
+
 }

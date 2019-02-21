@@ -83,7 +83,7 @@ int Window::end(){
 
 Window::Window(const Utils::Resolution& res, const Utils::Rational& rate, std::string name) :
 		SyncVideoConsumer(rate),
-		m_name(name),
+		m_title(name),
 		m_resolution(res)
 {
 	m_glfwWindow=nullptr;
@@ -98,9 +98,6 @@ Window::~Window(){
 }
 
 void Window::open(){
-	//Ensure nothing is open
-	close();
-
 	//Check if it is fullscreen
 	std::lock_guard<std::mutex> lock(Screen::s_cbkMutex);
 	GLFWmonitor* monitor=nullptr;
@@ -112,7 +109,7 @@ void Window::open(){
 	m_glfwWindow=glfwCreateWindow(
 			m_resolution.width,							//Width
 			m_resolution.height,						//Height
-			m_name.c_str(),								//Name
+			m_title.c_str(),							//Name
 			monitor,									//Monitor
 			Graphics::Context::s_mainGlfwCtx			//Share objects with
 

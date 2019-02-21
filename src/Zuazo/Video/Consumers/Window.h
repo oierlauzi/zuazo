@@ -20,7 +20,8 @@
 namespace Zuazo::Video::Consumers{
 
 class Window :
-	public SyncVideoConsumer
+	public SyncVideoConsumer,
+	public Resizeable
 {
 public:
 	class Screen{
@@ -60,17 +61,17 @@ public:
 	void										open() override;
 	void										close() override;
 
-	void										setRes(const Utils::Resolution& res);
+	void										setRes(const Utils::Resolution& res) override;
 	void										setFullScreen(const std::shared_ptr<Screen>& screen);
 	void										setWindowed();
 	void										setVSync(bool value);
-	void										setName(const std::string& name);
+	void										setTitle(const std::string& title);
 
-	Utils::Resolution							getRes() const;
+	Utils::Resolution							getRes() const override;
 	bool										isFullScreen() const;
-	std::shared_ptr<Screen>						getScreen() const;
+	const std::weak_ptr<Screen>&				getScreen() const;
 	bool										getVSync() const;
-	std::string									getName() const;
+	const std::string&							getTitle() const;
 protected:
 	void										update() const override;
 private:
@@ -101,8 +102,8 @@ private:
 	GLFWwindow* 								m_glfwWindow;
 
 	//Window Data
-	std::string									m_name;
-	Utils::Resolution 							m_resolution;
+	std::string									m_title;
+	Utils::Resolution							m_resolution;
 	bool										m_vSync;
 	std::weak_ptr<Screen>						m_screen;
 	std::unique_ptr<WindowedParams> 			m_windowed;
@@ -208,8 +209,9 @@ inline void Window::setRes(const Utils::Resolution& res) {
 	}
 }
 
-inline void Window::setName(const std::string& name){
-	glfwSetWindowTitle(m_glfwWindow, name.c_str());
+inline void Window::setTitle(const std::string& title){
+	glfwSetWindowTitle(m_glfwWindow, title.c_str());
+	m_title=title;
 }
 
 /********************************
@@ -224,16 +226,16 @@ inline bool Window::getVSync() const {
 	return m_vSync;
 }
 
-inline std::string	Window::getName() const{
-	return m_name;
+inline const std::string&	Window::getTitle() const{
+	return m_title;
 }
 
 inline bool Window::isFullScreen() const{
 	return !m_screen.use_count();
 }
 
-inline std::shared_ptr<Window::Screen> Window::getScreen() const{
-	return m_screen.lock();
+inline const std::weak_ptr<Window::Screen>& Window::getScreen() const{
+	return m_screen;
 }
 
 }

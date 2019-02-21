@@ -103,7 +103,8 @@ int main(void){
 	win.setWindowed();*/
 
 	getchar();
-	win.open();
+	if(!win.isOpen())
+		win.open();
 	getchar();
 	}
 
