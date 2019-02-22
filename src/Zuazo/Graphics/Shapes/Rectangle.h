@@ -16,13 +16,13 @@ public:
 	};
 
 	struct RectangleVertices{
-		Utils::Vec<2, float> 	topLeft;
-		Utils::Vec<2, float> 	bottomRight;
+		Utils::Vec<2, float> 	v0;
+		Utils::Vec<2, float> 	v1;
 	};
 
 	struct RectangleTexCoords{
-		Utils::Vec<2, float> 	topLeft;
-		Utils::Vec<2, float> 	bottomRight;
+		Utils::Vec<2, float> 	c0;
+		Utils::Vec<2, float> 	c1;
 	};
 
 	Rectangle()=default;
@@ -110,10 +110,10 @@ inline Quads<2>::Vertices	Rectangle::getVertices(const RectangleData& data){
 inline Quads<2>::Vertices Rectangle::getVertices(const RectangleVertices& vert){
 	return Quads<2>::Vertices
 	{
-		Utils::Vec<2, float>{vert.topLeft.x,			vert.topLeft.y				},
-		Utils::Vec<2, float>{vert.bottomRight.x,		vert.topLeft.y				},
-		Utils::Vec<2, float>{vert.topLeft.x,			vert.bottomRight.y			},
-		Utils::Vec<2, float>{vert.bottomRight.x,		vert.bottomRight.y			}
+		Utils::Vec<2, float>{vert.v1.x,					vert.v1.y					},
+		Utils::Vec<2, float>{vert.v0.x,					vert.v1.y					},
+		Utils::Vec<2, float>{vert.v1.x,					vert.v0.y					},
+		Utils::Vec<2, float>{vert.v0.x,					vert.v0.y					}
 	};
 }
 
@@ -121,10 +121,10 @@ inline Quads<2>::Vertices Rectangle::getVertices(const RectangleVertices& vert){
 inline Quads<2>::TexCoords Rectangle::getTexCoords(const RectangleTexCoords& tc){
 	return Quads<2>::Vertices
 	{
-		Utils::Vec<2, float>{tc.topLeft.x,				tc.bottomRight.y			},
-		Utils::Vec<2, float>{tc.bottomRight.x,			tc.bottomRight.y			},
-		Utils::Vec<2, float>{tc.topLeft.x,				tc.topLeft.y				},
-		Utils::Vec<2, float>{tc.bottomRight.x,			tc.topLeft.y				}
+		Utils::Vec<2, float>{tc.c1.x,					tc.c1.y						},
+		Utils::Vec<2, float>{tc.c0.x,					tc.c1.y						},
+		Utils::Vec<2, float>{tc.c1.x,					tc.c0.y						},
+		Utils::Vec<2, float>{tc.c0.x,					tc.c0.y						}
 	};
 }
 }

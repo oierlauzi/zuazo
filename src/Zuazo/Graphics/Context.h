@@ -32,13 +32,19 @@ public:
 	void 						unuse() const;
 
 	static const Context&		getMainCtx();
+	static const Context&		getAvalibleCtx();
 private:
+	static const u_int32_t 		SHARED_CONTEXTS=32;
+
 	GLFWwindow *				m_glfwCtx;
 	mutable std::mutex			m_mutex;
 
 	static GLFWwindow *			s_mainGlfwCtx;
-	static std::unique_ptr<const Context> s_mainCtx;
 	static thread_local std::stack<const Context*> s_activeContext;
+
+
+	static std::unique_ptr<const Context> s_mainCtx;
+	static std::array<std::unique_ptr<const Context>, SHARED_CONTEXTS> s_sharedCtxs;
 };
 
 /*
@@ -51,20 +57,6 @@ public:
 	~UniqueContext();
 private:
 	const Context& m_ctx;
-};
-
-class SharedContext{
-public:
-	SharedContext();
-	SharedContext(const SharedContext& ctx)=delete;
-	~SharedContext();
-private:
-	static const u_int32_t MAX_SHARED_CONTEXTS=32;
-
-	const Context& m_ctx;
-
-	const Context& lockAvalibleContext();
-	static std::vector<std::unique_ptr<Context>> s_sharedContexts;
 };
 
 
@@ -96,7 +88,10 @@ inline bool	Context::tryUse() const{
 		//This context is not active. Try to set it active
 		if(m_mutex.try_lock()){
 			glfwMakeContextCurrent(m_glfwCtx);
-			s_activeContext.top()->m_mutex.unlock();
+
+			if(s_activeContext.top())
+				s_activeContext.top()->m_mutex.unlock();
+
 			s_activeContext.push(this);
 			return true;
 		} else return false; //Could not lock the mutex
@@ -134,16 +129,6 @@ inline UniqueContext::UniqueContext(const Context& ctx) :
 }
 
 inline UniqueContext::~UniqueContext(){
-	m_ctx.unuse();
-}
-
-inline SharedContext::SharedContext() :
-		m_ctx(lockAvalibleContext())
-{
-
-}
-
-inline SharedContext::~SharedContext(){
 	m_ctx.unuse();
 }
 

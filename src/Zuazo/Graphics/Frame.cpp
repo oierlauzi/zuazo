@@ -61,8 +61,8 @@ Shapes::Rectangle::RectangleTexCoords Frame::scaleFrame(
 		float diffY = (dstRes.height - srcRes.height * sY) / (2 * dstRes.height);
 
 		return Shapes::Rectangle::RectangleTexCoords {
-			Utils::Vec<2, float>{-diffX, -diffY},
-			Utils::Vec<2, float>{1.0 + diffX, 	1.0 + diffY},
+			Utils::Vec<2, float>{1.0 + diffX, -diffY},
+			Utils::Vec<2, float>{-diffX, 1.0 + diffY},
 		};
 	} else return Shapes::Rectangle::RectangleTexCoords();
 }

@@ -354,7 +354,7 @@ void V4L2::capturingThread(){
 
 		{
 			//Graphics::SharedContext ctx;
-			Graphics::UniqueContext ctx(Graphics::Context::getMainCtx()); //TODO use a shared context
+			Graphics::UniqueContext ctx(Graphics::Context::getAvalibleCtx()); //TODO use a shared context
 			pbo->upload(imgBuffer);
 		}
 

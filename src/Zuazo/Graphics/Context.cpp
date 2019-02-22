@@ -14,9 +14,8 @@ GLFWwindow* Context::s_mainGlfwCtx=nullptr;
 
 thread_local std::stack<const Context*> Context::s_activeContext( std::deque<const Context*>{nullptr} );
 
-//Stores all the available unique contexts
-std::vector<std::unique_ptr<Context>> SharedContext::s_sharedContexts;
-
+//Stores all the available shared contexts
+std::array<std::unique_ptr<const Context>, Context::SHARED_CONTEXTS> Context::s_sharedCtxs;
 
 /*
  * @brief initializes the context environment
@@ -31,6 +30,11 @@ int Context::init() {
 	//Set the reference for the main GLFW context
 	s_mainGlfwCtx=s_mainCtx->m_glfwCtx;
 
+	//Create all the shared contexts
+	for(auto ite=s_sharedCtxs.begin(); ite != s_sharedCtxs.end(); ++ite){
+		*ite=std::unique_ptr<const Context>(new Context);
+	}
+
 	//All should be OK
 	return 0;
 }
@@ -40,6 +44,10 @@ int Context::init() {
  * @return generated error
  */
 int Context::end() {
+	for(auto& sharedCtx : s_sharedCtxs){
+		sharedCtx.reset();
+	}
+
 	s_mainCtx.reset();
 	s_mainGlfwCtx=nullptr;
 	return 0;
@@ -57,27 +65,16 @@ Context::~Context() {
 	glfwDestroyWindow(m_glfwCtx);
 }
 
-const Context& SharedContext::lockAvalibleContext(){
-	auto ite=s_sharedContexts.begin();
-
-	if(ite == s_sharedContexts.end()){
-		//There are no available contexts
-		s_sharedContexts.emplace_back();
-		ite=s_sharedContexts.begin();
-	}
+const Context& Context::getAvalibleCtx(){
+	auto ite=s_sharedCtxs.begin();
 
 	while((*ite)->tryUse() == false){
-		++ite;
-		if(ite == s_sharedContexts.end()){
-			if(s_sharedContexts.size() < MAX_SHARED_CONTEXTS){
-				//All contexts are in use, but a new one can be created
-				s_sharedContexts.emplace_back();
-				ite=s_sharedContexts.end() - 1;
-			}else{
-				//All contexts are in use, and there is no room for another. Start over
-				ite=s_sharedContexts.begin();
-			}
-		} // else: all should be fine :-)
+		++ite; //Next element
+
+		if(ite == s_sharedCtxs.end()){
+			//Start over
+			ite=s_sharedCtxs.begin();
+		}
 	}
 
 	return **ite;
