@@ -46,7 +46,6 @@ void Timings::threadFunc(){
 
 		if(updates.updateables.size()){
 			//Make all the needed updates
-			Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
 
 			//Sort by update priority
 			//std::sort(updates.updateables.begin(), updates.updateables.end());
@@ -54,10 +53,14 @@ void Timings::threadFunc(){
 			 * No need, its actually sorted by default
 			 */
 
-			//Update all
-			for(auto ite=updates.updateables.begin(); ite!=updates.updateables.end(); ++ite){
-				for(const Updateable * updateable : ite->second){
-					updateable->perform();
+			{
+				Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
+
+				//Update all
+				for(auto ite=updates.updateables.begin(); ite!=updates.updateables.end(); ++ite){
+					for(const Updateable * updateable : ite->second){
+						updateable->perform();
+					}
 				}
 			}
 

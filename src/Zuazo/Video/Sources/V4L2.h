@@ -1,11 +1,8 @@
 #pragma once
 
 #include <stddef.h>
-#include <cstdio>
-#include <jpeglib.h>
 #include <sys/types.h>
 #include <map>
-#include <mutex>
 #include <set>
 #include <string>
 #include <thread>
@@ -14,6 +11,8 @@
 #include "../../Utils/Rational.h"
 #include "../../Utils/Resolution.h"
 #include "../Video.h"
+
+struct v4l2_buffer;
 
 namespace Zuazo::Video::Sources{
 
@@ -36,6 +35,13 @@ public:
 		VideoMode(const VideoMode& other)=default;
 		~VideoMode()=default;
 
+		int operator==(const VideoMode& other) const{
+			if(resolution == other.resolution && interval == other.interval)
+				return 1;
+			else
+				return 0;
+		}
+
 		int operator<(const VideoMode& other) const{
 			if(resolution < other.resolution){
 				//My resolution is smaller
@@ -51,6 +57,7 @@ public:
 				}else{
 					return 1;
 				}
+				return 1;
 			}
 		}
 	};
@@ -72,23 +79,26 @@ public:
 	VideoMode					getVideoMode() const;
 	const std::set<VideoMode>&	getVideoModes() const;
 private:
+	struct Buffer{
+		size_t						bufSize;
+		u_int8_t *					buffer;
+
+		Buffer(const v4l2_buffer& v4l2BufReq, int dev);
+		Buffer(const Buffer& other)=delete;
+		Buffer(Buffer&& other);
+		~Buffer();
+
+		Buffer& operator=(Buffer&& other);
+	};
+
 	int							m_dev;
 	std::set<VideoMode>			m_vidModes;
 	std::set<VideoMode>::iterator m_currVidMode;
 
-
-	struct Buffer{
-		u_int8_t *				buffer=NULL;
-		size_t					bufSize=0;
-	};
 	std::vector<Buffer>			m_buffers;
 
-	jpeg_decompress_struct 		m_decmp;
-	jpeg_error_mgr				m_decmpErr;
-
 	std::thread					m_capturingThread;
-	std::mutex					m_mutex;
-
+	bool						m_threadExit;
 	void 						capturingThread();
 };
 
@@ -111,17 +121,6 @@ inline void V4L2::setRes(const Utils::Resolution& res){
 		res,
 		m_currVidMode->interval
 	});
-}
-
-inline void V4L2::setVideoMode(const VideoMode& mode){
-	close();
-	m_currVidMode=m_vidModes.find(mode);
-
-	if(m_currVidMode != m_vidModes.end()){
-		//Video mode exists
-		AsyncVideoSource::setInterval(m_currVidMode->interval);
-		open();
-	}
 }
 
 inline Utils::Resolution V4L2::getRes() const{

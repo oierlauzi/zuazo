@@ -66,7 +66,7 @@ const Context& SharedContext::lockAvalibleContext(){
 		ite=s_sharedContexts.begin();
 	}
 
-	while((*ite)->tryUse()){
+	while((*ite)->tryUse() == false){
 		++ite;
 		if(ite == s_sharedContexts.end()){
 			if(s_sharedContexts.size() < MAX_SHARED_CONTEXTS){

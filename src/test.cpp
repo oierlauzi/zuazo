@@ -21,6 +21,7 @@
 #include "Zuazo/Graphics/Frame.h"
 #include "Zuazo/Video/Video.h"
 #include "Zuazo/Video/Consumers/Window.h"
+#include "Zuazo/Video/Sources/V4L2.h"
 
 #define TEST1
 //#define TEST2
@@ -40,7 +41,7 @@ int main(void){
 		std::terminate();
 	}
 
-	printf("OpenGL: %d.%d", GLVersion.major, GLVersion.minor);
+	printf("OpenGL: %d.%d\n", GLVersion.major, GLVersion.minor);
 
 	#ifdef TEST1
 	/*
@@ -92,7 +93,15 @@ int main(void){
 			"Window Test"
 	);
 
-	win<<src;
+	Zuazo::Video::Sources::V4L2 webcam(0);
+	const std::set<Zuazo::Video::Sources::V4L2::VideoMode>& vidModes=webcam.getVideoModes();
+	for(const Zuazo::Video::Sources::V4L2::VideoMode& vidMode : vidModes)
+		printf("%ux%u @ %gHz\n",
+				vidMode.resolution.width,
+				vidMode.resolution.height,
+				(double)vidMode.interval.den / vidMode.interval.num);
+
+	win<<webcam;
 
 	/*auto screens=Zuazo::Video::Consumers::Window::Screen::getScreens();
 	sleep(2);

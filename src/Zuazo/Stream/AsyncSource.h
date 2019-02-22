@@ -36,7 +36,7 @@ public:
 	virtual void						open() override;
 	virtual void						close() override;
 protected:
-	void								push(std::unique_ptr<const T>& element);
+	void								push(std::unique_ptr<const T> element);
 
 	virtual void 						update() const override;
 private:
@@ -144,7 +144,7 @@ template <typename T>
 void AsyncSource<T>::update() const{
 	if(m_buffer.size()){
 		//There is at least an element at the buffer. Push it into the source
-		Source<T>::push(m_buffer.front());
+		Source<T>::push(std::move(m_buffer.front()));
 		m_buffer.pop();
 	}else{
 		//Missing element -> dropped
@@ -157,7 +157,7 @@ void AsyncSource<T>::update() const{
 }
 
 template <typename T>
-void AsyncSource<T>::push(std::unique_ptr<const T>& element){
+void AsyncSource<T>::push(std::unique_ptr<const T> element){
 	std::lock_guard<std::mutex> lock(m_updateMutex);
 
 	if(m_buffer.size()>=m_maxBufferSize){

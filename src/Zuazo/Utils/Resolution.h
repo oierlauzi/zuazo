@@ -57,11 +57,21 @@ struct Resolution{
     }
 
 	constexpr int operator>(const Resolution& right)const{
-    	return ~operator<=(right);
+        int result=0;
+        if(width > right.width)
+        	result|=0x1;
+        if(height > right.height)
+        	result|=0x2;
+        return result;
     }
 
 	constexpr int operator>=(const Resolution& right)const{
-    	return ~operator<(right);
+        int result=0;
+        if(width >= right.width)
+        	result|=0x1;
+        if(height >= right.height)
+        	result|=0x2;
+        return result;
     }
 };
 

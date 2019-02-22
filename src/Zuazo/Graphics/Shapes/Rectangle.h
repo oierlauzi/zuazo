@@ -121,10 +121,10 @@ inline Quads<2>::Vertices Rectangle::getVertices(const RectangleVertices& vert){
 inline Quads<2>::TexCoords Rectangle::getTexCoords(const RectangleTexCoords& tc){
 	return Quads<2>::Vertices
 	{
-		Utils::Vec<2, float>{tc.topLeft.x,				tc.topLeft.y				},
-		Utils::Vec<2, float>{tc.bottomRight.x,			tc.topLeft.y				},
 		Utils::Vec<2, float>{tc.topLeft.x,				tc.bottomRight.y			},
-		Utils::Vec<2, float>{tc.bottomRight.x,			tc.bottomRight.y			}
+		Utils::Vec<2, float>{tc.bottomRight.x,			tc.bottomRight.y			},
+		Utils::Vec<2, float>{tc.topLeft.x,				tc.topLeft.y				},
+		Utils::Vec<2, float>{tc.bottomRight.x,			tc.topLeft.y				}
 	};
 }
 }

@@ -56,13 +56,15 @@ private:
 template<typename T, int maxElements>
 inline std::unique_ptr<T> Pool<T, maxElements>::pop(){
 	std::unique_ptr<T> result;
-	std::lock_guard<std::mutex> lock(m_mutex);
+	std::unique_lock<std::mutex> lock(m_mutex);
 
 	if(m_elements.size()){
 		//Requested element.exists
 		result=std::move(m_elements.front());
 		m_elements.pop();
 	}else{
+		lock.unlock();
+
 		//Requested element does not exist -> construct it
 		UniqueContext ctx(Context::getMainCtx());
 		result=std::unique_ptr<T>(new T());
@@ -104,7 +106,7 @@ inline void Pool<T, maxElements>::decrement(u_int32_t no){
 template<typename Q, typename T, int maxElements>
 inline std::unique_ptr<T> MultiPool<Q, T, maxElements>::pop(const Q& ref){
 	std::unique_ptr<T> result;
-	std::lock_guard<std::mutex> lock(m_mutex);
+	std::unique_lock<std::mutex> lock(m_mutex);
 
 	if(m_elements.find(ref) != m_elements.end()){
 		//Element exists
@@ -115,6 +117,8 @@ inline std::unique_ptr<T> MultiPool<Q, T, maxElements>::pop(const Q& ref){
 			m_elements.erase(ref);
 		}
 	}else{
+		lock.unlock();
+
 		//Requested element does not exist, construct it
 		UniqueContext ctx(Context::getMainCtx());
 		result=std::unique_ptr<T>(new T());

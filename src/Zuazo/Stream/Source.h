@@ -33,7 +33,7 @@ public:
 protected:
 	void								push() const;
 	void								push(std::shared_ptr<const T>& element) const;
-	void								push(std::unique_ptr<const T>& element) const;
+	void								push(std::unique_ptr<const T> element) const;
 
 	virtual void						open() override;
 	virtual void						close() override;
@@ -84,7 +84,7 @@ void Source<T>::push() const{
 }
 
 template <typename T>
-void Source<T>::push(std::unique_ptr<const T>& element) const{
+void Source<T>::push(std::unique_ptr<const T> element) const{
 	std::shared_ptr<const T> newEl=std::move(element);
 	push(newEl);
 }
