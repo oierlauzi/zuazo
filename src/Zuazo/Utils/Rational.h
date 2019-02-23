@@ -1,23 +1,14 @@
 #pragma once
 
-#include <boost/integer/common_factor_rt.hpp>
+#include <bits/stdint-intn.h>
 #include <math.h>
-#include <cstdint>
-#include <limits>
+#include <stddef.h>
+#include <sys/types.h>
+#include <numeric>
 
 namespace Zuazo::Utils{
 
-#define IS_FINITE_NUMBER(a) ( \
-		a < std::numeric_limits<double>::infinity() && \
-		a > -std::numeric_limits<double>::infinity())
 
-#define CAN_CAST_TO_INT(a) ( \
-		a < std::numeric_limits<int32_t>::max() && \
-		a > std::numeric_limits<int32_t>::min())
-
-/*
- * Contains a rational number
- */
 struct Rational{
 	int32_t num;
 	int32_t den;
@@ -34,26 +25,7 @@ struct Rational{
 		simplify();
 	}
 
-	constexpr Rational(double number) : Rational(){
-		if(IS_FINITE_NUMBER(number)){
-			int64_t d=1;
-
-			do{
-				if(CAN_CAST_TO_INT(d) && CAN_CAST_TO_INT(number)){
-					num=(int32_t)number;
-					den=(int32_t)d;
-				}else break;
-
-				number*=2;
-				d*=2;
-			}while(number != trunc(number));
-
-			simplify();
-		}else{
-			num=number>0 ? 1 : -1;
-			den=0;
-		}
-	}
+	constexpr Rational(double number);
 
 	constexpr Rational(const Rational& rat)=default;
 
@@ -142,26 +114,62 @@ struct Rational{
     	return Rational(left) / right;
     }
 
-
 private:
     constexpr void simplify();
 };
 
-constexpr void Rational::simplify(){
-	if(den && num){
-		//Calcualte GCD
-		int32_t gcd=boost::integer::gcd(num, den);
+constexpr Rational::Rational(double number) : Rational() {
+	/*
+	 * This code is based on:
+	 * https://rosettacode.org/wiki/Convert_decimal_number_to_rational
+	 */
+	constexpr size_t precision=64;
+	constexpr int32_t MAX_DENOMINATOR=4096;
+	int64_t h[3] = { 0, 1, 0 }, k[3] = { 1, 0, 0 };
+	int64_t n=1, d=0;
+	bool neg = false;
 
-		//Simplify the fraction
-		num /= gcd;
-		den /= gcd;
-	}else if(den){
-		num=0;
-		den=1;
-	}else if(num){
-		num=num>0 ? 1 : -1;
-		den=0;
+	if (number < 0) {
+		neg = true;
+		number = -number;
 	}
+
+	while (number != floor(number)) {
+		n <<= 1;
+		number *= 2;
+	}
+	d = number;
+
+	for (u_int32_t i = 0; i < precision; i++) {
+		int64_t a = n ? d / n : 0;
+		if (i && !a)
+			break;
+
+		int64_t x = d;
+		d = n;
+		n = x % n;
+		x = a;
+
+		if (k[1] * a + k[0] >= MAX_DENOMINATOR) {
+			x = (MAX_DENOMINATOR - k[0]) / k[1];
+			if (x * 2 >= a || k[1] >= MAX_DENOMINATOR)
+				i = precision+1;
+			else
+				break;
+		}
+
+		h[2] = x * h[1] + h[0]; h[0] = h[1]; h[1] = h[2];
+		k[2] = x * k[1] + k[0]; k[0] = k[1]; k[1] = k[2];
+	}
+
+	den = k[1];
+	num = neg ? -h[1] : h[1];
+}
+
+constexpr void Rational::simplify(){
+	int32_t gcd=std::gcd(num, den);
+	num/=gcd;
+	den/=gcd;
 }
 
 }
