@@ -62,7 +62,7 @@ V4L2::V4L2(const std::string& devName){
 	m_dev=::open(devName.c_str(), O_RDWR | O_NONBLOCK, 0);
 
 	//Check if file has been successfully opened
-	if(m_dev==-1)
+	if(m_dev < 0)
 		return;
 
 	//Check if it is a video capture device
@@ -72,7 +72,6 @@ V4L2::V4L2(const std::string& devName){
 
 	if (!(m_cap.capabilities & V4L2_CAP_VIDEO_CAPTURE))
 		return;
-
 
 	//Get all the available resolutions
 	std::set<Utils::Resolution> resolutions;
@@ -138,6 +137,9 @@ V4L2::V4L2(const std::string& devName){
 			v4lfrt.index++;
 		}
 	}
+
+	if(m_vidModes.size() == 0)
+		return; //There are no video modes for this device
 
 	//Set the default resolution (highest one)
 	m_currVidMode=--m_vidModes.end();
@@ -350,17 +352,15 @@ void V4L2::capturingThread(){
 			continue;
 
 		//Upload image to the source
-		std::unique_ptr<Graphics::GL::Buffers::PixelUnpackBuffer> pbo=Graphics::Frame::newPixelUnpackBuffer(imgSize);
+		std::unique_ptr<const Graphics::Frame> newFrame;
 
 		{
-			//Graphics::SharedContext ctx;
-			Graphics::UniqueContext ctx(Graphics::Context::getAvalibleCtx()); //TODO use a shared context
-			pbo->upload(imgBuffer);
-		}
+			Graphics::UniqueContext ctx(Graphics::Context::getAvalibleCtx());
 
-		std::unique_ptr<const Graphics::Frame> newFrame=std::unique_ptr<Graphics::Frame>(
-				new Graphics::Frame(std::move(pbo))
-		);
+			newFrame=std::unique_ptr<Graphics::Frame>(
+					new Graphics::Frame(imgBuffer)
+			);
+		}
 
 		AsyncVideoSource::push(std::move(newFrame));
     }

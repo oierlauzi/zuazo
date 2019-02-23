@@ -30,10 +30,14 @@ public:
 	virtual void				close() override;
 protected:
 	std::shared_ptr<const T>	get() const;
-	std::shared_ptr<const T>	get(Timing::TimePoint* ts) const;
+	bool						hasChanged() const;
 
 private:
 	const Source<T>*			m_source;
+
+	mutable std::weak_ptr<const T>	m_lastFrame;
+
+	std::shared_ptr<const T>	_get() const;
 };
 
 /************************
@@ -95,16 +99,20 @@ void Consumer<T>::close(){
 
 template <typename T>
 inline std::shared_ptr<const T>	Consumer<T>::get() const{
-	if(m_source)
-		return m_source->get();
-	else
-		return std::shared_ptr<const T>(); //No source, return an empty ptr
+	std::shared_ptr<const T> frame=_get();
+	m_lastFrame=frame;
+	return frame;
 }
 
 template <typename T>
-inline std::shared_ptr<const T>	Consumer<T>::get(Timing::TimePoint* ts) const{
+inline bool Consumer<T>::hasChanged() const{
+	return m_lastFrame == _get();
+}
+
+template <typename T>
+inline std::shared_ptr<const T>	Consumer<T>::_get() const{
 	if(m_source)
-		return m_source->get(ts);
+		return m_source->get();
 	else
 		return std::shared_ptr<const T>(); //No source, return an empty ptr
 }

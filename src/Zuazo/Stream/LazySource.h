@@ -18,7 +18,6 @@ public:
 	virtual ~LazySource();
 
 	virtual std::shared_ptr<const T>	get() const override;
-	virtual std::shared_ptr<const T> 	get(Timing::TimePoint* ts) const override;
 
 	virtual void						open() override;
 	virtual void						close() override;
@@ -50,17 +49,6 @@ inline std::shared_ptr<const T>	LazySource<T>::get() const{
 		m_updateInProgress=false;
 	}
 	return Source<T>::get();
-}
-
-template <typename T>
-inline std::shared_ptr<const T>	LazySource<T>::get(Timing::TimePoint* ts) const{
-	//Only update if it is not being updated (to avoid mutex deadlocks and endless loops)
-	if(!m_updateInProgress){
-		m_updateInProgress=true;
-		Updateable::perform();
-		m_updateInProgress=false;
-	}
-	return Source<T>::get(ts);
 }
 
 template <typename T>

@@ -21,7 +21,8 @@ namespace Zuazo::Video::Consumers{
 
 class Window :
 	public SyncVideoConsumer,
-	public Resizeable
+	public Resizeable,
+	public VideoScaler
 {
 public:
 	class Screen{
@@ -62,12 +63,14 @@ public:
 	void										close() override;
 
 	void										setRes(const Utils::Resolution& res) override;
+	void										setScalingMode(Utils::ScalingModes mode) override;
 	void										setFullScreen(const std::shared_ptr<Screen>& screen);
 	void										setWindowed();
 	void										setVSync(bool value);
 	void										setTitle(const std::string& title);
 
 	Utils::Resolution							getRes() const override;
+	Utils::ScalingModes							getScalingMode() const override;
 	bool										isFullScreen() const;
 	const std::weak_ptr<Screen>&				getScreen() const;
 	bool										getVSync() const;
@@ -104,6 +107,7 @@ private:
 	//Window Data
 	std::string									m_title;
 	Utils::Resolution							m_resolution;
+	Utils::ScalingModes							m_scalingMode;
 	bool										m_vSync;
 	std::weak_ptr<Screen>						m_screen;
 	std::unique_ptr<WindowedParams> 			m_windowed;
@@ -209,6 +213,11 @@ inline void Window::setRes(const Utils::Resolution& res) {
 	}
 }
 
+inline void	Window::setScalingMode(Utils::ScalingModes mode){
+	std::lock_guard<std::mutex> lock(m_updateMutex);
+	m_scalingMode=mode;
+}
+
 inline void Window::setTitle(const std::string& title){
 	glfwSetWindowTitle(m_glfwWindow, title.c_str());
 	m_title=title;
@@ -220,6 +229,10 @@ inline void Window::setTitle(const std::string& title){
 
 inline Zuazo::Utils::Resolution Window::getRes() const {
 	return m_resolution;
+}
+
+inline Utils::ScalingModes Window::getScalingMode() const{
+	return m_scalingMode;
 }
 
 inline bool Window::getVSync() const {

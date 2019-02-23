@@ -29,7 +29,6 @@ public:
 	virtual ~Source();
 
 	virtual std::shared_ptr<const T>	get() const;
-	virtual std::shared_ptr<const T>	get(Timing::TimePoint* ts) const;
 protected:
 	void								push() const;
 	void								push(std::shared_ptr<const T>& element) const;
@@ -41,7 +40,6 @@ protected:
 	bool								isActive() const;
 private:
 	mutable std::shared_ptr<const T>	m_last;
-	mutable Timing::TimePoint			m_elementTs;
 
 	mutable std::set<Consumer<T> *>		m_consumers;
 
@@ -72,27 +70,18 @@ std::shared_ptr<const T> Source<T>::get() const{
 }
 
 template <typename T>
-std::shared_ptr<const T> Source<T>::get(Timing::TimePoint* ts) const{
-	*ts=m_elementTs;
-	return m_last;
-}
-
-template <typename T>
 void Source<T>::push() const{
-	std::shared_ptr<const T> newEl;
-	push(newEl);
+	m_last=std::shared_ptr<const T>();
 }
 
 template <typename T>
 void Source<T>::push(std::unique_ptr<const T> element) const{
-	std::shared_ptr<const T> newEl=std::move(element);
-	push(newEl);
+	m_last=std::move(element);
 }
 
 template <typename T>
 void Source<T>::push(std::shared_ptr<const T>& element) const{
 	m_last=element;
-	m_elementTs=Timing::timings->now();
 }
 
 template <typename T>
@@ -103,7 +92,6 @@ void Source<T>::open(){
 template <typename T>
 void Source<T>::close(){
 	m_last=std::shared_ptr<const T>();
-	m_elementTs=Timing::TimePoint();
 	Updateable::close();
 }
 

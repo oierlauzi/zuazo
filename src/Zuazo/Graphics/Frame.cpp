@@ -57,12 +57,18 @@ Shapes::Rectangle::RectangleTexCoords Frame::scaleFrame(
 			break;
 		}
 
-		float diffX = (dstRes.width - srcRes.width * sX) / (2 * dstRes.width);
-		float diffY = (dstRes.height - srcRes.height * sY) / (2 * dstRes.height);
+		/*
+		float diffX = (srcRes.width * sX - dstRes.width) / (2 * srcRes.width * sX);
+		float diffY = (srcRes.height * sY - dstRes.height) / (2 * srcRes.height * sY);
+		Simplified: */
+
+		float diffX = 0.5 - (dstRes.width) / (2 * srcRes.width * sX);
+		float diffY = 0.5 - (dstRes.height) / (2 * srcRes.height * sY);
+
 
 		return Shapes::Rectangle::RectangleTexCoords {
-			Utils::Vec<2, float>{1.0 + diffX, -diffY},
-			Utils::Vec<2, float>{-diffX, 1.0 + diffY},
+			Utils::Vec<2, float>{1.0 - diffX, diffY},
+			Utils::Vec<2, float>{diffX, 1.0 - diffY},
 		};
 	} else return Shapes::Rectangle::RectangleTexCoords();
 }

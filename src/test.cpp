@@ -49,59 +49,23 @@ int main(void){
 	 * 		General testing
 	 */
 
-	class VideoSrcTest : public Zuazo::Video::LazyVideoSource{
-	protected:
-		mutable double time=0;
-
-		void update() const{
-			Zuazo::Utils::ImageAttributes att=Zuazo::Utils::ImageAttributes(Zuazo::Utils::Resolution(1920, 1080), Zuazo::Utils::PixelTypes::RGBA);
-			size_t size=att.size();
-			Zuazo::Utils::ImageBuffer pix={
-					pix.att=att,
-					pix.data=(u_int8_t*)malloc(size)
-			};
-
-			u_int8_t rgb[3];
-			rgb[0]=abs(sin(time)) * 0xff;
-			rgb[1]=abs(cos(time)) * 0xff;
-			rgb[2]=abs(sin(time)) * 0xff;
-
-			time+=0.1;
-
-			for(size_t i=0; i<size; i+=4){
-				pix.data[i + 0]=rgb[0];
-				pix.data[i + 1]=rgb[1];
-				pix.data[i + 2]=rgb[2];
-				pix.data[i + 3]=0xff;
-			}
-
-			std::unique_ptr<Zuazo::Graphics::GL::Buffers::PixelUnpackBuffer> buf=Zuazo::Graphics::Frame::newPixelUnpackBuffer(size);
-			buf->upload(pix);
-			free(pix.data);
-			std::shared_ptr<const Zuazo::Graphics::Frame> frame=std::shared_ptr<Zuazo::Graphics::Frame>(
-					new Zuazo::Graphics::Frame(std::move(buf))
-			);
-			Zuazo::Video::LazyVideoSource::push(frame);
-		}
-	};
 	{
-	VideoSrcTest src;
-
 	Zuazo::Video::Consumers::Window win(
 			Zuazo::Utils::Resolution(1280, 720),
 			Zuazo::Utils::Rational(30, 1),
-			"Window Test"
+			"Window with delay"
 	);
 
-	Zuazo::Video::Sources::V4L2 webcam(0);
+	Zuazo::Video::Sources::V4L2 webcam("/dev/video0");
 	const std::set<Zuazo::Video::Sources::V4L2::VideoMode>& vidModes=webcam.getVideoModes();
-	for(const Zuazo::Video::Sources::V4L2::VideoMode& vidMode : vidModes)
+	for(const Zuazo::Video::Sources::V4L2::VideoMode& vidMode : vidModes){
 		printf("%ux%u @ %gHz\n",
 				vidMode.resolution.width,
 				vidMode.resolution.height,
 				(double)vidMode.interval.den / vidMode.interval.num);
+	}
 
-	win<<webcam;
+	win << webcam;
 
 	/*auto screens=Zuazo::Video::Consumers::Window::Screen::getScreens();
 	sleep(2);
@@ -111,9 +75,6 @@ int main(void){
 	printf("Setting windowed\n");
 	win.setWindowed();*/
 
-	getchar();
-	if(!win.isOpen())
-		win.open();
 	getchar();
 	}
 

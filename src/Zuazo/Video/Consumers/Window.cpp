@@ -89,6 +89,7 @@ Window::Window(const Utils::Resolution& res, const Utils::Rational& rate, std::s
 	m_glfwWindow=nullptr;
 	m_exit=true;
 	m_vSync=true;
+	m_scalingMode=Utils::ScalingModes::Boxed;
 
 	open();
 }
@@ -276,7 +277,7 @@ void Window::update() const{
 
 		m_glResources->rectangle.upload(frame->scaleFrame(
 				m_resolution,
-				Utils::ScalingModes::ClampVert
+				m_scalingMode
 		));
 		m_glResources->rectangle.draw();
 

@@ -48,6 +48,14 @@ public:
 	virtual Utils::Resolution getRes() const=0;
 };
 
+class VideoScaler{
+public:
+	virtual ~VideoScaler()=default;
+
+	virtual void setScalingMode(Utils::ScalingModes mode)=0;
+	virtual Utils::ScalingModes getScalingMode() const=0;
+};
+
 
 
 }

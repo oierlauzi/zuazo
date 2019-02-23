@@ -27,17 +27,23 @@ public:
 	Delay(const Delay& delay)=default;
 	virtual ~Delay();
 
-	void								setDelay(const Timing::TimeInterval& delay);
-	Timing::TimeInterval				getDelay();
+	void									setDelay(const Timing::TimeInterval& delay);
+	Timing::TimeInterval					getDelay();
 
-	virtual void						update() const override;
+	virtual void							update() const override;
 
-	virtual void						open() override;
-	virtual void						close() override;
+	virtual void							open() override;
+	virtual void							close() override;
 private:
 	struct QueueElement{
 		std::shared_ptr<const T>			element;
 		Timing::TimePoint					ts;
+
+		QueueElement(const std::shared_ptr<const T>& el) :
+			element(el),
+			ts(Timing::timings->now())
+		{
+		}
 	};
 
 	Timing::TimeInterval 					m_delay;
@@ -46,20 +52,21 @@ private:
 };
 
 template<typename T>
-inline Delay<T>::Delay() :
-Timing::RegularUpdate<UpdateOrder::DELAY>(){
-	setDelay(Timing::TimeInterval(0));
+inline Delay<T>::Delay(){
+	open();
 }
 
 template<typename T>
 inline Delay<T>::Delay(const Timing::TimeInterval& delay) :
-Timing::RegularUpdate<UpdateOrder::DELAY>(){
-	setDelay(delay);
+Timing::RegularUpdate<UpdateOrder::DELAY>(),
+m_delay(delay)
+{
+	open();
 }
 
 template<typename T>
 inline Delay<T>::~Delay(){
-
+	close();
 }
 
 template<typename T>
@@ -84,8 +91,7 @@ inline void Delay<T>::update() const{
 	if(m_delay.count()){
 		//The delay is active
 		//Insert an element into the queue
-		m_queue.emplace();
-		m_queue.back().element=Consumer<T>::get(&m_queue.back().ts); //A bit ugly
+		m_queue.emplace(Consumer<T>::get());
 
 		//Advance the queue until an element with the desired time-stamp is found
 		while(m_queue.size()){
