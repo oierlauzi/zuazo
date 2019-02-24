@@ -1,12 +1,9 @@
 #include "Timing.h"
 
-#include <algorithm>
 #include <chrono>
 #include <map>
 
-#include "../Graphics/Context.h"
 #include "../Updateable.h"
-#include "TimePoint.h"
 
 namespace Zuazo::Timing{
 
@@ -55,7 +52,7 @@ void Timings::threadFunc(){
 
 			{
 				//Graphics::UniqueContext ctx(Graphics::Context::getMainCtx()); //Not needed
-				Graphics::UniqueContext ctx(Graphics::Context::getAvalibleCtx());
+				Graphics::UniqueContext ctx(m_ctx);
 
 				//Update all
 				for(auto ite=updates.updateables.begin(); ite!=updates.updateables.end(); ++ite){

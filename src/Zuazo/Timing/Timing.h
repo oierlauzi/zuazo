@@ -6,6 +6,7 @@
 #include <mutex>
 #include <thread>
 
+#include "../Graphics/Context.h"
 #include "TimePoint.h"
 #include "TimingTable.h"
 
@@ -42,6 +43,8 @@ public:
 	void 										modifyTiming(const PeriodicUpdate<order>* event);
 private:
 	TimingTable									m_timingTable;
+
+	Graphics::Context							m_ctx;
 
 	TimePoint									m_currTime;
 

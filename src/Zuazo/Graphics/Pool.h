@@ -6,55 +6,59 @@
 #include <mutex>
 
 #include "Context.h"
+#include "../Timing/RegularUpdate.h"
+#include "../UpdateOrder.h"
 
 namespace Zuazo::Graphics{
 
 /**
  * @brief A template for creating pools of GL resources
  */
-template<typename T, int maxElements=32>
-class Pool{
+template<typename T>
+class Pool : public Timing::RegularUpdate<UpdateOrder::POOL>{
 public:
-	constexpr Pool()=default;
+	constexpr Pool(){m_pops=0;}
 	Pool(const Pool& other)=delete;
 	~Pool()=default;
 
-	std::unique_ptr<T>					pop();
-	void								push(std::unique_ptr<T> el);
+	std::unique_ptr<T>						pop();
+	void									push(std::unique_ptr<T> el);
 
-	size_t								size() const;
-	void								decrement(u_int32_t no=1);
+	size_t									size() const;
+	void									update() const override;
 private:
-	std::queue<std::unique_ptr<T>>		m_elements;
-	std::mutex							m_mutex;
+	static constexpr u_int32_t				THRESHOLD=4;
+
+	mutable std::queue<std::unique_ptr<T>>	m_elements;
+	mutable std::mutex						m_mutex;
+	mutable u_int32_t						m_pops;
 };
 
 /**
  * @brief A template for creating pools of GL resources, ordered by a key
  */
-template<typename Q, typename T, int maxElements=32>
+template<typename Q, typename T>
 class MultiPool{
 public:
 	constexpr MultiPool()=default;
 	MultiPool(const MultiPool& other)=delete;
 	~MultiPool()=default;
 
-	std::unique_ptr<T>					pop(const Q& ref);
-	void								push(const Q& ref, std::unique_ptr<T> el);
+	std::unique_ptr<T>						pop(const Q& ref);
+	void									push(const Q& ref, std::unique_ptr<T> el);
 
-	size_t								size() const;
-	void								decrement(u_int32_t no=1);
+	size_t									size() const;
 private:
-	std::map<Q, Pool<T, maxElements>>	m_elements;
-	std::mutex							m_mutex;
+	mutable std::map<Q, Pool<T>>			m_elements;
+	mutable std::mutex						m_mutex;
 };
 
 /*
  * POOL METHOD DEFINITIONS
  */
 
-template<typename T, int maxElements>
-inline std::unique_ptr<T> Pool<T, maxElements>::pop(){
+template<typename T>
+inline std::unique_ptr<T> Pool<T>::pop(){
 	std::unique_ptr<T> result;
 	std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -68,41 +72,39 @@ inline std::unique_ptr<T> Pool<T, maxElements>::pop(){
 		result=std::unique_ptr<T>(new T());
 	}
 
+	m_pops++;
+
 	return result;
 }
 
-template<typename T, int maxElements>
-inline void Pool<T, maxElements>::push(std::unique_ptr<T> el){
+template<typename T>
+inline void Pool<T>::push(std::unique_ptr<T> el){
 	std::lock_guard<std::mutex> lock(m_mutex);
-
-	if(m_elements.size() < maxElements){
-		//There is room for another element
-		m_elements.push(std::move(el));
-	}else{
-		//There is no room for another element
-		el.reset();
-	}
+	m_elements.push(std::move(el));
 }
 
-template<typename T, int maxElements>
-inline size_t Pool<T, maxElements>::size() const{
-	return m_elements.size();
-}
-
-template<typename T, int maxElements>
-inline void Pool<T, maxElements>::decrement(u_int32_t no){
+template<typename T>
+inline void Pool<T>::update() const{
 	std::lock_guard<std::mutex> lock(m_mutex);
-	for(u_int32_t i=0; i<no && m_elements.size(); i++){
+
+	//Decrement the pool if necessary
+	while(m_elements.size() > m_pops + THRESHOLD)
 		m_elements.pop();
-	}
+
+	m_pops=0;
+}
+
+template<typename T>
+inline size_t Pool<T>::size() const{
+	return m_elements.size();
 }
 
 /*
  * MULTI-POOL METHOD DEFINITIONS
  */
 
-template<typename Q, typename T, int maxElements>
-inline std::unique_ptr<T> MultiPool<Q, T, maxElements>::pop(const Q& ref){
+template<typename Q, typename T>
+inline std::unique_ptr<T> MultiPool<Q, T>::pop(const Q& ref){
 	std::unique_ptr<T> result;
 	std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -123,33 +125,15 @@ inline std::unique_ptr<T> MultiPool<Q, T, maxElements>::pop(const Q& ref){
 	return result;
 }
 
-template<typename Q, typename T, int maxElements>
-inline void MultiPool<Q, T, maxElements>::push(const Q& ref, std::unique_ptr<T> el){
+template<typename Q, typename T>
+inline void MultiPool<Q, T>::push(const Q& ref, std::unique_ptr<T> el){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_elements[ref].push(std::move(el));
 }
 
-template<typename Q, typename T, int maxElements>
-inline size_t MultiPool<Q, T, maxElements>::size() const{
+template<typename Q, typename T>
+inline size_t MultiPool<Q, T>::size() const{
 	return m_elements.size();
-}
-
-template<typename Q, typename T, int maxElements>
-inline void MultiPool<Q, T, maxElements>::decrement(u_int32_t no){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	auto ite=m_elements.begin();
-
-	while(ite!=m_elements.end()){
-		//Decrement the pool
-		ite->decrement(no);
-
-		if(ite->size()){
-			//The pool is empty. Delete it
-			ite=m_elements.erase(ite);
-		}else{
-			ite++;
-		}
-	}
 }
 
 }
