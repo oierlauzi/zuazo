@@ -26,46 +26,6 @@ template <>
 constexpr GLenum GLType<u_int32_t> 						=GL_UNSIGNED_INT;
 
 template <Utils::PixelTypes T>
-constexpr GLenum GLPixel 								=GL_NONE;
-template <>
-constexpr GLenum GLPixel<Utils::PixelTypes::RED> 		=GL_RED;
-template <>
-constexpr GLenum GLPixel<Utils::PixelTypes::GREEN> 		=GL_GREEN;
-template <>
-constexpr GLenum GLPixel<Utils::PixelTypes::BLUE> 		=GL_BLUE;
-template <>
-constexpr GLenum GLPixel<Utils::PixelTypes::ALPHA> 		=GL_ALPHA;
-template <>
-constexpr GLenum GLPixel<Utils::PixelTypes::RGB> 		=GL_RGB;
-template <>
-constexpr GLenum GLPixel<Utils::PixelTypes::RGBA> 		=GL_RGBA;
-
-constexpr GLenum toGL(const Utils::PixelTypes& type){
-	GLenum result=0;
-	switch(type){
-	case Utils::PixelTypes::RED:
-		result=GLPixel<Utils::PixelTypes::RED>;
-		break;
-	case Utils::PixelTypes::GREEN:
-		result=GLPixel<Utils::PixelTypes::GREEN>;
-		break;
-	case Utils::PixelTypes::BLUE:
-		result=GLPixel<Utils::PixelTypes::BLUE>;
-		break;
-	case Utils::PixelTypes::ALPHA:
-		result=GLPixel<Utils::PixelTypes::ALPHA>;
-		break;
-	case Utils::PixelTypes::RGB:
-		result=GLPixel<Utils::PixelTypes::RGB>;
-		break;
-	case Utils::PixelTypes::RGBA:
-		result=GLPixel<Utils::PixelTypes::RGBA>;
-		break;
-	default:
-		result=GL_NONE;
-		break;
-	}
-	return result;
-}
+constexpr GLenum GLPixel=(GLenum)T;
 
 }

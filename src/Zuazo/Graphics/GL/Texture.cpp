@@ -77,11 +77,11 @@ void Texture::setAttributes(const Utils::ImageAttributes& att){
 		glTexImage2D(
 				GL_TEXTURE_2D,					//target
 				0,								//mip-map level
-				toGL(m_attributes.pixType),	//internal format
+				(GLenum)m_attributes.pixType,	//internal format
 				m_attributes.res.width,			//width
 				m_attributes.res.height,		//height
 				0,								//border (must be 0)
-				toGL(m_attributes.pixType),	//format
+				(GLenum)m_attributes.pixType,	//format
 				GL_UNSIGNED_BYTE,				//data type
 				nullptr							//data
 		);
@@ -102,11 +102,11 @@ void Texture::subImage(const Utils::ImageBuffer& buf){
 		glTexImage2D(
 				GL_TEXTURE_2D,					//target
 				0,								//mip-map level
-				toGL(m_attributes.pixType),	//internal format
+				(GLenum)m_attributes.pixType,	//internal format
 				m_attributes.res.width,			//width
 				m_attributes.res.height,		//height
 				0,								//border (must be 0)
-				toGL(m_attributes.pixType),	//format
+				(GLenum)m_attributes.pixType,	//format
 				GL_UNSIGNED_BYTE,				//data type
 				buf.data						//data
 		);
@@ -119,7 +119,7 @@ void Texture::subImage(const Utils::ImageBuffer& buf){
 				0,								//y offset
 				m_attributes.res.width,			//width
 				m_attributes.res.height,		//height
-				toGL(m_attributes.pixType),	//format
+				(GLenum)m_attributes.pixType,	//format
 				GL_UNSIGNED_BYTE,				//data type
 				buf.data						//data
 		);
@@ -139,11 +139,11 @@ void Texture::subImage(const Buffers::PixelUnpackBuffer& buf){
 		glTexImage2D(
 				GL_TEXTURE_2D,					//target
 				0,								//mip-map level
-				toGL(m_attributes.pixType),	//internal format
+				(GLenum)m_attributes.pixType,	//internal format
 				m_attributes.res.width,			//width
 				m_attributes.res.height,		//height
 				0,								//border (must be 0)
-				toGL(m_attributes.pixType),	//format
+				(GLenum)m_attributes.pixType,	//format
 				GL_UNSIGNED_BYTE,				//data type
 				nullptr							//data
 		);
@@ -156,7 +156,7 @@ void Texture::subImage(const Buffers::PixelUnpackBuffer& buf){
 				0,								//y offset
 				m_attributes.res.width,			//width
 				m_attributes.res.height,		//height
-				toGL(m_attributes.pixType),	//format
+				(GLenum)m_attributes.pixType,	//format
 				GL_UNSIGNED_BYTE,				//data type
 				nullptr							//data
 		);
@@ -179,7 +179,7 @@ void Texture::getImage(Utils::ImageBuffer* buf) const{
 	glGetTexImage(
 			GL_TEXTURE_2D,						//target
 			0,									//mip-map level
-			toGL(m_attributes.pixType),		//format
+			(GLenum)m_attributes.pixType,		//format
             GL_UNSIGNED_BYTE,					//data type
 			buf->data							//data
 	);

@@ -268,7 +268,7 @@ void FFmpeg::decodingFunc(){
 				break; //Error decoding the frame
 		}
 
-		//Convert the frame to an RGBA one
+		//Convert the frame to the final one
 		sws_scale(
 				swsCtx,
 				(uint8_t const * const *)decodedFrame->data,
@@ -304,11 +304,28 @@ void FFmpeg::decodingFunc(){
 AVPixelFormat FFmpeg::findBestMatch(AVPixelFormat fmt){
 	AVPixelFormat result;
 
-	/*switch(fmt){
-
-	}*/
-//TODO
-	result=AV_PIX_FMT_RGBA;
+	switch(fmt){
+	case AV_PIX_FMT_RGB24:
+		result=AV_PIX_FMT_RGB24;
+		break;
+	case AV_PIX_FMT_BGR24:
+		result=AV_PIX_FMT_BGR24;
+		break;
+	case AV_PIX_FMT_ARGB:
+		result=AV_PIX_FMT_RGBA;
+		break;
+	case AV_PIX_FMT_RGBA:
+		result=AV_PIX_FMT_RGBA;
+		break;
+	case AV_PIX_FMT_ABGR:
+		result=AV_PIX_FMT_BGRA;
+		break;
+	case AV_PIX_FMT_BGRA:
+		result=AV_PIX_FMT_BGRA;
+		break;
+	default:
+		result=AV_PIX_FMT_RGB24;
+	}
 
 	return result;
 }
@@ -316,11 +333,22 @@ AVPixelFormat FFmpeg::findBestMatch(AVPixelFormat fmt){
 Zuazo::Utils::PixelTypes FFmpeg::toPixelTypes(AVPixelFormat fmt){
 	Utils::PixelTypes  result;
 
-	/*switch(fmt){
-//TODO
-	}*/
-
-	result=Utils::PixelTypes::RGBA;
+	switch(fmt){
+	case AV_PIX_FMT_BGR24:
+		result=Utils::PixelTypes::BGR;
+		break;
+	case AV_PIX_FMT_RGB24:
+		result=Utils::PixelTypes::RGB;
+		break;
+	case AV_PIX_FMT_RGBA:
+		result=Utils::PixelTypes::RGBA;
+		break;
+	case AV_PIX_FMT_BGRA:
+		result=Utils::PixelTypes::BGRA;
+		break;
+	default:
+		result=Utils::PixelTypes::NONE;
+	}
 
 	return result;
 }

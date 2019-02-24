@@ -39,6 +39,10 @@ struct ImageAttributes{
 		size_t pixSize(0);
 
 		switch(pixType){
+		case PixelTypes::NONE:
+			pixSize=PIXEL_SIZE<PixelTypes::NONE>;
+			break;
+
 		case PixelTypes::RED:
 			pixSize=PIXEL_SIZE<PixelTypes::RED>;
 			break;
@@ -59,8 +63,16 @@ struct ImageAttributes{
 			pixSize=PIXEL_SIZE<PixelTypes::RGB>;
 			break;
 
+		case PixelTypes::BGR:
+			pixSize=PIXEL_SIZE<PixelTypes::BGR>;
+			break;
+
 		case PixelTypes::RGBA:
 			pixSize=PIXEL_SIZE<PixelTypes::RGBA>;
+			break;
+
+		case PixelTypes::BGRA:
+			pixSize=PIXEL_SIZE<PixelTypes::BGRA>;
 			break;
 		}
 
