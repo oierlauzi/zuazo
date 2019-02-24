@@ -98,19 +98,19 @@ void Consumer<T>::close(){
 }
 
 template <typename T>
-inline std::shared_ptr<const T>	Consumer<T>::get() const{
+inline std::shared_ptr<const T>	Consumer<T>::get() const {
 	std::shared_ptr<const T> frame=_get();
 	m_lastFrame=frame;
 	return frame;
 }
 
 template <typename T>
-inline bool Consumer<T>::hasChanged() const{
+inline bool Consumer<T>::hasChanged() const {
 	return m_lastFrame == _get();
 }
 
 template <typename T>
-inline std::shared_ptr<const T>	Consumer<T>::_get() const{
+inline std::shared_ptr<const T>	Consumer<T>::_get() const {
 	if(m_source)
 		return m_source->get();
 	else

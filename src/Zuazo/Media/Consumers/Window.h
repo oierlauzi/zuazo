@@ -15,9 +15,9 @@
 #include "../../Utils/Rational.h"
 #include "../../Utils/Resolution.h"
 #include "../../Utils/Vector.h"
-#include "../Video.h"
+#include "../Media.h"
 
-namespace Zuazo::Video::Consumers{
+namespace Zuazo::Media::Consumers{
 
 class Window :
 	public SyncVideoConsumer,

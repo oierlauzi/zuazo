@@ -1,4 +1,4 @@
-#include "Window.h"
+#include "../../Media/Consumers/Window.h"
 
 #include <algorithm>
 #include <map>
@@ -12,7 +12,7 @@
 #include "../../Stream/SyncConsumer.h"
 #include "../../Utils/ScalingModes.h"
 
-using namespace Zuazo::Video::Consumers;
+using namespace Zuazo::Media::Consumers;
 
 const Zuazo::Graphics::Shapes::Rectangle::RectangleData Window::WindowResources::screenVertices={
 		Zuazo::Utils::Vec2f(-1.0, 	-1.0),

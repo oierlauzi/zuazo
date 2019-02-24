@@ -10,11 +10,11 @@
 
 #include "../../Utils/Rational.h"
 #include "../../Utils/Resolution.h"
-#include "../Video.h"
+#include "../Media.h"
 
 struct v4l2_buffer;
 
-namespace Zuazo::Video::Sources{
+namespace Zuazo::Media::Sources{
 
 class V4L2:
 		public AsyncVideoSource,

@@ -8,7 +8,7 @@
 #include <stack>
 #include <vector>
 
-namespace Zuazo::Video::Consumers{
+namespace Zuazo::Media::Consumers{
 	class Window;
 }
 
@@ -18,7 +18,7 @@ namespace Zuazo::Graphics{
  *Context class
  */
 class Context{
-	friend Video::Consumers::Window;
+	friend Media::Consumers::Window;
 public:
 	static int init();
 	static int end();

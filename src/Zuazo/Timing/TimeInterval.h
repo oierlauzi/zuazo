@@ -33,6 +33,6 @@ public:
 		return (double)count()/TIME_UNITS_PER_SECOND;
 	}
 
-	static const int64_t TIME_UNITS_PER_SECOND;
+	static constexpr int64_t TIME_UNITS_PER_SECOND=std::chrono::TIME_UNIT( std::chrono::seconds(1) ).count();
 };
 }

@@ -19,9 +19,10 @@
 #include "Zuazo/Graphics/GL/VertexArray.h"
 #include "Zuazo/Graphics/Context.h"
 #include "Zuazo/Graphics/Frame.h"
-#include "Zuazo/Video/Video.h"
-#include "Zuazo/Video/Consumers/Window.h"
-#include "Zuazo/Video/Sources/V4L2.h"
+#include "Zuazo/Media/Consumers/Window.h"
+#include "Zuazo/Media/Media.h"
+#include "Zuazo/Media/Sources/V4L2.h"
+#include "Zuazo/Media/Sources/FFmpeg.h"
 
 #define TEST1
 //#define TEST2
@@ -50,24 +51,32 @@ int main(void){
 	 */
 
 	{
-	Zuazo::Video::Consumers::Window win(
+	Zuazo::Media::Consumers::Window win(
 			Zuazo::Utils::Resolution(1280, 720),
 			Zuazo::Utils::Rational(30, 1),
 			"Window with delay"
 	);
 
-	Zuazo::Video::Sources::V4L2 webcam("/dev/video0");
-	const std::set<Zuazo::Video::Sources::V4L2::VideoMode>& vidModes=webcam.getVideoModes();
-	for(const Zuazo::Video::Sources::V4L2::VideoMode& vidMode : vidModes){
+	Zuazo::Media::Sources::V4L2 webcam("/dev/video0");
+	const std::set<Zuazo::Media::Sources::V4L2::VideoMode>& vidModes=webcam.getVideoModes();
+	for(const Zuazo::Media::Sources::V4L2::VideoMode& vidMode : vidModes){
 		printf("%ux%u @ %gHz\n",
 				vidMode.resolution.width,
 				vidMode.resolution.height,
 				(double)vidMode.interval.den / vidMode.interval.num);
 	}
 
-	win << webcam;
+	Zuazo::Media::Sources::FFmpeg video("/home/oierlauzi/Bideoak/prueba1.mp4");
+	printf("Video: %ux%u @%g fps\n", video.getRes().width, video.getRes().height, video.getRate().operator double());
 
-	/*auto screens=Zuazo::Video::Consumers::Window::Screen::getScreens();
+	win << video;
+
+	while(true){
+		video.nextFrame();
+		usleep(33333);
+	}
+
+	/*auto screens=Zuazo::Media::Consumers::Window::Screen::getScreens();
 	sleep(2);
 	printf("Setting fullscreen\n");
 	win.setFullScreen(*(screens.begin()));

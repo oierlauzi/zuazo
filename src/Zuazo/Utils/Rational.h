@@ -10,8 +10,8 @@ namespace Zuazo::Utils{
 
 
 struct Rational{
-	int32_t num;
-	int32_t den;
+	int64_t num;
+	int64_t den;
 
 	constexpr Rational():
 			num(0),
@@ -19,7 +19,7 @@ struct Rational{
 
 	}
 
-	constexpr Rational(int32_t num, int32_t den):
+	constexpr Rational(int64_t num, int64_t den):
 			num(num),
 			den(den){
 		simplify();
@@ -39,7 +39,14 @@ struct Rational{
 	}
 
 	constexpr operator double() const{
-		return (double)num/den;
+		if(den)
+			return (double)num / den;
+		else if(num > 0)
+			return std::numeric_limits<double>::max();
+		else if(num < 0)
+			return std::numeric_limits<double>::min();
+		else
+			return NAN;
 	}
 
 	constexpr int operator==(const Rational& right)const{
@@ -167,9 +174,11 @@ constexpr Rational::Rational(double number) : Rational() {
 }
 
 constexpr void Rational::simplify(){
-	int32_t gcd=std::gcd(num, den);
-	num/=gcd;
-	den/=gcd;
+	int64_t gcd=std::gcd(num, den);
+	if(gcd){
+		num/=gcd;
+		den/=gcd;
+	}
 }
 
 }

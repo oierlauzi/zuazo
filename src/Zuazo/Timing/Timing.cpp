@@ -54,7 +54,8 @@ void Timings::threadFunc(){
 			 */
 
 			{
-				Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
+				//Graphics::UniqueContext ctx(Graphics::Context::getMainCtx()); //Not needed
+				Graphics::UniqueContext ctx(Graphics::Context::getAvalibleCtx());
 
 				//Update all
 				for(auto ite=updates.updateables.begin(); ite!=updates.updateables.end(); ++ite){

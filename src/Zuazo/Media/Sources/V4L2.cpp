@@ -1,4 +1,4 @@
-#include "V4L2.h"
+#include "../../Media/Sources/V4L2.h"
 
 #include <asm-generic/errno-base.h>
 #include <fcntl.h>
@@ -38,7 +38,7 @@ static int xioctl(int fd, int req, void *arg){
     return result;
 }
 
-using namespace Zuazo::Video::Sources;
+using namespace Zuazo::Media::Sources;
 
 V4L2::V4L2(u_int32_t dev) : V4L2("/dev/video" + std::to_string(dev))
 {
@@ -289,12 +289,8 @@ void V4L2::capturingThread(){
 		Utils::Resolution(m_currVidMode->resolution),
 		Utils::PixelTypes::RGB
 	};
-	size_t imgSize=imgAtt.size();
 
-    Utils::ImageBuffer imgBuffer={
-    		imgAtt,
-			(u_int8_t*)malloc(imgSize)
-    };
+    Utils::ImageBuffer imgBuffer(imgAtt);
 
     //Main loop
     while(!m_threadExit){
@@ -366,7 +362,6 @@ void V4L2::capturingThread(){
     }
 
     jpeg_destroy_decompress(&m_decmp);
-    free(imgBuffer.data);
 }
 
 V4L2::Buffer::Buffer(const v4l2_buffer& v4l2BufReq, int dev){
