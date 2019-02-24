@@ -1,23 +1,21 @@
 #pragma once
 
+#include <bits/stdint-intn.h>
+#include <libavutil/pixfmt.h>
+#include <libavutil/rational.h>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
 
+#include "../../Timing/TimeInterval.h"
+#include "../../Utils/PixelTypes.h"
 #include "../Media.h"
 
 struct AVCodec;
 struct AVCodecContext;
 struct AVFormatContext;
-
-extern "C"{
-	#include <libavcodec/avcodec.h>
-	#include <libavformat/avformat.h>
-	#include <libswscale/swscale.h>
-	#include <libavutil/imgutils.h>
-}
 
 namespace Zuazo {
 namespace Graphics {
@@ -29,7 +27,7 @@ namespace Zuazo::Media::Sources{
 
 class FFmpeg : public VideoClip{
 public:
-	FFmpeg(std::string dir);
+	FFmpeg(const std::string& dir);
 	FFmpeg(const FFmpeg& other);
 	~FFmpeg();
 

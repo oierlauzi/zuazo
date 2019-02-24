@@ -26,6 +26,10 @@ struct Resolution{
 		return width * height * pixSize;
 	}
 
+	constexpr size_t stride(size_t pixSize=1) const{
+		return width * pixSize;
+	}
+
 	constexpr operator bool() const{
 		return width && height;
 	}

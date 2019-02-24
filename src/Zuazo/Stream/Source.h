@@ -36,8 +36,6 @@ protected:
 
 	virtual void						open() override;
 	virtual void						close() override;
-
-	bool								isActive() const;
 private:
 	mutable std::shared_ptr<const T>	m_last;
 
@@ -105,18 +103,5 @@ template <typename T>
 void Source<T>::detach(Consumer<T> * cons) const{
 	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_consumers.erase(cons);
-}
-
-/*
- * CONSUMER RELATED THINGS
- */
-
-template <typename T>
-bool Source<T>::isActive() const{
-	for(Consumer<T> * cons : m_consumers)
-		if(cons->isActive())
-			return true;
-
-	return false;
 }
 } /* namespace Zuazo */

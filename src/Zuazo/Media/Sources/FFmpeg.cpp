@@ -1,30 +1,32 @@
 #include "FFmpeg.h"
 
-#include <bits/stdint-uintn.h>
-#include <libavutil/avutil.h>
-#include <libavutil/error.h>
-#include <libavutil/frame.h>
-#include <libavutil/mathematics.h>
-#include <libavutil/pixfmt.h>
-#include <libavutil/rational.h>
-#include <libavutil/version.h>
 #include <sys/types.h>
 #include <algorithm>
 #include <chrono>
 #include <ratio>
 
+extern "C"{
+	#include <libavcodec/avcodec.h>
+	#include <libavformat/avformat.h>
+	#include <libavutil/avutil.h>
+	#include <libavutil/error.h>
+	#include <libavutil/frame.h>
+	#include <libavutil/imgutils.h>
+	#include <libavutil/mathematics.h>
+	#include <libavutil/version.h>
+	#include <libswscale/swscale.h>
+}
+
 #include "../../Graphics/Context.h"
 #include "../../Graphics/Frame.h"
-#include "../../Timing/TimeInterval.h"
 #include "../../Utils/ImageAttributes.h"
 #include "../../Utils/ImageBuffer.h"
-#include "../../Utils/PixelTypes.h"
 #include "../../Utils/Resolution.h"
 
 using namespace Zuazo::Media::Sources;
 
 
-FFmpeg::FFmpeg(std::string dir)
+FFmpeg::FFmpeg(const std::string& dir)
 	: m_file(dir)
 {
 	open();

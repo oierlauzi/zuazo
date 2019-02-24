@@ -23,6 +23,7 @@
 #include "Zuazo/Media/Media.h"
 #include "Zuazo/Media/Sources/V4L2.h"
 #include "Zuazo/Media/Sources/FFmpeg.h"
+#include "Zuazo/Media/Sources/SVG.h"
 
 #define TEST1
 //#define TEST2
@@ -66,15 +67,7 @@ int main(void){
 				(double)vidMode.interval.den / vidMode.interval.num);
 	}
 
-	Zuazo::Media::Sources::FFmpeg video("/home/oierlauzi/Bideoak/prueba1.mp4");
-	printf("Video: %ux%u @%g fps\n", video.getRes().width, video.getRes().height, video.getRate().operator double());
-
-	win << video;
-
-	while(true){
-		video.nextFrame();
-		usleep(33333);
-	}
+	win<<webcam;
 
 	/*auto screens=Zuazo::Media::Consumers::Window::Screen::getScreens();
 	sleep(2);

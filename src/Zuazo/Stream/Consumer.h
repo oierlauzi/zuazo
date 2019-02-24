@@ -24,7 +24,6 @@ public:
 	void						setSource(const Source<T>* src);
 	Consumer<T>&				operator<<(const Source<T>& src);
 	Consumer<T>&				operator<<(std::nullptr_t ptr);
-	virtual bool 				isActive() const { return true; }
 
 	virtual void				open() override;
 	virtual void				close() override;

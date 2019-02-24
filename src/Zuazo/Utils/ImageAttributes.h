@@ -35,7 +35,7 @@ struct ImageAttributes{
 		return res!=right.res || pixType!=right.pixType;
     }
 
-	constexpr size_t size() const{
+	constexpr size_t pixSize() const{
 		size_t pixSize(0);
 
 		switch(pixType){
@@ -76,7 +76,15 @@ struct ImageAttributes{
 			break;
 		}
 
-		return res.size(pixSize);
+		return pixSize;
+	}
+
+	constexpr size_t stride() const{
+		return res.stride(pixSize());
+	}
+
+	constexpr size_t size() const{
+		return res.size(pixSize());
 	}
 };
 }
