@@ -283,7 +283,10 @@ void V4L2::capturingThread(){
 	jpeg_decompress_struct m_decmp={0};
 	jpeg_error_mgr errMgr={0};
 	m_decmp.err=jpeg_std_error(&errMgr);
-    jpeg_create_decompress(&m_decmp);
+    jpeg_create_decompress(&m_decmp)
+	;
+    m_decmp.out_color_space = JCS_RGB;
+    m_decmp.dct_method = JDCT_FASTEST;
 
 	Utils::ImageAttributes imgAtt{
 		Utils::Resolution(m_currVidMode->resolution),
@@ -291,6 +294,14 @@ void V4L2::capturingThread(){
 	};
 
     Utils::ImageBuffer imgBuffer(imgAtt);
+
+    //Index image's rows into rowPtr
+    size_t stride=imgBuffer.att.res.width * imgBuffer.att.pixSize();
+	u_int8_t** rowPtr=(u_int8_t**)malloc(sizeof(u_int8_t*) * imgBuffer.att.res.height);
+
+	for(u_int32_t i=0; i<imgBuffer.att.res.height; i++){
+		rowPtr[i]=imgBuffer.data + (stride * i);
+	}
 
     //Main loop
     while(!m_threadExit){
@@ -328,17 +339,17 @@ void V4L2::capturingThread(){
 		jpeg_read_header(&m_decmp, TRUE);
 
 		//Set output format as RGB and decompress it
-		m_decmp.out_color_space = JCS_EXT_RGB;
 		jpeg_start_decompress(&m_decmp);
 
-		size_t stride=m_decmp.output_width * m_decmp.output_components;
-		u_int8_t * rowPtr[1];
-		rowPtr[0]=imgBuffer.data;
+
 
 		//Read image line-by-line
 		while (m_decmp.output_scanline < m_decmp.output_height) {
-			jpeg_read_scanlines(&m_decmp, rowPtr, 1);
-			rowPtr[0]+=stride;
+			jpeg_read_scanlines(
+					&m_decmp,
+					&rowPtr[m_decmp.output_scanline],
+					m_decmp.output_height - m_decmp.output_scanline
+			);
 		}
 
 		jpeg_finish_decompress(&m_decmp);
@@ -361,6 +372,7 @@ void V4L2::capturingThread(){
 		AsyncVideoSource::push(std::move(newFrame));
     }
 
+	free(rowPtr);
     jpeg_destroy_decompress(&m_decmp);
 }
 

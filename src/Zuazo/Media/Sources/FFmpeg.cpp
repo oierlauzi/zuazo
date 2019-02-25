@@ -326,7 +326,10 @@ AVPixelFormat FFmpeg::findBestMatch(AVPixelFormat fmt){
 		result=AV_PIX_FMT_BGRA;
 		break;
 	default:
-		result=AV_PIX_FMT_RGB24;
+		const AVPixFmtDescriptor* fmtDesc=av_pix_fmt_desc_get(fmt);
+		result=fmtDesc->flags & AV_PIX_FMT_FLAG_ALPHA
+				? AV_PIX_FMT_RGBA
+				: AV_PIX_FMT_RGB24;
 	}
 
 	return result;
