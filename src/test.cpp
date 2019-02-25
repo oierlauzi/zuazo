@@ -58,8 +58,9 @@ int main(void){
 			"Window with delay"
 	);
 
-	Zuazo::Media::Sources::V4L2 webcam("/dev/video0");
-	const std::set<Zuazo::Media::Sources::V4L2::VideoMode>& vidModes=webcam.getVideoModes();
+	Zuazo::Media::Sources::V4L2 webcam1("/dev/video0");
+	Zuazo::Media::Sources::V4L2 webcam2("/dev/video2");
+	const std::set<Zuazo::Media::Sources::V4L2::VideoMode>& vidModes=webcam2.getVideoModes();
 	for(const Zuazo::Media::Sources::V4L2::VideoMode& vidMode : vidModes){
 		printf("%ux%u @ %gHz\n",
 				vidMode.resolution.width,
@@ -67,7 +68,33 @@ int main(void){
 				(double)vidMode.interval.den / vidMode.interval.num);
 	}
 
-	win<<webcam;
+	Zuazo::Media::Sources::SVG svg("/home/oierlauzi/Irudiak/color_bars.svg", 96);
+
+	char a;
+	do{
+		a=getchar();
+
+		switch(a){
+		case '1':
+			win<<webcam1;
+			break;
+		case '2':
+			win<<webcam2;
+			break;
+		case '3':
+			win<<svg;
+			break;
+		case 'o':
+			webcam2.open();
+			break;
+		case 'c':
+			webcam2.close();
+			break;
+		case 'e':
+			break;
+		}
+	}while(a != 'e');
+
 
 	/*auto screens=Zuazo::Media::Consumers::Window::Screen::getScreens();
 	sleep(2);

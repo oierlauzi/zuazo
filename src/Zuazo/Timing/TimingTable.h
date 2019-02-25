@@ -59,6 +59,7 @@ private:
 	RegularTimings								m_regularTimings;
 
 	void										cleanUnusedIntervals();
+	static void									cleanOrderedUpdates(OrderedUpdates* updates);
 };
 
 /*
@@ -101,6 +102,7 @@ void TimingTable::deleteTiming(const PeriodicUpdate<order>* event){
 template <u_int32_t order>
 void TimingTable::deleteTiming(const RegularUpdate<order>* event){
 	m_regularTimings[order].erase(event);
+	cleanOrderedUpdates(&m_regularTimings);
 }
 
 } /* namespace Zuazo::Timing*/

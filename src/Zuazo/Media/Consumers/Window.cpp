@@ -261,18 +261,21 @@ void Window::draw() const{
 
 void Window::update() const{
 	std::shared_ptr<const Graphics::Frame> frame=SyncVideoConsumer::get();
+	const Graphics::GL::Texture* tex=nullptr;
 
 	if(frame){
-		const Graphics::GL::Texture& tex=frame->getTexture();
+		tex=&(frame->getTexture());
+	}
 
-		GLFWwindow* previousCtx=glfwGetCurrentContext();
-		glfwMakeContextCurrent(m_glfwWindow);
+	GLFWwindow* previousCtx=glfwGetCurrentContext();
+	glfwMakeContextCurrent(m_glfwWindow);
 
-		//Clear
-		glClearColor(0.0, 0.0, 0.0, 0.0);
-		glClear(GL_COLOR_BUFFER_BIT);
+	//Clear
+	glClearColor(0.0, 0.0, 0.0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT);
 
-		Graphics::GL::UniqueBinding<Graphics::GL::Texture> textureBinding(tex);
+	if(tex){
+		Graphics::GL::UniqueBinding<Graphics::GL::Texture> textureBinding(*tex);
 		Graphics::GL::UniqueBinding<Graphics::GL::Shader> shaderBinding(m_glResources->shader);
 
 		m_glResources->rectangle.upload(frame->scaleFrame(
@@ -280,18 +283,18 @@ void Window::update() const{
 				m_scalingMode
 		));
 		m_glResources->rectangle.draw();
-
-		/*
-		glColor4f(1.0, 0.0, 1.0, 1.0);
-		glBegin(GL_QUADS);
-			glVertex2f(-0.5, -0.5);
-			glVertex2f(-0.5, +0.5);
-			glVertex2f(+0.5, +0.5);
-			glVertex2f(+0.5, -0.5);
-		glEnd();
-		*/
-		glfwMakeContextCurrent(previousCtx);
 	}
+
+	/*
+	glColor4f(1.0, 0.0, 1.0, 1.0);
+	glBegin(GL_QUADS);
+		glVertex2f(-0.5, -0.5);
+		glVertex2f(-0.5, +0.5);
+		glVertex2f(+0.5, +0.5);
+		glVertex2f(+0.5, -0.5);
+	glEnd();
+	*/
+	glfwMakeContextCurrent(previousCtx);
 	draw();
 }
 

@@ -44,19 +44,27 @@ void TimingTable::cleanUnusedIntervals(){
 	auto ite=m_periodicTimings.begin();
 
 	while(ite != m_periodicTimings.end()){
-		bool intervalIsEmpty=true;
+		cleanOrderedUpdates(&(ite->second.updateables));
 
-		for(auto& updateOrder : ite->second.updateables){
-			if(updateOrder.second.size() == 0){
-				//There is something
-				intervalIsEmpty=false;
-				break;
-			}
+		if(ite->second.updateables.size()){
+			++ite;
+		}else{
+			ite=m_periodicTimings.erase(ite);
 		}
 
-		if(intervalIsEmpty){
-			ite=m_periodicTimings.erase(ite);
-		}else
+	}
+}
+
+void TimingTable::cleanOrderedUpdates(OrderedUpdates* updates){
+	auto ite=updates->begin();
+
+	while(ite != updates->end()){
+		if(ite->second.size()){
+			//Update order is being used
 			++ite;
+		} else{
+			//Update order is NOT being used
+			ite=updates->erase(ite);
+		}
 	}
 }

@@ -5,10 +5,10 @@
 
 #include "../../Graphics/Context.h"
 #include "../../Graphics/Frame.h"
+#include "../../Graphics/GL/Texture.h"
 #include "../../Utils/ImageAttributes.h"
 #include "../../Utils/ImageBuffer.h"
 #include "../../Utils/PixelTypes.h"
-#include "../../Graphics/Frame.h"
 
 #define NANOSVG_IMPLEMENTATION
 #define NANOSVGRAST_IMPLEMENTATION
@@ -67,8 +67,12 @@ void SVG::open(){
 		{
 			Graphics::UniqueContext ctx(Graphics::Context::getAvalibleCtx());
 
+			std::unique_ptr<Graphics::GL::Texture> tex(
+					new Graphics::GL::Texture(imgBuf)
+			);
+
 			newFrame=std::unique_ptr<Graphics::Frame>(
-					new Graphics::Frame(imgBuf)
+					new Graphics::Frame(std::move(tex))
 			);
 		}
 
