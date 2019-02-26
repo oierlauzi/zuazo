@@ -5,6 +5,8 @@
 #include <chrono>
 #include <ratio>
 
+#include "../Packet.h"
+
 extern "C"{
 	#include <libavcodec/avcodec.h>
 	#include <libavformat/avformat.h>
@@ -15,15 +17,16 @@ extern "C"{
 	#include <libavutil/mathematics.h>
 	#include <libavutil/version.h>
 	#include <libswscale/swscale.h>
+	#include <libavutil/pixdesc.h>
 }
 
-#include "../../Graphics/Context.h"
-#include "../../Graphics/Frame.h"
-#include "../../Utils/ImageAttributes.h"
-#include "../../Utils/ImageBuffer.h"
-#include "../../Utils/Resolution.h"
+#include "../Graphics/Context.h"
+#include "../Graphics/Frame.h"
+#include "../Utils/ImageAttributes.h"
+#include "../Utils/ImageBuffer.h"
+#include "../Utils/Resolution.h"
 
-using namespace Zuazo::Media::Sources;
+using namespace Zuazo::Sources;
 
 
 FFmpeg::FFmpeg(const std::string& dir)
@@ -104,7 +107,7 @@ void FFmpeg::open(){
 			Utils::Resolution(m_codecCtx->width, m_codecCtx->height)
 	);
 
-	VideoClip::open();
+	VideoClipBase::open();
 
 	m_exit=false;
 	m_decodingThread=std::thread(&FFmpeg::decodingFunc, this);
@@ -116,7 +119,7 @@ void FFmpeg::close(){
 	if(m_decodingThread.joinable())
 		m_decodingThread.join();
 
-	VideoClip::close();
+	VideoClipBase::close();
 
 	if(m_formatCtx){
 		avformat_close_input(&m_formatCtx);
@@ -128,16 +131,16 @@ void FFmpeg::close(){
 	}
 }
 
-std::shared_ptr<const Zuazo::Graphics::Frame> FFmpeg::get() const{
+std::shared_ptr<const Zuazo::Packet> FFmpeg::get() const{
 	std::lock_guard<std::mutex> lock(m_decodeMutex);
-	return VideoSource::get();
+	return SourceBase::get();
 }
 
 void FFmpeg::update() const{
 	std::lock_guard<std::mutex> lock(m_decodeMutex);
 
 	int64_t newTs=av_rescale_q(
-			Clip::getCurrentTime().count(),
+			ClipBase::getCurrentTime().count(),
 			ZUAZO_TIME_BASE_Q,
 			m_formatCtx->streams[m_videoStream]->time_base
 	);
@@ -282,7 +285,7 @@ void FFmpeg::decodingFunc(){
 		);
 
 		//Upload image to the source
-		std::unique_ptr<const Graphics::Frame> newFrame;
+		std::unique_ptr<Graphics::Frame> newFrame;
 
 		{
 			Graphics::UniqueContext ctx(Graphics::Context::getAvalibleCtx());
@@ -292,7 +295,11 @@ void FFmpeg::decodingFunc(){
 			);
 		}
 
-		VideoSource::push(std::move(newFrame));
+		std::unique_ptr<const Packet> packet(new Packet(Packet::Data{
+			std::move(newFrame)
+		}));
+
+		SourceBase::push(std::move(packet));
 
 		m_decodeCondition.wait(lock);
 	}

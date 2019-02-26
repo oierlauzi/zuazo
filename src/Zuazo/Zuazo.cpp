@@ -4,7 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #include "Graphics/Context.h"
-#include "Media/Consumers/Window.h"
+#include "Consumers/Window.h"
 #include "Timing/Timing.h"
 
 namespace Zuazo{
@@ -42,7 +42,7 @@ Errors init(){
         return Errors::GLAD_INIT;
 
     //Initialize window class
-    err=Media::Consumers::Window::init();
+    err=Consumers::Window::init();
     if(err)
     	return Errors::WINDOW_INIT;
 
@@ -69,7 +69,7 @@ Errors init(){
 	@return Error generated destroying Error::NONE for all OK
  **/
 Errors end(){
-	Media::Consumers::Window::end();
+	Consumers::Window::end();
 	Timing::end();
 	Graphics::Context::end();
     return Errors::NONE; //TODO

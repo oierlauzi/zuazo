@@ -2,12 +2,14 @@
 
 #include <string>
 
-#include "../../Utils/Resolution.h"
-#include "../Media.h"
+#include "../Utils/Resolution.h"
+#include "../VideoBase.h"
+#include "SourceBase.h"
 
-namespace Zuazo::Media::Sources{
+namespace Zuazo::Sources{
 class SVG :
-		public VideoSource
+		public SourceBase,
+		public VideoBase
 {
 public:
 	SVG(const std::string& dir, float dpi);

@@ -1,8 +1,8 @@
-#include "../../Media/Sources/V4L2.h"
+#include "V4L2.h"
 
-#include <asm-generic/errno-base.h>
-#include <fcntl.h>
 #include <jpeglib.h>
+#include <fcntl.h>
+#include <jmorecfg.h>
 #include <linux/videodev2.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
@@ -12,13 +12,15 @@
 #include <unistd.h>
 #include <algorithm>
 #include <cerrno>
-#include <cstdio>
+#include <memory>
 #include <utility>
 
-#include "../../Utils/ImageAttributes.h"
-#include "../../Utils/ImageBuffer.h"
-#include "../../Utils/PixelTypes.h"
-#include "../../Graphics/Frame.h"
+#include "../Graphics/Context.h"
+#include "../Graphics/Frame.h"
+#include "../Packet.h"
+#include "../Utils/ImageAttributes.h"
+#include "../Utils/ImageBuffer.h"
+#include "../Utils/PixelTypes.h"
 
 
 /*
@@ -38,7 +40,7 @@ static int xioctl(int fd, int req, void *arg){
     return result;
 }
 
-using namespace Zuazo::Media::Sources;
+using namespace Zuazo::Sources;
 
 V4L2::V4L2(u_int32_t dev) : V4L2("/dev/video" + std::to_string(dev))
 {
@@ -143,7 +145,7 @@ V4L2::V4L2(const std::string& devName){
 
 	//Set the default resolution (highest one)
 	m_currVidMode=--m_vidModes.end();
-	AsyncVideoSource::setInterval(m_currVidMode->interval);
+	AsyncSourceBase::setInterval(m_currVidMode->interval);
 
 	open();
 }
@@ -163,7 +165,7 @@ void V4L2::setVideoMode(const VideoMode& mode){
 
 	if(m_currVidMode != m_vidModes.end()){
 		//Video mode exists
-		AsyncVideoSource::setInterval(m_currVidMode->interval);
+		AsyncSourceBase::setInterval(m_currVidMode->interval);
 		open();
 	}
 }
@@ -249,12 +251,12 @@ void V4L2::open(){
 		m_threadExit=false;
 		m_capturingThread=std::thread(&V4L2::capturingThread, this);
 
-		AsyncVideoSource::open();
+		AsyncSourceBase::open();
 	}
 }
 
 void V4L2::close(){
-	AsyncVideoSource::close();
+	AsyncSourceBase::close();
 
 	//End capture theread
 	m_threadExit=true;
@@ -359,7 +361,7 @@ void V4L2::capturingThread(){
 			continue;
 
 		//Upload image to the source
-		std::unique_ptr<const Graphics::Frame> newFrame;
+		std::unique_ptr<Graphics::Frame> newFrame;
 
 		{
 			Graphics::UniqueContext ctx(Graphics::Context::getAvalibleCtx());
@@ -369,7 +371,11 @@ void V4L2::capturingThread(){
 			);
 		}
 
-		AsyncVideoSource::push(std::move(newFrame));
+		std::unique_ptr<const Packet> packet(new Packet(Packet::Data{
+			std::move(newFrame)
+		}));
+
+		AsyncSourceBase::push(std::move(packet));
     }
 
 	free(rowPtr);

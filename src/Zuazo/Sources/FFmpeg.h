@@ -9,9 +9,9 @@
 #include <string>
 #include <thread>
 
-#include "../../Timing/TimeInterval.h"
-#include "../../Utils/PixelTypes.h"
-#include "../Media.h"
+#include "../Timing/TimeInterval.h"
+#include "../Utils/PixelTypes.h"
+#include "VideoClipBase.h"
 
 struct AVCodec;
 struct AVCodecContext;
@@ -23,9 +23,9 @@ class Frame;
 } /* namespace Graphics */
 } /* namespace Zuazo */
 
-namespace Zuazo::Media::Sources{
+namespace Zuazo::Sources{
 
-class FFmpeg : public VideoClip{
+class FFmpeg : public VideoClipBase{
 public:
 	FFmpeg(const std::string& dir);
 	FFmpeg(const FFmpeg& other);
@@ -34,7 +34,7 @@ public:
 	void							open() override;
 	void							close() override;
 
-	virtual std::shared_ptr<const Graphics::Frame> get() const override;
+	virtual std::shared_ptr<const Packet> get() const override;
 protected:
 	void							update() const;
 private:

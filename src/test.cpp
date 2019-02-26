@@ -4,9 +4,6 @@
 #include <memory>
 #include <string>
 
-#include "Zuazo/Stream/Consumer.h"
-#include "Zuazo/Stream/Delay.h"
-#include "Zuazo/Stream/Source.h"
 #include "Zuazo/Timing/PeriodicUpdate.h"
 #include "Zuazo/Timing/TimePoint.h"
 #include "Zuazo/UpdateOrder.h"
@@ -19,11 +16,10 @@
 #include "Zuazo/Graphics/GL/VertexArray.h"
 #include "Zuazo/Graphics/Context.h"
 #include "Zuazo/Graphics/Frame.h"
-#include "Zuazo/Media/Consumers/Window.h"
-#include "Zuazo/Media/Media.h"
-#include "Zuazo/Media/Sources/V4L2.h"
-#include "Zuazo/Media/Sources/FFmpeg.h"
-#include "Zuazo/Media/Sources/SVG.h"
+#include "Zuazo/Consumers/Window.h"
+#include "Zuazo/Sources/V4L2.h"
+#include "Zuazo/Sources/FFmpeg.h"
+#include "Zuazo/Sources/SVG.h"
 
 #define TEST1
 //#define TEST2
@@ -52,23 +48,23 @@ int main(void){
 	 */
 
 	{
-	Zuazo::Media::Consumers::Window win(
+	Zuazo::Consumers::Window win(
 			Zuazo::Utils::Resolution(1280, 720),
 			Zuazo::Utils::Rational(30, 1),
 			"Window with delay"
 	);
 
-	Zuazo::Media::Sources::V4L2 webcam1("/dev/video0");
-	Zuazo::Media::Sources::V4L2 webcam2("/dev/video2");
-	const std::set<Zuazo::Media::Sources::V4L2::VideoMode>& vidModes=webcam2.getVideoModes();
-	for(const Zuazo::Media::Sources::V4L2::VideoMode& vidMode : vidModes){
+	Zuazo::Sources::V4L2 webcam1("/dev/video0");
+	Zuazo::Sources::V4L2 webcam2("/dev/video2");
+	const std::set<Zuazo::Sources::V4L2::VideoMode>& vidModes=webcam2.getVideoModes();
+	for(const Zuazo::Sources::V4L2::VideoMode& vidMode : vidModes){
 		printf("%ux%u @ %gHz\n",
 				vidMode.resolution.width,
 				vidMode.resolution.height,
 				(double)vidMode.interval.den / vidMode.interval.num);
 	}
 
-	Zuazo::Media::Sources::SVG svg("/home/oierlauzi/Irudiak/color_bars.svg", 96);
+	Zuazo::Sources::SVG svg("/home/oierlauzi/Irudiak/color_bars.svg", 96);
 
 	char a;
 	do{
@@ -96,7 +92,7 @@ int main(void){
 	}while(a != 'e');
 
 
-	/*auto screens=Zuazo::Media::Consumers::Window::Screen::getScreens();
+	/*auto screens=Zuazo::Consumers::Window::Screen::getScreens();
 	sleep(2);
 	printf("Setting fullscreen\n");
 	win.setFullScreen(*(screens.begin()));

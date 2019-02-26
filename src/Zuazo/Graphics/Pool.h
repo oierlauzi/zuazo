@@ -15,7 +15,7 @@ namespace Zuazo::Graphics{
  * @brief A template for creating pools of GL resources
  */
 template<typename T>
-class Pool : public Timing::RegularUpdate<UpdateOrder::POOL>{
+class Pool : public Timing::RegularUpdate< (u_int32_t)UpdateOrder::POOL >{
 public:
 	constexpr Pool(){m_pops=0;}
 	Pool(const Pool& other)=delete;

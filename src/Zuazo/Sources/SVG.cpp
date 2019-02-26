@@ -3,19 +3,20 @@
 #include <algorithm>
 #include <memory>
 
-#include "../../Graphics/Context.h"
-#include "../../Graphics/Frame.h"
-#include "../../Graphics/GL/Texture.h"
-#include "../../Utils/ImageAttributes.h"
-#include "../../Utils/ImageBuffer.h"
-#include "../../Utils/PixelTypes.h"
+#include "../Graphics/Context.h"
+#include "../Graphics/Frame.h"
+#include "../Graphics/GL/Texture.h"
+#include "../Packet.h"
+#include "../Utils/ImageAttributes.h"
+#include "../Utils/ImageBuffer.h"
+#include "../Utils/PixelTypes.h"
 
 #define NANOSVG_IMPLEMENTATION
 #define NANOSVGRAST_IMPLEMENTATION
 #include <nanosvg/nanosvg.h>
 #include <nanosvg/nanosvgrast.h>
 
-using namespace Zuazo::Media::Sources;
+using namespace Zuazo::Sources;
 
 SVG::SVG(const std::string& dir, float dpi) :
 	m_file(dir),
@@ -62,7 +63,7 @@ void SVG::open(){
 		);
 
 		//Upload image to the source
-		std::unique_ptr<const Graphics::Frame> newFrame;
+		std::unique_ptr<Graphics::Frame> newFrame;
 
 		{
 			Graphics::UniqueContext ctx(Graphics::Context::getAvalibleCtx());
@@ -76,11 +77,15 @@ void SVG::open(){
 			);
 		}
 
-		VideoSource::push(std::move(newFrame));
+		std::unique_ptr<const Packet> packet(new Packet(Packet::Data{
+			std::move(newFrame)
+		}));
+
+		SourceBase::push(std::move(packet));
 
 		//Deletes the previously generated rasterizer
 		nsvgDeleteRasterizer(rasterizer);
-		VideoSource::open();
+		SourceBase::open();
 	}
 
 	//Close the file
@@ -88,5 +93,5 @@ void SVG::open(){
 }
 
 void SVG::close(){
-	VideoSource::close();
+	SourceBase::close();
 }

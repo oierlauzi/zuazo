@@ -1,18 +1,17 @@
-#include "../../Media/Consumers/Window.h"
+#include "Window.h"
 
 #include <algorithm>
 #include <map>
 #include <utility>
 
-#include "../../Graphics/Context.h"
-#include "../../Graphics/Frame.h"
-#include "../../Graphics/GL/Texture.h"
-#include "../../Graphics/GL/UniqueBinding.h"
-#include "../../Graphics/Shapes/Quads.h"
-#include "../../Stream/SyncConsumer.h"
-#include "../../Utils/ScalingModes.h"
+#include "../Graphics/Context.h"
+#include "../Graphics/Frame.h"
+#include "../Graphics/GL/Texture.h"
+#include "../Graphics/GL/UniqueBinding.h"
+#include "../Graphics/Shapes/Quads.h"
+#include "../Packet.h"
 
-using namespace Zuazo::Media::Consumers;
+using namespace Zuazo::Consumers;
 
 const Zuazo::Graphics::Shapes::Rectangle::RectangleData Window::WindowResources::screenVertices={
 		Zuazo::Utils::Vec2f(-1.0, 	-1.0),
@@ -20,11 +19,11 @@ const Zuazo::Graphics::Shapes::Rectangle::RectangleData Window::WindowResources:
 };
 
 const std::string Window::WindowResources::vertexShader=
-		#include "../../../../shaders/copy.vert"
+		#include "../../../shaders/copy.vert"
 		;
 
 const std::string Window::WindowResources::fragmentShader=
-		#include "../../../../shaders/copy.frag"
+		#include "../../../shaders/copy.frag"
 		;
 
 
@@ -82,7 +81,7 @@ int Window::end(){
  ********************************/
 
 Window::Window(const Utils::Resolution& res, const Utils::Rational& rate, std::string name) :
-		SyncVideoConsumer(rate),
+		PeriodicConsumerBase(rate),
 		m_title(name),
 		m_resolution(res)
 {
@@ -145,11 +144,11 @@ void Window::open(){
 	m_drawingThread=std::thread(&Window::drawThread, this);
 
 	//Open the consumer so updates are called
-	SyncVideoConsumer::open();
+	PeriodicConsumerBase::open();
 }
 void Window::close(){
 	//Close the sync consumer -> no more updates will be requested
-	SyncVideoConsumer::close();
+	PeriodicConsumerBase::close();
 
 	//Terminate the drawing thread
 	m_exit=true;
@@ -260,11 +259,12 @@ void Window::draw() const{
 }
 
 void Window::update() const{
-	std::shared_ptr<const Graphics::Frame> frame=SyncVideoConsumer::get();
+	std::shared_ptr<const Packet> packet=PeriodicConsumerBase::get();
 	const Graphics::GL::Texture* tex=nullptr;
 
-	if(frame){
-		tex=&(frame->getTexture());
+	if(packet){
+		if(packet->data.frame)
+		tex=&(packet->data.frame->getTexture());
 	}
 
 	GLFWwindow* previousCtx=glfwGetCurrentContext();
@@ -278,7 +278,7 @@ void Window::update() const{
 		Graphics::GL::UniqueBinding<Graphics::GL::Texture> textureBinding(*tex);
 		Graphics::GL::UniqueBinding<Graphics::GL::Shader> shaderBinding(m_glResources->shader);
 
-		m_glResources->rectangle.upload(frame->scaleFrame(
+		m_glResources->rectangle.upload(packet->data.frame->scaleFrame(
 				m_resolution,
 				m_scalingMode
 		));

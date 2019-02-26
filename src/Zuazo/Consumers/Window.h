@@ -1,7 +1,7 @@
 #pragma once
 
-#include <glm/detail/type_vec2.hpp>
 #include <glad/glad.h>
+#include <glm/detail/type_vec2.hpp>
 #include <GLFW/glfw3.h>
 #include <condition_variable>
 #include <memory>
@@ -10,19 +10,21 @@
 #include <string>
 #include <thread>
 
-#include "../../Graphics/GL/Shader.h"
-#include "../../Graphics/Shapes/Rectangle.h"
-#include "../../Utils/Rational.h"
-#include "../../Utils/Resolution.h"
-#include "../../Utils/Vector.h"
-#include "../Media.h"
+#include "../Graphics/GL/Shader.h"
+#include "../Graphics/Shapes/Rectangle.h"
+#include "../Utils/Rational.h"
+#include "../Utils/Resolution.h"
+#include "../Utils/ScalingModes.h"
+#include "../Utils/Vector.h"
+#include "../VideoBase.h"
+#include "PeriodicConsumerBase.h"
 
-namespace Zuazo::Media::Consumers{
+namespace Zuazo::Consumers{
 
 class Window :
-	public SyncVideoConsumer,
-	public Resizeable,
-	public VideoScaler
+	public PeriodicConsumerBase,
+	public ResizeableVideoBase,
+	public VideoScalerBase
 {
 public:
 	class Screen{

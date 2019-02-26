@@ -8,17 +8,18 @@
 #include <thread>
 #include <vector>
 
-#include "../../Utils/Rational.h"
-#include "../../Utils/Resolution.h"
-#include "../Media.h"
+#include "../Utils/Rational.h"
+#include "../Utils/Resolution.h"
+#include "../VideoBase.h"
+#include "AsyncSourceBase.h"
 
 struct v4l2_buffer;
 
-namespace Zuazo::Media::Sources{
+namespace Zuazo::Sources{
 
 class V4L2:
-		public AsyncVideoSource,
-		public Resizeable
+		public AsyncSourceBase,
+		public ResizeableVideoBase
 {
 public:
 	struct VideoMode{
