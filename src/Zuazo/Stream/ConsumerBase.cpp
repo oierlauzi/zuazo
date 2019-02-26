@@ -1,6 +1,6 @@
 #include "ConsumerBase.h"
 
-using namespace Zuazo::Consumers;
+using namespace Zuazo::Stream;
 
 ConsumerBase::ConsumerBase(){
 	m_source=nullptr;
@@ -15,7 +15,7 @@ ConsumerBase::~ConsumerBase(){
 	setSource(nullptr);
 }
 
-void ConsumerBase::setSource(const Sources::SourceBase* src){
+void ConsumerBase::setSource(const SourceBase* src){
 	std::lock_guard<std::mutex> lock(m_updateMutex);
 
 	//Detach consumer from the previous source
@@ -27,7 +27,7 @@ void ConsumerBase::setSource(const Sources::SourceBase* src){
 	if(m_source)
 		m_source->m_consumers.insert(this);
 }
-ConsumerBase& ConsumerBase::operator<<(const Sources::SourceBase& src){
+ConsumerBase& ConsumerBase::operator<<(const SourceBase& src){
 	setSource(&src);
 	return *this;
 }

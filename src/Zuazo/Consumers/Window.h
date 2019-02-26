@@ -17,12 +17,12 @@
 #include "../Utils/ScalingModes.h"
 #include "../Utils/Vector.h"
 #include "../VideoBase.h"
-#include "PeriodicConsumerBase.h"
+#include "../Stream/PeriodicConsumerBase.h"
 
 namespace Zuazo::Consumers{
 
 class Window :
-	public PeriodicConsumerBase,
+	public Stream::PeriodicConsumerBase,
 	public ResizeableVideoBase,
 	public VideoScalerBase
 {

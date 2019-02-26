@@ -5,7 +5,7 @@
 #include <chrono>
 #include <ratio>
 
-#include "../Packet.h"
+#include "../Stream/Packet.h"
 
 extern "C"{
 	#include <libavcodec/avcodec.h>
@@ -131,7 +131,7 @@ void FFmpeg::close(){
 	}
 }
 
-std::shared_ptr<const Zuazo::Packet> FFmpeg::get() const{
+std::shared_ptr<const Zuazo::Stream::Packet> FFmpeg::get() const{
 	std::lock_guard<std::mutex> lock(m_decodeMutex);
 	return SourceBase::get();
 }
@@ -295,7 +295,7 @@ void FFmpeg::decodingFunc(){
 			);
 		}
 
-		std::unique_ptr<const Packet> packet(new Packet(Packet::Data{
+		std::unique_ptr<const Stream::Packet> packet(new Stream::Packet(Stream::Packet::Data{
 			std::move(newFrame)
 		}));
 

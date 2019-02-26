@@ -36,7 +36,7 @@ Zuazo::Timing::TimeInterval Delay::getDelay(){
 
 
 void Delay::update() const{
-	std::shared_ptr<const Packet> lastElement;
+	std::shared_ptr<const Stream::Packet> lastElement;
 
 	if(m_delay.count()){
 		//The delay is active

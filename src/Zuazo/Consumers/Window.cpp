@@ -9,7 +9,7 @@
 #include "../Graphics/GL/Texture.h"
 #include "../Graphics/GL/UniqueBinding.h"
 #include "../Graphics/Shapes/Quads.h"
-#include "../Packet.h"
+#include "../Stream/Packet.h"
 
 using namespace Zuazo::Consumers;
 
@@ -81,7 +81,7 @@ int Window::end(){
  ********************************/
 
 Window::Window(const Utils::Resolution& res, const Utils::Rational& rate, std::string name) :
-		PeriodicConsumerBase(rate),
+		Stream::PeriodicConsumerBase(rate),
 		m_title(name),
 		m_resolution(res)
 {
@@ -264,7 +264,7 @@ void Window::update() const{
 	if(PeriodicConsumerBase::hasChanged() || m_forceDraw){
 		m_forceDraw=false;
 
-		std::shared_ptr<const Packet> packet=PeriodicConsumerBase::get();
+		std::shared_ptr<const Stream::Packet> packet=PeriodicConsumerBase::get();
 		const Graphics::GL::Texture* tex=nullptr;
 
 		if(packet){

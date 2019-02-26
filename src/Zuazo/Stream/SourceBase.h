@@ -4,19 +4,17 @@
 #include <memory>
 #include <set>
 
-#include "../Packet.h"
+#include "Packet.h"
 #include "../Updateable.h"
 
-namespace Zuazo::Consumers{
-	class ConsumerBase;
-}
+namespace Zuazo::Stream{
 
-namespace Zuazo::Sources{
+class ConsumerBase;
 
 class SourceBase :
 		public virtual Updateable
 {
-	friend Consumers::ConsumerBase;
+	friend ConsumerBase;
 public:
 	SourceBase()=default;
 	SourceBase(const SourceBase& other)=delete;
@@ -34,7 +32,7 @@ protected:
 private:
 	mutable std::shared_ptr<const Packet>	m_last;
 
-	mutable std::set<Consumers::ConsumerBase*> m_consumers;
+	mutable std::set<ConsumerBase*>			m_consumers;
 };
 
 

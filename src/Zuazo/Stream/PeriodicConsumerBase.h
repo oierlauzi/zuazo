@@ -4,7 +4,7 @@
 #include "../UpdateOrder.h"
 #include "ConsumerBase.h"
 
-namespace Zuazo::Consumers{
+namespace Zuazo::Stream{
 
 class PeriodicConsumerBase :
 	public ConsumerBase,

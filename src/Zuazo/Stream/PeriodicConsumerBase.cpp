@@ -1,6 +1,6 @@
 #include "PeriodicConsumerBase.h"
 
-using namespace Zuazo::Consumers;
+using namespace Zuazo::Stream;
 
 void PeriodicConsumerBase::open(){
 	ConsumerBase::open();

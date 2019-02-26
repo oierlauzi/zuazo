@@ -5,8 +5,8 @@
 #include <memory>
 #include <queue>
 
-#include "../Consumers/ConsumerBase.h"
-#include "../Sources/SourceBase.h"
+#include "../Stream/ConsumerBase.h"
+#include "../Stream/SourceBase.h"
 #include "../Timing/RegularUpdate.h"
 #include "../UpdateOrder.h"
 #include "../Timing/TimeInterval.h"
@@ -16,8 +16,8 @@
 namespace Zuazo::Processors{
 
 class Delay :
-		public Sources::SourceBase,
-		public Consumers::ConsumerBase,
+		public Stream::SourceBase,
+		public Stream::ConsumerBase,
 		public Timing::RegularUpdate< (u_int32_t)UpdateOrder::DELAY >
 {
 public:
@@ -26,27 +26,27 @@ public:
 	Delay(const Delay& delay)=default;
 	virtual ~Delay();
 
-	void									setDelay(const Timing::TimeInterval& delay);
-	Timing::TimeInterval					getDelay();
+	void										setDelay(const Timing::TimeInterval& delay);
+	Timing::TimeInterval						getDelay();
 
-	virtual void							update() const override;
+	virtual void								update() const override;
 
-	virtual void							open() override;
-	virtual void							close() override;
+	virtual void								open() override;
+	virtual void								close() override;
 private:
 	struct QueueElement{
-		std::shared_ptr<const Packet>		element;
-		Timing::TimePoint					ts;
+		std::shared_ptr<const Stream::Packet> 	element;
+		Timing::TimePoint						ts;
 
-		QueueElement(const std::shared_ptr<const Packet>& el) :
+		QueueElement(const std::shared_ptr<const Stream::Packet>& el) :
 			element(el),
 			ts(Timing::timings->now())
 		{
 		}
 	};
 
-	Timing::TimeInterval 					m_delay;
+	Timing::TimeInterval 						m_delay;
 
-	mutable std::queue<QueueElement>		m_queue;
+	mutable std::queue<QueueElement>			m_queue;
 };
 }

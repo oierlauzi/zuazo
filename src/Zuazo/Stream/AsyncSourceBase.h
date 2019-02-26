@@ -9,7 +9,7 @@
 #include "../Utils/Rational.h"
 #include "SourceBase.h"
 
-namespace Zuazo::Sources{
+namespace Zuazo::Stream{
 
 class AsyncSourceBase :
 		public SourceBase,

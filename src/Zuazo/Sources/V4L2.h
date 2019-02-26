@@ -11,14 +11,14 @@
 #include "../Utils/Rational.h"
 #include "../Utils/Resolution.h"
 #include "../VideoBase.h"
-#include "AsyncSourceBase.h"
+#include "../Stream/AsyncSourceBase.h"
 
 struct v4l2_buffer;
 
 namespace Zuazo::Sources{
 
 class V4L2:
-		public AsyncSourceBase,
+		public Stream::AsyncSourceBase,
 		public ResizeableVideoBase
 {
 public:

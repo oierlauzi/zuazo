@@ -5,9 +5,9 @@
 #include <atomic>
 #include <memory>
 
-#include "Graphics/Frame.h"
+#include "../Graphics/Frame.h"
 
-namespace Zuazo{
+namespace Zuazo::Stream{
 struct Packet{
 public:
 	struct Data{

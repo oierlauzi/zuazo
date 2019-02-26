@@ -4,11 +4,11 @@
 
 #include "../Utils/Resolution.h"
 #include "../VideoBase.h"
-#include "SourceBase.h"
+#include "../Stream/SourceBase.h"
 
 namespace Zuazo::Sources{
 class SVG :
-		public SourceBase,
+		public Stream::SourceBase,
 		public VideoBase
 {
 public:

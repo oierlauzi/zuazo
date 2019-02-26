@@ -2,9 +2,9 @@
 
 #include <map>
 
-#include "../Consumers/ConsumerBase.h"
+#include "ConsumerBase.h"
 
-using namespace Zuazo::Sources;
+using namespace Zuazo::Stream;
 
 
 SourceBase::~SourceBase(){

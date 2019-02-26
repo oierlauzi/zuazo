@@ -2,7 +2,7 @@
 
 #include "SourceBase.h"
 
-namespace Zuazo::Sources{
+namespace Zuazo::Stream{
 
 class LazySourceBase :
 		public SourceBase

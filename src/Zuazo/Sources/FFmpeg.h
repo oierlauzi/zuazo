@@ -11,7 +11,7 @@
 
 #include "../Timing/TimeInterval.h"
 #include "../Utils/PixelTypes.h"
-#include "VideoClipBase.h"
+#include "ClipBase.h"
 
 struct AVCodec;
 struct AVCodecContext;
@@ -34,7 +34,7 @@ public:
 	void							open() override;
 	void							close() override;
 
-	virtual std::shared_ptr<const Packet> get() const override;
+	virtual std::shared_ptr<const Stream::Packet> get() const override;
 protected:
 	void							update() const;
 private:

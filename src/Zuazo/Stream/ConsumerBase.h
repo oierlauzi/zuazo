@@ -5,22 +5,22 @@
 #include <memory>
 
 #include "../Updateable.h"
-#include "../Packet.h"
-#include "../Sources/SourceBase.h"
+#include "Packet.h"
+#include "SourceBase.h"
 
-namespace Zuazo::Consumers{
+namespace Zuazo::Stream{
 
 class ConsumerBase :
 	public virtual Updateable
 {
-	friend Sources::SourceBase;
+	friend SourceBase;
 public:
 	ConsumerBase();
 	ConsumerBase(const ConsumerBase& other);
 	virtual ~ConsumerBase();
 
-	void							setSource(const Sources::SourceBase* src);
-	ConsumerBase&					operator<<(const Sources::SourceBase& src);
+	void							setSource(const SourceBase* src);
+	ConsumerBase&					operator<<(const SourceBase& src);
 	ConsumerBase&					operator<<(std::nullptr_t ptr);
 
 	virtual void					open() override;
@@ -30,7 +30,7 @@ protected:
 	bool							hasChanged() const;
 
 private:
-	const Sources::SourceBase*		m_source;
+	const SourceBase*				m_source;
 
 	mutable int64_t					m_lastPktId;
 

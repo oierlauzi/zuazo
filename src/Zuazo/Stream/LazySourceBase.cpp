@@ -1,8 +1,8 @@
 #include "LazySourceBase.h"
 
-using namespace Zuazo::Sources;
+using namespace Zuazo::Stream;
 
-std::shared_ptr<const Zuazo::Packet> LazySourceBase::get() const{
+std::shared_ptr<const Zuazo::Stream::Packet> LazySourceBase::get() const{
 	//Only update if it is not being updated (to avoid mutex deadlocks and endless loops)
 	if(!m_updateInProgress){
 		m_updateInProgress=true;

@@ -49,22 +49,8 @@ private:
 };
 
 /*
- * METHOD DEFINITIONS
+ * INLINE METHOD DEFINITIONS
  */
-
-
-inline Updateable::Updateable(){
-	m_beforeCbk=nullptr;
-	m_afterCbk=nullptr;
-	m_isOpen=false;
-}
-
-
-inline Updateable::Updateable(const Updateable& other){
-	m_beforeCbk=other.m_beforeCbk;
-	m_afterCbk=other.m_afterCbk;
-	m_isOpen=other.m_isOpen;
-}
 
 inline void Updateable::setBeforeUpdateCallback(const std::shared_ptr<Callback>& cbk){
 	std::lock_guard<std::mutex> lock(m_mutex);
@@ -100,20 +86,6 @@ inline void Updateable::close(){
 
 inline bool Updateable::isOpen() const{
 	return m_isOpen;
-}
-
-inline void Updateable::perform() const{
-	std::lock_guard<std::mutex> lock(m_mutex);
-	if(m_beforeCbk)
-		m_beforeCbk->update();
-
-	{
-	std::lock_guard<std::mutex> lock(m_updateMutex);
-	update();
-	}
-
-	if(m_afterCbk)
-		m_afterCbk->update();
 }
 
 }

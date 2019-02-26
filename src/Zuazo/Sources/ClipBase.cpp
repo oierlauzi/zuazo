@@ -2,6 +2,12 @@
 
 using namespace Zuazo::Sources;
 
+
+/*
+ * CLIP BASE'S METHODS
+ */
+
+
 ClipBase::ClipBase() :
 	m_duration(Timing::TimeInterval::zero())
 {
@@ -40,3 +46,21 @@ void ClipBase::setInfo(const Timing::TimeInterval& duration){
 	m_duration=duration;
 	m_currTime%=m_duration;
 }
+
+VideoClipBase::VideoClipBase() :
+	m_nbFrames(0),
+	m_frameInterval()
+{
+}
+
+/*
+ * VIDEO CLIP BASE'S METHODS
+ */
+
+void VideoClipBase::setInfo(const Timing::TimeInterval& duration, u_int64_t frames, const Utils::Resolution& res){
+	ClipBase::setInfo(duration);
+	m_nbFrames=frames;
+	m_frameInterval=Utils::Rational(duration.count(), frames * Timing::TimeInterval::TIME_UNITS_PER_SECOND);
+	m_resolution=res;
+}
+

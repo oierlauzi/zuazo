@@ -17,7 +17,7 @@
 
 #include "../Graphics/Context.h"
 #include "../Graphics/Frame.h"
-#include "../Packet.h"
+#include "../Stream/Packet.h"
 #include "../Utils/ImageAttributes.h"
 #include "../Utils/ImageBuffer.h"
 #include "../Utils/PixelTypes.h"
@@ -371,7 +371,7 @@ void V4L2::capturingThread(){
 			);
 		}
 
-		std::unique_ptr<const Packet> packet(new Packet(Packet::Data{
+		std::unique_ptr<const Stream::Packet> packet(new Stream::Packet(Stream::Packet::Data{
 			std::move(newFrame)
 		}));
 

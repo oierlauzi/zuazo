@@ -1,6 +1,6 @@
 #include "AsyncSourceBase.h"
 
-using namespace Zuazo::Sources;
+using namespace Zuazo::Stream;
 
 
 AsyncSourceBase::AsyncSourceBase(){
