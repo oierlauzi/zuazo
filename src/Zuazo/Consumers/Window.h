@@ -120,6 +120,7 @@ private:
 	bool										m_exit;
 
 	std::unique_ptr<WindowResources> 			m_glResources;
+	mutable bool								m_forceDraw;
 
 	void										draw() const;
 	void										drawThread();

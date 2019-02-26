@@ -143,6 +143,8 @@ void Window::open(){
 	m_exit=false;
 	m_drawingThread=std::thread(&Window::drawThread, this);
 
+	m_forceDraw=true;
+
 	//Open the consumer so updates are called
 	PeriodicConsumerBase::open();
 }
@@ -259,43 +261,47 @@ void Window::draw() const{
 }
 
 void Window::update() const{
-	std::shared_ptr<const Packet> packet=PeriodicConsumerBase::get();
-	const Graphics::GL::Texture* tex=nullptr;
+	if(PeriodicConsumerBase::hasChanged() || m_forceDraw){
+		m_forceDraw=false;
 
-	if(packet){
-		if(packet->data.frame)
-		tex=&(packet->data.frame->getTexture());
+		std::shared_ptr<const Packet> packet=PeriodicConsumerBase::get();
+		const Graphics::GL::Texture* tex=nullptr;
+
+		if(packet){
+			if(packet->data.frame)
+			tex=&(packet->data.frame->getTexture());
+		}
+
+		GLFWwindow* previousCtx=glfwGetCurrentContext();
+		glfwMakeContextCurrent(m_glfwWindow);
+
+		//Clear
+		glClearColor(0.0, 0.0, 0.0, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		if(tex){
+			Graphics::GL::UniqueBinding<Graphics::GL::Texture> textureBinding(*tex);
+			Graphics::GL::UniqueBinding<Graphics::GL::Shader> shaderBinding(m_glResources->shader);
+
+			m_glResources->rectangle.upload(packet->data.frame->scaleFrame(
+					m_resolution,
+					m_scalingMode
+			));
+			m_glResources->rectangle.draw();
+		}
+
+		/*
+		glColor4f(1.0, 0.0, 1.0, 1.0);
+		glBegin(GL_QUADS);
+			glVertex2f(-0.5, -0.5);
+			glVertex2f(-0.5, +0.5);
+			glVertex2f(+0.5, +0.5);
+			glVertex2f(+0.5, -0.5);
+		glEnd();
+		*/
+		glfwMakeContextCurrent(previousCtx);
+		draw();
 	}
-
-	GLFWwindow* previousCtx=glfwGetCurrentContext();
-	glfwMakeContextCurrent(m_glfwWindow);
-
-	//Clear
-	glClearColor(0.0, 0.0, 0.0, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	if(tex){
-		Graphics::GL::UniqueBinding<Graphics::GL::Texture> textureBinding(*tex);
-		Graphics::GL::UniqueBinding<Graphics::GL::Shader> shaderBinding(m_glResources->shader);
-
-		m_glResources->rectangle.upload(packet->data.frame->scaleFrame(
-				m_resolution,
-				m_scalingMode
-		));
-		m_glResources->rectangle.draw();
-	}
-
-	/*
-	glColor4f(1.0, 0.0, 1.0, 1.0);
-	glBegin(GL_QUADS);
-		glVertex2f(-0.5, -0.5);
-		glVertex2f(-0.5, +0.5);
-		glVertex2f(+0.5, +0.5);
-		glVertex2f(+0.5, -0.5);
-	glEnd();
-	*/
-	glfwMakeContextCurrent(previousCtx);
-	draw();
 }
 
 /*
@@ -313,6 +319,7 @@ void Window::resize(const Utils::Resolution& res){
 	std::unique_lock<std::mutex> lock(m_updateMutex);
 
 	m_resolution=res;
+	m_forceDraw=true;
 
 	glfwMakeContextCurrent(m_glfwWindow);
 

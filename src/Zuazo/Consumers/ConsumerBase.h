@@ -53,9 +53,9 @@ inline bool ConsumerBase::hasChanged() const{
 	std::shared_ptr<const Packet> pkt=reqPacket();
 
 	if(pkt)
-		return reqPacket()->id == m_lastPktId;
+		return reqPacket()->id != m_lastPktId;
 	else
-		return m_lastPktId == -1;
+		return m_lastPktId != -1;
 
 }
 
