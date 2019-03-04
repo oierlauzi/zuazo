@@ -3,9 +3,8 @@
 #include <glad/glad.h>
 #include <stddef.h>
 
-#include "../../Utils/ImageAttributes.h"
-#include "../../Utils/PixelTypes.h"
-#include "Buffers/PixelUnpackBuffer.h"
+#include "Buffer.h"
+#include "ImageBuffer.h"
 
 namespace Zuazo::Graphics::GL{
 class FrameBuffer;
@@ -14,9 +13,9 @@ class Texture{
 	friend FrameBuffer;
 public:
 	Texture();
-	Texture(const Utils::ImageAttributes& att);
-	Texture(const Utils::ImageBuffer& buf);
-	Texture(const Buffers::PixelUnpackBuffer& buf);
+	Texture(const ImageAttributes& att);
+	Texture(const ImageBuffer& buf);
+	Texture(const Buffer<BufferTypes::PixelUnpack>& buf);
 	Texture(const Texture& other);
 	Texture(Texture&& other);
 	virtual ~Texture();
@@ -26,22 +25,22 @@ public:
 	template<int binding=0>
 	void							unbind() const;
 
-	void							setRes(const Utils::Resolution& res);
-	void							setPixelType(Utils::PixelTypes pixType);
-	void							setAttributes(const Utils::ImageAttributes& att);
+	void							setRes(const Resolution& res);
+	void							setPixelType(PixelFormat pixFmt);
+	void							setAttributes(const ImageAttributes& att);
 
-	const Utils::Resolution&		getRes() const;
-	Utils::PixelTypes				getPixelType() const;
-	const Utils::ImageAttributes& 	getAttributes() const;
+	const Resolution&				getRes() const;
+	PixelFormat						getPixelType() const;
+	const ImageAttributes& 			getAttributes() const;
 	size_t							getSize() const;
 
-	void							subImage(const Utils::ImageBuffer& buf);
-	void							subImage(const Buffers::PixelUnpackBuffer& buf);
+	void							subImage(const ImageBuffer& buf);
+	void							subImage(const Buffer<BufferTypes::PixelUnpack>& buf);
 	void							subImage(const Texture& buf);
 
-	void							getImage(Utils::ImageBuffer* buf) const;
+	void							getImage(ImageBuffer* buf) const;
 private:
-	Utils::ImageAttributes			m_attributes;
+	ImageAttributes					m_attributes;
 
 	GLuint							m_texture;
 };
@@ -64,27 +63,27 @@ inline void	Texture::unbind() const{
 
 
 
-inline void	Texture::setRes(const Utils::Resolution& res){
-	setAttributes(Utils::ImageAttributes(res, m_attributes.pixType));
+inline void	Texture::setRes(const Resolution& res){
+	setAttributes(ImageAttributes(res, m_attributes.pixFmt));
 }
 
-inline void	Texture::setPixelType(Utils::PixelTypes pixType){
-	setAttributes(Utils::ImageAttributes(m_attributes.res, pixType));
+inline void	Texture::setPixelType(PixelFormat pixFmt){
+	setAttributes(ImageAttributes(m_attributes.res, pixFmt));
 }
 
-inline const Utils::Resolution&	Texture::getRes() const{
+inline const Resolution& Texture::getRes() const{
 	return m_attributes.res;
 }
 
-inline Utils::PixelTypes Texture::getPixelType() const{
-	return m_attributes.pixType;
+inline PixelFormat Texture::getPixelType() const{
+	return m_attributes.pixFmt;
 }
 
-inline const Utils::ImageAttributes& Texture::getAttributes() const{
+inline const ImageAttributes& Texture::getAttributes() const{
 	return m_attributes;
 }
 
 inline size_t Texture::getSize() const{
-	return m_attributes.size();
+	return m_attributes.getSize();
 }
 }

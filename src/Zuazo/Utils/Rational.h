@@ -15,13 +15,15 @@ struct Rational{
 
 	constexpr Rational():
 			num(0),
-			den(0){
+			den(0)
+	{
 
 	}
 
 	constexpr Rational(int64_t num, int64_t den):
 			num(num),
-			den(den){
+			den(den)
+	{
 		simplify();
 	}
 

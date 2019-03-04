@@ -4,8 +4,6 @@
 #include <glad/glad.h>
 #include <sys/types.h>
 
-#include "../../Utils/PixelTypes.h"
-
 namespace Zuazo::Graphics::GL{
 
 template <typename T>
@@ -24,8 +22,5 @@ template <>
 constexpr GLenum GLType<u_int16_t> 						=GL_UNSIGNED_SHORT;
 template <>
 constexpr GLenum GLType<u_int32_t> 						=GL_UNSIGNED_INT;
-
-template <Utils::PixelTypes T>
-constexpr GLenum GLPixel=(GLenum)T;
 
 }

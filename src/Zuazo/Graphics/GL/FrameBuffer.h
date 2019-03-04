@@ -8,7 +8,7 @@
 
 namespace Zuazo::Graphics::GL{
 
-class FrameBuffer : public Bindable{
+class FrameBuffer{
 public:
 	enum class Target{
 		READ=GL_READ_FRAMEBUFFER,
@@ -22,8 +22,8 @@ public:
 
 	void			bind(Target trgt) const;
 	void			unbind(Target trgt) const;
-	void			bind() const override;
-	void			unbind() const override;
+	void			bind() const;
+	void			unbind() const;
 
 	template <u_int32_t no=0>
 	void			attach(Texture& tex);

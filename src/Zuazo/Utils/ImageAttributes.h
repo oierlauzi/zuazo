@@ -1,22 +1,22 @@
 #pragma once
 
+#include "PixelFormats.h"
 #include "Resolution.h"
-#include "PixelTypes.h"
 
 namespace Zuazo::Utils{
 
 struct ImageAttributes{
-	Resolution		res;
-	PixelTypes		pixType;
+	Resolution			res;
+	PixelFormat			pixFmt;
 
 	constexpr ImageAttributes() :
-			pixType(PixelTypes::RGBA)
+		pixFmt(PixelFormats::NONE)
 	{
 	}
 
-	constexpr ImageAttributes(const Resolution& res, PixelTypes pixType) :
-			res(res),
-			pixType(pixType)
+	constexpr ImageAttributes(const Resolution& res, PixelFormat pixFmt) :
+		res(res),
+		pixFmt(pixFmt)
 	{
 	}
 
@@ -24,67 +24,35 @@ struct ImageAttributes{
 	~ImageAttributes()=default;
 
 	constexpr operator bool() const{
-		return res.operator bool();
+		return res.operator bool() && pixFmt.fmt != PixelFormats::NONE;
 	}
 
 	constexpr int operator==(const ImageAttributes& right)const{
-        return res==right.res && pixType==right.pixType;
+        return res==right.res && pixFmt==right.pixFmt;
     }
 
 	constexpr int operator!=(const ImageAttributes& right)const{
-		return res!=right.res || pixType!=right.pixType;
+		return res!=right.res || pixFmt!=right.pixFmt;
     }
 
-	constexpr size_t pixSize() const{
-		size_t pixSize(0);
-
-		switch(pixType){
-		case PixelTypes::NONE:
-			pixSize=PIXEL_SIZE<PixelTypes::NONE>;
-			break;
-
-		case PixelTypes::RED:
-			pixSize=PIXEL_SIZE<PixelTypes::RED>;
-			break;
-
-		case PixelTypes::GREEN:
-			pixSize=PIXEL_SIZE<PixelTypes::GREEN>;
-			break;
-
-		case PixelTypes::BLUE:
-			pixSize=PIXEL_SIZE<PixelTypes::BLUE>;
-			break;
-
-		case PixelTypes::ALPHA:
-			pixSize=PIXEL_SIZE<PixelTypes::ALPHA>;
-			break;
-
-		case PixelTypes::RGB:
-			pixSize=PIXEL_SIZE<PixelTypes::RGB>;
-			break;
-
-		case PixelTypes::BGR:
-			pixSize=PIXEL_SIZE<PixelTypes::BGR>;
-			break;
-
-		case PixelTypes::RGBA:
-			pixSize=PIXEL_SIZE<PixelTypes::RGBA>;
-			break;
-
-		case PixelTypes::BGRA:
-			pixSize=PIXEL_SIZE<PixelTypes::BGRA>;
-			break;
-		}
-
-		return pixSize;
+	size_t getStride(u_int32_t plane) const{
+		return av_image_get_linesize(pixFmt.toAVPixelFormat(), res.width, plane);
 	}
 
-	constexpr size_t stride() const{
-		return res.stride(pixSize());
+	void getStrides(int linesizes[4]) const{
+	 	av_image_fill_linesizes(
+	 			linesizes,
+				pixFmt.toAVPixelFormat(),
+				res.width
+		);
 	}
 
-	constexpr size_t size() const{
-		return res.size(pixSize());
+	size_t getPlaneSize(u_int32_t plane) const{
+		return getStride(plane) * res.height;
+	}
+
+	size_t getSize() const{
+	 	return av_image_get_buffer_size(pixFmt.toAVPixelFormat(), res.width, res.height, 1);
 	}
 };
 }

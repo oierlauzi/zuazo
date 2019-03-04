@@ -9,15 +9,15 @@
 
 namespace Zuazo::Graphics::GL{
 
-class Shader : public Bindable{
+class Shader{
 public:
 	Shader();
 	Shader(const Shader& shader)=delete;
 	Shader(const std::string&  vertSrc, const std::string& fragSrc);
 	~Shader();
 
-	void				bind() const override;
-	void				unbind() const override;
+	void				bind() const;
+	void				unbind() const;
 
 	GLint				getUniformLoc(const std::string& name) const;
 	GLint				getAttributeLoc(const std::string& name) const;

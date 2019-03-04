@@ -1,7 +1,6 @@
 #pragma once
 
 #include <bits/stdint-intn.h>
-#include <libavutil/pixfmt.h>
 #include <libavutil/rational.h>
 #include <condition_variable>
 #include <memory>
@@ -9,23 +8,24 @@
 #include <string>
 #include <thread>
 
-#include "../Timing/TimeInterval.h"
-#include "../Utils/PixelTypes.h"
-#include "ClipBase.h"
+#include "../Packet.h"
+#include "../Stream/Source.h"
+#include "../Updateables/NonLinear.h"
+#include "../Updateables/UpdateOrder.h"
+#include "../Utils/TimeInterval.h"
+#include "../Video.h"
 
 struct AVCodec;
 struct AVCodecContext;
 struct AVFormatContext;
 
-namespace Zuazo {
-namespace Graphics {
-class Frame;
-} /* namespace Graphics */
-} /* namespace Zuazo */
-
 namespace Zuazo::Sources{
 
-class FFmpeg : public VideoClipBase{
+class FFmpeg :
+		public VideoBase,
+		public Updateables::NonLinear<Updateables::UPDATE_ORDER_FF_DEC>,
+		public Stream::Source<Packet>
+{
 public:
 	FFmpeg(const std::string& dir);
 	FFmpeg(const FFmpeg& other);
@@ -34,9 +34,9 @@ public:
 	void							open() override;
 	void							close() override;
 
-	virtual std::shared_ptr<const Stream::Packet> get() const override;
+	virtual std::shared_ptr<const Packet> get() const override;
 protected:
-	void							update() const;
+	void							nonLinearUpdate() const override;
 private:
 	std::string 					m_file;
 
@@ -53,12 +53,9 @@ private:
 
 	mutable int64_t					m_currTs;
 
-	static constexpr AVRational		ZUAZO_TIME_BASE_Q={1, Timing::TimeInterval::TIME_UNITS_PER_SECOND};
+	static constexpr AVRational		ZUAZO_TIME_BASE_Q={1, Utils::TimeInterval::TIME_UNITS_PER_SECOND};
 
 	void							decodingFunc();
-
-	static AVPixelFormat			findBestMatch(AVPixelFormat fmt);
-	static Utils::PixelTypes		toPixelTypes(AVPixelFormat fmt);
 };
 
 }

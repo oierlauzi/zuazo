@@ -2,13 +2,12 @@
 
 #include <stddef.h>
 #include <algorithm>
+#include <deque>
 #include <memory>
 
-#include "../Utils/ImageAttributes.h"
-#include "../Utils/ImageBuffer.h"
-#include "../Utils/PixelTypes.h"
 #include "../Utils/ScalingModes.h"
-#include "GL/Buffers/PixelUnpackBuffer.h"
+#include "GL/Buffer.h"
+#include "GL/ImageBuffer.h"
 #include "GL/Texture.h"
 #include "Pool.h"
 #include "Shapes/Rectangle.h"
@@ -18,67 +17,53 @@ namespace Zuazo::Graphics{
 class Frame{
 public:
 	Frame()=default;
-	Frame(const Utils::ImageBuffer& buf);
-	Frame(const GL::Buffers::PixelUnpackBuffer& buf);
-	Frame(std::unique_ptr<GL::Buffers::PixelUnpackBuffer> pbo);
+	Frame(std::unique_ptr<GL::PixelUnpackBuffer> buf, const GL::ImageAttributes& att);
 	Frame(std::unique_ptr<GL::Texture> tex);
-	Frame(const Frame& other);
 	Frame(Frame&& other);
 	virtual ~Frame();
 
-	const GL::Texture& 										getTexture() const;
-	void													bind() const;
-	void													unbind() const;
-	void													bindFill() const;
-	void													unbindFill() const;
-	void													bindKey() const;
-	void													unbindKey() const;
+	const GL::Texture& 									getTexture() const;
+	void												bind() const;
+	void												unbind() const;
+	void												bindFill() const;
+	void												unbindFill() const;
+	void												bindKey() const;
+	void												unbindKey() const;
 
-	const Utils::Resolution&								getRes() const;
-	Utils::PixelTypes 										getPixelType() const;
-	const Utils::ImageAttributes& 							getAttributes() const;
-	Shapes::Rectangle::RectangleTexCoords					scaleFrame(const Utils::Resolution& dstRes, Utils::ScalingModes scaling) const;
+	const GL::ImageAttributes& 							getAttributes() const;
+	Shapes::Rectangle::RectangleTexCoords				scaleFrame(const GL::Resolution& dstRes, Utils::ScalingModes scaling) const;
 
 
-	static std::unique_ptr<GL::Buffers::PixelUnpackBuffer>	newPixelUnpackBuffer(size_t size);
-	static std::unique_ptr<GL::Texture>						newTexture(const Utils::ImageAttributes& attrib);
-	static void												recycle(std::unique_ptr<GL::Buffers::PixelUnpackBuffer> pbo);
-	static void												recycle(std::unique_ptr<GL::Texture> tex);
+	static std::unique_ptr<GL::Texture>					createTexture(const GL::ImageAttributes& attrib);
+	static std::unique_ptr<GL::PixelUnpackBuffer>		createPixelUnpackBuffer(size_t size);
+	static void											recycleTexture(std::unique_ptr<GL::Texture> tex);
+	static void											recyclePixelUnpackBuffer(std::unique_ptr<GL::PixelUnpackBuffer> buf);
 private:
-	mutable std::unique_ptr<GL::Texture>					m_texture;
-	mutable std::unique_ptr<GL::Buffers::PixelUnpackBuffer>	m_pbo;
+	mutable std::unique_ptr<GL::Texture>				m_texture;
+	mutable std::unique_ptr<GL::PixelUnpackBuffer> 		m_pbo;
 
-	static MultiPool<size_t, GL::Buffers::PixelUnpackBuffer> pboPool;
-	static MultiPool<Utils::ImageAttributes, GL::Texture> 	texPool;
+	GL::ImageAttributes									m_attributes;
+
+	static MultiPool<size_t, GL::PixelUnpackBuffer> 	s_pboPool;
+	static MultiPool<GL::ImageAttributes, GL::Texture> 	s_texPool;
 };
 
 /*
  * INLINE METHOD DEFINITIONS
  */
 
-inline Frame::Frame(const Utils::ImageBuffer& buf){
-	m_pbo=newPixelUnpackBuffer(buf.att.size());
-	m_pbo->upload(buf);
-}
-
-inline Frame::Frame(const GL::Buffers::PixelUnpackBuffer& buf){
-	m_texture=newTexture(buf.getAttributes());
-	m_texture->subImage(buf);
-}
-
-inline Frame::Frame(std::unique_ptr<GL::Buffers::PixelUnpackBuffer> pbo){
-	m_pbo=std::move(pbo);
+inline Frame::Frame(std::unique_ptr<GL::PixelUnpackBuffer> buf, const GL::ImageAttributes& att){
+	m_attributes=att;
+	m_pbo=std::move(buf);
 }
 
 inline Frame::Frame(std::unique_ptr<GL::Texture> tex){
+	m_attributes=tex->getAttributes();
 	m_texture=std::move(tex);
 }
 
-inline Frame::Frame(const Frame& other){
-	m_texture=std::unique_ptr<GL::Texture>(new GL::Texture(other.getTexture()));
-}
-
 inline Frame::Frame(Frame&& other){
+	m_attributes=other.m_attributes;
 	m_texture=std::move(other.m_texture);
 	m_pbo=std::move(other.m_pbo);
 }
@@ -87,23 +72,28 @@ inline Frame::~Frame(){
 	//You should always recycle, its good for the environment
 	//Therefore recycle textures and PBOs
 	if(m_texture){
-		recycle(std::move(m_texture));
+		recycleTexture(std::move(m_texture));
 	}
 
 	if(m_pbo){
-		recycle(std::move(m_pbo));
+		recyclePixelUnpackBuffer(std::move(m_pbo));
 	}
 }
 
 inline const GL::Texture& Frame::getTexture() const{
 	if(m_texture){
 		return *m_texture;
-	}else if(m_pbo){
-		m_texture=newTexture(m_pbo->getAttributes());
-		m_texture->subImage(*m_pbo);
-		return *m_texture;
 	}else{
-		m_texture=newTexture(Utils::ImageAttributes());
+		m_texture=createTexture(m_attributes);
+
+		if(m_pbo){
+			if(m_texture->getAttributes() != m_attributes){
+				m_texture->setAttributes(m_attributes);
+			}
+
+			m_texture->subImage(*m_pbo);
+		}
+
 		return *m_texture;
 	}
 }
@@ -131,51 +121,31 @@ inline void	Frame::unbindKey() const{
 	getTexture().unbind<1>();
 }
 
-
-
-
-inline const Utils::Resolution& Frame::getRes() const{
-	return getAttributes().res;
+inline const GL::ImageAttributes& Frame::getAttributes() const{
+	return m_attributes;
 }
 
-inline Utils::PixelTypes Frame::getPixelType() const{
-	return getAttributes().pixType;
+inline std::unique_ptr<GL::Texture>	Frame::createTexture(const GL::ImageAttributes& attrib){
+	return s_texPool.pop(attrib);
 }
 
-inline const Utils::ImageAttributes& Frame::getAttributes() const{
-	if(m_texture){
-		return m_texture->getAttributes();
-	}else if(m_pbo){
-		return m_pbo->getAttributes();
-	}else{
-		m_texture=newTexture(Utils::ImageAttributes());
-		return m_texture->getAttributes();
-	}
+inline std::unique_ptr<GL::PixelUnpackBuffer> Frame::createPixelUnpackBuffer(size_t size){
+	return s_pboPool.pop(size);
 }
 
-inline std::unique_ptr<GL::Texture>	Frame::newTexture(const Utils::ImageAttributes& attrib){
-	return texPool.pop(attrib);
-}
-
-inline std::unique_ptr<GL::Buffers::PixelUnpackBuffer> Frame::newPixelUnpackBuffer(size_t size){
-	return pboPool.pop(size);
-}
-
-inline void	Frame::recycle(std::unique_ptr<GL::Buffers::PixelUnpackBuffer> pbo){
-	// 1 hour lost until I figured out that the compiler resets the pointer before
-	// it gets read if I put this instruction inside XD
-	size_t size=pbo->getSize();
-	pboPool.push(
-			size,
-			std::move(pbo)
+inline void	Frame::recycleTexture(std::unique_ptr<GL::Texture> tex){
+	const GL::ImageAttributes& att=tex->getAttributes();
+	s_texPool.push(
+			att,
+			std::move(tex)
 	);
 }
 
-inline void	Frame::recycle(std::unique_ptr<GL::Texture> tex){
-	const Utils::ImageAttributes& att=tex->getAttributes();
-	texPool.push(
-			att,
-			std::move(tex)
+inline void	Frame::recyclePixelUnpackBuffer(std::unique_ptr<GL::PixelUnpackBuffer> buf){
+	size_t size=buf->getSize();
+	s_pboPool.push(
+			size,
+			std::move(buf)
 	);
 }
 

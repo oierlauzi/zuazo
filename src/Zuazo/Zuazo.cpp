@@ -3,11 +3,15 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "Graphics/Context.h"
 #include "Consumers/Window.h"
-#include "Timing/Timing.h"
+#include "Graphics/Context.h"
+#include "Timing.h"
+
+
 
 namespace Zuazo{
+
+std::unique_ptr<Timing> timings;
 
 /***************************************************
  *  INITIALIZATION / QUIT FUNCTIONS                *
@@ -47,9 +51,7 @@ Errors init(){
     	return Errors::WINDOW_INIT;
 
     //Initialize timing
-    err=Timing::init();
-    if(err)
-    	return Errors::TIMING_INIT;
+    timings=std::unique_ptr<Timing>(new Timing);
 
 //TODO
     /*err=Shapes::Base::init();
@@ -70,7 +72,7 @@ Errors init(){
  **/
 Errors end(){
 	Consumers::Window::end();
-	Timing::end();
+	timings.reset();
 	Graphics::Context::end();
     return Errors::NONE; //TODO
 }

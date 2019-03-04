@@ -5,17 +5,16 @@
 #include <utility>
 
 #include "../Graphics/Context.h"
-#include "../Graphics/Frame.h"
 #include "../Graphics/GL/Texture.h"
 #include "../Graphics/GL/UniqueBinding.h"
 #include "../Graphics/Shapes/Quads.h"
-#include "../Stream/Packet.h"
+#include "../Stream/Consumer.h"
 
 using namespace Zuazo::Consumers;
 
-const Zuazo::Graphics::Shapes::Rectangle::RectangleData Window::WindowResources::screenVertices={
+const Zuazo::Graphics::Shapes::Rectangle::RectangleVertices Window::WindowResources::screenVertices={
 		Zuazo::Utils::Vec2f(-1.0, 	-1.0),
-		Zuazo::Utils::Vec2f(+2.0, 	+2.0)
+		Zuazo::Utils::Vec2f(+1.0, 	+1.0)
 };
 
 const std::string Window::WindowResources::vertexShader=
@@ -81,9 +80,9 @@ int Window::end(){
  ********************************/
 
 Window::Window(const Utils::Resolution& res, const Utils::Rational& rate, std::string name) :
-		Stream::PeriodicConsumerBase(rate),
-		m_title(name),
-		m_resolution(res)
+		VideoBase(res),
+		Stream::PeriodicConsumer<Graphics::Frame>(rate),
+		m_title(name)
 {
 	m_glfwWindow=nullptr;
 	m_exit=true;
@@ -146,11 +145,11 @@ void Window::open(){
 	m_forceDraw=true;
 
 	//Open the consumer so updates are called
-	PeriodicConsumerBase::open();
+	Stream::PeriodicConsumer<Graphics::Frame>::open();
 }
 void Window::close(){
 	//Close the sync consumer -> no more updates will be requested
-	PeriodicConsumerBase::close();
+	Stream::PeriodicConsumer<Graphics::Frame>::close();
 
 	//Terminate the drawing thread
 	m_exit=true;
@@ -261,15 +260,14 @@ void Window::draw() const{
 }
 
 void Window::update() const{
-	if(PeriodicConsumerBase::hasChanged() || m_forceDraw){
+	if(Stream::Consumer<Graphics::Frame>::hasChanged() || m_forceDraw){
 		m_forceDraw=false;
 
-		std::shared_ptr<const Stream::Packet> packet=PeriodicConsumerBase::get();
+		std::shared_ptr<const Graphics::Frame> frame=Stream::Consumer<Graphics::Frame>::get();
 		const Graphics::GL::Texture* tex=nullptr;
 
-		if(packet){
-			if(packet->data.frame)
-			tex=&(packet->data.frame->getTexture());
+		if(frame){
+			tex=&(frame->getTexture());
 		}
 
 		GLFWwindow* previousCtx=glfwGetCurrentContext();
@@ -283,22 +281,13 @@ void Window::update() const{
 			Graphics::GL::UniqueBinding<Graphics::GL::Texture> textureBinding(*tex);
 			Graphics::GL::UniqueBinding<Graphics::GL::Shader> shaderBinding(m_glResources->shader);
 
-			m_glResources->rectangle.upload(packet->data.frame->scaleFrame(
+			m_glResources->rectangle.upload(frame->scaleFrame(
 					m_resolution,
 					m_scalingMode
 			));
 			m_glResources->rectangle.draw();
 		}
 
-		/*
-		glColor4f(1.0, 0.0, 1.0, 1.0);
-		glBegin(GL_QUADS);
-			glVertex2f(-0.5, -0.5);
-			glVertex2f(-0.5, +0.5);
-			glVertex2f(+0.5, +0.5);
-			glVertex2f(+0.5, -0.5);
-		glEnd();
-		*/
 		glfwMakeContextCurrent(previousCtx);
 		draw();
 	}

@@ -1,8 +1,9 @@
 #pragma once
 
+#include <stddef.h>
 #include <sys/types.h>
 
-#include "PixelTypes.h"
+#include "Rational.h"
 
 namespace Zuazo::Utils{
 
@@ -77,6 +78,10 @@ struct Resolution{
         	result|=0x2;
         return result;
     }
+
+	constexpr Rational getAspectRatio() const{
+		return Rational(width, height);
+	}
 };
 
 }

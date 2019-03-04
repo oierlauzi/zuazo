@@ -6,15 +6,15 @@
 
 namespace Zuazo::Graphics{
 
-MultiPool<size_t, GL::Buffers::PixelUnpackBuffer> Frame::pboPool;
-MultiPool<Utils::ImageAttributes, GL::Texture> 	Frame::texPool;
+MultiPool<size_t, GL::Buffer<GL::BufferTypes::PixelUnpack>> Frame::s_pboPool;
+MultiPool<GL::ImageAttributes, GL::Texture> 	Frame::s_texPool;
 
 
 Shapes::Rectangle::RectangleTexCoords Frame::scaleFrame(
 		const Utils::Resolution& dstRes,
 		Utils::ScalingModes scalingMode) const
 {
-	const Utils::Resolution& srcRes=getRes();
+	const Utils::Resolution& srcRes=m_attributes.res;
 	if(srcRes){
 		float sX, sY, s;
 

@@ -16,12 +16,12 @@ public:
 	using ShapeBase<dim, 4>::uploadTexCoords;
 
 	void draw() const override{
-		GL::UniqueBinding<GL::VertexArray<float>> vaoBinding(ShapeBase<dim, 4>::m_vao);
+		GL::UniqueBinding<GL::VertexArray> vaoBinding(ShapeBase<dim, 4>::m_vao);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	}
 
 	void drawOutline() const override{
-		GL::UniqueBinding<GL::VertexArray<float>> vaoBinding(ShapeBase<dim, 4>::m_vao);
+		GL::UniqueBinding<GL::VertexArray> vaoBinding(ShapeBase<dim, 4>::m_vao);
 		glDrawArrays(GL_LINE_LOOP, 0, 4);
 	}
 };

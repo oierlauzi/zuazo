@@ -1,13 +1,15 @@
 #pragma once
 
-#include <map>
-#include <queue>
+#include <stddef.h>
+#include <sys/types.h>
 #include <memory>
 #include <mutex>
+#include <queue>
+#include <unordered_map>
 
+#include "../Updateables/RegularUpdate.h"
+#include "../Updateables/UpdateOrder.h"
 #include "Context.h"
-#include "../Timing/RegularUpdate.h"
-#include "../UpdateOrder.h"
 
 namespace Zuazo::Graphics{
 
@@ -15,7 +17,7 @@ namespace Zuazo::Graphics{
  * @brief A template for creating pools of GL resources
  */
 template<typename T>
-class Pool : public Timing::RegularUpdate< (u_int32_t)UpdateOrder::POOL >{
+class Pool : public Updateables::RegularUpdate<Updateables::UPDATE_ORDER_POOL>{
 public:
 	constexpr Pool(){m_pops=0;}
 	Pool(const Pool& other)=delete;

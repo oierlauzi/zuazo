@@ -3,7 +3,7 @@
 #include <array>
 
 #include "../../Utils/Vector.h"
-#include "../GL/Buffers/VertexBuffer.h"
+#include "../GL/Buffer.h"
 #include "../GL/VertexArray.h"
 
 namespace Zuazo::Graphics::Shapes{
@@ -19,8 +19,9 @@ public:
 template <int dim, int nVert>
 class ShapeBase : public Shape{
 public:
-	using Vertices = std::array<Utils::Vec<dim, float>, nVert>;
-	using TexCoords = std::array<Utils::Vec<2, float>, nVert>;
+	typedef float VectorComponent;
+	typedef std::array<Utils::Vec<dim,	VectorComponent>, nVert> Vertices;
+	typedef std::array<Utils::Vec<2, 	VectorComponent>, nVert> TexCoords;
 
 	ShapeBase();
 	ShapeBase(const Vertices& vert);
@@ -29,67 +30,75 @@ public:
 	ShapeBase(ShapeBase&& other)=default;
 	virtual ~ShapeBase()=default;
 protected:
-	GL::VertexArray<float>				m_vao;
+	GL::VertexArray				m_vao;
 
-	void								uploadVertices(const Vertices& vertices);
-	void								uploadTexCoords(const TexCoords& texCoords);
+	void						uploadVertices(const Vertices& vertices);
+	void						uploadTexCoords(const TexCoords& texCoords);
 private:
-	GL::Buffers::VertexBuffer<float>	m_vertexVbo;
-	GL::Buffers::VertexBuffer<float>	m_texCoordVbo;
+	GL::VertexArrayBuffer		m_vertexVbo;
+	GL::VertexArrayBuffer		m_texCoordVbo;
 
-	Vertices							m_vertexData;
-	TexCoords							m_texCoordData;
+	Vertices					m_vertexData;
+	TexCoords					m_texCoordData;
+
+	static constexpr size_t		s_vertexArraySize=sizeof(Utils::Vec<dim,	VectorComponent>) * nVert;
+	static constexpr size_t		s_texCoordArraySize=sizeof(Utils::Vec<2,	VectorComponent>) * nVert;
 };
 
 template <int dim, int nVert>
 inline ShapeBase<dim, nVert>::ShapeBase(){
+	m_texCoordVbo.allocate(s_texCoordArraySize, GL::VertexArrayBuffer::BufferUsage::StreamDraw);
+	m_vertexVbo.allocate(s_vertexArraySize, GL::VertexArrayBuffer::BufferUsage::StreamDraw);
+
 	m_vao.enableAttrib(0);
-	m_vao.setAttribPtr(m_vertexVbo, 0);
 	m_vao.enableAttrib(1);
-	m_vao.setAttribPtr(m_texCoordData, 1);
+	m_vao.setAttribPtr<VectorComponent, dim, 0>(m_vertexVbo);
+	m_vao.setAttribPtr<VectorComponent, dim, 1>(m_texCoordVbo);
 }
 
 template <int dim, int nVert>
 inline ShapeBase<dim, nVert>::ShapeBase(const Vertices& vert) :
-	m_vertexVbo(vert),
+	m_vertexVbo(vert.data(), s_vertexArraySize),
 	m_vertexData(vert)
 {
+	m_texCoordVbo.allocate(s_texCoordArraySize, GL::VertexArrayBuffer::BufferUsage::StreamDraw);
+
 	m_vao.enableAttrib(0);
-	m_vao.setAttribPtr(m_vertexVbo, 0);
 	m_vao.enableAttrib(1);
-	m_vao.setAttribPtr(m_texCoordData, 1);
+	m_vao.setAttribPtr<VectorComponent, dim, 0>(m_vertexVbo);
+	m_vao.setAttribPtr<VectorComponent, dim, 1>(m_texCoordVbo);
 }
 
 template <int dim, int nVert>
 inline ShapeBase<dim, nVert>::ShapeBase(const Vertices& vert, const TexCoords& texCoord) :
-	m_vertexVbo(vert),
-	m_texCoordVbo(texCoord),
+	m_vertexVbo(vert.data(), s_vertexArraySize),
+	m_texCoordVbo(texCoord.data(), s_texCoordArraySize),
 	m_vertexData(vert),
 	m_texCoordData(texCoord)
 {
 	m_vao.enableAttrib(0);
-	m_vao.setAttribPtr(m_vertexVbo, 0);
 	m_vao.enableAttrib(1);
-	m_vao.setAttribPtr(m_texCoordData, 1);
+	m_vao.setAttribPtr<VectorComponent, dim, 0>(m_vertexVbo);
+	m_vao.setAttribPtr<VectorComponent, dim, 1>(m_texCoordVbo);
 }
 
 template <int dim, int nVert>
 inline void	ShapeBase<dim, nVert>::uploadVertices(const Vertices& vertices){
-	if(memcmp(&(m_vertexData[0]), &(vertices[0]), sizeof(float) * dim * nVert)){
+	if(memcmp(m_vertexData.data(), vertices.data(), s_vertexArraySize)){
 		//Vertices have changed. Upload changes
-		m_vertexVbo.upload(vertices);
-		m_vao.setAttribPtr(m_vertexVbo, 0);
-		memcpy(&(m_vertexData[0]), &(vertices[0]), sizeof(float) * dim * nVert);
+		m_vertexVbo.write(vertices.data());
+		m_vao.setAttribPtr<VectorComponent, dim, 0>(m_vertexVbo); //TODO necesary?
+		memcpy(m_vertexData.data(), vertices.data(), s_vertexArraySize);
 	}
 }
 
 template <int dim, int nVert>
 inline void	ShapeBase<dim, nVert>::uploadTexCoords(const TexCoords& texCoords){
-	if(memcmp(&(m_vertexData[0]), &(texCoords[0]), sizeof(float) * 2 * nVert)){
+	if(memcmp(m_texCoordData.data(), texCoords.data(), s_texCoordArraySize)){
 		//Texture coordinates have changed. Upload changes
-		m_texCoordVbo.upload(texCoords);
-		m_vao.setAttribPtr(m_texCoordVbo, 1); //TODO necesary?
-		memcpy(&(m_texCoordData[0]), &(texCoords[0]), sizeof(float) * 2 * nVert);
+		m_texCoordVbo.write(texCoords.data());
+		m_vao.setAttribPtr<VectorComponent, dim, 1>(m_texCoordVbo); //TODO necesary?
+		memcpy(m_texCoordData.data(), texCoords.data(), s_texCoordArraySize);
 	}
 }
 

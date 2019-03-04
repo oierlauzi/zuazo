@@ -10,19 +10,20 @@
 #include <string>
 #include <thread>
 
+#include "../Graphics/Frame.h"
 #include "../Graphics/GL/Shader.h"
 #include "../Graphics/Shapes/Rectangle.h"
+#include "../Stream/PeriodicConsumer.h"
 #include "../Utils/Rational.h"
 #include "../Utils/Resolution.h"
 #include "../Utils/ScalingModes.h"
 #include "../Utils/Vector.h"
-#include "../VideoBase.h"
-#include "../Stream/PeriodicConsumerBase.h"
+#include "../Video.h"
 
 namespace Zuazo::Consumers{
 
 class Window :
-	public Stream::PeriodicConsumerBase,
+	public Stream::PeriodicConsumer<Graphics::Frame>,
 	public ResizeableVideoBase,
 	public VideoScalerBase
 {
@@ -71,7 +72,6 @@ public:
 	void										setVSync(bool value);
 	void										setTitle(const std::string& title);
 
-	Utils::Resolution							getRes() const override;
 	Utils::ScalingModes							getScalingMode() const override;
 	bool										isFullScreen() const;
 	const std::weak_ptr<Screen>&				getScreen() const;
@@ -100,7 +100,7 @@ private:
 	private:
 		static const std::string					vertexShader;
 		static const std::string					fragmentShader;
-		static const Graphics::Shapes::Rectangle::RectangleData screenVertices;
+		static const Graphics::Shapes::Rectangle::RectangleVertices screenVertices;
 	};
 
  	//The GLFW window
@@ -108,7 +108,6 @@ private:
 
 	//Window Data
 	std::string									m_title;
-	Utils::Resolution							m_resolution;
 	Utils::ScalingModes							m_scalingMode;
 	bool										m_vSync;
 	std::weak_ptr<Screen>						m_screen;
@@ -229,10 +228,6 @@ inline void Window::setTitle(const std::string& title){
 /********************************
  *			GETS				*
  ********************************/
-
-inline Zuazo::Utils::Resolution Window::getRes() const {
-	return m_resolution;
-}
 
 inline Utils::ScalingModes Window::getScalingMode() const{
 	return m_scalingMode;

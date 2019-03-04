@@ -3,9 +3,11 @@
 #include <sys/types.h>
 #include <algorithm>
 #include <chrono>
+#include <cstring>
 #include <ratio>
 
-#include "../Stream/Packet.h"
+#include "../Graphics/Uploader.h"
+#include "../Utils/PixelFormats.h"
 
 extern "C"{
 	#include <libavcodec/avcodec.h>
@@ -96,21 +98,25 @@ void FFmpeg::open(){
 
 
 
-	int64_t duration=av_rescale_q(
+	int64_t dur=av_rescale_q(
 			m_formatCtx->streams[m_videoStream]->duration,
 			m_formatCtx->streams[m_videoStream]->time_base, AV_TIME_BASE_Q
 	);
 
-	setInfo(
-			Timing::TimeInterval(std::chrono::duration<int64_t, std::ratio<1, AV_TIME_BASE>>(duration)),
-			m_formatCtx->streams[m_videoStream]->nb_frames,
-			Utils::Resolution(m_codecCtx->width, m_codecCtx->height)
+	Utils::TimeInterval duration=std::chrono::duration<int64_t, std::ratio<1, AV_TIME_BASE>>(dur);
+	Utils::TimeInterval interval=duration / m_formatCtx->streams[m_videoStream]->nb_frames;
+
+	Updateables::NonLinear<Updateables::UPDATE_ORDER_FF_DEC>::setInfo(
+			duration,
+			interval
 	);
 
-	VideoClipBase::open();
+	m_resolution=Utils::Resolution(m_codecCtx->width, m_codecCtx->height);
 
 	m_exit=false;
 	m_decodingThread=std::thread(&FFmpeg::decodingFunc, this);
+
+	Updateables::NonLinear<Updateables::UPDATE_ORDER_FF_DEC>::open();
 }
 
 void FFmpeg::close(){
@@ -119,7 +125,7 @@ void FFmpeg::close(){
 	if(m_decodingThread.joinable())
 		m_decodingThread.join();
 
-	VideoClipBase::close();
+	Updateables::NonLinear<Updateables::UPDATE_ORDER_FF_DEC>::close();
 
 	if(m_formatCtx){
 		avformat_close_input(&m_formatCtx);
@@ -131,16 +137,16 @@ void FFmpeg::close(){
 	}
 }
 
-std::shared_ptr<const Zuazo::Stream::Packet> FFmpeg::get() const{
+std::shared_ptr<const Zuazo::Packet> FFmpeg::get() const{
 	std::lock_guard<std::mutex> lock(m_decodeMutex);
-	return SourceBase::get();
+	return Source<Packet>::get();
 }
 
-void FFmpeg::update() const{
+void FFmpeg::nonLinearUpdate() const{
 	std::lock_guard<std::mutex> lock(m_decodeMutex);
 
 	int64_t newTs=av_rescale_q(
-			ClipBase::getCurrentTime().count(),
+			Updateables::NonLinear<Updateables::UPDATE_ORDER_FF_DEC>::getCurrentTime().count(),
 			ZUAZO_TIME_BASE_Q,
 			m_formatCtx->streams[m_videoStream]->time_base
 	);
@@ -160,53 +166,14 @@ void FFmpeg::decodingFunc(){
 	if(!decodedFrame)
 		return;
 
-	//Create the destination for the rgba (final) frame
-	AVFrame* finalFrame=av_frame_alloc();
-
-	if(!finalFrame){
-		av_frame_unref(decodedFrame);
-		return;
-	}
-
-
-	//Set up everything for conversion between color spaces
-	AVPixelFormat pixFmt=findBestMatch(m_codecCtx->pix_fmt);
-	SwsContext* swsCtx= sws_getContext(
-			m_codecCtx->width,
-			m_codecCtx->height,
-			m_codecCtx->pix_fmt,
-			m_codecCtx->width,
-			m_codecCtx->height,
-			pixFmt,
-			SWS_POINT,
-			NULL,
-			NULL,
-			NULL);
-
-	if(!swsCtx){
-		av_frame_unref(decodedFrame);
-		av_frame_unref(finalFrame);
-		return;
-	}
-
-
-	Utils::ImageAttributes imgAtt(
-			Utils::Resolution(m_codecCtx->width, m_codecCtx->height),
-			toPixelTypes(pixFmt)
+	Utils::ImageBuffer decodedImgBuf(
+			Utils::ImageAttributes(
+					Utils::Resolution(m_codecCtx->width, m_codecCtx->height),
+					Utils::PixelFormat(m_codecCtx->pix_fmt)
+			), nullptr
 	);
 
-	Utils::ImageBuffer imgBuf(imgAtt);
-
-	//Set up the destination frame
-	av_image_fill_arrays(
-			finalFrame->data,
-			finalFrame->linesize,
-			imgBuf.data,
-			pixFmt,
-			m_codecCtx->width,
-			m_codecCtx->height,
-			1
-	);
+	Graphics::Uploader frameConverter;
 
 	int64_t lastTs=m_formatCtx->streams[m_videoStream]->duration;
 	int64_t decodedTs=-1;
@@ -273,94 +240,25 @@ void FFmpeg::decodingFunc(){
 				break; //Error decoding the frame
 		}
 
-		//Convert the frame to the final one
-		sws_scale(
-				swsCtx,
-				(uint8_t const * const *)decodedFrame->data,
-				decodedFrame->linesize,
-				0,
-				decodedFrame->height,
-				finalFrame->data,
-				finalFrame->linesize
-		);
+		std::unique_ptr<const Graphics::Frame> newFrame;
 
 		//Upload image to the source
-		std::unique_ptr<Graphics::Frame> newFrame;
-
+		memcpy(decodedImgBuf.data, decodedFrame->data, sizeof(decodedImgBuf.data)); //Copy plane pointers
 		{
 			Graphics::UniqueContext ctx(Graphics::Context::getAvalibleCtx());
-
-			newFrame=std::unique_ptr<Graphics::Frame>(
-					new Graphics::Frame(imgBuf)
-			);
+			newFrame=frameConverter.getFrame(decodedImgBuf);
 		}
 
-		std::unique_ptr<const Stream::Packet> packet(new Stream::Packet(Stream::Packet::Data{
+		std::unique_ptr<const Packet> packet(new Packet{
 			std::move(newFrame)
-		}));
+			/*	IMPLEMENT HERE MISSING COMPONENTS*/
+		});
 
-		SourceBase::push(std::move(packet));
+		Source::push(std::move(packet));
 
 		m_decodeCondition.wait(lock);
 	}
 
 	//Free everything
 	av_frame_unref(decodedFrame);
-	av_frame_unref(finalFrame);
-	sws_freeContext(swsCtx);
-}
-
-AVPixelFormat FFmpeg::findBestMatch(AVPixelFormat fmt){
-	AVPixelFormat result;
-
-	switch(fmt){
-	case AV_PIX_FMT_RGB24:
-		result=AV_PIX_FMT_RGB24;
-		break;
-	case AV_PIX_FMT_BGR24:
-		result=AV_PIX_FMT_BGR24;
-		break;
-	case AV_PIX_FMT_ARGB:
-		result=AV_PIX_FMT_RGBA;
-		break;
-	case AV_PIX_FMT_RGBA:
-		result=AV_PIX_FMT_RGBA;
-		break;
-	case AV_PIX_FMT_ABGR:
-		result=AV_PIX_FMT_BGRA;
-		break;
-	case AV_PIX_FMT_BGRA:
-		result=AV_PIX_FMT_BGRA;
-		break;
-	default:
-		const AVPixFmtDescriptor* fmtDesc=av_pix_fmt_desc_get(fmt);
-		result=fmtDesc->flags & AV_PIX_FMT_FLAG_ALPHA
-				? AV_PIX_FMT_RGBA
-				: AV_PIX_FMT_RGB24;
-	}
-
-	return result;
-}
-
-Zuazo::Utils::PixelTypes FFmpeg::toPixelTypes(AVPixelFormat fmt){
-	Utils::PixelTypes  result;
-
-	switch(fmt){
-	case AV_PIX_FMT_BGR24:
-		result=Utils::PixelTypes::BGR;
-		break;
-	case AV_PIX_FMT_RGB24:
-		result=Utils::PixelTypes::RGB;
-		break;
-	case AV_PIX_FMT_RGBA:
-		result=Utils::PixelTypes::RGBA;
-		break;
-	case AV_PIX_FMT_BGRA:
-		result=Utils::PixelTypes::BGRA;
-		break;
-	default:
-		result=Utils::PixelTypes::NONE;
-	}
-
-	return result;
 }
