@@ -100,8 +100,8 @@ inline Quads<2>::Vertices	Rectangle::getVertices(const RectangleData& data){
 	return Quads<2>::Vertices
 	{
 		Utils::Vec<2, float>{data.pos.x,				data.pos.y					},
-		Utils::Vec<2, float>{data.pos.x + data.size.x,	data.pos.y					},
 		Utils::Vec<2, float>{data.pos.x,				data.pos.y + data.size.y	},
+		Utils::Vec<2, float>{data.pos.x + data.size.x,	data.pos.y 					},
 		Utils::Vec<2, float>{data.pos.x + data.size.x,	data.pos.y + data.size.y	}
 	};
 }
@@ -110,10 +110,10 @@ inline Quads<2>::Vertices	Rectangle::getVertices(const RectangleData& data){
 inline Quads<2>::Vertices Rectangle::getVertices(const RectangleVertices& vert){
 	return Quads<2>::Vertices
 	{
-		Utils::Vec<2, float>{vert.v1.x,					vert.v1.y					},
+		Utils::Vec<2, float>{vert.v0.x,					vert.v0.y					},
 		Utils::Vec<2, float>{vert.v0.x,					vert.v1.y					},
 		Utils::Vec<2, float>{vert.v1.x,					vert.v0.y					},
-		Utils::Vec<2, float>{vert.v0.x,					vert.v0.y					}
+		Utils::Vec<2, float>{vert.v1.x,					vert.v1.y					}
 	};
 }
 
@@ -121,10 +121,10 @@ inline Quads<2>::Vertices Rectangle::getVertices(const RectangleVertices& vert){
 inline Quads<2>::TexCoords Rectangle::getTexCoords(const RectangleTexCoords& tc){
 	return Quads<2>::Vertices
 	{
-		Utils::Vec<2, float>{tc.c1.x,					tc.c1.y						},
+		Utils::Vec<2, float>{tc.c0.x,					tc.c0.y						},
 		Utils::Vec<2, float>{tc.c0.x,					tc.c1.y						},
 		Utils::Vec<2, float>{tc.c1.x,					tc.c0.y						},
-		Utils::Vec<2, float>{tc.c0.x,					tc.c0.y						}
+		Utils::Vec<2, float>{tc.c1.x,					tc.c1.y						}
 	};
 }
 }

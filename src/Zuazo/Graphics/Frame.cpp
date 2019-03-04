@@ -67,8 +67,8 @@ Shapes::Rectangle::RectangleTexCoords Frame::scaleFrame(
 
 
 		return Shapes::Rectangle::RectangleTexCoords {
-			Utils::Vec<2, float>{1.0 - diffX, diffY},
-			Utils::Vec<2, float>{diffX, 1.0 - diffY},
+			Utils::Vec<2, float>{diffX, 		1.0 - diffY		},//Invert Y coordinates, as buffer starts on top
+			Utils::Vec<2, float>{1.0 - diffX, 	diffY			}
 		};
 	} else return Shapes::Rectangle::RectangleTexCoords();
 }

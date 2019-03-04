@@ -21,7 +21,7 @@ public:
 
 	void close() override{
 		Consumer<T>::open();
-		Updateables::PeriodicUpdate<Updateables::UPDATE_ORDER_CONSUMER>::open();
+		Updateables::PeriodicUpdate<Updateables::UPDATE_ORDER_CONSUMER>::close();
 	}
 };
 

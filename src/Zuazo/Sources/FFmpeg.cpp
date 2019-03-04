@@ -192,6 +192,7 @@ void FFmpeg::decodingFunc(){
 				return;
 
 			decodedTs=-1;
+			decodedDur=-1;
 
 			//Enter draining mode
 			avcodec_send_packet(m_codecCtx, NULL);
@@ -204,58 +205,62 @@ void FFmpeg::decodingFunc(){
 			avcodec_flush_buffers(m_codecCtx);
 		}
 
-		while((decodedTs + decodedDur) < m_currTs){
-			//Try to decode a frame
-			int err=avcodec_receive_frame(m_codecCtx, decodedFrame);
 
-			if(err==0){
-				//Frame has been successfully decoded.
-				//Save it's timing values for future use cases
-				decodedTs=decodedFrame->pts;
-				decodedDur=decodedFrame->pkt_duration;
-			}else if(err==AVERROR(EAGAIN)){
-				//We need at least 1 packet to be able to decode the frame
-				AVPacket packet;
+		if((decodedTs + decodedDur) < m_currTs){
+			do{
+				//Try to decode a frame
+				int err=avcodec_receive_frame(m_codecCtx, decodedFrame);
 
-				//Read packet from file
-				if(av_read_frame(m_formatCtx, &packet)<0){
-					//File has ended
-					//Enter draining mode
-					avcodec_send_packet(m_codecCtx, NULL);
-					//To escape from draining mode, Clip needs to be seeked
-				}else{
-					//It needs to be a packet from the video stream
-					if(packet.stream_index==m_videoStream){
-						//Send the packet
-						if(avcodec_send_packet(m_codecCtx, &packet)<0){
-							//Something went wrong sending the packet
-							av_packet_unref(&packet);
-							break;
+				if(err==0){
+					//Frame has been successfully decoded.
+					//Save it's timing values for future use cases
+					decodedTs=decodedFrame->pts;
+					decodedDur=decodedFrame->pkt_duration;
+				}else if(err==AVERROR(EAGAIN)){
+					//We need at least 1 packet to be able to decode the frame
+					AVPacket packet;
+
+					//Read packet from file
+					if(av_read_frame(m_formatCtx, &packet)<0){
+						//File has ended
+						//Enter draining mode
+						avcodec_send_packet(m_codecCtx, NULL);
+						//To escape from draining mode, Clip needs to be seeked
+					}else{
+						//It needs to be a packet from the video stream
+						if(packet.stream_index==m_videoStream){
+							//Send the packet
+							if(avcodec_send_packet(m_codecCtx, &packet)<0){
+								//Something went wrong sending the packet
+								av_packet_unref(&packet);
+								break;
+							}
 						}
-					}
 
-					av_packet_unref(&packet);
-					}
-			}else
-				break; //Error decoding the frame
+						av_packet_unref(&packet);
+						}
+				}else
+					break; //Error decoding the frame
+
+			}while((decodedTs + decodedDur) < m_currTs);
+
+			//At least one frame was decoded
+			std::unique_ptr<const Graphics::Frame> newFrame;
+
+			//Upload image to the source
+			memcpy(decodedImgBuf.data, decodedFrame->data, sizeof(decodedImgBuf.data)); //Copy plane pointers
+			{
+				Graphics::UniqueContext ctx(Graphics::Context::getAvalibleCtx());
+				newFrame=frameConverter.getFrame(decodedImgBuf);
+			}
+
+			std::unique_ptr<const Packet> packet(new Packet{
+				std::move(newFrame)
+				/*	IMPLEMENT HERE MISSING COMPONENTS*/
+			});
+
+			Source::push(std::move(packet));
 		}
-
-		std::unique_ptr<const Graphics::Frame> newFrame;
-
-		//Upload image to the source
-		memcpy(decodedImgBuf.data, decodedFrame->data, sizeof(decodedImgBuf.data)); //Copy plane pointers
-		{
-			Graphics::UniqueContext ctx(Graphics::Context::getAvalibleCtx());
-			newFrame=frameConverter.getFrame(decodedImgBuf);
-		}
-
-		std::unique_ptr<const Packet> packet(new Packet{
-			std::move(newFrame)
-			/*	IMPLEMENT HERE MISSING COMPONENTS*/
-		});
-
-		Source::push(std::move(packet));
-
 		m_decodeCondition.wait(lock);
 	}
 
