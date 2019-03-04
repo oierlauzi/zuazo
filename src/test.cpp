@@ -6,6 +6,7 @@
 #include "Zuazo/Consumers/Window.h"
 #include "Zuazo/Processors/Demuxer.h"
 #include "Zuazo/Sources/FFmpeg.h"
+#include "Zuazo/Sources/SVG.h"
 #include "Zuazo/Utils/Rational.h"
 #include "Zuazo/Utils/Resolution.h"
 #include "Zuazo/Video.h"
@@ -58,6 +59,9 @@ int main(void){
 	Zuazo::Processors::Demuxer demux;
 	std::cout<<vid.getRes().width << "x" << vid.getRes().height << std::endl;
 
+	Zuazo::Sources::SVG svg("/home/oierlauzi/Irudiak/color_bars.svg", 96);
+	demux << vid;
+
 	/*Zuazo::Sources::SVG svg("/home/oierlauzi/Irudiak/color_bars.svg", 96);
 
 	char a;
@@ -93,10 +97,9 @@ int main(void){
 	sleep(2);
 	printf("Setting windowed\n");
 	win.setWindowed();*/
-
-	demux << vid;
 	win << demux.video;
-
+	getchar();
+	win << svg;
 	getchar();
 	}
 

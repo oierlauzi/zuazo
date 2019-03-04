@@ -154,8 +154,8 @@ void NonLinear<order>::setPlaySpeed(double speed){
 		m_playSpeed=-speed;
 		m_playRev=true;
 	}
-
-	PeriodicUpdate<order>::setInterval(m_updateInterval * speed);
+	Utils::TimeInterval newInterval((u_int64_t)(m_updateInterval.count() / speed));
+	PeriodicUpdate<order>::setInterval(newInterval);
 }
 
 template <u_int32_t order>

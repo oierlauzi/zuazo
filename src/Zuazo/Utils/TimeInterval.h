@@ -17,6 +17,11 @@ public:
 	{
 	}
 
+	constexpr TimeInterval(u_int64_t count) :
+			std::chrono::TIME_UNIT(count)
+	{
+	}
+
 	TimeInterval(const TimeInterval& other) :
 		std::chrono::TIME_UNIT( static_cast<std::chrono::TIME_UNIT>(other) )
 	{
