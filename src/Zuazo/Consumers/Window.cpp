@@ -5,7 +5,7 @@
 #include <utility>
 
 #include "../Graphics/Context.h"
-#include "../Graphics/GL/Texture.h"
+#include "../Graphics/GL/Texture2D.h"
 #include "../Graphics/GL/UniqueBinding.h"
 #include "../Graphics/Shapes/Quads.h"
 #include "../Stream/Consumer.h"
@@ -264,7 +264,7 @@ void Window::update() const{
 		m_forceDraw=false;
 
 		std::shared_ptr<const Graphics::Frame> frame=Stream::Consumer<Graphics::Frame>::get();
-		const Graphics::GL::Texture* tex=nullptr;
+		const Graphics::GL::Texture2D* tex=nullptr;
 
 		if(frame){
 			tex=&(frame->getTexture());
@@ -278,7 +278,7 @@ void Window::update() const{
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		if(tex){
-			Graphics::GL::UniqueBinding<Graphics::GL::Texture> textureBinding(*tex);
+			Graphics::GL::UniqueBinding<Graphics::GL::Texture2D> textureBinding(*tex);
 			Graphics::GL::UniqueBinding<Graphics::GL::Shader> shaderBinding(m_glResources->shader);
 
 			m_glResources->rectangle.upload(frame->scaleFrame(

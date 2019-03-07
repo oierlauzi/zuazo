@@ -1,9 +1,13 @@
 #pragma once
 
+#include <glad/glad.h>
+#include <stddef.h>
 #include <array>
 
 #include "../../Utils/Vector.h"
 #include "../GL/Buffer.h"
+#include "../GL/Types.h"
+#include "../GL/UniqueBinding.h"
 #include "../GL/VertexArray.h"
 
 namespace Zuazo::Graphics::Shapes{
@@ -47,48 +51,166 @@ private:
 
 template <int dim, int nVert>
 inline ShapeBase<dim, nVert>::ShapeBase(){
-	m_texCoordVbo.allocate(s_texCoordArraySize, GL::VertexArrayBuffer::BufferUsage::StreamDraw);
-	m_vertexVbo.allocate(s_vertexArraySize, GL::VertexArrayBuffer::BufferUsage::StreamDraw);
+	GL::UniqueBinding vaoBinding(m_vao);
 
-	m_vao.enableAttrib(0);
-	m_vao.enableAttrib(1);
-	m_vao.setAttribPtr<VectorComponent, dim, 0>(m_vertexVbo);
-	m_vao.setAttribPtr<VectorComponent, dim, 1>(m_texCoordVbo);
+	//Enable arrays
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+
+	{
+		GL::UniqueBinding bufferBinding(m_vertexVbo);
+		glBufferData(
+				m_vertexVbo.GLType,
+				s_vertexArraySize,
+				nullptr,
+				GL_STREAM_DRAW
+		);
+		glVertexAttribPointer(
+				0,
+				dim,
+				GL::GLType<VectorComponent>,
+				0,
+				GL_FALSE,
+				0
+		);
+	}
+
+	{
+		GL::UniqueBinding bufferBinding(m_texCoordData);
+		glBufferData(
+				m_texCoordData.GLType,
+				s_texCoordArraySize,
+				nullptr,
+				GL_STREAM_DRAW
+		);
+		glVertexAttribPointer(
+				1,
+				2,
+				GL::GLType<VectorComponent>,
+				0,
+				GL_FALSE,
+				0
+		);
+	}
 }
 
 template <int dim, int nVert>
-inline ShapeBase<dim, nVert>::ShapeBase(const Vertices& vert) :
-	m_vertexVbo(vert.data(), s_vertexArraySize),
-	m_vertexData(vert)
-{
-	m_texCoordVbo.allocate(s_texCoordArraySize, GL::VertexArrayBuffer::BufferUsage::StreamDraw);
+inline ShapeBase<dim, nVert>::ShapeBase(const Vertices& vert){
+	GL::UniqueBinding vaoBinding(m_vao);
 
-	m_vao.enableAttrib(0);
-	m_vao.enableAttrib(1);
-	m_vao.setAttribPtr<VectorComponent, dim, 0>(m_vertexVbo);
-	m_vao.setAttribPtr<VectorComponent, dim, 1>(m_texCoordVbo);
+	//Enable arrays
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+
+	m_vertexData=vert;
+
+	{
+		GL::UniqueBinding bufferBinding(m_vertexVbo);
+		glBufferData(
+				m_vertexVbo.GLType,
+				s_vertexArraySize,
+				m_vertexData.data(),
+				GL_STATIC_DRAW
+		);
+		glVertexAttribPointer(
+				0,
+				dim,
+				GL::GLType<VectorComponent>,
+				0,
+				GL_FALSE,
+				0
+		);
+	}
+
+	{
+		GL::UniqueBinding bufferBinding(m_texCoordVbo);
+		glBufferData(
+				m_texCoordVbo.GLType,
+				s_texCoordArraySize,
+				nullptr,
+				GL_STREAM_DRAW
+		);
+		glVertexAttribPointer(
+				1,
+				2,
+				GL::GLType<VectorComponent>,
+				0,
+				GL_FALSE,
+				0
+		);
+	}
 }
 
 template <int dim, int nVert>
-inline ShapeBase<dim, nVert>::ShapeBase(const Vertices& vert, const TexCoords& texCoord) :
-	m_vertexVbo(vert.data(), s_vertexArraySize),
-	m_texCoordVbo(texCoord.data(), s_texCoordArraySize),
-	m_vertexData(vert),
-	m_texCoordData(texCoord)
-{
-	m_vao.enableAttrib(0);
-	m_vao.enableAttrib(1);
-	m_vao.setAttribPtr<VectorComponent, dim, 0>(m_vertexVbo);
-	m_vao.setAttribPtr<VectorComponent, dim, 1>(m_texCoordVbo);
+inline ShapeBase<dim, nVert>::ShapeBase(const Vertices& vert, const TexCoords& texCoord){
+	GL::UniqueBinding vaoBinding(m_vao);
+
+	//Enable arrays
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+
+	m_vertexData=vert;
+	m_texCoordData=texCoord;
+
+	{
+		GL::UniqueBinding bufferBinding(m_vertexVbo);
+		glBufferData(
+				m_vertexVbo.GLType,
+				s_vertexArraySize,
+				m_vertexData.data(),
+				GL_STATIC_DRAW
+		);
+		glVertexAttribPointer(
+				0,
+				dim,
+				GL::GLType<VectorComponent>,
+				0,
+				GL_FALSE,
+				0
+		);
+	}
+
+	{
+		GL::UniqueBinding bufferBinding(m_texCoordVbo);
+		glBufferData(
+				m_texCoordVbo.GLType,
+				s_texCoordArraySize,
+				m_vertexData.data(),
+				GL_STATIC_DRAW
+		);
+		glVertexAttribPointer(
+				1,
+				2,
+				GL::GLType<VectorComponent>,
+				0,
+				GL_FALSE,
+				0
+		);
+	}
 }
 
 template <int dim, int nVert>
 inline void	ShapeBase<dim, nVert>::uploadVertices(const Vertices& vertices){
 	if(memcmp(m_vertexData.data(), vertices.data(), s_vertexArraySize)){
 		//Vertices have changed. Upload changes
-		m_vertexVbo.write(vertices.data());
-		m_vao.setAttribPtr<VectorComponent, dim, 0>(m_vertexVbo); //TODO necesary?
 		memcpy(m_vertexData.data(), vertices.data(), s_vertexArraySize);
+		GL::UniqueBinding vaoBinding(m_vao);
+		GL::UniqueBinding bufferBinding(m_vertexVbo);
+
+		glBufferSubData(
+				m_vertexVbo.GLType,
+				0,
+				s_vertexArraySize,
+				m_vertexData.data()
+		);
+		glVertexAttribPointer(
+				0,
+				dim,
+				GL::GLType<VectorComponent>,
+				0,
+				GL_FALSE,
+				0
+		);
 	}
 }
 
@@ -96,9 +218,24 @@ template <int dim, int nVert>
 inline void	ShapeBase<dim, nVert>::uploadTexCoords(const TexCoords& texCoords){
 	if(memcmp(m_texCoordData.data(), texCoords.data(), s_texCoordArraySize)){
 		//Texture coordinates have changed. Upload changes
-		m_texCoordVbo.write(texCoords.data());
-		m_vao.setAttribPtr<VectorComponent, dim, 1>(m_texCoordVbo); //TODO necesary?
 		memcpy(m_texCoordData.data(), texCoords.data(), s_texCoordArraySize);
+		GL::UniqueBinding vaoBinding(m_vao);
+		GL::UniqueBinding bufferBinding(m_texCoordVbo);
+
+		glBufferSubData(
+				m_texCoordVbo.GLType,
+				0,
+				s_texCoordArraySize,
+				m_texCoordData.data()
+		);
+		glVertexAttribPointer(
+				1,
+				2,
+				GL::GLType<VectorComponent>,
+				0,
+				GL_FALSE,
+				0
+		);
 	}
 }
 

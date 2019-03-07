@@ -6,9 +6,6 @@
 #include <cstring>
 #include <ratio>
 
-#include "../Graphics/Uploader.h"
-#include "../Utils/PixelFormats.h"
-
 extern "C"{
 	#include <libavcodec/avcodec.h>
 	#include <libavformat/avformat.h>
@@ -22,6 +19,8 @@ extern "C"{
 	#include <libavutil/pixdesc.h>
 }
 
+#include "../Graphics/PixelFormat.h"
+#include "../Graphics/Uploader.h"
 #include "../Graphics/Context.h"
 #include "../Graphics/Frame.h"
 #include "../Utils/ImageAttributes.h"

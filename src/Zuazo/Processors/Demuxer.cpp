@@ -4,19 +4,21 @@
 
 using namespace Zuazo::Processors;
 
-void Demuxer::open(){
+Demuxer::Demuxer():
+	video(*this)
+	/* IMPLEMENT HERE OTHER MUXES*/
+{
+	open();
+}
 
+void Demuxer::open(){
 	Consumer<Packet>::close();
 
 	video.close();
 	/* IMPLEMENT HERE OTHER MUXES*/
-
-	Updateables::RegularUpdate<Updateables::UPDATE_ORDER_DEMUXER>::open();
 }
 
 void Demuxer::close(){
-	Updateables::RegularUpdate<Updateables::UPDATE_ORDER_DEMUXER>::close();
-
 	video.close();
 	/* IMPLEMENT HERE OTHER MUXES*/
 

@@ -68,12 +68,7 @@ inline std::unique_ptr<T> Pool<T>::pop(){
 		//Requested element.exists
 		result=std::move(m_elements.front());
 		m_elements.pop();
-	}else{
-		//Requested element does not exist -> construct it
-		UniqueContext ctx(Context::getMainCtx());
-		result=std::unique_ptr<T>(new T());
 	}
-
 	m_pops++;
 
 	return result;
@@ -118,10 +113,6 @@ inline std::unique_ptr<T> MultiPool<Q, T>::pop(const Q& ref){
 			//The pool is empty. Delete it
 			m_elements.erase(ref);
 		}
-	}else{
-		//Requested element does not exist, construct it
-		UniqueContext ctx(Context::getMainCtx());
-		result=std::unique_ptr<T>(new T());
 	}
 
 	return result;

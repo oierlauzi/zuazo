@@ -26,60 +26,20 @@ enum class BufferTypes{
 template<BufferTypes type>
 class Buffer{
 public:
-	enum class BufferUsage{
-		StreamDraw		=GL_STREAM_DRAW,
-		StreamRead		=GL_STREAM_READ,
-		StreamCopy		=GL_STREAM_COPY,
-		StaticDraw		=GL_STATIC_DRAW,
-		StaticRead		=GL_STATIC_READ,
-		StaticCopy		=GL_STATIC_COPY,
-		DynamicWrite	=GL_DYNAMIC_DRAW,
-		DynamicRead		=GL_DYNAMIC_READ,
-		DynamicCopy		=GL_DYNAMIC_COPY
-	};
-
-	class BufferMapping{
-	public:
-		enum class Access{
-			Read			=GL_READ_ONLY,
-			Write			=GL_WRITE_ONLY,
-			ReadWrite		=GL_READ_WRITE,
-		};
-
-		BufferMapping()=delete;
-		BufferMapping(Buffer& buf, Access ac);
-		BufferMapping(const BufferMapping& other)=delete;
-		BufferMapping(BufferMapping&& other);
-		~BufferMapping();
-
-		void* 				get() const;
-		void				unmap();
-	private:
-		Buffer& 			buf;
-		void*				data;
-	};
-
 	Buffer();
-	Buffer(const void* data, size_t size);
 	Buffer(const Buffer& buf)=delete;
 	Buffer(Buffer&& buf);
-	virtual ~Buffer();
+	~Buffer();
 
 	void				bind() const;
 	void				unbind() const;
 
-	size_t				getSize() const;
+	GLuint				get() const;
+	operator 			GLuint() const;
 
-	void				allocate(size_t size, BufferUsage usage);
-	void				write(const void* data);
-	void				read(void* data);
-	template<BufferTypes otherType>
-	void				copy(const Buffer<otherType>& buf);
-
-
+	static const GLuint	GLType=(GLuint)type;
 private:
 	GLuint				m_glBuffer;
-	size_t				m_size;
 };
 
 typedef Buffer<BufferTypes::PixelUnpack> PixelUnpackBuffer;
@@ -92,30 +52,12 @@ typedef Buffer<BufferTypes::Array> VertexArrayBuffer;
 template<BufferTypes type>
 inline Buffer<type>::Buffer(){
 	glGenBuffers(1, &m_glBuffer);
-	m_size=0;
-}
-
-template<BufferTypes type>
-inline Buffer<type>::Buffer(const void* data, size_t size){
-	glGenBuffers(1, &m_glBuffer);
-	m_size=size;
-
-	UniqueBinding<Buffer<type>> binding(*this);
-	glBufferData(
-			(GLenum)type,				//target
-			m_size,						//buffer size
-			data,						//data
-			(GLenum)BufferUsage::StaticDraw	//usage
-	);
 }
 
 template<BufferTypes type>
 inline Buffer<type>::Buffer(Buffer<type>&& buf){
 	m_glBuffer=buf.m_glBuffer;
-	m_size=buf.m_size;
-
 	buf.m_glBuffer=0;
-	buf.m_size=0;
 }
 
 template<BufferTypes type>
@@ -134,100 +76,12 @@ inline void Buffer<type>::unbind() const{
 }
 
 template<BufferTypes type>
-inline size_t Buffer<type>::getSize() const{
-	return m_size;
+inline GLuint Buffer<type>::get() const{
+	return m_glBuffer;
 }
 
 template<BufferTypes type>
-inline void Buffer<type>::allocate(size_t size, BufferUsage usage){
-	UniqueBinding<Buffer<type>> binding(*this);
-	m_size=size;
-
-	//Reallocate data
-	glBufferData(
-			(GLenum)type,				//target
-			m_size,						//buffer size
-			nullptr,					//data
-			(GLenum)usage				//usage
-	);
-}
-
-template<BufferTypes type>
-inline void Buffer<type>::write(const void* data){
-	UniqueBinding<Buffer<type>> binding(*this);
-	glBufferSubData(
-			(GLenum)type,
-			0,
-			m_size,
-			data
-	);
-}
-
-template<BufferTypes type>
-inline void Buffer<type>::read(void* data){
-	UniqueBinding<Buffer<type>> binding(*this);
-	glGetBufferSubData(
-			(GLenum)type,
-			0,
-			m_size,
-			data
-	);
-}
-
-template<BufferTypes type>
-template<BufferTypes otherType>
-inline void Buffer<type>::copy(const Buffer<otherType>& other){
-	//Bind the buffers. Not using RAII style because only one
-	// buffer can be bound to the same target
-	glBindBuffer(GL_COPY_READ_BUFFER, other.m_glBuffer);
-	glBindBuffer(GL_COPY_WRITE_BUFFER, m_glBuffer);
-
-	glCopyBufferSubData(
-			GL_COPY_READ_BUFFER,		//read target
-			GL_COPY_WRITE_BUFFER,		//write target
-			0,							//read offset
-			0,							//write offset
-			m_size						//size
-	);
-
-	//Unbind the buffers
-	glBindBuffer(GL_COPY_READ_BUFFER, 0);
-	glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
-}
-
-template<BufferTypes type>
-Buffer<type>::BufferMapping::BufferMapping(Buffer& buf, Access ac) :
-	buf(buf)
-{
-	buf.bind();
-	data=glMapBuffer((GLenum)type, (GLenum)ac);
-}
-
-template<BufferTypes type>
-Buffer<type>::BufferMapping::BufferMapping(BufferMapping&& other) :
-	buf(other.buf)
-{
-	data=other.data;
-	other.data=nullptr;
-}
-
-template<BufferTypes type>
-Buffer<type>::BufferMapping::~BufferMapping(){
-	if(data){
-		glUnmapBuffer((GLenum)type);
-		buf.unbind();
-	}
-}
-
-template<BufferTypes type>
-void* Buffer<type>::BufferMapping::get() const{
-	return data;
-}
-
-template<BufferTypes type>
-void Buffer<type>::BufferMapping::unmap(){
-	glUnmapBuffer((GLenum)type);
-	buf.unbind();
-	data=nullptr;
+inline Buffer<type>::operator GLuint() const{
+	return m_glBuffer;
 }
 }

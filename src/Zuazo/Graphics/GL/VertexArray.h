@@ -1,13 +1,6 @@
 #pragma once
 
 #include <glad/glad.h>
-#include <vector>
-#include <array>
-
-#include "UniqueBinding.h"
-#include "Buffer.h"
-#include "Types.h"
-#include "../../Utils/Vector.h"
 
 namespace Zuazo::Graphics::GL{
 
@@ -21,10 +14,7 @@ public:
 	void				bind() const;
 	void				unbind() const;
 
-	template<typename T, u_int32_t dim, u_int32_t no>
-	void				setAttribPtr(const Buffer<BufferTypes::Array>& buf);
-	void				enableAttrib(u_int32_t attrib);
-	void				disableAttrib(u_int32_t attrib);
+	GLuint				get() const;
 private:
 	GLuint				m_vao;
 };
@@ -59,33 +49,8 @@ inline void	VertexArray::unbind() const{
 	glBindVertexArray(0);
 }
 
-template<typename T, u_int32_t dim, u_int32_t no>
-inline void	VertexArray::setAttribPtr(const VertexArrayBuffer& buf){
-	UniqueBinding<VertexArray> vaoBinding(*this);
-	UniqueBinding<VertexArrayBuffer> vboBinding(buf);
-
-	glVertexAttribPointer(
-			no,							//Index
-			dim,						//Size
-			GLType<T>,					//Type
-			GL_FALSE,					//Normalize?
-			0,							//Stride (0=default)
-			nullptr						//Offset
-	);
-}
-
-
-inline void	VertexArray::enableAttrib(u_int32_t attrib){
-	UniqueBinding<VertexArray> vaoBinding(*this);
-
-	glEnableVertexAttribArray(attrib);
-}
-
-
-inline void	VertexArray::disableAttrib(u_int32_t attrib){
-	UniqueBinding<VertexArray> vaoBinding(*this);
-
-	glDisableVertexAttribArray(attrib);
+inline GLuint VertexArray::get() const{
+	return m_vao;
 }
 }
 

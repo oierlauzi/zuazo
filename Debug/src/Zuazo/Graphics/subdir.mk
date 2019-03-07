@@ -6,17 +6,20 @@
 CPP_SRCS += \
 ../src/Zuazo/Graphics/Context.cpp \
 ../src/Zuazo/Graphics/Frame.cpp \
-../src/Zuazo/Graphics/Surface.cpp 
+../src/Zuazo/Graphics/Surface.cpp \
+../src/Zuazo/Graphics/Uploader.cpp 
 
 OBJS += \
 ./src/Zuazo/Graphics/Context.o \
 ./src/Zuazo/Graphics/Frame.o \
-./src/Zuazo/Graphics/Surface.o 
+./src/Zuazo/Graphics/Surface.o \
+./src/Zuazo/Graphics/Uploader.o 
 
 CPP_DEPS += \
 ./src/Zuazo/Graphics/Context.d \
 ./src/Zuazo/Graphics/Frame.d \
-./src/Zuazo/Graphics/Surface.d 
+./src/Zuazo/Graphics/Surface.d \
+./src/Zuazo/Graphics/Uploader.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

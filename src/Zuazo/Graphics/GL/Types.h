@@ -1,6 +1,5 @@
 #pragma once
 
-#include <bits/stdint-intn.h>
 #include <glad/glad.h>
 #include <sys/types.h>
 

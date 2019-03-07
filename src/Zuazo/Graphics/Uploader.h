@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ImageAttributes.h"
+
 extern "C"{
 	#include <libavutil/pixfmt.h>
 }
@@ -8,7 +10,7 @@ extern "C"{
 
 #include "../Utils/ImageAttributes.h"
 #include "../Utils/ImageBuffer.h"
-#include "GL/ImageBuffer.h"
+#include "ImageBuffer.h"
 
 struct SwsContext;
 
@@ -29,7 +31,7 @@ public:
 	std::unique_ptr<const Frame> 	getFrame(const Utils::ImageBuffer& buf) const;
 private:
 	mutable Utils::ImageAttributes	m_srcAttributes;
-	mutable GL::ImageAttributes		m_destAttributes;
+	mutable ImageAttributes			m_destAttributes;
 	mutable int						m_srcStrides[4];
 	mutable int						m_destStrides[4];
 	mutable size_t					m_destSize;
@@ -38,7 +40,7 @@ private:
 
 
 	static const AVPixelFormat		s_compatiblePixelFormats[];
-	static GL::ImageAttributes		getBestMatch(const Utils::ImageAttributes& other);
+	static ImageAttributes			getBestMatch(const Utils::ImageAttributes& other);
 
 };
 

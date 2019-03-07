@@ -32,7 +32,7 @@ inline std::shared_ptr<const T> LazySource<T>::get() const{
 	//Only update if it is not being updated (to avoid mutex deadlocks and endless loops)
 	if(!m_updateInProgress){
 		m_updateInProgress=true;
-		Updateable::perform();
+		Updateables::Updateable::perform();
 		m_updateInProgress=false;
 	}
 	return Source<T>::get();

@@ -25,14 +25,12 @@ C_DEPS :=
 SUBDIRS := \
 build/Zuazo/Graphics \
 build/Zuazo/Graphics/GL \
-build/Zuazo/Media/Sources \
-build/Zuazo/Timing \
-build/Zuazo \
+src/Zuazo/Consumers \
 src/Zuazo/Graphics \
 src/Zuazo/Graphics/GL \
-src/Zuazo/Media/Consumers \
-src/Zuazo/Media/Sources \
-src/Zuazo/Timing \
+src/Zuazo/Processors \
+src/Zuazo/Sources \
 src/Zuazo \
+src/Zuazo/Updateables \
 src \
 

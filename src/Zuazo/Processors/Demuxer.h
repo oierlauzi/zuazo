@@ -3,34 +3,37 @@
 #include "../Graphics/Frame.h"
 #include "../Packet.h"
 #include "../Stream/Consumer.h"
-#include "../Stream/Source.h"
-#include "../Updateables/RegularUpdate.h"
-#include "../Updateables/UpdateOrder.h"
+#include "../Stream/LazySource.h"
 
 namespace Zuazo::Processors{
 class Demuxer :
-		public Stream::Consumer<Packet>,
-		public Updateables::RegularUpdate<Updateables::UPDATE_ORDER_DEMUXER>
+		public Stream::Consumer<Packet>
 {
 public:
-	Demuxer(){open();}
+	Demuxer();
 	Demuxer(const Demuxer&)=delete;
 	Demuxer(Demuxer&&)=default;
 	~Demuxer(){close();}
 
 	template <typename T>
 	class DemuxerOutput :
-			public Stream::Source<T>
+			public Stream::LazySource<T>
 	{
 		friend Demuxer;
 	public:
-		using Stream::Source<T>::Source;
+		using Stream::LazySource<T>::Source;
 	private:
-		void update() const override{}
+		const Demuxer& owner;
 
-		using Stream::Source<T>::open;
-		using Stream::Source<T>::close;
-		using Stream::Source<T>::push;
+		DemuxerOutput(const Demuxer& owner) : owner(owner){}
+		DemuxerOutput(const DemuxerOutput& owner)=default;
+		~DemuxerOutput()=default;
+
+		void update() const override{owner.update();}
+
+		using Stream::LazySource<T>::open;
+		using Stream::LazySource<T>::close;
+		using Stream::LazySource<T>::push;
 	};
 
 	DemuxerOutput<Graphics::Frame>			video;

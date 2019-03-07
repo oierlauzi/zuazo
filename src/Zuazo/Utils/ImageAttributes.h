@@ -10,7 +10,7 @@ struct ImageAttributes{
 	PixelFormat			pixFmt;
 
 	constexpr ImageAttributes() :
-		pixFmt(PixelFormats::NONE)
+		pixFmt(PixelFormat::NONE)
 	{
 	}
 
@@ -24,7 +24,7 @@ struct ImageAttributes{
 	~ImageAttributes()=default;
 
 	constexpr operator bool() const{
-		return res.operator bool() && pixFmt.fmt != PixelFormats::NONE;
+		return res.operator bool() && pixFmt != PixelFormat::NONE;
 	}
 
 	constexpr int operator==(const ImageAttributes& right)const{

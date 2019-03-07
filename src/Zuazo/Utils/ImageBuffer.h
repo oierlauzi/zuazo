@@ -47,7 +47,8 @@ struct ImageBuffer{
 	}
 
 	~ImageBuffer(){
-		deallocate();
+		if(wasAllocated)
+			deallocate();
 	}
 
 	void allocate(){
@@ -81,10 +82,8 @@ struct ImageBuffer{
 	}
 
 	void deallocate(){
-		if(data[0] && wasAllocated){
-			av_freep(data[0]);
-			wasAllocated=false;
-		}
+		av_freep(data[0]);
+		wasAllocated=false;
 	}
 
 private:

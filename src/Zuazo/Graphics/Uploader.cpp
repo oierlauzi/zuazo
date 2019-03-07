@@ -3,10 +3,11 @@
 #include <sys/types.h>
 #include <algorithm>
 #include <cstring>
+#include <deque>
 
 #include "../Utils/Resolution.h"
 #include "Frame.h"
-#include "GL/Buffer.h"
+#include "PixelFormat.h"
 
 extern "C"{
 	#include <libavcodec/avcodec.h>
@@ -81,16 +82,28 @@ std::unique_ptr<const Frame> Uploader::getFrame(const Utils::ImageBuffer& buf) c
 		);
 	}
 
+	//Get a Pixel Unpack Buffer
 	std::unique_ptr<GL::PixelUnpackBuffer> pbo=Frame::createPixelUnpackBuffer(m_destSize);
-	pbo->allocate(m_destSize, GL::PixelUnpackBuffer::BufferUsage::StreamDraw);
+	if(!pbo){
+		UniqueContext ctx(Context::getMainCtx());
+		pbo=std::unique_ptr<GL::PixelUnpackBuffer> (new GL::PixelUnpackBuffer);
+	}
 
-	{
-		GL::PixelUnpackBuffer::BufferMapping pboData(
-				*pbo,
-				GL::PixelUnpackBuffer::BufferMapping::Access::Write
-		);
+	//Bind the PBO
+	GL::UniqueBinding<GL::PixelUnpackBuffer> bufferbinding(*pbo);
 
-		u_int8_t* pboDataPtr=(u_int8_t*)pboData.get();
+	//Reallocate data on the PBO
+	glBufferData(
+			GL_PIXEL_UNPACK_BUFFER,
+			m_destSize,
+			nullptr,
+			GL_STREAM_DRAW
+	);
+
+	//Map the PBO's data into memory
+	u_int8_t* pboDataPtr=(u_int8_t*)glMapBuffer(pbo->GLType, GL_WRITE_ONLY);
+	if(pboDataPtr){
+		//Succesfuly maped PBO
 		u_int8_t* planes[4]={
 				pboDataPtr,
 				nullptr,
@@ -108,19 +121,9 @@ std::unique_ptr<const Frame> Uploader::getFrame(const Utils::ImageBuffer& buf) c
 				planes,
 				m_destStrides
 		);
+
+		glUnmapBuffer(pbo->GLType); //Unmap the PBO
 	}
-
-	/*TESTING*/
-	/*
-	u_int8_t* testingData=(u_int8_t*)malloc(m_destSize);
-	pbo->read(testingData);
-
-	FILE * testOutput=fopen("Prueba.rgba", "w+");
-	fwrite(testingData, m_destSize, 1, testOutput);
-	fclose(testOutput);
-
-	free(testingData);
-	*/
 
 	return std::unique_ptr<Frame>(new Frame(
 			std::move(pbo),
@@ -128,7 +131,7 @@ std::unique_ptr<const Frame> Uploader::getFrame(const Utils::ImageBuffer& buf) c
 	));
 }
 
-GL::ImageAttributes	Uploader::getBestMatch(const Utils::ImageAttributes& other){
+ImageAttributes	Uploader::getBestMatch(const Utils::ImageAttributes& other){
 	int loss; //Not used
 	Utils::PixelFormat fmt(avcodec_find_best_pix_fmt_of_list(
 			s_compatiblePixelFormats,
@@ -137,8 +140,8 @@ GL::ImageAttributes	Uploader::getBestMatch(const Utils::ImageAttributes& other){
 			&loss
 	));
 
-	return GL::ImageAttributes(
+	return ImageAttributes(
 			other.res,
-			GL::PixelFormat(fmt)
+			PixelFormat(fmt)
 	);
 }

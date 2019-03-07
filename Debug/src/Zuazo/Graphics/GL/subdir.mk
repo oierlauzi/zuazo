@@ -4,19 +4,13 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
-../src/Zuazo/Graphics/GL/FrameBuffer.cpp \
-../src/Zuazo/Graphics/GL/Shader.cpp \
-../src/Zuazo/Graphics/GL/Texture.cpp 
+../src/Zuazo/Graphics/GL/Shader.cpp 
 
 OBJS += \
-./src/Zuazo/Graphics/GL/FrameBuffer.o \
-./src/Zuazo/Graphics/GL/Shader.o \
-./src/Zuazo/Graphics/GL/Texture.o 
+./src/Zuazo/Graphics/GL/Shader.o 
 
 CPP_DEPS += \
-./src/Zuazo/Graphics/GL/FrameBuffer.d \
-./src/Zuazo/Graphics/GL/Shader.d \
-./src/Zuazo/Graphics/GL/Texture.d 
+./src/Zuazo/Graphics/GL/Shader.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
