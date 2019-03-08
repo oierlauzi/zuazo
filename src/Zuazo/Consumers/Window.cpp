@@ -146,6 +146,7 @@ void Window::open(){
 
 	//Open the consumer so updates are called
 	Stream::PeriodicConsumer<Graphics::Frame>::open();
+	Updateables::Updateable::open();
 }
 void Window::close(){
 	//Close the sync consumer -> no more updates will be requested
@@ -171,6 +172,7 @@ void Window::close(){
 		glfwDestroyWindow(m_glfwWindow);
 		m_glfwWindow=nullptr;
 	}
+	Updateables::Updateable::close();
 }
 
 void Window::setFullScreen(const std::shared_ptr<Screen>& screen){

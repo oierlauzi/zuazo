@@ -1,18 +1,16 @@
 #pragma once
 
-#include <sys/types.h>
 #include <chrono>
 #include <mutex>
 
 #include "../Utils/TimeInterval.h"
-#include "PeriodicUpdate.h"
+#include "../Utils/TimePoint.h"
+#include "Updateable.h"
 
 namespace Zuazo::Updateables{
 
-
-template <u_int32_t order>
 class NonLinear :
-		public PeriodicUpdate<order>
+	virtual Updateable
 {
 public:
 	enum class States{
@@ -21,9 +19,12 @@ public:
 	};
 
 	NonLinear();
-	NonLinear(const Utils::TimeInterval& duration, const Utils::TimeInterval& updateInterval);
-	NonLinear(const NonLinear& other);
+	NonLinear(const Utils::TimeInterval& duration);
+	NonLinear(const NonLinear& other)=default;
 	virtual ~NonLinear()=default;
+
+	virtual void 				open() override;
+	virtual void 				close() override;
 
 	void 						gotoTime(const Utils::TimeInterval& tp);
 	void 						gotoProgress(double p);
@@ -46,25 +47,22 @@ public:
 	Utils::TimeInterval 		getCurrentTime() const;
 	Utils::TimeInterval 		getDuration() const;
 	double 						getProgress() const;
-
-	using PeriodicUpdate<order>::open;
-	using PeriodicUpdate<order>::close;
 protected:
 	virtual void				update() const override;
 	virtual void				nonLinearUpdate() const{};
-	void						setInfo(const Utils::TimeInterval& duration, const Utils::TimeInterval& updateInterval);
+	void						setInfo(const Utils::TimeInterval& duration);
 
 	using Updateable::m_updateMutex;
 private:
 	Utils::TimeInterval 		m_duration;
-	Utils::TimeInterval 		m_updateInterval;
 
 	mutable Utils::TimeInterval	m_currTime;
+	mutable Utils::TimePoint	m_lastUpdate;
 
-	States						m_state		=States::Playing;
+	States						m_state;
 	bool						m_repeat;
-	double						m_playSpeed	=1.0;
-	bool						m_playRev=false;
+	double						m_playSpeed;
+	bool						m_playRev;
 
 	mutable bool				m_hasEnded	=false;
 	void						_gotoTime(Utils::TimeInterval tp) const;
@@ -74,79 +72,43 @@ private:
  * METHOD DEFINITIONS
  */
 
-template <u_int32_t order>
-inline NonLinear<order>::NonLinear(){
-	m_repeat=true;
-}
 
-template <u_int32_t order>
-inline NonLinear<order>::NonLinear(const Utils::TimeInterval& duration, const Utils::TimeInterval& updateInterval) :
-	PeriodicUpdate<order>(updateInterval),
-	m_duration(duration),
-	m_updateInterval(updateInterval)
-{
-	m_repeat=true;
-}
-
-
-template <u_int32_t order>
-inline NonLinear<order>::NonLinear(const NonLinear<order>& other) :
-	PeriodicUpdate<order>(other),
-	m_duration(other.m_duration),
-	m_updateInterval(other.m_updateInterval)
-{
-	m_repeat=true;
-	//TODO
-}
-
-template <u_int32_t order>
-void NonLinear<order>::gotoTime(const Utils::TimeInterval& tp){
+inline void NonLinear::gotoTime(const Utils::TimeInterval& tp){
 	std::lock_guard<std::mutex> lock(m_updateMutex);
 	_gotoTime(tp);
 }
 
-template <u_int32_t order>
-inline void NonLinear<order>::gotoProgress(double p){
+
+inline void NonLinear::gotoProgress(double p){
 	gotoTime(Utils::TimeInterval(m_duration * p));
 }
 
-template <u_int32_t order>
-inline void NonLinear<order>::addTime(const Utils::TimeInterval& time){
+
+inline void NonLinear::addTime(const Utils::TimeInterval& time){
 	std::lock_guard<std::mutex> lock(m_updateMutex);
 	_gotoTime(m_currTime + time);
 }
 
-template <u_int32_t order>
-inline void NonLinear<order>::subsTime(const Utils::TimeInterval& time){
+
+inline void NonLinear::subsTime(const Utils::TimeInterval& time){
 	std::lock_guard<std::mutex> lock(m_updateMutex);
 	_gotoTime(m_currTime - time);
 }
 
-template <u_int32_t order>
-void NonLinear<order>::nextUpdate(){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
-	addTime(m_updateInterval);
-}
 
-template <u_int32_t order>
-void NonLinear<order>::prevUpdate(){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
-	subsTime(m_updateInterval);
-}
-
-template <u_int32_t order>
-void NonLinear<order>::setState(States state){
+inline void NonLinear::setState(States state){
 	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_state=state;
 }
 
-template <u_int32_t order>
-typename NonLinear<order>::States NonLinear<order>::getState() const{
+
+inline typename NonLinear::States NonLinear::getState() const{
 	return m_state;
 }
 
-template <u_int32_t order>
-void NonLinear<order>::setPlaySpeed(double speed){
+
+inline void NonLinear::setPlaySpeed(double speed){
+	std::lock_guard<std::mutex> lock(m_updateMutex);
 	if(speed >= 0){
 		m_playSpeed=speed;
 		m_playRev=false;
@@ -154,17 +116,15 @@ void NonLinear<order>::setPlaySpeed(double speed){
 		m_playSpeed=-speed;
 		m_playRev=true;
 	}
-	Utils::TimeInterval newInterval((u_int64_t)(m_updateInterval.count() / speed));
-	PeriodicUpdate<order>::setInterval(newInterval);
 }
 
-template <u_int32_t order>
-double NonLinear<order>::getPlaySpeed() const{
+
+inline double NonLinear::getPlaySpeed() const{
 	return m_playRev ? -m_playSpeed : m_playSpeed;
 }
 
-template <u_int32_t order>
-void NonLinear<order>::setRepeat(bool rep){
+
+inline void NonLinear::setRepeat(bool rep){
 	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_repeat=rep;
 
@@ -172,79 +132,33 @@ void NonLinear<order>::setRepeat(bool rep){
 		m_hasEnded=false;
 }
 
-template <u_int32_t order>
-bool NonLinear<order>::getRepeat() const{
+
+inline bool NonLinear::getRepeat() const{
 	return m_repeat;
 }
 
-template <u_int32_t order>
-inline bool NonLinear<order>::hasEnded() const{
+
+inline bool NonLinear::hasEnded() const{
 	return m_hasEnded;
 }
 
-template <u_int32_t order>
-inline Utils::TimeInterval NonLinear<order>::getCurrentTime() const{
+
+inline Utils::TimeInterval NonLinear::getCurrentTime() const{
 	return m_currTime;
 }
 
-template <u_int32_t order>
-inline Utils::TimeInterval NonLinear<order>::getDuration() const{
+
+inline Utils::TimeInterval NonLinear::getDuration() const{
 	return m_duration;
 }
 
-template <u_int32_t order>
-inline double NonLinear<order>::getProgress() const{
+
+inline double NonLinear::getProgress() const{
 	return (double)m_currTime.count() / m_duration.count() ;
 }
 
-template <u_int32_t order>
-inline void	NonLinear<order>::update() const{
-	if(m_state == States::Playing && !m_hasEnded){
-		if(m_playRev){
-			_gotoTime(m_currTime - m_updateInterval);
-		}else{
-			_gotoTime(m_currTime + m_updateInterval);		}
-	}
-}
-
-template <u_int32_t order>
-inline void	NonLinear<order>::_gotoTime(Utils::TimeInterval tp) const{
-	if(tp >=  m_duration){
-		//New time is longer than the duration
-		if(m_repeat){
-			m_hasEnded = false;
-			tp %= m_duration;
-		}else{
-			m_hasEnded = true;
-			tp = m_duration - m_updateInterval; //Go to the end
-		}
-	}else if(tp < Utils::TimeInterval::zero()){
-		//New time is negative
-		if(m_repeat){
-			m_hasEnded = false;
-
-			while(tp < Utils::TimeInterval::zero()){
-				tp += m_duration;
-			}
-		}else{
-			m_hasEnded = true;
-			tp = Utils::TimeInterval::zero(); //Go to the begining
-		}
-	}
-
-
-	if(tp != m_currTime){
-		m_currTime=tp;
-		nonLinearUpdate();
-	}
-}
-
-template <u_int32_t order>
-void NonLinear<order>::setInfo(const Utils::TimeInterval& duration, const Utils::TimeInterval& updateInterval){
+inline void NonLinear::setInfo(const Utils::TimeInterval& duration){
 	m_duration=duration;
-	m_updateInterval=updateInterval;
-
-	PeriodicUpdate<order>::setInterval(m_updateInterval);
 	m_currTime%=m_duration;
 }
 

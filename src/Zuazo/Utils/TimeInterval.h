@@ -41,6 +41,22 @@ public:
 		return (double)count()/TIME_UNITS_PER_SECOND;
 	}
 
+	constexpr TimeInterval operator*(int i) const{
+		return TimeInterval((u_int64_t)(count() * i));
+	}
+
+	constexpr TimeInterval operator*(double d) const{
+		return TimeInterval((u_int64_t)(count() * d));
+	}
+
+	constexpr TimeInterval operator/(int i) const{
+		return TimeInterval((u_int64_t)(count() / i));
+	}
+
+	constexpr TimeInterval operator/(double d) const{
+		return TimeInterval((u_int64_t)(count() / d));
+	}
+
 	static constexpr int64_t TIME_UNITS_PER_SECOND=std::chrono::TIME_UNIT( std::chrono::seconds(1) ).count();
 };
 }

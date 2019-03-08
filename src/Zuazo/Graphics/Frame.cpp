@@ -14,7 +14,25 @@ MultiPool<size_t, GL::PixelUnpackBuffer> Frame::s_pboPool;
 MultiPool<ImageAttributes, GL::Texture2D>  Frame::s_texPool;
 
 
+Frame::Frame(const ImageBuffer& buf){
+	m_attributes=buf.att;
+	size_t bufSize=m_attributes.getSize();
 
+	m_pbo=createPixelUnpackBuffer(bufSize);
+	if(!m_pbo){
+		UniqueContext ctx(Context::getMainCtx());
+		//Create the PBO
+		m_pbo=std::unique_ptr<GL::PixelUnpackBuffer>(new GL::PixelUnpackBuffer);
+	}
+
+	//Upload the buffer to GL
+	GL::UniqueBinding<GL::PixelUnpackBuffer> bufBinding(*m_pbo);
+	GL::PixelUnpackBuffer::bufferData(
+			bufSize,
+			GL::PixelUnpackBuffer::Usage::StreamDraw,
+			buf.data
+	);
+}
 
 Frame::Frame(std::unique_ptr<GL::PixelUnpackBuffer> buf, const ImageAttributes& att){
 	m_attributes=att;
@@ -71,33 +89,12 @@ const GL::Texture2D& Frame::getTexture() const{
 				GL::UniqueBinding<GL::PixelUnpackBuffer> bufferBinding(*m_pbo);
 				GL::UniqueBinding<GL::Texture2D> texBinding(*m_texture);
 
-				glTexImage2D(
-						GL_TEXTURE_2D,
-						0,
-						m_attributes.pixFmt.toGLenum(),
-						m_attributes.res.width,
-						m_attributes.res.height,
-						0,
-						m_attributes.pixFmt.toGLenum(),
-						GL_UNSIGNED_BYTE,
-						0
-				);
+				GL::Texture2D::textureImage(m_attributes);
 			}else{
 				//Bind texture and PBO
 				GL::UniqueBinding<GL::PixelUnpackBuffer> bufferBinding(*m_pbo);
 				GL::UniqueBinding<GL::Texture2D> texBinding(*m_texture);
-
-				glTexSubImage2D(
-						GL_TEXTURE_2D,
-						0,
-						0,
-						0,
-						m_attributes.res.width,
-						m_attributes.res.height,
-						m_attributes.pixFmt.toGLenum(),
-						GL_UNSIGNED_BYTE,
-						0
-				);
+				GL::Texture2D::textureSubImage(m_attributes);
 			}
 		}
 

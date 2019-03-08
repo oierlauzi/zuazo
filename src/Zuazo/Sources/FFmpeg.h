@@ -11,6 +11,7 @@
 #include "../Packet.h"
 #include "../Stream/Source.h"
 #include "../Updateables/NonLinear.h"
+#include "../Updateables/PeriodicUpdate.h"
 #include "../Updateables/UpdateOrder.h"
 #include "../Utils/TimeInterval.h"
 #include "../Video.h"
@@ -23,7 +24,8 @@ namespace Zuazo::Sources{
 
 class FFmpeg :
 		public VideoBase,
-		public Updateables::NonLinear<Updateables::UPDATE_ORDER_FF_DEC>,
+		public Updateables::NonLinear,
+		public Updateables::PeriodicUpdate<Updateables::UPDATE_ORDER_FF_DEC>,
 		public Stream::Source<Packet>
 {
 public:

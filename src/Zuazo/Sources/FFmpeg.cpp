@@ -103,10 +103,13 @@ void FFmpeg::open(){
 	);
 
 	Utils::TimeInterval duration=std::chrono::duration<int64_t, std::ratio<1, AV_TIME_BASE>>(dur);
-	Utils::TimeInterval interval=duration / m_formatCtx->streams[m_videoStream]->nb_frames;
+	Utils::TimeInterval interval=duration.count() / m_formatCtx->streams[m_videoStream]->nb_frames;
 
-	Updateables::NonLinear<Updateables::UPDATE_ORDER_FF_DEC>::setInfo(
-			duration,
+	Updateables::NonLinear::setInfo(
+			duration
+	);
+
+	Updateables::PeriodicUpdate<Updateables::UPDATE_ORDER_FF_DEC>::setInterval(
 			interval
 	);
 
@@ -115,7 +118,9 @@ void FFmpeg::open(){
 	m_exit=false;
 	m_decodingThread=std::thread(&FFmpeg::decodingFunc, this);
 
-	Updateables::NonLinear<Updateables::UPDATE_ORDER_FF_DEC>::open();
+	Updateables::NonLinear::open();
+	Updateables::PeriodicUpdate<Updateables::UPDATE_ORDER_FF_DEC>::open();
+	Updateables::Updateable::open();
 }
 
 void FFmpeg::close(){
@@ -124,7 +129,8 @@ void FFmpeg::close(){
 	if(m_decodingThread.joinable())
 		m_decodingThread.join();
 
-	Updateables::NonLinear<Updateables::UPDATE_ORDER_FF_DEC>::close();
+	Updateables::PeriodicUpdate<Updateables::UPDATE_ORDER_FF_DEC>::close();
+	Updateables::NonLinear::close();
 
 	if(m_formatCtx){
 		avformat_close_input(&m_formatCtx);
@@ -134,6 +140,8 @@ void FFmpeg::close(){
 		avcodec_close(m_codecCtx);
 		m_codecCtx=nullptr;
 	}
+
+	Updateables::Updateable::close();
 }
 
 std::shared_ptr<const Zuazo::Packet> FFmpeg::get() const{
@@ -145,7 +153,7 @@ void FFmpeg::nonLinearUpdate() const{
 	std::lock_guard<std::mutex> lock(m_decodeMutex);
 
 	int64_t newTs=av_rescale_q(
-			Updateables::NonLinear<Updateables::UPDATE_ORDER_FF_DEC>::getCurrentTime().count(),
+			Updateables::NonLinear::getCurrentTime().count(),
 			ZUAZO_TIME_BASE_Q,
 			m_formatCtx->streams[m_videoStream]->time_base
 	);

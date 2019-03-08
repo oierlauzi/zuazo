@@ -33,7 +33,9 @@ public:
 	void								unlock() const;
 
 	virtual void						open();
+	void								asyncOpen();
 	virtual void						close();
+	void								asyncClose(); //TODO
 	bool								isOpen() const;
 protected:
 	mutable std::mutex					m_updateMutex;

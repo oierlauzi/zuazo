@@ -31,7 +31,6 @@ public:
 
 template <u_int32_t order>
 inline void RegularUpdate<order>::open(){
-	Updateable::open();
 	timings->addTiming(this);
 }
 
@@ -39,6 +38,5 @@ template <u_int32_t order>
 inline void RegularUpdate<order>::close(){
 	if(timings)
 		timings->deleteTiming(this);
-	Updateable::close();
 }
 }

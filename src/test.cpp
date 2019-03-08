@@ -99,8 +99,6 @@ int main(void){
 	win.setWindowed();*/
 	win << demux.video;
 	getchar();
-	win << svg;
-	getchar();
 	}
 
 

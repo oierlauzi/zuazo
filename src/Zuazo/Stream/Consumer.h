@@ -80,13 +80,11 @@ inline Consumer<T>& Consumer<T>::operator<<(std::nullptr_t ptr){
 
 template <typename T>
 inline void Consumer<T>::open(){
-	Updateable::open();
 }
 
 template <typename T>
 inline void Consumer<T>::close(){
 	m_lastElement=std::shared_ptr<const T>();
-	Updateable::close();
 }
 
 template <typename T>

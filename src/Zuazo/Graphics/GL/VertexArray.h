@@ -1,6 +1,9 @@
 #pragma once
 
 #include <glad/glad.h>
+#include <sys/types.h>
+
+#include "Types.h"
 
 namespace Zuazo::Graphics::GL{
 
@@ -15,6 +18,11 @@ public:
 	void				unbind() const;
 
 	GLuint				get() const;
+
+	static void			enableAttribute(u_int32_t no);
+	static void			disableAttribute(u_int32_t no);
+	template <typename T, int dim>
+	static void			attributePtr(u_int32_t no);
 private:
 	GLuint				m_vao;
 };
@@ -52,5 +60,27 @@ inline void	VertexArray::unbind() const{
 inline GLuint VertexArray::get() const{
 	return m_vao;
 }
+
+inline void	VertexArray::enableAttribute(u_int32_t no){
+	glEnableVertexAttribArray(no);
+}
+
+inline void	VertexArray::disableAttribute(u_int32_t no){
+	glDisableVertexAttribArray(no);
+}
+
+template <typename T, int dim>
+inline void	VertexArray::attributePtr(u_int32_t no){
+	glVertexAttribPointer(
+			no,				//Attribute index
+			dim,			//Vertex dimensions
+			GLType<T>,		//Vertex component type
+			0,				//Stride (0=auto, packed)
+			GL_FALSE,		//Normalize?
+			0				//Offset
+	);
+}
+
+
 }
 

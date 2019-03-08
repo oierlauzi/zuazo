@@ -31,6 +31,10 @@ public:
 				);
 	}
 
+	operator bool(){
+		return time_since_epoch().count();
+	}
+
 	static TimePoint now(){
 		return std::chrono::TIME_CLOCK::now();
 	}

@@ -90,7 +90,6 @@ inline Utils::Rational PeriodicUpdate<order>::getRate() const {
 
 template <u_int32_t order>
 inline void PeriodicUpdate<order>::open(){
-	Updateable::open();
 	timings->addTiming(this);
 }
 
@@ -98,7 +97,6 @@ template <u_int32_t order>
 inline void PeriodicUpdate<order>::close(){
 	if(timings) //It might have been deleted
 		timings->deleteTiming(this);
-	Updateable::close();
 }
 
 }

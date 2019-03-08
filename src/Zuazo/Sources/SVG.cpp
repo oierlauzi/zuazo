@@ -1,12 +1,12 @@
 #include "SVG.h"
 
-#include <stdlib.h>
-#include <sys/types.h>
 #include <algorithm>
+#include <deque>
 #include <memory>
 
 #include "../Graphics/Context.h"
 #include "../Graphics/GL/Texture2D.h"
+#include "../Graphics/GL/UniqueBinding.h"
 #include "../Graphics/ImageAttributes.h"
 #include "../Graphics/ImageBuffer.h"
 #include "../Graphics/PixelFormat.h"
@@ -78,19 +78,9 @@ void SVG::open(){
 					new Graphics::GL::Texture2D
 			);
 
+			//Upload the image to the texture
 			Graphics::GL::UniqueBinding<Graphics::GL::Texture2D> texBinding(*tex);
-
-			glTexImage2D(
-					GL_TEXTURE_2D,
-					0,
-					imgBuf.att.pixFmt.toGLenum(),
-					imgBuf.att.res.width,
-					imgBuf.att.res.height,
-					0,
-					imgBuf.att.pixFmt.toGLenum(),
-					GL_UNSIGNED_BYTE,
-					imgBuf.data
-			);
+			Graphics::GL::Texture2D::textureImage(imgBuf);
 
 			newFrame=std::unique_ptr<Graphics::Frame>(new Graphics::Frame(
 					std::move(tex),
@@ -103,6 +93,7 @@ void SVG::open(){
 		//Deletes the previously generated rasterizer
 		nsvgDeleteRasterizer(rasterizer);
 		Source<Graphics::Frame>::open();
+		Updateables::Updateable::open();
 	}
 
 	//Close the file
@@ -111,4 +102,5 @@ void SVG::open(){
 
 void SVG::close(){
 	Source<Graphics::Frame>::close();
+	Updateables::Updateable::close();
 }

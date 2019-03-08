@@ -3,10 +3,6 @@
 #include <chrono>
 #include <utility>
 
-#include "Updateables/PeriodicUpdate.h"
-#include "Updateables/RegularUpdate.h"
-
-
 namespace Zuazo{
 
 /*
@@ -47,13 +43,11 @@ void Timing::threadFunc(){
 			 * No need, its actually sorted by default
 			 */
 
-			{
 
-				//Update all
-				for(auto ite=updates.updateables.begin(); ite!=updates.updateables.end(); ++ite){
-					for(const Updateables::Updateable * updateable : ite->second){
-						updateable->perform();
-					}
+			//Update all
+			for(auto ite=updates.updateables.begin(); ite!=updates.updateables.end(); ++ite){
+				for(const Updateables::Updateable * updateable : ite->second){
+					updateable->perform();
 				}
 			}
 

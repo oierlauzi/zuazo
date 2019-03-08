@@ -63,13 +63,11 @@ inline std::shared_ptr<const T> Source<T>::get() const{
 
 template <typename T>
 inline void Source<T>::open(){
-	Updateable::open();
 }
 
 template <typename T>
 inline void Source<T>::close(){
 	m_last=std::shared_ptr<const T>();
-	Updateable::close();
 }
 
 template <typename T>
