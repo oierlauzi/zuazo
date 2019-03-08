@@ -116,6 +116,7 @@ inline void Delay<T>::open(){
 	Source<T>::open();
 	Consumer<T>::open();
 	Updateables::RegularUpdate<Updateables::UPDATE_ORDER_DELAY>::open();
+	Updateables::Updateable::open();
 }
 
 template <typename T>
@@ -127,5 +128,6 @@ inline void Delay<T>::close(){
 	//Reset all
 	while(m_queue.size())
 		m_queue.pop();
+	Updateables::Updateable::close();
 }
 }

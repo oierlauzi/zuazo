@@ -16,6 +16,8 @@ void Demuxer::open(){
 
 	video.close();
 	/* IMPLEMENT HERE OTHER MUXES*/
+
+	Updateables::Updateable::open();
 }
 
 void Demuxer::close(){
@@ -23,6 +25,7 @@ void Demuxer::close(){
 	/* IMPLEMENT HERE OTHER MUXES*/
 
 	Consumer<Packet>::close();
+	Updateables::Updateable::close();
 }
 
 void Demuxer::update() const{

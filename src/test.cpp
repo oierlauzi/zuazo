@@ -7,9 +7,9 @@
 #include "Zuazo/Processors/Demuxer.h"
 #include "Zuazo/Sources/FFmpeg.h"
 #include "Zuazo/Sources/SVG.h"
+#include "Zuazo/Sources/V4L2.h"
 #include "Zuazo/Utils/Rational.h"
 #include "Zuazo/Utils/Resolution.h"
-#include "Zuazo/Video.h"
 #include "Zuazo/Zuazo.h"
 
 #define TEST1
@@ -45,24 +45,13 @@ int main(void){
 			"Window with delay"
 	);
 
-	//Zuazo::Sources::V4L2 webcam1("/dev/video0");
-	//Zuazo::Sources::V4L2 webcam2("/dev/video2");
-	/*const std::set<Zuazo::Sources::V4L2::VideoMode>& vidModes=webcam2.getVideoModes();
-	for(const Zuazo::Sources::V4L2::VideoMode& vidMode : vidModes){
-		printf("%ux%u @ %gHz\n",
-				vidMode.resolution.width,
-				vidMode.resolution.height,
-				(double)vidMode.interval.den / vidMode.interval.num);
-	}*/
-
 	Zuazo::Sources::FFmpeg vid("/home/oierlauzi/Bideoak/prueba1.mp4");
 	Zuazo::Processors::Demuxer demux;
-	std::cout<<vid.getRes().width << "x" << vid.getRes().height << std::endl;
+	demux<<vid;
 
 	Zuazo::Sources::SVG svg("/home/oierlauzi/Irudiak/color_bars.svg", 96);
-	demux << vid;
-
-	/*Zuazo::Sources::SVG svg("/home/oierlauzi/Irudiak/color_bars.svg", 96);
+	Zuazo::Sources::V4L2 webcam1("/dev/video0");
+	Zuazo::Sources::V4L2 webcam2("/dev/video2");
 
 	char a;
 	do{
@@ -76,29 +65,15 @@ int main(void){
 			win<<webcam2;
 			break;
 		case '3':
+			win<<demux.video;
+			break;
+		case '4':
 			win<<svg;
-			break;
-		case 'o':
-			webcam2.open();
-			break;
-		case 'c':
-			webcam2.close();
 			break;
 		case 'e':
 			break;
 		}
-	}while(a != 'e');*/
-
-
-	/*auto screens=Zuazo::Consumers::Window::Screen::getScreens();
-	sleep(2);
-	printf("Setting fullscreen\n");
-	win.setFullScreen(*(screens.begin()));
-	sleep(2);
-	printf("Setting windowed\n");
-	win.setWindowed();*/
-	win << demux.video;
-	getchar();
+	}while(a != 'e');
 	}
 
 
