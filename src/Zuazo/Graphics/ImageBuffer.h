@@ -32,11 +32,19 @@ public:
 	{
 	}
 
+	constexpr ImageBuffer(ImageBuffer&& img) :
+		att(img.att),
+		data(img.data),
+		wasAllocated(img.wasAllocated)
+	{
+		img.wasAllocated=false;
+	}
+
 	~ImageBuffer(){
 		if(wasAllocated)
 			free(data);
 	}
 private:
-	const bool wasAllocated;
+	bool wasAllocated;
 };
 }

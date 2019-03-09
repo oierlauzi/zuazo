@@ -177,7 +177,7 @@ void FFmpeg::decodingFunc(){
 			Utils::ImageAttributes(
 					Utils::Resolution(m_codecCtx->width, m_codecCtx->height),
 					Utils::PixelFormat(m_codecCtx->pix_fmt)
-			), nullptr
+			), (u_int8_t*)nullptr
 	);
 
 	Graphics::Uploader frameConverter;

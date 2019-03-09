@@ -102,7 +102,10 @@ private:
 
 	std::thread					m_capturingThread;
 	bool						m_threadExit;
-	void 						capturingThread();
+
+	void						reqBuffer(v4l2_buffer* buf);
+	void						freeBuffer(v4l2_buffer* buf);
+	void 						mpegCapturingThread();
 };
 
 inline void V4L2::setRate(const Utils::Rational& rate){

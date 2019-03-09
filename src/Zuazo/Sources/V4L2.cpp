@@ -2,7 +2,6 @@
 
 #include <fcntl.h>
 #include <linux/videodev2.h>
-#include <stdlib.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/select.h>
@@ -10,14 +9,22 @@
 #include <unistd.h>
 #include <algorithm>
 #include <cerrno>
+#include <cstring>
 #include <memory>
 #include <utility>
-#include <jpeglib.h>
+
+extern "C"{
+	#include <libavutil/frame.h>
+	#include <libavcodec/avcodec.h>
+	#include <libavutil/avutil.h>
+}
 
 #include "../Graphics/Context.h"
-#include "../Graphics/ImageAttributes.h"
-#include "../Graphics/ImageBuffer.h"
 #include "../Graphics/PixelFormat.h"
+#include "../Graphics/Uploader.h"
+#include "../Utils/ImageAttributes.h"
+#include "../Utils/ImageBuffer.h"
+
 
 
 /*
@@ -246,7 +253,7 @@ void V4L2::open(){
 			return;
 
 		m_threadExit=false;
-		m_capturingThread=std::thread(&V4L2::capturingThread, this);
+		m_capturingThread=std::thread(&V4L2::mpegCapturingThread, this);
 
 		AsyncSource::open();
 	}
@@ -266,7 +273,7 @@ void V4L2::close(){
 		return;
 
     //Release buffers
-    m_buffers.erase(m_buffers.begin(), m_buffers.end());
+    m_buffers.clear();
 
 	struct v4l2_requestbuffers req={0};
 	req.count = 0;
@@ -277,100 +284,136 @@ void V4L2::close(){
 		return;
 }
 
-void V4L2::capturingThread(){
-    //Initialize jpeg decompressor
-	jpeg_decompress_struct m_decmp={0};
-	jpeg_error_mgr errMgr={0};
-	m_decmp.err=jpeg_std_error(&errMgr);
-    jpeg_create_decompress(&m_decmp)
-	;
-    m_decmp.out_color_space = JCS_RGB;
-    m_decmp.dct_method = JDCT_FASTEST;
+void V4L2::reqBuffer(v4l2_buffer* buf){
+	fd_set fds;
+	FD_ZERO(&fds);
+	FD_SET(m_dev, &fds);
 
-	Graphics::ImageBuffer imgBuf(Graphics::ImageAttributes(
-			m_currVidMode->resolution,
-			Graphics::PixelFormat::RGB
-	));
+	//Time out for select
+	struct timeval tv = {0};
+	tv.tv_sec = 2;
 
-    //Index image's rows into rowPtrimgBuf
-    size_t stride=imgBuf.att.getStride();
-	u_int8_t** rowPtr=(u_int8_t**)malloc(sizeof(u_int8_t*) * imgBuf.att.res.height);
+	//Wait for a frame
+	if(0 >= select(m_dev+1, &fds, NULL, NULL, &tv))
+		return; //Timeout
 
-	for(u_int32_t i=0; i<imgBuf.att.res.height; i++){
-		rowPtr[i]=imgBuf.data + (stride * i);
+	//Request the buffer
+	*buf={0};
+	buf->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	buf->memory = V4L2_MEMORY_MMAP;
+
+	if(-1 == xioctl(m_dev, VIDIOC_DQBUF, buf)){
+		*buf={0};
+		return; //Error requesting buffer
 	}
+
+
+	if(buf->index>=m_buffers.size()){
+		//Invalid index given
+		freeBuffer(buf);
+		*buf={0};
+		return;
+	}
+}
+
+void V4L2::freeBuffer(v4l2_buffer* buf){
+	//No need to check if it was successfully unmapped
+	//As it has no remedy :-<
+	xioctl(m_dev, VIDIOC_QBUF, buf);
+}
+
+void V4L2::mpegCapturingThread(){
+	const AVCodec *codec=avcodec_find_decoder(AV_CODEC_ID_MJPEG); //MPEG2 codec is preferred over MPEG1 codec
+	if(!codec)
+		return; //Something went horribly wrong
+
+	//Get a parser for the codec
+	AVCodecParserContext* parser = av_parser_init(codec->id);
+	if(!parser)
+		return; //Error
+
+	//Allocate the context
+	AVCodecContext* codecCtx=avcodec_alloc_context3(codec);
+	if(!codecCtx){
+		av_parser_close(parser);
+		return; //Error
+	}
+
+	//Open the context
+	if (avcodec_open2(codecCtx, codec, NULL) < 0) {
+		avcodec_free_context(&codecCtx);
+		av_parser_close(parser);
+		return;
+	}
+
+	//Allocate space for the packet
+	AVPacket *pkt=av_packet_alloc();
+	if(!pkt){
+		avcodec_free_context(&codecCtx);
+		av_parser_close(parser);
+		return;
+	}
+
+	AVFrame* decodedFrame=av_frame_alloc();
+	if(!decodedFrame){
+		avcodec_free_context(&codecCtx);
+		av_parser_close(parser);
+		avcodec_free_context(&codecCtx);
+		return;
+	}
+
+	Graphics::Uploader uplo;
+	v4l2_buffer buf;
+	int ret;
+
+	Utils::ImageBuffer decodedImgBuf(
+			Utils::ImageAttributes(
+					m_currVidMode->resolution,
+					Utils::PixelFormat::YUV422P
+			), (u_int8_t*)nullptr
+	);
 
     //Main loop
     while(!m_threadExit){
-		fd_set fds;
-		FD_ZERO(&fds);
-		FD_SET(m_dev, &fds);
 
-		//Time out for select
-		struct timeval tv = {0};
-		tv.tv_sec = 2;
+    	reqBuffer(&buf);
 
-		//Wait for a frame
-		if(0 >= select(m_dev+1, &fds, NULL, NULL, &tv))
-			continue; //Timeout
+		//Create the packet with the given data
+		u_int8_t* bufData=(u_int8_t*)av_malloc(buf.bytesused);
+		memcpy(bufData, m_buffers[buf.index].buffer, buf.bytesused); //copy the data
+		av_packet_from_data (pkt, bufData, buf.bytesused);
 
-		//Request the buffer
-		v4l2_buffer buf={0};
-		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		buf.memory = V4L2_MEMORY_MMAP;
+		freeBuffer(&buf); //V4L2 buffer no longer needed
 
-		if(-1 == xioctl(m_dev, VIDIOC_DQBUF, &buf))
-			continue; //Error requesting buffer
-
-
-		if(buf.index>=m_buffers.size()){
-			//Invalid index given
-			xioctl(m_dev, VIDIOC_QBUF, &buf);
+		//Try to decode the packet
+		ret=avcodec_send_packet(codecCtx, pkt);
+		av_packet_unref(pkt);
+		if(ret<0){
 			continue;
 		}
 
-		//Set decoder's source
-		jpeg_mem_src(&m_decmp, m_buffers[buf.index].buffer, buf.bytesused);
-
-		//Read the JPEG's header
-		jpeg_read_header(&m_decmp, TRUE);
-
-		//Set output format as RGB and decompress it
-		jpeg_start_decompress(&m_decmp);
-
-
-
-		//Read image line-by-line
-		while (m_decmp.output_scanline < m_decmp.output_height) {
-			jpeg_read_scanlines(
-					&m_decmp,
-					&rowPtr[m_decmp.output_scanline],
-					m_decmp.output_height - m_decmp.output_scanline
-			);
+		ret = avcodec_receive_frame(codecCtx, decodedFrame);
+		if(ret<0){
+			continue;
 		}
 
-		jpeg_finish_decompress(&m_decmp);
+		memcpy(decodedImgBuf.data, decodedFrame->data, sizeof(decodedImgBuf.data)); //Copy plane pointers
 
-		//Buffer no longer needed
-		if(-1 == xioctl(m_dev, VIDIOC_QBUF, &buf))
-			continue;
-
-		//Upload image to the source
 		std::unique_ptr<const Graphics::Frame> frame;
 
 		{
 			Graphics::UniqueContext ctx(Graphics::Context::getAvalibleCtx());
-
-			frame=std::unique_ptr<const Graphics::Frame>(
-					new Graphics::Frame(imgBuf)
-			);
+			frame=uplo.getFrame(decodedImgBuf);
 		}
 
-		AsyncSource<Graphics::Frame>::push(std::move(frame));
+		Stream::AsyncSource<Graphics::Frame>::push(std::move(frame));
     }
 
-	free(rowPtr);
-    jpeg_destroy_decompress(&m_decmp);
+    //Free everything
+    avcodec_free_context(&codecCtx);
+    av_parser_close(parser);
+    av_packet_free(&pkt);
+    av_frame_free(&decodedFrame);
 }
 
 V4L2::Buffer::Buffer(const v4l2_buffer& v4l2BufReq, int dev){

@@ -28,6 +28,15 @@ struct ImageBuffer{
 		fillData(data);
 	}
 
+
+	ImageBuffer(const ImageAttributes& att, u_int8_t*  const data[4]) :
+		att(att)
+	{
+		for(u_int32_t i=0; i<4; i++){
+			this->data[i]=data[i];
+		}
+	}
+
 	ImageBuffer(const ImageBuffer& other) :
 		ImageBuffer(other.att)
 	{
