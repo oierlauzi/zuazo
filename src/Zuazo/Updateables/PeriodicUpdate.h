@@ -72,9 +72,9 @@ inline void PeriodicUpdate<order>::setInterval(const Utils::TimeInterval& interv
 template <u_int32_t order>
 inline void PeriodicUpdate<order>::setRate(const Utils::Rational& rate){
 	if(rate)
-		setInterval(1/rate);
+		PeriodicUpdate<order>::setInterval(Utils::TimeInterval(1/rate));
 	else
-		setInterval(Utils::TimeInterval::zero());
+		PeriodicUpdate<order>::setInterval(Utils::TimeInterval::zero());
 }
 
 template <u_int32_t order>

@@ -8,6 +8,7 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
+-include src/Zuazo/Utils/subdir.mk
 -include src/Zuazo/Updateables/subdir.mk
 -include src/Zuazo/Sources/subdir.mk
 -include src/Zuazo/Processors/subdir.mk
@@ -16,8 +17,14 @@ RM := rm -rf
 -include src/Zuazo/Consumers/subdir.mk
 -include src/Zuazo/subdir.mk
 -include src/subdir.mk
+-include build/Zuazo/Updateables/subdir.mk
+-include build/Zuazo/Sources/subdir.mk
+-include build/Zuazo/Processors/subdir.mk
 -include build/Zuazo/Graphics/GL/subdir.mk
 -include build/Zuazo/Graphics/subdir.mk
+-include build/Zuazo/Consumers/subdir.mk
+-include build/Zuazo/subdir.mk
+-include build/subdir.mk
 -include subdir.mk
 -include objects.mk
 

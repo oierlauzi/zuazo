@@ -14,7 +14,7 @@ extern "C"{
 	#include <libswscale/swscale.h>
 }
 
-#include "../Utils/PixelFormats.h"
+#include "../Utils/PixelFormat.h"
 
 using namespace Zuazo::Graphics;
 

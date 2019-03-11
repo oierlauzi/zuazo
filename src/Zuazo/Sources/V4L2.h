@@ -2,7 +2,6 @@
 
 #include <stddef.h>
 #include <sys/types.h>
-#include <map>
 #include <set>
 #include <string>
 #include <thread>
@@ -10,9 +9,12 @@
 
 #include "../Graphics/Frame.h"
 #include "../Stream/AsyncSource.h"
+#include "../Utils/Codec.h"
+#include "../Utils/PixelFormat.h"
 #include "../Utils/Rational.h"
 #include "../Utils/Resolution.h"
 #include "../Utils/TimeInterval.h"
+#include "../Utils/VideoMode.h"
 #include "../Video.h"
 
 struct v4l2_buffer;
@@ -24,47 +26,6 @@ class V4L2:
 		public ResizeableVideoBase
 {
 public:
-	struct VideoMode{
-		Utils::Resolution			resolution;
-		Utils::Rational				interval;
-
-		VideoMode()=default;
-		VideoMode(const Utils::Resolution& res, const Utils::Rational& interval) :
-			resolution(res),
-			interval(interval)
-		{
-		}
-
-		VideoMode(const VideoMode& other)=default;
-		~VideoMode()=default;
-
-		int operator==(const VideoMode& other) const{
-			if(resolution == other.resolution && interval == other.interval)
-				return 1;
-			else
-				return 0;
-		}
-
-		int operator<(const VideoMode& other) const{
-			if(resolution < other.resolution){
-				//My resolution is smaller
-				return 1;
-			} else if(resolution > other.resolution){
-				//My resolution is bigger
-				return 0;
-			} else{
-				//Both resolutions are equal
-				if(interval < other.interval){
-					//Lower interval -> Higher frame rate
-					return 0;
-				}else{
-					return 1;
-				}
-				return 1;
-			}
-		}
-	};
-
 	V4L2(u_int32_t dev);
 	V4L2(const std::string& devName);
 	V4L2(const V4L2& other)=delete;
@@ -76,11 +37,11 @@ public:
 	void						setRate(const Utils::Rational& rate) override;
 	void						setInterval(const Utils::TimeInterval& interval) override;
 	void						setRes(const Utils::Resolution& res) override;
-	void						setVideoMode(const VideoMode& mode);
+	void						setVideoMode(const Utils::VideoMode& mode);
 
 	//Utils::Resolution			getRes() const override;
-	VideoMode					getVideoMode() const;
-	const std::set<VideoMode>&	getVideoModes() const;
+	Utils::VideoMode			getCurrentVideoMode() const;
+	std::set<Utils::VideoMode>	getVideoModes() const;
 private:
 	struct Buffer{
 		size_t						bufSize;
@@ -94,9 +55,15 @@ private:
 		Buffer& operator=(Buffer&& other);
 	};
 
+	struct PixelFormatMap{
+		Utils::PixelFormat			pixFmt;
+		Utils::Codec				codec;
+		uint32_t					v4l2PixFmt;
+	};
+
+	std::string					m_name;
 	int							m_dev;
-	std::set<VideoMode>			m_vidModes;
-	std::set<VideoMode>::iterator m_currVidMode;
+	Utils::VideoMode			m_currVidMode;
 
 	std::vector<Buffer>			m_buffers;
 
@@ -105,28 +72,30 @@ private:
 
 	void						reqBuffer(v4l2_buffer* buf);
 	void						freeBuffer(v4l2_buffer* buf);
-	void 						mpegCapturingThread();
+	void 						compressedCapturingThread();
+	void 						rawCapturingThread();
+
+	static const PixelFormatMap	s_pixFmtConverisons[];
+
+	static Utils::Codec			getCodec(uint32_t v4l2Fmt);
+	static Utils::PixelFormat	getPixFmt(uint32_t v4l2Fmt);
+	static uint32_t				getV4L2PixFmt(const Utils::Codec& codec, const Utils::PixelFormat& fmt);
 };
 
-inline void V4L2::setRate(const Utils::Rational& rate){
-	setVideoMode(VideoMode{
-		m_currVidMode->resolution,
-		1 / rate
-	});
+inline void V4L2::setRate(const Utils::Rational& rate){ //TODO
+	//TODO
 }
 
 inline void V4L2::setInterval(const Utils::TimeInterval& interval){
-	setVideoMode(VideoMode{
-		m_currVidMode->resolution,
-		static_cast<Utils::Rational>(interval)
-	});
+	//TODO
 }
 
 inline void V4L2::setRes(const Utils::Resolution& res){
-	setVideoMode(VideoMode{
-		res,
-		m_currVidMode->interval
-	});
+	//TODO
+}
+
+inline Utils::VideoMode	V4L2::getCurrentVideoMode() const{
+	return m_currVidMode;
 }
 
 /*inline Utils::Resolution V4L2::getRes() const{
@@ -135,15 +104,4 @@ inline void V4L2::setRes(const Utils::Resolution& res){
 	else
 		return Utils::Resolution();
 }*/
-
-inline V4L2::VideoMode V4L2::getVideoMode() const{
-	if(m_currVidMode != m_vidModes.end())
-		return *m_currVidMode;
-	else
-		return VideoMode();
-}
-
-inline const std::set<V4L2::VideoMode>& V4L2::getVideoModes() const{
-	return m_vidModes;
-}
 }

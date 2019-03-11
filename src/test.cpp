@@ -53,6 +53,9 @@ int main(void){
 	Zuazo::Sources::V4L2 webcam1("/dev/video0");
 	Zuazo::Sources::V4L2 webcam2("/dev/video2");
 
+	webcam1.setVideoMode(*(--webcam1.getVideoModes().end()));
+	//webcam2.setVideoMode(*(--webcam2.getVideoModes().end()));
+
 	char a;
 	do{
 		a=getchar();

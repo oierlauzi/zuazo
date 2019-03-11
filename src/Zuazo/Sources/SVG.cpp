@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "../Graphics/Context.h"
+#include "../Graphics/Frame.h"
 #include "../Graphics/GL/Texture2D.h"
 #include "../Graphics/GL/UniqueBinding.h"
 #include "../Graphics/ImageAttributes.h"
@@ -54,7 +55,7 @@ void SVG::open(){
 
 		Graphics::ImageBuffer imgBuf(Graphics::ImageAttributes(
 				m_resolution,
-				Graphics::PixelFormat::RGBA
+				Graphics::PixelFormats::RGBA
 		));
 
 		//Rasterize the image
@@ -84,7 +85,7 @@ void SVG::open(){
 
 			newFrame=std::unique_ptr<Graphics::Frame>(new Graphics::Frame(
 					std::move(tex),
-					Graphics::ImageAttributes(m_resolution, Graphics::PixelFormat::RGBA)
+					Graphics::ImageAttributes(m_resolution, Graphics::PixelFormats::RGBA)
 			));
 		}
 

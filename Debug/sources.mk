@@ -23,8 +23,14 @@ C_DEPS :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
+build/Zuazo/Consumers \
 build/Zuazo/Graphics \
 build/Zuazo/Graphics/GL \
+build/Zuazo/Processors \
+build/Zuazo/Sources \
+build/Zuazo \
+build/Zuazo/Updateables \
+build \
 src/Zuazo/Consumers \
 src/Zuazo/Graphics \
 src/Zuazo/Graphics/GL \
@@ -32,5 +38,6 @@ src/Zuazo/Processors \
 src/Zuazo/Sources \
 src/Zuazo \
 src/Zuazo/Updateables \
+src/Zuazo/Utils \
 src \
 
