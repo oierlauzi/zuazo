@@ -1,9 +1,9 @@
 #pragma once
 
-#include <ctpl/ctpl.h>
-#include <future>
-#include <memory>
+#include <condition_variable>
 #include <mutex>
+#include <queue>
+#include <thread>
 
 namespace Zuazo::Timing{
 class Timings;
@@ -25,39 +25,41 @@ public:
 	void								asyncClose();
 	bool								isOpen() const;
 private:
+	class AsyncOCThread{
+	public:
+		AsyncOCThread();
+		AsyncOCThread(const AsyncOCThread& other)=delete;
+		~AsyncOCThread();
+
+		struct Job{
+			enum class JobType{
+				Open,
+				Close,
+			};
+
+			JobType	type;
+			ZuazoBase& target;
+		};
+
+		void								addJob(const Job& job);
+	private:
+		std::queue<Job>						m_jobs;
+
+		bool								m_exit;
+		std::thread							m_thread;
+		std::mutex							m_mutex;
+		std::condition_variable				m_cond;
+
+		void								threadFunc();
+	};
+
 	mutable std::mutex					m_mutex;
 
 	bool								m_isOpen=false;
 
-	static ctpl::thread_pool			s_asyncOpenCloseThreads;
+	static AsyncOCThread				s_asyncOpenCloseThread;
 };
 
-/*
- * INLINE METHOD DEFINITIONS
- */
 
-
-inline void ZuazoBase::open(){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	m_isOpen=true;
-}
-
-inline void ZuazoBase::asyncOpen(){
-	//s_asyncOpenCloseThreads.push(&ZuazoBase::open, this); //TODO
-}
-
-inline void ZuazoBase::close(){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	m_isOpen=false;
-}
-
-inline void ZuazoBase::asyncClose(){
-	//s_asyncOpenCloseThreads.push(&ZuazoBase::close, this); //TODO
-}
-
-inline bool ZuazoBase::isOpen() const{
-	std::lock_guard<std::mutex> lock(m_mutex);
-	return m_isOpen;
-}
 
 }

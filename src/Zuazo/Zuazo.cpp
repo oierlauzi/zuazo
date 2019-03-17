@@ -3,7 +3,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-//#include "Consumers/Window.h"
+#include "Consumers/Window.h"
 #include "Graphics/Context.h"
 #include "Timing/Timings.h"
 
@@ -43,7 +43,7 @@ Errors init(){
         return Errors::GLAD_INIT;
 
     //Initialize window class
-    //err=Consumers::Window::init();
+    err=Consumers::Window::init();
     if(err)
     	return Errors::WINDOW_INIT;
 
@@ -68,7 +68,7 @@ Errors init(){
 	@return Error generated destroying Error::NONE for all OK
  **/
 Errors end(){
-	//Consumers::Window::end();
+	Consumers::Window::end();
 	timings.reset();
 	Graphics::Context::end();
     return Errors::NONE; //TODO
