@@ -2,17 +2,19 @@
 
 #include <string>
 
-#include "../Graphics/Frame.h"
-#include "../Stream/Source.h"
 #include "../Utils/Resolution.h"
+#include "../Video/VideoStream.h"
 #include "../Video.h"
+#include "../ZuazoBase.h"
 
 namespace Zuazo::Sources{
 class SVG :
-		public Stream::Source<Graphics::Frame>,
-		public VideoBase
+		public VideoBase,
+		public ZuazoBase
 {
 public:
+	Video::VideoSourcePad<SVG>		videoOut;
+
 	SVG(const std::string& dir, float dpi);
 	SVG(const SVG& other);
 	~SVG();

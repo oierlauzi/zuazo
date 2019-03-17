@@ -3,15 +3,15 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "Consumers/Window.h"
+//#include "Consumers/Window.h"
 #include "Graphics/Context.h"
-#include "Timing.h"
+#include "Timing/Timings.h"
 
 
 
 namespace Zuazo{
 
-std::unique_ptr<Timing> timings;
+std::unique_ptr<Timing::Timings> timings;
 
 /***************************************************
  *  INITIALIZATION / QUIT FUNCTIONS                *
@@ -23,9 +23,6 @@ std::unique_ptr<Timing> timings;
  **/
 Errors init(){
     int err;
-
-    //TODO: logging
-
     //Init GLFW
     err=glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -46,12 +43,12 @@ Errors init(){
         return Errors::GLAD_INIT;
 
     //Initialize window class
-    err=Consumers::Window::init();
+    //err=Consumers::Window::init();
     if(err)
     	return Errors::WINDOW_INIT;
 
     //Initialize timing
-    timings=std::unique_ptr<Timing>(new Timing);
+    timings=std::unique_ptr<Timing::Timings>(new Timing::Timings);
 
 //TODO
     /*err=Shapes::Base::init();
@@ -71,7 +68,7 @@ Errors init(){
 	@return Error generated destroying Error::NONE for all OK
  **/
 Errors end(){
-	Consumers::Window::end();
+	//Consumers::Window::end();
 	timings.reset();
 	Graphics::Context::end();
     return Errors::NONE; //TODO

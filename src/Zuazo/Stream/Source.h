@@ -1,10 +1,8 @@
 #pragma once
 
-#include <algorithm>
 #include <memory>
 #include <set>
 
-#include "../Updateables/Updateable.h"
 #include "Consumer.h"
 
 namespace Zuazo::Stream{
@@ -13,9 +11,7 @@ template <typename T>
 class Consumer;
 
 template <typename T>
-class Source :
-		public virtual Updateables::Updateable
-{
+class Source{
 	friend Consumer<T>;
 public:
 	Source()=default;
@@ -25,18 +21,25 @@ public:
 
 	virtual std::shared_ptr<const T>	get() const;
 
-	virtual void						open() override;
-	virtual void						close() override;
 protected:
 	void								push() const;
 	void								push(const std::shared_ptr<const T>& element) const;
 	void								push(std::unique_ptr<const T> element) const;
+
+	void								reset();
 private:
 	mutable std::shared_ptr<const T>	m_last;
 
 	mutable std::set<Consumer<T>*>		m_consumers;
 };
 
+
+template <typename T, typename Q>
+class SourcePad :
+		public Source<T>
+{
+	friend Q;
+};
 
 /*
  * METHOD DEFINITIONS
@@ -62,15 +65,6 @@ inline std::shared_ptr<const T> Source<T>::get() const{
 }
 
 template <typename T>
-inline void Source<T>::open(){
-}
-
-template <typename T>
-inline void Source<T>::close(){
-	m_last=std::shared_ptr<const T>();
-}
-
-template <typename T>
 inline void	Source<T>::push() const{
 	m_last=std::shared_ptr<const T>();
 }
@@ -83,5 +77,10 @@ inline void	Source<T>::push(const std::shared_ptr<const T>& element) const{
 template <typename T>
 inline void	Source<T>::push(std::unique_ptr<const T> element) const{
 	m_last=std::move(element);
+}
+
+template <typename T>
+inline void	Source<T>::reset(){
+	push();
 }
 }

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <mutex>
 
 #include "Source.h"
 
@@ -11,9 +12,7 @@ template <typename T>
 class Source;
 
 template <typename T>
-class Consumer :
-	public virtual Updateables::Updateable
-{
+class Consumer{
 	friend Source<T>;
 public:
 	Consumer();
@@ -24,18 +23,30 @@ public:
 	Consumer&							operator<<(const Source<T>& src);
 	Consumer&							operator<<(std::nullptr_t ptr);
 
-	virtual void						open() override;
-	virtual void						close() override;
 protected:
 	std::shared_ptr<const T>			get() const;
 	bool								hasChanged() const;
+	void								reset();
 
 private:
 	const Source<T>*					m_source;
 
+	mutable std::mutex					m_mutex;
+
 	mutable std::shared_ptr<const T>	m_lastElement;
 	std::shared_ptr<const T>			reqElement() const;
 };
+
+
+
+template <typename T, typename Q>
+class ConsumerPad :
+		public Consumer<T>
+{
+	friend Q;
+};
+
+
 
 template <typename T>
 inline Consumer<T>::Consumer(){
@@ -54,7 +65,7 @@ inline Consumer<T>::~Consumer(){
 
 template <typename T>
 inline void Consumer<T>::setSource(const Source<T>* src){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
+	std::lock_guard<std::mutex> lock(m_mutex);
 
 	//Detach consumer from the previous source
 	if(m_source)
@@ -79,15 +90,6 @@ inline Consumer<T>& Consumer<T>::operator<<(std::nullptr_t ptr){
 }
 
 template <typename T>
-inline void Consumer<T>::open(){
-}
-
-template <typename T>
-inline void Consumer<T>::close(){
-	m_lastElement=std::shared_ptr<const T>();
-}
-
-template <typename T>
 inline std::shared_ptr<const T> Consumer<T>::get() const{
 	std::shared_ptr<const T> el=reqElement();
 	m_lastElement=el;
@@ -101,7 +103,13 @@ inline bool Consumer<T>::hasChanged() const{
 }
 
 template <typename T>
+inline void Consumer<T>::reset(){
+	m_lastElement=std::shared_ptr<const T>();
+}
+
+template <typename T>
 inline std::shared_ptr<const T> Consumer<T>::reqElement() const{
+	std::lock_guard<std::mutex> lock(m_mutex);
 	if(m_source)
 		return m_source->get();
 	else

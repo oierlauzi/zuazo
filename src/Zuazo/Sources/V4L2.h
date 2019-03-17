@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bits/stdint-uintn.h>
 #include <stddef.h>
 #include <sys/types.h>
 #include <set>
@@ -7,25 +8,32 @@
 #include <thread>
 #include <vector>
 
-#include "../Graphics/Frame.h"
-#include "../Stream/AsyncSource.h"
 #include "../Utils/Codec.h"
 #include "../Utils/PixelFormat.h"
 #include "../Utils/Rational.h"
-#include "../Utils/Resolution.h"
 #include "../Utils/TimeInterval.h"
 #include "../Utils/VideoMode.h"
+#include "../Video/VideoStream.h"
 #include "../Video.h"
+#include "../ZuazoBase.h"
+
+namespace Zuazo {
+namespace Utils {
+struct Resolution;
+} /* namespace Utils */
+} /* namespace Zuazo */
 
 struct v4l2_buffer;
 
 namespace Zuazo::Sources{
 
 class V4L2:
-		public Stream::AsyncSource<Graphics::Frame>,
-		public ResizeableVideoBase
+		public ResizeableVideoBase,
+		public ZuazoBase
 {
 public:
+	Video::AsyncVideoSourcePad<V4L2> videoOut;
+
 	V4L2(u_int32_t dev);
 	V4L2(const std::string& devName);
 	V4L2(const V4L2& other)=delete;
@@ -34,8 +42,8 @@ public:
 	void						open() override;
 	void						close() override;
 
-	void						setRate(const Utils::Rational& rate) override;
-	void						setInterval(const Utils::TimeInterval& interval) override;
+	//void						setRate(const Utils::Rational& rate) override;
+	//void						setInterval(const Utils::TimeInterval& interval) override;
 	void						setRes(const Utils::Resolution& res) override;
 	void						setVideoMode(const Utils::VideoMode& mode);
 
@@ -82,13 +90,13 @@ private:
 	static uint32_t				getV4L2PixFmt(const Utils::Codec& codec, const Utils::PixelFormat& fmt);
 };
 
-inline void V4L2::setRate(const Utils::Rational& rate){ //TODO
+//inline void V4L2::setRate(const Utils::Rational& rate){ //TODO
 	//TODO
-}
+//}
 
-inline void V4L2::setInterval(const Utils::TimeInterval& interval){
+//inline void V4L2::setInterval(const Utils::TimeInterval& interval){
 	//TODO
-}
+//}
 
 inline void V4L2::setRes(const Utils::Resolution& res){
 	//TODO

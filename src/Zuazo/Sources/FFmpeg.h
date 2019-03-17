@@ -8,13 +8,12 @@
 #include <string>
 #include <thread>
 
-#include "../Packet.h"
 #include "../Stream/Source.h"
-#include "../Updateables/NonLinear.h"
-#include "../Updateables/PeriodicUpdate.h"
-#include "../Updateables/UpdateOrder.h"
+#include "../Timing/NonLinear.h"
 #include "../Utils/TimeInterval.h"
+#include "../Video/VideoStream.h"
 #include "../Video.h"
+#include "../ZuazoBase.h"
 
 struct AVCodec;
 struct AVCodecContext;
@@ -24,21 +23,33 @@ namespace Zuazo::Sources{
 
 class FFmpeg :
 		public VideoBase,
-		public Updateables::NonLinear,
-		public Updateables::PeriodicUpdate<Updateables::UPDATE_ORDER_FF_DEC>,
-		public Stream::Source<Packet>
+		public Timing::NonLinear<Timing::UPDATE_ORDER_FF_DEC>,
+		public ZuazoBase
 {
 public:
+	template<typename T>
+	class FFmpegPad :
+		public Stream::Source<T>
+	{
+		friend FFmpeg;
+	public:
+		std::shared_ptr<const T> get() const override;
+	private:
+		FFmpegPad(const FFmpeg& owner);
+
+		const FFmpeg& m_owner;
+	};
+
+	FFmpegPad<Video::VideoElement>	videoOut;
+
 	FFmpeg(const std::string& dir);
 	FFmpeg(const FFmpeg& other);
 	~FFmpeg();
 
 	void							open() override;
 	void							close() override;
-
-	virtual std::shared_ptr<const Packet> get() const override;
 protected:
-	void							nonLinearUpdate() const override;
+	void							update() const override;
 private:
 	std::string 					m_file;
 
@@ -59,5 +70,17 @@ private:
 
 	void							decodingFunc();
 };
+
+template<typename T>
+std::shared_ptr<const T> FFmpeg::FFmpegPad<T>::get() const{
+	std::lock_guard<std::mutex> lock(m_owner.m_decodeMutex); //Wait until decoding has finished
+	return Stream::Source<T>::get();
+}
+
+template<typename T>
+FFmpeg::FFmpegPad<T>::FFmpegPad(const FFmpeg& owner) :
+	m_owner(owner)
+{
+}
 
 }

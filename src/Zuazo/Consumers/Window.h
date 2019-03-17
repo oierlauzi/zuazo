@@ -1,7 +1,6 @@
 #pragma once
 
 #include <glad/glad.h>
-#include <glm/detail/type_vec2.hpp>
 #include <GLFW/glfw3.h>
 #include <condition_variable>
 #include <memory>
@@ -10,22 +9,25 @@
 #include <string>
 #include <thread>
 
-#include "../Graphics/Frame.h"
 #include "../Graphics/GL/Shader.h"
 #include "../Graphics/Shapes/Rectangle.h"
-#include "../Stream/PeriodicConsumer.h"
+#include "../Timing/PeriodicUpdate.h"
+#include "../Timing/UpdateOrder.h"
 #include "../Utils/Rational.h"
 #include "../Utils/Resolution.h"
 #include "../Utils/ScalingModes.h"
 #include "../Utils/Vector.h"
+#include "../Video/VideoStream.h"
 #include "../Video.h"
+#include "../ZuazoBase.h"
 
 namespace Zuazo::Consumers{
 
 class Window :
-	public Stream::PeriodicConsumer<Graphics::Frame>,
+	public Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>,
 	public ResizeableVideoBase,
-	public VideoScalerBase
+	public VideoScalerBase,
+	public ZuazoBase
 {
 public:
 	class Screen{
@@ -56,6 +58,8 @@ public:
 
 	static int init();
 	static int end();
+
+	Video::VideoConsumerPad<Window>				videoIn;
 
 	Window()=delete;
 	Window(const Utils::Resolution& res=Utils::Resolution(640, 480), const Utils::Rational& rate=60, std::string name="");

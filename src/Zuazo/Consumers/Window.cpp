@@ -5,10 +5,10 @@
 #include <utility>
 
 #include "../Graphics/Context.h"
+#include "../Graphics/Frame.h"
 #include "../Graphics/GL/Texture2D.h"
 #include "../Graphics/GL/UniqueBinding.h"
 #include "../Graphics/Shapes/Quads.h"
-#include "../Stream/Consumer.h"
 
 using namespace Zuazo::Consumers;
 
@@ -81,7 +81,7 @@ int Window::end(){
 
 Window::Window(const Utils::Resolution& res, const Utils::Rational& rate, std::string name) :
 		VideoBase(res),
-		Stream::PeriodicConsumer<Graphics::Frame>(rate),
+		Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>(rate),
 		m_title(name)
 {
 	m_glfwWindow=nullptr;
@@ -145,12 +145,14 @@ void Window::open(){
 	m_forceDraw=true;
 
 	//Open the consumer so updates are called
-	Stream::PeriodicConsumer<Graphics::Frame>::open();
-	Updateables::Updateable::open();
+	Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>::enable();
+	ZuazoBase::open();
 }
 void Window::close(){
 	//Close the sync consumer -> no more updates will be requested
-	Stream::PeriodicConsumer<Graphics::Frame>::close();
+	Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>::disable();
+
+	videoIn.reset();
 
 	//Terminate the drawing thread
 	m_exit=true;
@@ -172,7 +174,7 @@ void Window::close(){
 		glfwDestroyWindow(m_glfwWindow);
 		m_glfwWindow=nullptr;
 	}
-	Updateables::Updateable::close();
+	ZuazoBase::close();
 }
 
 void Window::setFullScreen(const std::shared_ptr<Screen>& screen){
@@ -262,10 +264,10 @@ void Window::draw() const{
 }
 
 void Window::update() const{
-	if(Stream::Consumer<Graphics::Frame>::hasChanged() || m_forceDraw){
+	if(videoIn.hasChanged() || m_forceDraw){
 		m_forceDraw=false;
 
-		std::shared_ptr<const Graphics::Frame> frame=Stream::Consumer<Graphics::Frame>::get();
+		std::shared_ptr<const Graphics::Frame> frame=videoIn.get();
 		const Graphics::GL::Texture2D* tex=nullptr;
 
 		if(frame){

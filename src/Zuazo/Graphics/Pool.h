@@ -7,8 +7,8 @@
 #include <queue>
 #include <unordered_map>
 
-#include "../Updateables/RegularUpdate.h"
-#include "../Updateables/UpdateOrder.h"
+#include "../Timing/RegularUpdate.h"
+#include "../Timing/UpdateOrder.h"
 #include "Context.h"
 
 namespace Zuazo::Graphics{
@@ -17,7 +17,7 @@ namespace Zuazo::Graphics{
  * @brief A template for creating pools of GL resources
  */
 template<typename T>
-class Pool : public Updateables::RegularUpdate<Updateables::UPDATE_ORDER_POOL>{
+class Pool{
 public:
 	constexpr Pool(){m_pops=0;}
 	Pool(const Pool& other)=delete;
@@ -27,7 +27,6 @@ public:
 	void									push(std::unique_ptr<T> el);
 
 	size_t									size() const;
-	void									update() const override;
 private:
 	static constexpr u_int32_t				THRESHOLD=4;
 
@@ -78,17 +77,6 @@ template<typename T>
 inline void Pool<T>::push(std::unique_ptr<T> el){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_elements.push(std::move(el));
-}
-
-template<typename T>
-inline void Pool<T>::update() const{
-	std::lock_guard<std::mutex> lock(m_mutex);
-
-	//Decrement the pool if necessary
-	while(m_elements.size() > m_pops + THRESHOLD)
-		m_elements.pop();
-
-	m_pops=0;
 }
 
 template<typename T>

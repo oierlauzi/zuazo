@@ -4,36 +4,37 @@
 #include <chrono>
 #include <memory>
 
-#include "../Timing.h"
 #include "../Utils/Rational.h"
 #include "../Utils/TimeInterval.h"
-#include "Updateable.h"
+#include "Timings.h"
+#include "UpdateableBase.h"
 
 namespace Zuazo{
-extern std::unique_ptr<Timing> timings;
+extern std::unique_ptr<Timing::Timings> timings;
 }
 
-namespace Zuazo::Updateables{
+namespace Zuazo::Timing{
 
 template <u_int32_t order>
 class PeriodicUpdate :
-		public virtual Updateable
+		public virtual UpdateableBase
 {
 public:
 	PeriodicUpdate()=default;
 	PeriodicUpdate(const Utils::TimeInterval& interval);
 	PeriodicUpdate(const Utils::Rational& rate);
 	PeriodicUpdate(const PeriodicUpdate& other);
-	virtual ~PeriodicUpdate()=default;
-
-	virtual void 						setInterval(const Utils::TimeInterval& interval);
-	virtual void						setRate(const Utils::Rational& rate);
+	virtual ~PeriodicUpdate();
 
 	Utils::TimeInterval					getInterval() const;
 	Utils::Rational						getRate() const;
 
-	virtual void						open() override;
-	virtual void						close() override;
+protected:
+	virtual void 						setInterval(const Utils::TimeInterval& interval);
+	virtual void						setRate(const Utils::Rational& rate);
+
+	virtual void 						enable() override;
+	virtual void 						disable() override;
 private:
 	Utils::Rational						m_updateInterval;
 };
@@ -61,20 +62,8 @@ inline PeriodicUpdate<order>::PeriodicUpdate(const PeriodicUpdate& other) :
 }
 
 template <u_int32_t order>
-inline void PeriodicUpdate<order>::setInterval(const Utils::TimeInterval& interval){
-	m_updateInterval=interval;
-
-	if(isOpen()){
-		timings->modifyTiming(this);
-	}
-}
-
-template <u_int32_t order>
-inline void PeriodicUpdate<order>::setRate(const Utils::Rational& rate){
-	if(rate)
-		PeriodicUpdate<order>::setInterval(Utils::TimeInterval(1/rate));
-	else
-		PeriodicUpdate<order>::setInterval(Utils::TimeInterval::zero());
+inline PeriodicUpdate<order>::~PeriodicUpdate(){
+	disable();
 }
 
 template <u_int32_t order>
@@ -87,16 +76,31 @@ inline Utils::Rational PeriodicUpdate<order>::getRate() const {
 	return 1/m_updateInterval;
 }
 
+template <u_int32_t order>
+inline void PeriodicUpdate<order>::setInterval(const Utils::TimeInterval& interval){
+	m_updateInterval=interval;
+
+	timings->modifyTiming(this);
+}
 
 template <u_int32_t order>
-inline void PeriodicUpdate<order>::open(){
+inline void PeriodicUpdate<order>::setRate(const Utils::Rational& rate){
+	if(rate)
+		PeriodicUpdate<order>::setInterval(Utils::TimeInterval(1/rate));
+	else
+		PeriodicUpdate<order>::setInterval(Utils::TimeInterval::zero());
+}
+
+template <u_int32_t order>
+inline void PeriodicUpdate<order>::enable(){
 	timings->addTiming(this);
 }
 
 template <u_int32_t order>
-inline void PeriodicUpdate<order>::close(){
-	if(timings) //It might have been deleted
+inline void PeriodicUpdate<order>::disable(){
+	if(timings)
 		timings->deleteTiming(this);
 }
+
 
 }

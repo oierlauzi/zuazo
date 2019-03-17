@@ -2,9 +2,10 @@
 #include <cstdio>
 #include <exception>
 #include <iostream>
+#include <map>
+#include <set>
 
 #include "Zuazo/Consumers/Window.h"
-#include "Zuazo/Processors/Demuxer.h"
 #include "Zuazo/Sources/FFmpeg.h"
 #include "Zuazo/Sources/SVG.h"
 #include "Zuazo/Sources/V4L2.h"
@@ -46,8 +47,6 @@ int main(void){
 	);
 
 	Zuazo::Sources::FFmpeg vid("/home/oierlauzi/Bideoak/prueba1.mp4");
-	Zuazo::Processors::Demuxer demux;
-	demux<<vid;
 
 	Zuazo::Sources::SVG svg("/home/oierlauzi/Irudiak/color_bars.svg", 96);
 	Zuazo::Sources::V4L2 webcam1("/dev/video0");
@@ -62,16 +61,16 @@ int main(void){
 
 		switch(a){
 		case '1':
-			win<<webcam1;
+			win.videoIn<<webcam1.videoOut;
 			break;
 		case '2':
-			win<<webcam2;
+			win.videoIn<<webcam2.videoOut;
 			break;
 		case '3':
-			win<<demux.video;
+			win.videoIn<<vid.videoOut;
 			break;
 		case '4':
-			win<<svg;
+			win.videoIn<<svg.videoOut;
 			break;
 		case 'e':
 			break;
@@ -144,15 +143,16 @@ int main(void){
  *		Source / Consumer testing
  */
 
-	//using DelayD=Zuazo::Stream::Delay<double>;
+	using DelayExample=Zuazo::Stream::Delay<double>;
+	using DummyPadExample=Zuazo::Stream::DummyPad<double>;
 
 	class SourceExample :
-			public Zuazo::Stream::Source<double>,
-			public Zuazo::Updateables::PeriodicUpdate<Zuazo::Updateables::UPDATE_ORDER_SOURCE>{
-		public:
+			public Zuazo::Timing::PeriodicUpdate<Zuazo::Timing::UPDATE_ORDER_SOURCE>,
+			public Zuazo::ZuazoBase
+	{
+	public:
 		SourceExample(double framerate) :
-			Zuazo::Stream::Source<double>(),
-			Zuazo::Updateables::PeriodicUpdate<Zuazo::Updateables::UPDATE_ORDER_SOURCE>(Zuazo::Utils::Rational(framerate))
+			Zuazo::Timing::PeriodicUpdate<Zuazo::Timing::UPDATE_ORDER_SOURCE>(Zuazo::Utils::Rational(framerate))
 		{
 			open();
 		}
@@ -162,33 +162,34 @@ int main(void){
 		}
 
 		void open() override{
-			Zuazo::Stream::Source<double>::open();
-			Zuazo::Updateables::PeriodicUpdate<Zuazo::Updateables::UPDATE_ORDER_SOURCE>::open();
+			Zuazo::Timing::PeriodicUpdate<Zuazo::Timing::UPDATE_ORDER_SOURCE>::enable();
 		}
 
 		void close() override{
-			Zuazo::Stream::Source<double>::close();
-			Zuazo::Updateables::PeriodicUpdate<Zuazo::Updateables::UPDATE_ORDER_SOURCE>::close();
+			src.reset();
+			Zuazo::Timing::PeriodicUpdate<Zuazo::Timing::UPDATE_ORDER_SOURCE>::disable();
 		}
 
 		virtual void update() const{
 			static double i=0;
 
 			std::unique_ptr<const double> d(new double(i));
-			push(std::move(d));
+			src.push(std::move(d));
 			i+=1;
 
 			printf("Sending\n");
 		}
+
+		Zuazo::Stream::SourcePad<double, SourceExample>		src;
 	};
 
 	class ConsumerExample :
-			public Zuazo::Stream::Consumer<double>,
-			public Zuazo::Updateables::PeriodicUpdate<Zuazo::Updateables::UPDATE_ORDER_CONSUMER>{
-		public:
+			public Zuazo::Timing::PeriodicUpdate<Zuazo::Timing::UPDATE_ORDER_CONSUMER>,
+			public Zuazo::ZuazoBase
+	{
+	public:
 		ConsumerExample(double framerate) :
-			Zuazo::Stream::Consumer<double>(),
-			Zuazo::Updateables::PeriodicUpdate<Zuazo::Updateables::UPDATE_ORDER_CONSUMER>(Zuazo::Utils::Rational(framerate))
+			Zuazo::Timing::PeriodicUpdate<Zuazo::Timing::UPDATE_ORDER_CONSUMER>(Zuazo::Utils::Rational(framerate))
 		{
 			open();
 		}
@@ -198,32 +199,41 @@ int main(void){
 		}
 
 		void open() override{
-			Zuazo::Stream::Consumer<double>::open();
-			Zuazo::Updateables::PeriodicUpdate<Zuazo::Updateables::UPDATE_ORDER_CONSUMER>::open();
+			Zuazo::Timing::PeriodicUpdate<Zuazo::Timing::UPDATE_ORDER_CONSUMER>::enable();
 		}
 
 		void close() override{
-			Zuazo::Stream::Consumer<double>::close();
-			Zuazo::Updateables::PeriodicUpdate<Zuazo::Updateables::UPDATE_ORDER_CONSUMER>::close();
+			cons.reset();
+			Zuazo::Timing::PeriodicUpdate<Zuazo::Timing::UPDATE_ORDER_CONSUMER>::disable();
 		}
 
 		virtual void update() const{
 			Zuazo::Utils::TimePoint ts;
-			std::shared_ptr<const double> ptr=get();
+			std::shared_ptr<const double> ptr=cons.get();
 			if(ptr)
 				printf("On update: %g\n", *ptr);
 			else
 				printf("On update: nullptr\n");
 
 		}
+
+		Zuazo::Stream::ConsumerPad<double, ConsumerExample>		cons;
 	};
+
 
 	ConsumerExample cons(30);
 	SourceExample src(30);
+	DummyPadExample pad;
+	DelayExample delay(std::chrono::seconds(1));
 	//DelayD	del(Zuazo::Timing::TimeInterval(0));
 	//del<<src;
-	cons<<src;
 
+	delay<<src.src;
+	cons.cons<<pad;
+
+	pad<<src.src;
+	getchar();
+	pad<<delay;
 	getchar();
 #endif
 

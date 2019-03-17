@@ -306,10 +306,10 @@ void V4L2::open(){
 			return;
 		}
 
-		AsyncSource::setRate(m_currVidMode.frameRate);
+		videoOut.setRate(m_currVidMode.frameRate);
 	} else{
 		//Device does not support setting the framerate
-		AsyncSource::setRate(Utils::Rational(
+		videoOut.setRate(Utils::Rational(
 				strm.parm.capture.timeperframe.denominator,
 				strm.parm.capture.timeperframe.numerator
 		));
@@ -384,13 +384,11 @@ void V4L2::open(){
 	else
 		m_capturingThread=std::thread(&V4L2::compressedCapturingThread, this);
 
-	AsyncSource::open();
-	Updateable::open();
+	videoOut.enable();
+	ZuazoBase::open();
 }
 
 void V4L2::close(){
-	AsyncSource::close();
-
 	if(m_dev>=0){
 		//End capture theread
 		m_threadExit=true;
@@ -415,7 +413,11 @@ void V4L2::close(){
 		m_dev=-1;
 	}
 
-	Updateable::close();
+	videoOut.disable();
+	videoOut.flushBuffer();
+	videoOut.reset();
+
+	ZuazoBase::close();
 }
 
 void V4L2::reqBuffer(v4l2_buffer* buf){
@@ -461,15 +463,9 @@ void V4L2::compressedCapturingThread(){
 	if(!codec)
 		return; //Something went horribly wrong
 
-	//Get a parser for the codec
-	AVCodecParserContext* parser = av_parser_init(codec->id);
-	if(!parser)
-		return; //Error
-
 	//Allocate the context
 	AVCodecContext* codecCtx=avcodec_alloc_context3(codec);
 	if(!codecCtx){
-		av_parser_close(parser);
 		return; //Error
 	}
 
@@ -479,7 +475,6 @@ void V4L2::compressedCapturingThread(){
 	//Open the context
 	if (avcodec_open2(codecCtx, codec, nullptr) < 0) {
 		avcodec_free_context(&codecCtx);
-		av_parser_close(parser);
 		return;
 	}
 
@@ -487,14 +482,12 @@ void V4L2::compressedCapturingThread(){
 	AVPacket *pkt=av_packet_alloc();
 	if(!pkt){
 		avcodec_free_context(&codecCtx);
-		av_parser_close(parser);
 		return;
 	}
 
 	AVFrame* decodedFrame=av_frame_alloc();
 	if(!decodedFrame){
 		avcodec_free_context(&codecCtx);
-		av_parser_close(parser);
 		avcodec_free_context(&codecCtx);
 		return;
 	}
@@ -523,7 +516,7 @@ void V4L2::compressedCapturingThread(){
 		memcpy(bufData, m_buffers[buf.index].buffer, buf.bytesused); //copy the data
 		av_packet_from_data (pkt, bufData, buf.bytesused);
 
-		freeBuffer(&buf); //V4L2 buffer no longer needed
+    	freeBuffer(&buf); //V4L2 buffer no longer needed
 
 		//Try to decode the packet
 		ret=avcodec_send_packet(codecCtx, pkt);
@@ -560,12 +553,11 @@ void V4L2::compressedCapturingThread(){
 			frame=uplo.getFrame(decodedImgBuf);
 		}
 
-		Stream::AsyncSource<Graphics::Frame>::push(std::move(frame));
+		videoOut.push(std::move(frame));
     }
 
     //Free everything
     avcodec_free_context(&codecCtx);
-    av_parser_close(parser);
     av_packet_free(&pkt);
     av_frame_free(&decodedFrame);
 }
@@ -597,7 +589,7 @@ void V4L2::rawCapturingThread(){
 
 		freeBuffer(&buf); //V4L2 buffer no longer needed
 
-		Stream::AsyncSource<Graphics::Frame>::push(std::move(frame));
+		videoOut.push(std::move(frame));
     }
 }
 

@@ -5,8 +5,8 @@
 #include <mutex>
 #include <queue>
 
-#include "../Updateables/PeriodicUpdate.h"
-#include "../Updateables/UpdateOrder.h"
+#include "../Timing/PeriodicUpdate.h"
+#include "../Timing/UpdateOrder.h"
 #include "../Utils/Rational.h"
 #include "Source.h"
 
@@ -15,7 +15,7 @@ namespace Zuazo::Stream{
 template <typename T>
 class AsyncSource :
 		public Source<T>,
-		public Updateables::PeriodicUpdate<Updateables::UPDATE_ORDER_SOURCE>
+		public Timing::PeriodicUpdate<Timing::UPDATE_ORDER_SOURCE>
 {
 public:
 	AsyncSource();
@@ -33,11 +33,11 @@ public:
 	u_int32_t							getBufferSize() const;
 	void								flushBuffer();
 
-	virtual void						open() override;
-	virtual void						close() override;
 protected:
-	void								push(std::unique_ptr<const T> element);
+	using Timing::PeriodicUpdate<Timing::UPDATE_ORDER_SOURCE>::enable;
+	using Timing::PeriodicUpdate<Timing::UPDATE_ORDER_SOURCE>::disable;
 
+	void								push(std::unique_ptr<const T> element);
 	virtual void 						update() const override;
 private:
 	static constexpr u_int32_t			DEFAULT_MAX_DROPPED=3;
@@ -50,6 +50,12 @@ private:
 	mutable std::queue<std::unique_ptr<const T>> m_buffer;
 };
 
+template <typename T, typename Q>
+class AsyncSourcePad :
+		public AsyncSource<T>
+{
+	friend Q;
+};
 
 template <typename T>
 AsyncSource<T>::AsyncSource(){
@@ -60,7 +66,7 @@ AsyncSource<T>::AsyncSource(){
 
 template <typename T>
 AsyncSource<T>::AsyncSource(const Utils::Rational& rat) :
-		Updateables::PeriodicUpdate<Updateables::UPDATE_ORDER_SOURCE>(rat)
+		Timing::PeriodicUpdate<Timing::UPDATE_ORDER_SOURCE>(rat)
 {
 	m_maxBufferSize=DEFAULT_MAX_BUFFER_SIZE;
 	m_maxDropped=DEFAULT_MAX_DROPPED;
@@ -158,22 +164,5 @@ inline void AsyncSource<T>::push(std::unique_ptr<const T> element){
 		m_buffer.emplace(std::move(element));
 	}
 }
-
-
-template <typename T>
-inline void AsyncSource<T>::open(){
-	Source<T>::open();
-	Updateables::PeriodicUpdate<Updateables::UPDATE_ORDER_SOURCE>::open();
-}
-
-
-template <typename T>
-inline void AsyncSource<T>::close(){
-	Updateables::PeriodicUpdate<Updateables::UPDATE_ORDER_SOURCE>::close();
-	flushBuffer();
-	Source<T>::close();
-}
-
-
 
 }

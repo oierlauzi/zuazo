@@ -2,16 +2,18 @@
 
 #include "Delay.h"
 
+#include <unistd.h>
 #include <chrono>
 #include <memory>
 #include <mutex>
 #include <queue>
 
-#include "../Timing.h"
-#include "../Updateables/RegularUpdate.h"
-#include "../Updateables/UpdateOrder.h"
+#include "../Timing/RegularUpdate.h"
+#include "../Timing/Timings.h"
+#include "../Timing/UpdateOrder.h"
 #include "../Utils/TimeInterval.h"
 #include "../Utils/TimePoint.h"
+#include "../ZuazoBase.h"
 #include "Consumer.h"
 #include "Source.h"
 
@@ -21,7 +23,8 @@ template <typename T>
 class Delay :
 		public Stream::Source<T>,
 		public Stream::Consumer<T>,
-		public Updateables::RegularUpdate<Updateables::UPDATE_ORDER_DELAY>
+		public Timing::RegularUpdate<Timing::UPDATE_ORDER_DELAY>,
+		public ZuazoBase
 {
 public:
 	Delay();
@@ -60,7 +63,7 @@ inline Delay<T>::Delay(){
 
 template <typename T>
 inline Delay<T>::Delay(const Utils::TimeInterval& delay) :
-	Updateables::RegularUpdate<Updateables::UPDATE_ORDER_DELAY>(),
+	Timing::RegularUpdate<Timing::UPDATE_ORDER_DELAY>(),
 	m_delay(delay)
 {
 	open();
@@ -73,7 +76,7 @@ inline Delay<T>::~Delay(){
 
 template <typename T>
 inline void Delay<T>::setDelay(const Utils::TimeInterval& delay){
-	std::lock_guard<std::mutex> lock(Updateable::m_updateMutex);
+	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_delay=delay;
 
 	if(m_delay.count()==0) //Delay is disabled, empty the queue
@@ -113,21 +116,19 @@ inline void Delay<T>::update() const{
 
 template <typename T>
 inline void Delay<T>::open(){
-	Source<T>::open();
-	Consumer<T>::open();
-	Updateables::RegularUpdate<Updateables::UPDATE_ORDER_DELAY>::open();
-	Updateables::Updateable::open();
+	Timing::RegularUpdate<Timing::UPDATE_ORDER_DELAY>::enable();
+	ZuazoBase::open();
 }
 
 template <typename T>
 inline void Delay<T>::close(){
-	Updateables::RegularUpdate<Updateables::UPDATE_ORDER_DELAY>::close();
-	Source<T>::close();
-	Consumer<T>::close();
+	Timing::RegularUpdate<Timing::UPDATE_ORDER_DELAY>::disable();
+	Source<T>::reset();
+	Consumer<T>::reset();
 
 	//Reset all
 	while(m_queue.size())
 		m_queue.pop();
-	Updateables::Updateable::close();
+	ZuazoBase::close();
 }
 }

@@ -2,8 +2,8 @@
 
 #include <memory>
 
-namespace Zuazo {
-class Timing;
+namespace Zuazo::Timing {
+class Timings;
 } /* namespace Zuazo */
 
 namespace Zuazo{
@@ -21,7 +21,7 @@ enum class Errors{
     TEXT_INIT
 };
 
-extern std::unique_ptr<Timing> timings;
+extern std::unique_ptr<Timing::Timings> timings;
 
 Errors				init();
 Errors 				end();

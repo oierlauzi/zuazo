@@ -30,8 +30,9 @@ extern "C"{
 using namespace Zuazo::Sources;
 
 
-FFmpeg::FFmpeg(const std::string& dir)
-	: m_file(dir)
+FFmpeg::FFmpeg(const std::string& dir) :
+		videoOut(*this),
+		m_file(dir)
 {
 	open();
 }
@@ -105,12 +106,8 @@ void FFmpeg::open(){
 	Utils::TimeInterval duration=std::chrono::duration<int64_t, std::ratio<1, AV_TIME_BASE>>(dur);
 	Utils::TimeInterval interval=duration.count() / m_formatCtx->streams[m_videoStream]->nb_frames;
 
-	Updateables::NonLinear::setInfo(
+	Timing::NonLinear<Timing::UPDATE_ORDER_FF_DEC>::setInfo(
 			duration
-	);
-
-	Updateables::PeriodicUpdate<Updateables::UPDATE_ORDER_FF_DEC>::setInterval(
-			interval
 	);
 
 	m_resolution=Utils::Resolution(m_codecCtx->width, m_codecCtx->height);
@@ -118,19 +115,18 @@ void FFmpeg::open(){
 	m_exit=false;
 	m_decodingThread=std::thread(&FFmpeg::decodingFunc, this);
 
-	Updateables::NonLinear::open();
-	Updateables::PeriodicUpdate<Updateables::UPDATE_ORDER_FF_DEC>::open();
-	Updateables::Updateable::open();
+	Timing::NonLinear<Timing::UPDATE_ORDER_FF_DEC>::enable();
+	ZuazoBase::open();
 }
 
 void FFmpeg::close(){
+	videoOut.reset();
 	m_exit=true;
 	m_decodeCondition.notify_one();
 	if(m_decodingThread.joinable())
 		m_decodingThread.join();
 
-	Updateables::PeriodicUpdate<Updateables::UPDATE_ORDER_FF_DEC>::close();
-	Updateables::NonLinear::close();
+	Timing::NonLinear<Timing::UPDATE_ORDER_FF_DEC>::disable();
 
 	if(m_formatCtx){
 		avformat_close_input(&m_formatCtx);
@@ -141,19 +137,14 @@ void FFmpeg::close(){
 		m_codecCtx=nullptr;
 	}
 
-	Updateables::Updateable::close();
+	ZuazoBase::close();
 }
 
-std::shared_ptr<const Zuazo::Packet> FFmpeg::get() const{
-	std::lock_guard<std::mutex> lock(m_decodeMutex);
-	return Source<Packet>::get();
-}
-
-void FFmpeg::nonLinearUpdate() const{
+void FFmpeg::update() const{
 	std::lock_guard<std::mutex> lock(m_decodeMutex);
 
 	int64_t newTs=av_rescale_q(
-			Updateables::NonLinear::getCurrentTime().count(),
+			Timing::NonLinear<Timing::UPDATE_ORDER_FF_DEC>::getCurrentTime().count(),
 			ZUAZO_TIME_BASE_Q,
 			m_formatCtx->streams[m_videoStream]->time_base
 	);
@@ -261,12 +252,7 @@ void FFmpeg::decodingFunc(){
 				newFrame=frameConverter.getFrame(decodedImgBuf);
 			}
 
-			std::unique_ptr<const Packet> packet(new Packet{
-				std::move(newFrame)
-				/*	IMPLEMENT HERE MISSING COMPONENTS*/
-			});
-
-			Source::push(std::move(packet));
+			videoOut.push(std::move(newFrame));
 		}
 		m_decodeCondition.wait(lock);
 	}

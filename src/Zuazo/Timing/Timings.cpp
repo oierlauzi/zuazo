@@ -1,27 +1,27 @@
-#include "Timing.h"
+#include "Timings.h"
 
 #include <chrono>
 #include <utility>
 
-namespace Zuazo{
+namespace Zuazo::Timing{
 
 /*
  * TIMING'S METHOD DEFINITIONS
  */
 
-Timing::Timing(){
+Timings::Timings(){
 	m_exit=false;
 	m_currTime=Utils::TimePoint::now();
-	m_thread=std::thread(&Timing::threadFunc, this);
+	m_thread=std::thread(&Timings::threadFunc, this);
 }
 
-Timing::~Timing(){
+Timings::~Timings(){
 	m_exit=true;
 	m_cond.notify_all();
 	m_thread.join();
 }
 
-void Timing::threadFunc(){
+void Timings::threadFunc(){
 	std::unique_lock<std::mutex> lock(m_mutex);
 	Graphics::UniqueContext ctx(m_ctx);
 
@@ -43,16 +43,17 @@ void Timing::threadFunc(){
 			 * No need, its actually sorted by default
 			 */
 
-
 			//Update all
 			for(auto ite=updates.updateables.begin(); ite!=updates.updateables.end(); ++ite){
-				for(const Updateables::Updateable * updateable : ite->second){
-					updateable->perform();
+				for(const UpdateableBase * updateable : ite->second){
+					std::lock_guard<std::mutex> lock(updateable->m_updateMutex);
+					updateable->update();
 				}
 			}
 
 			// Increment timing values for each interval and for currTime
 			m_currTime+=updates.timeForNextUpdate;
+			m_elapsed=updates.timeForNextUpdate;
 			m_timingTable.incrTime(updates.timeForNextUpdate);
 
 			//Wait until next update
@@ -74,7 +75,7 @@ void Timing::threadFunc(){
  * TIMING TABLE'S METHOD DEFINITIONS
  */
 
-Timing::TimingTable::PendingUpdates	Timing::TimingTable::getPendingUpdates(){
+Timings::TimingTable::PendingUpdates	Timings::TimingTable::getPendingUpdates(){
 	PendingUpdates pend;
 
 	for(auto& timing : m_periodicTimings){
@@ -110,14 +111,14 @@ Timing::TimingTable::PendingUpdates	Timing::TimingTable::getPendingUpdates(){
 	return pend;
 }
 
-void Timing::TimingTable::incrTime(const Utils::TimeInterval& t){
+void Timings::TimingTable::incrTime(const Utils::TimeInterval& t){
 	//Add the time to the events
 	for(auto& timing : m_periodicTimings){
 		timing.second.timeSinceLastUpdate += t;
 	}
 }
 
-void Timing::TimingTable::cleanUnusedIntervals(){
+void Timings::TimingTable::cleanUnusedIntervals(){
 	auto ite=m_periodicTimings.begin();
 
 	while(ite != m_periodicTimings.end()){
@@ -132,7 +133,7 @@ void Timing::TimingTable::cleanUnusedIntervals(){
 	}
 }
 
-void Timing::TimingTable::cleanOrderedUpdates(OrderedUpdates* updates){
+void Timings::TimingTable::cleanOrderedUpdates(OrderedUpdates* updates){
 	auto ite=updates->begin();
 
 	while(ite != updates->end()){

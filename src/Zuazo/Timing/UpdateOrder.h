@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Zuazo::Updateables{
+namespace Zuazo::Timing{
 
 constexpr u_int32_t UPDATE_ORDER_SOURCE		=1;
 
