@@ -31,9 +31,11 @@
 *.out
 *.app
 test
+build/
 
 #Eclipse project
 .settings/
 .cproject
 .project
 .directory
+Debug/
