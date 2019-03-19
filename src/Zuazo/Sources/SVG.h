@@ -13,8 +13,6 @@ class SVG :
 		public ZuazoBase
 {
 public:
-	Video::VideoSourcePad<SVG>		videoOut;
-
 	SVG(const std::string& dir, float dpi);
 	SVG(const SVG& other);
 	~SVG();

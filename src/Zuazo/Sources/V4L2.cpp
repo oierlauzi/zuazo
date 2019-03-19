@@ -306,10 +306,10 @@ void V4L2::open(){
 			return;
 		}
 
-		videoOut.setRate(m_videoMode.frameRate);
+		m_videoSourcePad.setRate(m_videoMode.frameRate);
 	} else{
 		//Device does not support setting the framerate
-		videoOut.setRate(Utils::Rational(
+		m_videoSourcePad.setRate(Utils::Rational(
 				strm.parm.capture.timeperframe.denominator,
 				strm.parm.capture.timeperframe.numerator
 		));
@@ -384,7 +384,7 @@ void V4L2::open(){
 	else
 		m_capturingThread=std::thread(&V4L2::compressedCapturingThread, this);
 
-	videoOut.enable();
+	m_videoSourcePad.enable();
 	ZuazoBase::open();
 }
 
@@ -413,9 +413,9 @@ void V4L2::close(){
 		m_dev=-1;
 	}
 
-	videoOut.disable();
-	videoOut.flushBuffer();
-	videoOut.reset();
+	m_videoSourcePad.disable();
+	m_videoSourcePad.flushBuffer();
+	m_videoSourcePad.reset();
 
 	ZuazoBase::close();
 }
@@ -553,7 +553,7 @@ void V4L2::compressedCapturingThread(){
 			frame=uplo.getFrame(decodedImgBuf);
 		}
 
-		videoOut.push(std::move(frame));
+		m_videoSourcePad.push(std::move(frame));
     }
 
     //Free everything
@@ -589,7 +589,7 @@ void V4L2::rawCapturingThread(){
 
 		freeBuffer(&buf); //V4L2 buffer no longer needed
 
-		videoOut.push(std::move(frame));
+		m_videoSourcePad.push(std::move(frame));
     }
 }
 

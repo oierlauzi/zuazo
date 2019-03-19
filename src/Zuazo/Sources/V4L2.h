@@ -29,8 +29,6 @@ class V4L2:
 		public ZuazoBase
 {
 public:
-	Video::AsyncVideoSourcePad<V4L2> videoOut;
-
 	V4L2(u_int32_t dev);
 	V4L2(const std::string& devName);
 	V4L2(const V4L2& other)=delete;

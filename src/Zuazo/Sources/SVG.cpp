@@ -88,7 +88,7 @@ void SVG::open(){
 			));
 		}
 
-		videoOut.push(std::move(newFrame));
+		m_videoSourcePad.push(std::move(newFrame));
 
 		//Deletes the previously generated rasterizer
 		nsvgDeleteRasterizer(rasterizer);
@@ -100,6 +100,6 @@ void SVG::open(){
 }
 
 void SVG::close(){
-	videoOut.reset();
+	m_videoSourcePad.reset();
 	ZuazoBase::close();
 }

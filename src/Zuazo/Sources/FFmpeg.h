@@ -50,16 +50,12 @@ class FFmpeg :
 {
 	friend Stream::FFmpegSourcePad<Video::VideoElement>;
 public:
-	Stream::FFmpegSourcePad<Video::VideoElement> videoOut;
-
 	FFmpeg(const std::string& dir);
 	FFmpeg(const FFmpeg& other);
 	~FFmpeg();
 
 	void							open() override;
 	void							close() override;
-
-	Video::VideoSource&				getVideoSource() override;
 protected:
 	void							update() const override;
 private:
@@ -75,6 +71,7 @@ private:
 	AVCodec*						m_codec;
 	int								m_videoStream;
 
+	Stream::FFmpegSourcePad<Video::VideoElement> m_videoSourcePad;
 
 	mutable int64_t					m_currTs;
 
@@ -82,10 +79,6 @@ private:
 
 	void							decodingFunc();
 };
-
-inline Video::VideoSource&	FFmpeg::getVideoSource(){
-	return videoOut;
-}
 
 }
 

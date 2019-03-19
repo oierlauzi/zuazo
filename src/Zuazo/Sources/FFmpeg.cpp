@@ -31,8 +31,9 @@ using namespace Zuazo::Sources;
 
 
 FFmpeg::FFmpeg(const std::string& dir) :
-		videoOut(*this),
-		m_file(dir)
+		Video::VideoOutputBase(m_videoSourcePad),
+		m_file(dir),
+		m_videoSourcePad(*this)
 {
 	open();
 }
@@ -127,7 +128,7 @@ void FFmpeg::open(){
 }
 
 void FFmpeg::close(){
-	videoOut.reset();
+	m_videoSourcePad.reset();
 	m_exit=true;
 	m_decodeCondition.notify_one();
 	if(m_decodingThread.joinable())
@@ -259,7 +260,7 @@ void FFmpeg::decodingFunc(){
 				newFrame=frameConverter.getFrame(decodedImgBuf);
 			}
 
-			videoOut.push(std::move(newFrame));
+			m_videoSourcePad.push(std::move(newFrame));
 		}
 		m_decodeCondition.wait(lock);
 	}

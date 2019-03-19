@@ -155,7 +155,7 @@ void Window::close(){
 	//Close the sync consumer -> no more updates will be requested
 	Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>::disable();
 
-	videoIn.reset();
+	m_videoConsumerPad.reset();
 
 	//Terminate the drawing thread
 	m_exit=true;
@@ -276,10 +276,10 @@ void Window::draw() const{
 }
 
 void Window::update() const{
-	if(videoIn.hasChanged() || m_forceDraw){
+	if(m_videoConsumerPad.hasChanged() || m_forceDraw){
 		m_forceDraw=false;
 
-		std::shared_ptr<const Graphics::Frame> frame=videoIn.get();
+		std::shared_ptr<const Graphics::Frame> frame=m_videoConsumerPad.get();
 		const Graphics::GL::Texture2D* tex=nullptr;
 
 		if(frame){
