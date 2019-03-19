@@ -114,11 +114,11 @@ V4L2::~V4L2(){
 
 void V4L2::setVideoMode(const Utils::VideoMode& mode){
 	close();
-	m_currVidMode=mode;
+	m_videoMode=mode;
 	open();
 }
 
-std::set<Zuazo::Utils::VideoMode> V4L2::getVideoModes() const{
+std::set<Zuazo::Utils::VideoMode> V4L2::getSupportedVideoModes() const{
 	std::set<Utils::VideoMode> videoModes;
 
 	if(m_dev>0){
@@ -259,13 +259,13 @@ void V4L2::open(){
 		return;
 	}
 
-	std::set<Utils::VideoMode> vidModes=getVideoModes();
-	std::set<Utils::VideoMode>::iterator vidMode=vidModes.find(m_currVidMode);
+	std::set<Utils::VideoMode> vidModes=getSupportedVideoModes();
+	std::set<Utils::VideoMode>::iterator vidMode=vidModes.find(m_videoMode);
 	if(vidMode==vidModes.end()){
 		//Requested video mode does not exist
 		//Set the lowest video mode as current
 		if(vidModes.begin() != vidModes.end()){
-			m_currVidMode=*(vidModes.begin());
+			m_videoMode=*(vidModes.begin());
 		}else{
 			//There are no video modes available
 			close();
@@ -276,9 +276,9 @@ void V4L2::open(){
 	//Set the new resolution
 	struct v4l2_format fmt = {0};
 	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	fmt.fmt.pix.width = m_currVidMode.res.width;
-	fmt.fmt.pix.height = m_currVidMode.res.height;
-	fmt.fmt.pix.pixelformat = getV4L2PixFmt(m_currVidMode.codec, m_currVidMode.pixFmt);
+	fmt.fmt.pix.width = m_videoMode.res.width;
+	fmt.fmt.pix.height = m_videoMode.res.height;
+	fmt.fmt.pix.pixelformat = getV4L2PixFmt(m_videoMode.codec, m_videoMode.pixFmt);
 	fmt.fmt.pix.field = V4L2_FIELD_NONE;
 
 	if (-1 == xioctl(m_dev, VIDIOC_S_FMT, &fmt)){
@@ -297,8 +297,8 @@ void V4L2::open(){
 	}
 
 	if(strm.parm.capture.capability & V4L2_CAP_TIMEPERFRAME){
-		strm.parm.capture.timeperframe.numerator = m_currVidMode.frameRate.den;
-		strm.parm.capture.timeperframe.denominator = m_currVidMode.frameRate.num;
+		strm.parm.capture.timeperframe.numerator = m_videoMode.frameRate.den;
+		strm.parm.capture.timeperframe.denominator = m_videoMode.frameRate.num;
 
 		if (-1 == xioctl(m_dev, VIDIOC_S_PARM, &strm)){
 			//Error setting the frame interval
@@ -306,7 +306,7 @@ void V4L2::open(){
 			return;
 		}
 
-		videoOut.setRate(m_currVidMode.frameRate);
+		videoOut.setRate(m_videoMode.frameRate);
 	} else{
 		//Device does not support setting the framerate
 		videoOut.setRate(Utils::Rational(
@@ -379,7 +379,7 @@ void V4L2::open(){
 	}
 
 	m_threadExit=false;
-	if(m_currVidMode.codec == Utils::Codecs::RAWVIDEO)
+	if(m_videoMode.codec == Utils::Codecs::RAWVIDEO)
 		m_capturingThread=std::thread(&V4L2::rawCapturingThread, this);
 	else
 		m_capturingThread=std::thread(&V4L2::compressedCapturingThread, this);
@@ -459,7 +459,7 @@ void V4L2::freeBuffer(v4l2_buffer* buf){
 }
 
 void V4L2::compressedCapturingThread(){
-	const AVCodec *codec=avcodec_find_decoder(m_currVidMode.codec.toAVCodecID());
+	const AVCodec *codec=avcodec_find_decoder(m_videoMode.codec.toAVCodecID());
 	if(!codec)
 		return; //Something went horribly wrong
 
@@ -469,8 +469,8 @@ void V4L2::compressedCapturingThread(){
 		return; //Error
 	}
 
-	codecCtx->width=m_currVidMode.res.width;
-	codecCtx->height=m_currVidMode.res.height;
+	codecCtx->width=m_videoMode.res.width;
+	codecCtx->height=m_videoMode.res.height;
 
 	//Open the context
 	if (avcodec_open2(codecCtx, codec, nullptr) < 0) {
@@ -498,8 +498,8 @@ void V4L2::compressedCapturingThread(){
 
 	Utils::ImageBuffer decodedImgBuf(
 			Utils::ImageAttributes(
-					m_currVidMode.res,
-					m_currVidMode.pixFmt
+					m_videoMode.res,
+					m_videoMode.pixFmt
 			), (u_int8_t*)nullptr
 	);
 
@@ -569,8 +569,8 @@ void V4L2::rawCapturingThread(){
 
 	Utils::ImageBuffer decodedImgBuf(
 			Utils::ImageAttributes(
-					m_currVidMode.res,
-					m_currVidMode.pixFmt
+					m_videoMode.res,
+					m_videoMode.pixFmt
 			), (u_int8_t*)nullptr
 	);
 

@@ -1,7 +1,6 @@
 #include "SVG.h"
 
 #include <algorithm>
-#include <deque>
 #include <memory>
 
 #include "../Graphics/Context.h"
@@ -48,13 +47,13 @@ void SVG::open(){
 	if(!svgFile)
 		return; //Could not open the file
 
-	m_resolution=Utils::Resolution(svgFile->width, svgFile->height);
+	m_videoMode.res=Utils::Resolution(svgFile->width, svgFile->height);
 
-	if(m_resolution){
+	if(m_videoMode.res){
 		NSVGrasterizer* rasterizer = nsvgCreateRasterizer();
 
 		Graphics::ImageBuffer imgBuf(Graphics::ImageAttributes(
-				m_resolution,
+				m_videoMode.res,
 				Graphics::PixelFormats::RGBA
 		));
 
@@ -85,7 +84,7 @@ void SVG::open(){
 
 			newFrame=std::unique_ptr<Graphics::Frame>(new Graphics::Frame(
 					std::move(tex),
-					Graphics::ImageAttributes(m_resolution, Graphics::PixelFormats::RGBA)
+					Graphics::ImageAttributes(m_videoMode.res, Graphics::PixelFormats::RGBA)
 			));
 		}
 

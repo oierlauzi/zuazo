@@ -14,6 +14,10 @@ struct VideoMode{
 	Rational		frameRate		=Rational(0, 0);
 	bool			progressive		=true;
 
+	VideoMode()=default;
+	VideoMode(const VideoMode& other)=default;
+	~VideoMode()=default;
+
 	constexpr int 	operator==(const VideoMode& other) const;
 	constexpr int 	operator!=(const VideoMode& other) const;
 	constexpr int 	operator<(const VideoMode& other) const;

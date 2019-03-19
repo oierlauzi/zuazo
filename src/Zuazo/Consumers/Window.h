@@ -17,17 +17,16 @@
 #include "../Utils/Resolution.h"
 #include "../Utils/ScalingModes.h"
 #include "../Utils/Vector.h"
+#include "../Video/VideoInputBase.h"
 #include "../Video/VideoStream.h"
-#include "../Video.h"
 #include "../ZuazoBase.h"
 
 namespace Zuazo::Consumers{
 
 class Window :
-	public Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>,
-	public ResizeableVideoBase,
-	public VideoScalerBase,
-	public ZuazoBase
+	public Video::TVideoInputBase<Video::VideoConsumerPad<Window>>,
+	public ZuazoBase,
+	private Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>
 {
 public:
 	class Screen{
@@ -59,24 +58,30 @@ public:
 	static int init();
 	static int end();
 
-	Video::VideoConsumerPad<Window>				videoIn;
-
 	Window()=delete;
-	Window(const Utils::Resolution& res=Utils::Resolution(640, 480), const Utils::Rational& rate=60, std::string name="");
+	Window(const Utils::VideoMode& videoMode, std::string name="");
 	Window(const Window& win)=delete;
 	virtual ~Window();
 
 	void										open() override;
 	void										close() override;
 
-	void										setRes(const Utils::Resolution& res) override;
+	SUPPORTS_SETTING_RESOLUTION
+	SUPPORTS_ANY_RESOLUTION
+	void										setResolution(const Utils::Resolution& res) override;
+
+	SUPPORTS_SETTING_SCALINGMODE
 	void										setScalingMode(Utils::ScalingModes mode) override;
+
+	SUPPORTS_SETTING_FRAMERATE
+	SUPPORTS_ANY_FRAMERATE
+	void										setFramerate(const Utils::Rational& rate) override;
+
 	void										setFullScreen(const std::shared_ptr<Screen>& screen);
 	void										setWindowed();
 	void										setVSync(bool value);
 	void										setTitle(const std::string& title);
 
-	Utils::ScalingModes							getScalingMode() const override;
 	bool										isFullScreen() const;
 	const std::weak_ptr<Screen>&				getScreen() const;
 	bool										getVSync() const;
@@ -112,7 +117,6 @@ private:
 
 	//Window Data
 	std::string									m_title;
-	Utils::ScalingModes							m_scalingMode;
 	bool										m_vSync;
 	std::weak_ptr<Screen>						m_screen;
 	std::unique_ptr<WindowedParams> 			m_windowed;
@@ -132,6 +136,8 @@ private:
 	//Event thread stuff
 	static std::thread							s_eventThread;
 	static bool									s_exit;
+
+	static const Utils::VideoMode				s_defaultWindow;
 
 	static void									eventThreadFunc();
 	static void									glfwResizeCbk(GLFWwindow * win, int width, int height);
@@ -213,8 +219,8 @@ inline std::set<std::shared_ptr<Window::Screen>> Window::Screen::getScreens(){
  *			SETS				*
  ********************************/
 
-inline void Window::setRes(const Utils::Resolution& res) {
-	if(m_resolution != res){
+inline void Window::setResolution(const Utils::Resolution& res) {
+	if(m_videoMode.res != res){
 		glfwSetWindowSize(m_glfwWindow, res.width, res.height); //Callback should update the actual data
 	}
 }
@@ -232,10 +238,6 @@ inline void Window::setTitle(const std::string& title){
 /********************************
  *			GETS				*
  ********************************/
-
-inline Utils::ScalingModes Window::getScalingMode() const{
-	return m_scalingMode;
-}
 
 inline bool Window::getVSync() const {
 	return m_vSync;

@@ -79,15 +79,14 @@ int Window::end(){
  *	CONSTRUCTOR / DESTRUCTOR	*
  ********************************/
 
-Window::Window(const Utils::Resolution& res, const Utils::Rational& rate, std::string name) :
-		VideoBase(res),
-		Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>(rate),
+Window::Window(const Utils::VideoMode& videoMode, std::string name) :
 		m_title(name)
 {
+	m_videoMode=videoMode;
+
 	m_glfwWindow=nullptr;
 	m_exit=true;
 	m_vSync=true;
-	m_scalingMode=Utils::ScalingModes::Boxed;
 
 	open();
 }
@@ -97,56 +96,60 @@ Window::~Window(){
 }
 
 void Window::open(){
-	//Check if it is fullscreen
-	std::lock_guard<std::mutex> lock(Screen::s_cbkMutex);
-	GLFWmonitor* monitor=nullptr;
-	std::shared_ptr<Screen> screen=m_screen.lock();
-	if(screen)
-		monitor=screen->m_glfwMonitor;
+	if(m_videoMode.res && m_videoMode.frameRate){
+		//Check if it is fullscreen
+		std::lock_guard<std::mutex> lock(Screen::s_cbkMutex);
+		GLFWmonitor* monitor=nullptr;
+		std::shared_ptr<Screen> screen=m_screen.lock();
+		if(screen)
+			monitor=screen->m_glfwMonitor;
 
-	//Set up the GLFW window
-	m_glfwWindow=glfwCreateWindow(
-			m_resolution.width,							//Width
-			m_resolution.height,						//Height
-			m_title.c_str(),							//Name
-			monitor,									//Monitor
-			Graphics::Context::s_mainGlfwCtx			//Share objects with
+		//Set up the GLFW window
+		m_glfwWindow=glfwCreateWindow(
+				m_videoMode.res.width,						//Width
+				m_videoMode.res.height,						//Height
+				m_title.c_str(),							//Name
+				monitor,									//Monitor
+				Graphics::Context::s_mainGlfwCtx			//Share objects with
 
-	);
+		);
 
-	//Set up callbacks for the window
-	glfwSetWindowUserPointer(m_glfwWindow, this);
-	glfwSetWindowSizeCallback(m_glfwWindow, glfwResizeCbk);
-	glfwSetWindowCloseCallback(m_glfwWindow, glfwCloseCbk);
+		//Set up callbacks for the window
+		glfwSetWindowUserPointer(m_glfwWindow, this);
+		glfwSetWindowSizeCallback(m_glfwWindow, glfwResizeCbk);
+		glfwSetWindowCloseCallback(m_glfwWindow, glfwCloseCbk);
 
-	//Set the window's context as current
-	GLFWwindow* previousCtx=glfwGetCurrentContext();
-	glfwMakeContextCurrent(m_glfwWindow);
+		//Set the window's context as current
+		GLFWwindow* previousCtx=glfwGetCurrentContext();
+		glfwMakeContextCurrent(m_glfwWindow);
 
-	//Enable the OpenGL features that will be needed
-	glEnable(GL_TEXTURE_2D);
+		//Enable the OpenGL features that will be needed
+		glEnable(GL_TEXTURE_2D);
 
-	//Initialize the OpenGL resources
-	m_glResources=std::unique_ptr<WindowResources>(new WindowResources);
+		//Initialize the OpenGL resources
+		m_glResources=std::unique_ptr<WindowResources>(new WindowResources);
 
-	//Turn v-sync on/off
-	if(m_vSync)
-		glfwSwapInterval(1);
-	else
-		glfwSwapInterval(0);
+		//Turn v-sync on/off
+		if(m_vSync)
+			glfwSwapInterval(1);
+		else
+			glfwSwapInterval(0);
 
-	//Return to the previous context
-	glfwMakeContextCurrent(previousCtx);
+		//Return to the previous context
+		glfwMakeContextCurrent(previousCtx);
 
-	//Initialize the thread
-	m_exit=false;
-	m_drawingThread=std::thread(&Window::drawThread, this);
+		//Initialize the thread
+		m_exit=false;
+		m_drawingThread=std::thread(&Window::drawThread, this);
 
-	m_forceDraw=true;
+		m_forceDraw=true;
 
-	//Open the consumer so updates are called
-	Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>::enable();
-	ZuazoBase::open();
+		//Open the consumer so updates are called
+		Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>::setRate(m_videoMode.frameRate);
+		Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>::enable();
+
+		ZuazoBase::open();
+	}
 }
 void Window::close(){
 	//Close the sync consumer -> no more updates will be requested
@@ -203,6 +206,15 @@ void Window::setFullScreen(const std::shared_ptr<Screen>& screen){
 		m_windowed=std::move(windowedParams);
 		m_screen=screen;
 	}
+}
+
+
+void Window::setFramerate(const Utils::Rational& rate){
+	std::lock_guard<std::mutex> lock(m_videoModeMutex);
+	m_videoMode.frameRate=rate;
+
+	if(isOpen())
+		Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>::setRate(m_videoMode.frameRate);
 }
 
 void Window::setWindowed(){
@@ -286,7 +298,7 @@ void Window::update() const{
 			Graphics::GL::UniqueBinding<Graphics::GL::Shader> shaderBinding(m_glResources->shader);
 
 			m_glResources->rectangle.upload(frame->scaleFrame(
-					m_resolution,
+					m_videoMode.res,
 					m_scalingMode
 			));
 			m_glResources->rectangle.draw();
@@ -309,15 +321,16 @@ void Window::drawThread(){
 }
 
 void Window::resize(const Utils::Resolution& res){
-	std::unique_lock<std::mutex> lock(m_updateMutex);
+	std::lock_guard<std::mutex> lockUpdate(m_updateMutex);
+	std::lock_guard<std::mutex> lockVideoMode(m_videoModeMutex);
 
-	m_resolution=res;
+	m_videoMode.res=res;
 	m_forceDraw=true;
 
 	glfwMakeContextCurrent(m_glfwWindow);
 
 	//Update the rendering view-port
-	glViewport(0, 0, m_resolution.width, m_resolution.height);
+	glViewport(0, 0, m_videoMode.res.width, m_videoMode.res.height);
 
 	glfwMakeContextCurrent(NULL);
 }

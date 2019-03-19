@@ -1,7 +1,9 @@
 #pragma once
 
-#include <bits/stdint-intn.h>
+extern "C"{
 #include <libavutil/rational.h>
+}
+
 #include <condition_variable>
 #include <memory>
 #include <mutex>
@@ -10,9 +12,10 @@
 
 #include "../Stream/Source.h"
 #include "../Timing/NonLinear.h"
+#include "../Timing/UpdateOrder.h"
 #include "../Utils/TimeInterval.h"
+#include "../Video/VideoOutputBase.h"
 #include "../Video/VideoStream.h"
-#include "../Video.h"
 #include "../ZuazoBase.h"
 
 struct AVCodec;
@@ -20,27 +23,34 @@ struct AVCodecContext;
 struct AVFormatContext;
 
 namespace Zuazo::Sources{
+	class FFmpeg;
+}
 
-class FFmpeg :
-		public VideoBase,
-		public Timing::NonLinear<Timing::UPDATE_ORDER_FF_DEC>,
-		public ZuazoBase
-{
-public:
+namespace Zuazo::Stream{
 	template<typename T>
-	class FFmpegPad :
-		public Stream::Source<T>
+	class FFmpegSourcePad :
+		public Source<T>
 	{
-		friend FFmpeg;
+		friend Sources::FFmpeg;
 	public:
 		std::shared_ptr<const T> get() const override;
 	private:
-		FFmpegPad(const FFmpeg& owner);
+		FFmpegSourcePad(const Sources::FFmpeg& owner);
 
-		const FFmpeg& m_owner;
+		const Sources::FFmpeg& m_owner;
 	};
+}
 
-	FFmpegPad<Video::VideoElement>	videoOut;
+namespace Zuazo::Sources{
+
+class FFmpeg :
+		public Video::VideoOutputBase,
+		public Timing::NonLinear<Timing::UPDATE_ORDER_FF_DEC>,
+		public ZuazoBase
+{
+	friend Stream::FFmpegSourcePad<Video::VideoElement>;
+public:
+	Stream::FFmpegSourcePad<Video::VideoElement> videoOut;
 
 	FFmpeg(const std::string& dir);
 	FFmpeg(const FFmpeg& other);
@@ -48,6 +58,8 @@ public:
 
 	void							open() override;
 	void							close() override;
+
+	Video::VideoSource&				getVideoSource() override;
 protected:
 	void							update() const override;
 private:
@@ -71,16 +83,21 @@ private:
 	void							decodingFunc();
 };
 
-template<typename T>
-std::shared_ptr<const T> FFmpeg::FFmpegPad<T>::get() const{
-	std::lock_guard<std::mutex> lock(m_owner.m_decodeMutex); //Wait until decoding has finished
-	return Stream::Source<T>::get();
+inline Video::VideoSource&	FFmpeg::getVideoSource(){
+	return videoOut;
+}
+
 }
 
 template<typename T>
-FFmpeg::FFmpegPad<T>::FFmpegPad(const FFmpeg& owner) :
+inline std::shared_ptr<const T> Zuazo::Stream::FFmpegSourcePad<T>::get() const{
+	std::lock_guard<std::mutex> lock(m_owner.m_decodeMutex); //Wait until decoding has finished
+	return Source<T>::get();
+}
+
+template<typename T>
+inline Zuazo::Stream::FFmpegSourcePad<T>::FFmpegSourcePad(const Sources::FFmpeg& owner) :
 	m_owner(owner)
 {
 }
 
-}

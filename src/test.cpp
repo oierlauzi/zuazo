@@ -9,8 +9,8 @@
 #include "Zuazo/Sources/FFmpeg.h"
 #include "Zuazo/Sources/SVG.h"
 #include "Zuazo/Sources/V4L2.h"
-#include "Zuazo/Utils/Rational.h"
-#include "Zuazo/Utils/Resolution.h"
+#include "Zuazo/Stream/Consumer.h"
+#include "Zuazo/Stream/Source.h"
 #include "Zuazo/Zuazo.h"
 
 #define TEST1
@@ -40,10 +40,10 @@ int main(void){
 	 */
 
 	{
+
 	Zuazo::Consumers::Window win(
-			Zuazo::Utils::Resolution(1280, 720),
-			Zuazo::Utils::Rational(30, 1),
-			"Window with delay"
+			Zuazo::Utils::VideoMode{ .res=Zuazo::Utils::Resolution(1280, 720), .frameRate=Zuazo::Utils::Rational(30)},
+			"Zuazo test window"
 	);
 
 	Zuazo::Sources::FFmpeg vid("/home/oierlauzi/Bideoak/prueba1.mp4");
@@ -52,8 +52,8 @@ int main(void){
 	Zuazo::Sources::V4L2 webcam1("/dev/video0");
 	Zuazo::Sources::V4L2 webcam2("/dev/video2");
 
-	webcam1.setVideoMode(*(--webcam1.getVideoModes().end()));
-	//webcam2.setVideoMode(*(--webcam2.getVideoModes().end()));
+	webcam1.setVideoMode(*(--webcam1.getSupportedVideoModes().end()));
+	//webcam2.setVideoMode(*(--webcam2.getSupportedVideoModes().end()));
 
 	char a;
 	do{

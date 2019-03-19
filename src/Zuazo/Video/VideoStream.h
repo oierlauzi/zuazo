@@ -13,7 +13,6 @@ namespace Zuazo::Video{
 	typedef Stream::Source<VideoElement>			VideoSource;
 	typedef Stream::Consumer<VideoElement>			VideoConsumer;
 	typedef Stream::Delay<VideoElement>				VideoDelay;
-	typedef Stream::DummyPad<VideoElement>			DummyVideoPad;
 
 	typedef Stream::AsyncSource<VideoElement>		VideoAsyncSource;
 	typedef Stream::LazySource<VideoElement>		VideoLazySource;
@@ -26,4 +25,11 @@ namespace Zuazo::Video{
 	using AsyncVideoSourcePad=Stream::AsyncSourcePad<VideoElement, Q>;
 	template<typename Q>
 	using LazyVideoSourcePad=Stream::LazySourcePad<VideoElement, Q>;
+
+	template<typename Q>
+	using DummyBidirVideoPad=Stream::DummyBidirPad<VideoElement, Q>;
+	template<typename Q>
+	using DummyInputVideoPad=Stream::DummyInputPad<VideoElement, Q>;
+	template<typename Q>
+	using DummyOutputVideoPad=Stream::DummyOutputPad<VideoElement, Q>;
 }
