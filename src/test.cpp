@@ -21,6 +21,16 @@
 //#define TEST6
 //#define TEST7
 
+class Test : public Zuazo::Video::TVideoOutputBase<Zuazo::Video::LazyVideoSourcePad<Test>>{
+public:
+	Test()=default;
+	virtual ~Test()=default;
+protected:
+	void update() const override{ printf("Updating\n"); }
+	void enable() override{}
+	void disable() override{}
+};
+
 int main(void){
 	/*
 	 * 		INITIALIZATION
@@ -40,6 +50,8 @@ int main(void){
 	 */
 
 	{
+
+	Test test;
 
 	Zuazo::Consumers::Window win(
 			Zuazo::Utils::VideoMode{ .res=Zuazo::Utils::Resolution(1280, 720), .frameRate=Zuazo::Utils::Rational(30)},
@@ -71,6 +83,9 @@ int main(void){
 			break;
 		case '4':
 			win.videoIn<<svg.videoOut;
+			break;
+		case 't':
+			win.videoIn<<test.videoOut;
 			break;
 		case 'e':
 			break;

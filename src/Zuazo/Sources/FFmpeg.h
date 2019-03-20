@@ -56,7 +56,7 @@ public:
 
 	void							open() override;
 	void							close() override;
-protected:
+
 	void							update() const override;
 private:
 	std::string 					m_file;

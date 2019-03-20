@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Timing/UpdateableBase.h"
 #include "VideoBase.h"
 #include "VideoStream.h"
 
@@ -51,6 +52,34 @@ inline TVideoOutputBase<T>::TVideoOutputBase() :
 template <typename T>
 inline TVideoOutputBase<T>::TVideoOutputBase(const Utils::VideoMode& videoMode) :
 	VideoOutputBase(m_videoSourcePad, videoMode)
+{
+}
+
+template<typename Q>
+class TVideoOutputBase<LazyVideoSourcePad<Q>> :
+	public VideoOutputBase,
+	private virtual Timing::UpdateableBase
+{
+public:
+	TVideoOutputBase();
+	TVideoOutputBase(const Utils::VideoMode& videoMode);
+	TVideoOutputBase(const TVideoOutputBase& other)=default;
+	virtual ~TVideoOutputBase()=default;
+protected:
+	LazyVideoSourcePad<Q> m_videoSourcePad;
+};
+
+template <typename Q>
+inline TVideoOutputBase<LazyVideoSourcePad<Q>>::TVideoOutputBase() :
+	VideoOutputBase(m_videoSourcePad),
+	m_videoSourcePad(*this)
+{
+}
+
+template <typename Q>
+inline TVideoOutputBase<LazyVideoSourcePad<Q>>::TVideoOutputBase(const Utils::VideoMode& videoMode) :
+	VideoOutputBase(m_videoSourcePad, videoMode),
+	m_videoSourcePad(*this)
 {
 }
 

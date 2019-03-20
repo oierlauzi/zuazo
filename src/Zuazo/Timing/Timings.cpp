@@ -46,7 +46,7 @@ void Timings::threadFunc(){
 			//Update all
 			for(auto ite=updates.updateables.begin(); ite!=updates.updateables.end(); ++ite){
 				for(const UpdateableBase * updateable : ite->second){
-					std::lock_guard<std::mutex> lock(updateable->m_updateMutex);
+					std::lock_guard<const UpdateableBase> lock(*updateable);
 					updateable->update();
 				}
 			}

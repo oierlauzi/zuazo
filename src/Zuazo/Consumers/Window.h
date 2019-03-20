@@ -86,7 +86,7 @@ public:
 	const std::weak_ptr<Screen>&				getScreen() const;
 	bool										getVSync() const;
 	const std::string&							getTitle() const;
-protected:
+
 	void										update() const override;
 private:
 	struct WindowedParams{

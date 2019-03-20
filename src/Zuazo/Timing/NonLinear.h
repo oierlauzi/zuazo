@@ -48,11 +48,11 @@ public:
 	Utils::TimeInterval 		getCurrentTime() const;
 	Utils::TimeInterval 		getDuration() const;
 	double 						getProgress() const;
+
+	virtual void 				enable() override;
+	virtual void 				disable() override;
 protected:
 	void						setInfo(const Utils::TimeInterval& duration);
-
-	void 						enable();
-	void 						disable();
 private:
 	class Player :
 			public RegularUpdate<order>
@@ -65,10 +65,10 @@ private:
 
 		void addUpdate(NonLinear& update);
 		void delUpdate(NonLinear& update);
-	protected:
-		using Timing::UpdateableBase::m_updateMutex;
 
 		virtual void update() const override;
+	protected:
+		using Timing::UpdateableBase::m_updateMutex;
 	private:
 		std::set<NonLinear*> 		m_updates;
 	};

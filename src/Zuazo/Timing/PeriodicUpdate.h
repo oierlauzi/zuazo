@@ -23,7 +23,7 @@ public:
 	PeriodicUpdate()=default;
 	PeriodicUpdate(const Utils::TimeInterval& interval);
 	PeriodicUpdate(const Utils::Rational& rate);
-	PeriodicUpdate(const PeriodicUpdate& other);
+	PeriodicUpdate(const PeriodicUpdate& other)=default;
 	virtual ~PeriodicUpdate();
 
 	virtual void 						setInterval(const Utils::TimeInterval& interval);
@@ -51,12 +51,6 @@ inline PeriodicUpdate<order>::PeriodicUpdate(const Utils::TimeInterval& interval
 template <u_int32_t order>
 inline PeriodicUpdate<order>::PeriodicUpdate(const Utils::Rational& rate) :
 	m_updateInterval(1 / rate)
-{
-}
-
-template <u_int32_t order>
-inline PeriodicUpdate<order>::PeriodicUpdate(const PeriodicUpdate& other) :
-	m_updateInterval(other.m_updateInterval)
 {
 }
 

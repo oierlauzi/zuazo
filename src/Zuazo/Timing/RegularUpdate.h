@@ -20,7 +20,7 @@ public:
 	RegularUpdate()=default;
 	RegularUpdate(const RegularUpdate& other)=default;
 	virtual ~RegularUpdate();
-protected:
+
 	virtual void enable() override;
 	virtual void disable() override;
 };

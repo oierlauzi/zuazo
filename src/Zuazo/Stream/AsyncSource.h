@@ -33,12 +33,12 @@ public:
 	u_int32_t							getBufferSize() const;
 	void								flushBuffer();
 
+	virtual void 						update() const override;
 protected:
 	using Timing::PeriodicUpdate<Timing::UPDATE_ORDER_SOURCE>::enable;
 	using Timing::PeriodicUpdate<Timing::UPDATE_ORDER_SOURCE>::disable;
 
 	void								push(std::unique_ptr<const T> element);
-	virtual void 						update() const override;
 private:
 	static constexpr u_int32_t			DEFAULT_MAX_DROPPED=3;
 	static constexpr u_int32_t			DEFAULT_MAX_BUFFER_SIZE=3;

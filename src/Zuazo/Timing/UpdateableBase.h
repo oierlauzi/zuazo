@@ -4,10 +4,8 @@
 #include <mutex>
 
 namespace Zuazo::Timing{
-class Timings;
 
 class UpdateableBase{
-	friend Timings;
 public:
 	UpdateableBase()=default;
 	UpdateableBase(const UpdateableBase& other)=default;
@@ -16,13 +14,13 @@ public:
 	bool								try_lock() const;
 	void								lock() const;
 	void								unlock() const;
-protected:
-	mutable std::mutex					m_updateMutex;
 
 	virtual void						update() const=0;
 
 	virtual void 						enable()=0;
 	virtual void 						disable()=0;
+protected:
+	mutable std::mutex					m_updateMutex;
 };
 
 /*
