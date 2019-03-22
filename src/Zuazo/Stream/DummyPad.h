@@ -20,11 +20,20 @@ class DummyBidirPad :
 public:
 	using Consumer<T>::reset;
 	std::shared_ptr<const T>	get() const override;
+
+	void reset();
 };
 
 template <typename T, typename Q>
 inline std::shared_ptr<const T> DummyBidirPad<T, Q>::get() const{
 	return Consumer<T>::get(); //That's all
+}
+
+template <typename T, typename Q>
+inline void DummyBidirPad<T, Q>::reset(){
+	Source<T>::reset();
+	Consumer<T>::reset();
+
 }
 
 /**
@@ -40,6 +49,8 @@ class DummyInputPad :
 public:
 	using Consumer<T>::reset;
 	std::shared_ptr<const T>	get() const override;
+
+	void reset();
 };
 
 template <typename T, typename Q>
@@ -47,6 +58,12 @@ inline std::shared_ptr<const T> DummyInputPad<T, Q>::get() const{
 	return Consumer<T>::get(); //That's all
 }
 
+template <typename T, typename Q>
+inline void DummyInputPad<T, Q>::reset(){
+	Source<T>::reset();
+	Consumer<T>::reset();
+
+}
 
 /**
  * Dummy output pad
@@ -61,11 +78,20 @@ class DummyOutputPad :
 public:
 	using Consumer<T>::reset;
 	std::shared_ptr<const T>	get() const override;
+
+	void reset();
 };
 
 template <typename T, typename Q>
 inline std::shared_ptr<const T> DummyOutputPad<T, Q>::get() const{
 	return Consumer<T>::get(); //That's all
+}
+
+template <typename T, typename Q>
+inline void DummyOutputPad<T, Q>::reset(){
+	Source<T>::reset();
+	Consumer<T>::reset();
+
 }
 
 }

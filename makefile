@@ -9,7 +9,7 @@ SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS :=-Wall -std=c++17 -g
 LIB := -lpthread -lGL -lGLU -lglfw -lavformat -lavcodec -lavutil -lswscale -ltinyxml2 -lfreetype -ljpeg -ldl
-INC := -I/usr/include/freetype2 -Iinclude
+INC := -I/usr/include/freetype2 -I/usr/include/x86_64-linux-gnu/ImageMagick-6/ -I/usr/include/ImageMagick-6/ -Iinclude
 
 $(TARGET): $(OBJECTS)
 	@echo " Linking..."

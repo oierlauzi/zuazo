@@ -1,5 +1,13 @@
 #include "V4L2.h"
 
+extern "C"{
+	#include <libavcodec/avcodec.h>
+	#include <libavutil/frame.h>
+	#include <libavutil/avutil.h>
+	#include <libavutil/mem.h>
+}
+
+
 #include <fcntl.h>
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>
@@ -10,16 +18,13 @@
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
+#include <map>
 #include <memory>
 #include <utility>
 
-extern "C"{
-	#include <libavcodec/avcodec.h>
-	#include <libavutil/frame.h>
-	#include <libavutil/avutil.h>
-	#include <libavutil/mem.h>
-}
-
+#include "../Graphics/Frame.h"
+#include "../Utils/Rational.h"
+#include "../Utils/Resolution.h"
 #include "../Graphics/Context.h"
 #include "../Graphics/PixelFormat.h"
 #include "../Graphics/Uploader.h"
@@ -102,7 +107,7 @@ V4L2::V4L2(u_int32_t dev) :
 }
 
 V4L2::V4L2(const std::string& devName) :
-		m_name(devName)
+		Utils::FileBase(devName)
 {
 	open();
 }
@@ -232,7 +237,7 @@ void V4L2::open(){
 
 	//Check if the video device directory exists
 	struct stat st;
-	if (stat(m_name.c_str(), &st) == -1)
+	if (stat(m_directory.c_str(), &st) == -1)
 		return;
 
 	//Check if the directory is a "special" file, FI a tty, V4L2 device...
@@ -241,7 +246,7 @@ void V4L2::open(){
 		return;
 
 	//Try to open the device
-	m_dev=::open(m_name.c_str(), O_RDWR | O_NONBLOCK, 0);
+	m_dev=::open(m_directory.c_str(), O_RDWR | O_NONBLOCK, 0);
 
 	//Check if file has been successfully opened
 	if(m_dev < 0)

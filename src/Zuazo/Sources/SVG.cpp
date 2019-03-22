@@ -54,7 +54,7 @@ void SVG::open(){
 
 		Graphics::ImageBuffer imgBuf(Graphics::ImageAttributes(
 				m_videoMode.res,
-				Graphics::PixelFormats::RGBA
+				Graphics::PixelFormats::RGBA32
 		));
 
 		//Rasterize the image
@@ -84,7 +84,7 @@ void SVG::open(){
 
 			newFrame=std::unique_ptr<Graphics::Frame>(new Graphics::Frame(
 					std::move(tex),
-					Graphics::ImageAttributes(m_videoMode.res, Graphics::PixelFormats::RGBA)
+					Graphics::ImageAttributes(m_videoMode.res, Graphics::PixelFormats::RGBA32)
 			));
 		}
 

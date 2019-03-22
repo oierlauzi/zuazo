@@ -8,8 +8,10 @@
 #include <vector>
 
 #include "../Utils/Codec.h"
+#include "../Utils/FileBase.h"
 #include "../Utils/PixelFormat.h"
 #include "../Utils/VideoMode.h"
+#include "../Video/VideoBase.h"
 #include "../Video/VideoOutputBase.h"
 #include "../Video/VideoStream.h"
 #include "../ZuazoBase.h"
@@ -26,6 +28,7 @@ namespace Zuazo::Sources{
 
 class V4L2:
 		public Video::TVideoOutputBase<Video::AsyncVideoSourcePad<V4L2>>,
+		public Utils::FileBase,
 		public ZuazoBase
 {
 public:
@@ -61,7 +64,6 @@ private:
 		uint32_t					v4l2PixFmt;
 	};
 
-	std::string					m_name;
 	int							m_dev;
 
 	std::vector<Buffer>			m_buffers;

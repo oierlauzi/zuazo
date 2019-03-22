@@ -6,6 +6,8 @@
 #include <cstring>
 #include <ratio>
 
+#include "../Utils/Rational.h"
+
 extern "C"{
 	#include <libavcodec/avcodec.h>
 	#include <libavformat/avformat.h>
@@ -32,13 +34,13 @@ using namespace Zuazo::Sources;
 
 FFmpeg::FFmpeg(const std::string& dir) :
 		Video::VideoOutputBase(m_videoSourcePad),
-		m_file(dir),
+		Utils::FileBase(dir),
 		m_videoSourcePad(*this)
 {
 	open();
 }
 
-FFmpeg::FFmpeg(const FFmpeg& other) : FFmpeg(other.m_file)
+FFmpeg::FFmpeg(const FFmpeg& other) : FFmpeg(other.m_directory)
 {
 }
 
@@ -59,7 +61,7 @@ void FFmpeg::open(){
 	av_register_all();
 #endif
 
-	if(avformat_open_input(&m_formatCtx, m_file.c_str(), NULL, NULL)!=0)
+	if(avformat_open_input(&m_formatCtx, m_directory.c_str(), NULL, NULL)!=0)
 		return;//Error opening the video file
 
 	if(avformat_find_stream_info(m_formatCtx, NULL)<0)

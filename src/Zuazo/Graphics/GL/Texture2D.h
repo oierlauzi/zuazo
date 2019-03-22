@@ -91,12 +91,12 @@ inline void	Texture2D::textureImage(const Graphics::ImageAttributes& att){
 	glTexImage2D(
 			GL_TEXTURE_2D,
 			0,
-			att.pixFmt.toGLenum(),
+			att.pixFmt.getFormat(),
 			att.res.width,
 			att.res.height,
 			0,
-			att.pixFmt.toGLenum(),
-			GL_UNSIGNED_BYTE,
+			att.pixFmt.getFormat(),
+			att.pixFmt.getType(),
 			0
 	);
 }
@@ -109,8 +109,8 @@ inline void	Texture2D::textureSubImage(const Graphics::ImageAttributes& att){
 			0,
 			att.res.width,
 			att.res.height,
-			att.pixFmt.toGLenum(),
-			GL_UNSIGNED_BYTE,
+			att.pixFmt.getFormat(),
+			att.pixFmt.getType(),
 			0
 	);
 }
@@ -119,12 +119,12 @@ inline void	Texture2D::textureImage(const Graphics::ImageBuffer& buf){
 	glTexImage2D(
 			GL_TEXTURE_2D,
 			0,
-			buf.att.pixFmt.toGLenum(),
+			buf.att.pixFmt.getFormat(),
 			buf.att.res.width,
 			buf.att.res.height,
 			0,
-			buf.att.pixFmt.toGLenum(),
-			GL_UNSIGNED_BYTE,
+			buf.att.pixFmt.getFormat(),
+			buf.att.pixFmt.getType(),
 			buf.data
 	);
 }
@@ -137,8 +137,8 @@ inline void	Texture2D::textureSubImage(const Graphics::ImageBuffer& buf){
 			0,
 			buf.att.res.width,
 			buf.att.res.height,
-			buf.att.pixFmt.toGLenum(),
-			GL_UNSIGNED_BYTE,
+			buf.att.pixFmt.getFormat(),
+			buf.att.pixFmt.getType(),
 			buf.data
 	);
 }

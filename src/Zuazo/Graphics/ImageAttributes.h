@@ -48,7 +48,7 @@ struct ImageAttributes{
 	}
 
 	constexpr size_t getStride() const{
-		return pixFmt.getPixelComponents() * res.width;
+		return pixFmt.getSize() * res.width;
 	}
 
 	constexpr size_t getSize() const{

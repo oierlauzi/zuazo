@@ -1,7 +1,7 @@
 #pragma once
 
 extern "C"{
-#include <libavutil/rational.h>
+	#include <libavutil/rational.h>
 }
 
 #include <condition_variable>
@@ -13,6 +13,7 @@ extern "C"{
 #include "../Stream/Source.h"
 #include "../Timing/NonLinear.h"
 #include "../Timing/UpdateOrder.h"
+#include "../Utils/FileBase.h"
 #include "../Utils/TimeInterval.h"
 #include "../Video/VideoOutputBase.h"
 #include "../Video/VideoStream.h"
@@ -45,6 +46,7 @@ namespace Zuazo::Sources{
 
 class FFmpeg :
 		public Video::VideoOutputBase,
+		public Utils::FileBase,
 		public Timing::NonLinear<Timing::UPDATE_ORDER_FF_DEC>,
 		public ZuazoBase
 {
@@ -59,8 +61,6 @@ public:
 
 	void							update() const override;
 private:
-	std::string 					m_file;
-
 	bool							m_exit;
 	std::thread						m_decodingThread;
 	mutable std::mutex				m_decodeMutex;

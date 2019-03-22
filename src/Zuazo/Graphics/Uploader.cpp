@@ -19,10 +19,29 @@ extern "C"{
 using namespace Zuazo::Graphics;
 
 const AVPixelFormat Uploader::s_compatiblePixelFormats[]={
+		AV_PIX_FMT_GRAY8,
+		AV_PIX_FMT_GRAY8,
+		AV_PIX_FMT_GRAY8,
+		AV_PIX_FMT_GRAY8,
 		AV_PIX_FMT_RGB24,
 		AV_PIX_FMT_BGR24,
-		AV_PIX_FMT_RGBA,
-		AV_PIX_FMT_BGRA,
+		AV_PIX_FMT_RGB32,
+		AV_PIX_FMT_BGR32,
+
+		AV_PIX_FMT_GRAY16,
+		AV_PIX_FMT_GRAY16,
+		AV_PIX_FMT_GRAY16,
+		AV_PIX_FMT_GRAY16,
+		AV_PIX_FMT_RGB48,
+		AV_PIX_FMT_BGR48,
+		AV_PIX_FMT_RGBA64,
+		AV_PIX_FMT_BGRA64,
+
+		AV_PIX_FMT_GRAYF32,
+		AV_PIX_FMT_GRAYF32,
+		AV_PIX_FMT_GRAYF32,
+		AV_PIX_FMT_GRAYF32,
+
 		AV_PIX_FMT_NONE, //List needs to be terminated with AV_PIX_FMT_NONE
 };
 
