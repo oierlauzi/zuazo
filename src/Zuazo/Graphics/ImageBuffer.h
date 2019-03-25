@@ -10,7 +10,7 @@ namespace Zuazo::Graphics{
 class ImageBuffer{
 public:
 	ImageAttributes		att;
-	u_int8_t*			data;
+	u_int8_t* const		data;
 
 	constexpr ImageBuffer() :
 		data(nullptr),
@@ -22,6 +22,13 @@ public:
 		att(att),
 		data((u_int8_t*)malloc(att.getSize())),
 		wasAllocated(true)
+	{
+	}
+
+	ImageBuffer(const ImageAttributes& att, u_int8_t* data) :
+		att(att),
+		data(data),
+		wasAllocated(false)
 	{
 	}
 

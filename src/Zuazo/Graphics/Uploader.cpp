@@ -15,35 +15,9 @@ extern "C"{
 }
 
 #include "../Utils/PixelFormat.h"
+#include "GL/Buffer.h"
 
 using namespace Zuazo::Graphics;
-
-const AVPixelFormat Uploader::s_compatiblePixelFormats[]={
-		AV_PIX_FMT_GRAY8,
-		AV_PIX_FMT_GRAY8,
-		AV_PIX_FMT_GRAY8,
-		AV_PIX_FMT_GRAY8,
-		AV_PIX_FMT_RGB24,
-		AV_PIX_FMT_BGR24,
-		AV_PIX_FMT_RGB32,
-		AV_PIX_FMT_BGR32,
-
-		AV_PIX_FMT_GRAY16,
-		AV_PIX_FMT_GRAY16,
-		AV_PIX_FMT_GRAY16,
-		AV_PIX_FMT_GRAY16,
-		AV_PIX_FMT_RGB48,
-		AV_PIX_FMT_BGR48,
-		AV_PIX_FMT_RGBA64,
-		AV_PIX_FMT_BGRA64,
-
-		AV_PIX_FMT_GRAYF32,
-		AV_PIX_FMT_GRAYF32,
-		AV_PIX_FMT_GRAYF32,
-		AV_PIX_FMT_GRAYF32,
-
-		AV_PIX_FMT_NONE, //List needs to be terminated with AV_PIX_FMT_NONE
-};
 
 Uploader::Uploader(){
 	memset(m_srcStrides, 0, sizeof(m_srcStrides));
@@ -149,9 +123,27 @@ std::unique_ptr<const Frame> Uploader::getFrame(const Utils::ImageBuffer& buf) c
 }
 
 ImageAttributes	Uploader::getBestMatch(const Utils::ImageAttributes& other){
-	int loss; //Not used
+	const AVPixelFormat compatiblePixelFormats[]={
+			AV_PIX_FMT_GRAY8,
+			AV_PIX_FMT_RGB24,
+			AV_PIX_FMT_BGR24,
+			AV_PIX_FMT_RGB32,
+			AV_PIX_FMT_BGR32,
+
+			AV_PIX_FMT_GRAY16,
+			AV_PIX_FMT_RGB48,
+			AV_PIX_FMT_BGR48,
+			AV_PIX_FMT_RGBA64,
+			AV_PIX_FMT_BGRA64,
+
+			AV_PIX_FMT_GRAYF32,
+
+			AV_PIX_FMT_NONE, //List needs to be terminated with AV_PIX_FMT_NONE
+	};
+
+	int loss=0; //Needs to be set to 0, otherwise, erratic conversions will occur.
 	Utils::PixelFormat fmt(avcodec_find_best_pix_fmt_of_list(
-			s_compatiblePixelFormats,
+			compatiblePixelFormats,
 			other.pixFmt.toAVPixelFormat(),
 			other.pixFmt.hasAlpha(),
 			&loss

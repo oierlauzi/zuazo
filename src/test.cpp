@@ -7,10 +7,14 @@
 
 #include "Zuazo/Consumers/Window.h"
 #include "Zuazo/Sources/FFmpeg.h"
-#include "Zuazo/Sources/SVG.h"
+#include "Zuazo/Sources/ImageMagick.h"
 #include "Zuazo/Sources/V4L2.h"
 #include "Zuazo/Stream/Consumer.h"
 #include "Zuazo/Stream/Source.h"
+#include "Zuazo/Utils/Resolution.h"
+#include "Zuazo/Utils/VideoMode.h"
+#include "Zuazo/Video/VideoOutputBase.h"
+#include "Zuazo/Video/VideoStream.h"
 #include "Zuazo/Zuazo.h"
 
 #define TEST1
@@ -53,16 +57,16 @@ int main(void){
 
 	Test test;
 
+	//Zuazo::Sources::SVG svg("/home/oierlauzi/Irudiak/color_bars.svg", 96);
+	Zuazo::Sources::FFmpeg vid("/home/oierlauzi/Bideoak/prueba1.mp4");
+	Zuazo::Sources::ImageMagick svg("/home/oierlauzi/Irudiak/color_bars.svg");
+	Zuazo::Sources::V4L2 webcam1("/dev/video0");
+	Zuazo::Sources::V4L2 webcam2("/dev/video2");
+
 	Zuazo::Consumers::Window win(
 			Zuazo::Utils::VideoMode{ .res=Zuazo::Utils::Resolution(1280, 720), .frameRate=Zuazo::Utils::Rational(30)},
 			"Zuazo test window"
 	);
-
-	Zuazo::Sources::FFmpeg vid("/home/oierlauzi/Bideoak/prueba1.mp4");
-
-	Zuazo::Sources::SVG svg("/home/oierlauzi/Irudiak/color_bars.svg", 96);
-	Zuazo::Sources::V4L2 webcam1("/dev/video0");
-	Zuazo::Sources::V4L2 webcam2("/dev/video2");
 
 	webcam1.setVideoMode(*(--webcam1.getSupportedVideoModes().end()));
 	//webcam2.setVideoMode(*(--webcam2.getSupportedVideoModes().end()));

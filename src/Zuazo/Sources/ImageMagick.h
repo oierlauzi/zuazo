@@ -35,12 +35,6 @@ private:
 	std::shared_ptr<const Magick::Image>	m_image;
 };
 
-inline ImageMagick::ImageMagick(const std::shared_ptr<const Magick::Image>& img) :
-		m_image(img)
-{
-	open();
-}
-
 inline std::shared_ptr<const Magick::Image>	ImageMagick::getCurrentImage() const{
 	return m_image;
 }

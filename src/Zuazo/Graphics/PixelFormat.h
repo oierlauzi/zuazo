@@ -27,6 +27,7 @@ public:
 
 	constexpr int 					operator==(const PixelFormat& other) const;
 	constexpr int 					operator!=(const PixelFormat& other) const;
+	constexpr 						operator bool() const;
 
 	constexpr Utils::PixelFormat 	toPixelFormat() const;
 	constexpr GLenum 				getType() const;
@@ -59,6 +60,10 @@ constexpr int PixelFormat::operator==(const PixelFormat& other) const{
 
 constexpr int PixelFormat::operator!=(const PixelFormat& other) const{
 	return type != other.type || fmt != other.fmt;
+}
+
+constexpr PixelFormat::operator bool() const{
+	return fmt != GL_NONE && type != GL_NONE;
 }
 
 constexpr GLenum PixelFormat::getFormat() const{
@@ -116,8 +121,6 @@ constexpr PixelFormat BGRA128f	=PixelFormat(GL_BGRA, 	GL::GLType<float>);
 }
 
 constexpr std::pair<PixelFormat, Utils::PixelFormat> pixelConversions[]={
-		{PixelFormats::NONE,	Utils::PixelFormats::NONE		},
-
 		{PixelFormats::RED8,	Utils::PixelFormats::GRAY8		},
 		{PixelFormats::GREEN8,	Utils::PixelFormats::GRAY8		},
 		{PixelFormats::BLUE8,	Utils::PixelFormats::GRAY8		},
@@ -140,12 +143,14 @@ constexpr std::pair<PixelFormat, Utils::PixelFormat> pixelConversions[]={
 		{PixelFormats::GREEN32f,Utils::PixelFormats::GRAYF32	},
 		{PixelFormats::BLUE32f,	Utils::PixelFormats::GRAYF32	},
 		{PixelFormats::ALPHA32f,Utils::PixelFormats::GRAYF32	},
+
+		{PixelFormats::NONE,	Utils::PixelFormats::NONE		},
 };
 
 constexpr PixelFormat::PixelFormat(const Utils::PixelFormat& other) :
 			PixelFormat()
 {
-	for(u_int32_t i=0; i<sizeof(pixelConversions); i++){
+	for(u_int32_t i=0; pixelConversions[i].first; i++){
 		if(pixelConversions[i].second == other){
 			fmt=pixelConversions[i].first.getFormat();
 			type=pixelConversions[i].first.getType();
@@ -157,7 +162,7 @@ constexpr PixelFormat::PixelFormat(const Utils::PixelFormat& other) :
 constexpr Utils::PixelFormat PixelFormat::toPixelFormat() const{
 	Utils::PixelFormat result=Utils::PixelFormats::NONE;
 
-	for(u_int32_t i=0; i<sizeof(pixelConversions); i++){
+	for(u_int32_t i=0; pixelConversions[i].first; i++){
 		if(pixelConversions[i].first == *this){
 			result=pixelConversions[i].second;
 			break;

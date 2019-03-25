@@ -2,6 +2,7 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <Magick++.h>
 
 #include "Consumers/Window.h"
 #include "Graphics/Context.h"
@@ -46,6 +47,8 @@ Errors init(){
     err=Consumers::Window::init();
     if(err)
     	return Errors::WINDOW_INIT;
+
+    Magick::InitializeMagick(nullptr);
 
     //Initialize timing
     timings=std::unique_ptr<Timing::Timings>(new Timing::Timings);

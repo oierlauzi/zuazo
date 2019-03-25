@@ -1,35 +1,75 @@
 #include "ImageMagick.h"
 
-#include <magick/colorspace.h>
-#include <magick/magick-type.h>
-#include <Magick++/Geometry.h>
-#include <Magick++/Image.h>
+#include <Magick++.h>
 
 #include "../Utils/PixelFormat.h"
 #include "../Utils/Resolution.h"
+#include "../Graphics/Frame.h"
+#include "../Graphics/Uploader.h"
+#include "../Graphics/ImageAttributes.h"
+#include "../Graphics/PixelFormat.h"
+#include "../Graphics/ImageBuffer.h"
 
 using namespace Zuazo::Sources;
 
+ImageMagick::ImageMagick(const std::shared_ptr<const Magick::Image>& img) :
+		m_image(img)
+{
+	open();
+}
+
+ImageMagick::ImageMagick(const std::string& path) :
+		ImageMagick(std::shared_ptr<const Magick::Image>(new Magick::Image(path)))
+{
+}
 
 void ImageMagick::open(){
 	if(m_image){
 		Magick::Geometry size=m_image->size();
-		if(size._width && size._height){
-			//We have a valid image
-			Magick::ColorspaceType colorSpace=m_image->colorSpace();
+		//Get all the pixels
+		const Magick::PixelPacket* pixels=m_image->getConstPixels(0, 0, size.width(), size.height());
 
-			if(colorSpace != Magick::ColorspaceType::RGBColorspace){
-				//Image is not RGB -> quantize it to RGB
-				std::shared_ptr<Magick::Image> rgbImage(new Magick::Image(*m_image));
-				rgbImage->quantizeColorSpace(Magick::ColorspaceType::RGBColorspace);
-				m_image=rgbImage;
-			}
+		Graphics::ImageAttributes att(
+				Graphics::Resolution(size.width(), size.height()),
+				Graphics::PixelFormat(GL_RGBA, Graphics::GL::GLType<Magick::Quantum>)
+		);
 
-			//Get all the pixels
-			const Magick::Quantum* pixels=m_image->getConstPixels(0, 0, size._width, size._height);
+		Graphics::ImageBuffer imgBuf(att);
 
-			ZuazoBase::open();
+		//Reorder pixels
+		size_t nPixels=size.width() * size.height();
+		Magick::PixelPacket* bufPtr=(Magick::PixelPacket*) imgBuf.data;
+
+		for(size_t i=0; i<nPixels; i++){
+			bufPtr[i].blue		=pixels[i].red;
+			bufPtr[i].green		=pixels[i].green;
+			bufPtr[i].red		=pixels[i].blue;
+			bufPtr[i].opacity	=pixels[i].red;
 		}
+
+		//Try to create a texture with the image
+		std::unique_ptr<Graphics::GL::Texture2D> tex=Graphics::Frame::createTexture(att);
+		if(tex){
+			//There was an available texture in the pool
+			Graphics::UniqueContext ctx(Graphics::Context::getAvalibleCtx());
+			Graphics::GL::UniqueBinding<Graphics::GL::Texture2D> texBinding(*tex);
+			Graphics::GL::Texture2D::textureSubImage(imgBuf);
+		}else{
+			//There wasn't an available texture in the pool -> create it
+			Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
+			tex=std::unique_ptr<Graphics::GL::Texture2D>(new Graphics::GL::Texture2D);
+
+			Graphics::GL::UniqueBinding<Graphics::GL::Texture2D> texBinding(*tex);
+			Graphics::GL::Texture2D::textureImage(imgBuf);
+		}
+
+		std::unique_ptr<const Graphics::Frame> frame(new Graphics::Frame(std::move(tex), att));
+		m_videoSourcePad.push(std::move(frame));
+
+		m_videoMode.res=att.res;
+		m_videoMode.pixFmt=att.pixFmt.toPixelFormat();
+
+		ZuazoBase::open();
 	}
 }
 

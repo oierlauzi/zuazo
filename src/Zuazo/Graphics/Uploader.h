@@ -38,8 +38,6 @@ private:
 
 	mutable SwsContext*				m_swsContext;
 
-
-	static const AVPixelFormat		s_compatiblePixelFormats[];
 	static ImageAttributes			getBestMatch(const Utils::ImageAttributes& other);
 
 };
