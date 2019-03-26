@@ -15,14 +15,18 @@
 
 /**
  * DESCRIPTION:
- * This example shows how a simple video-switcher can be made with zuazo
- * It takes as arguments the desired video input paths and is able to switch
+ * This example shows how to make a simple video-switcher with zuazo.
+ * It takes as arguments the desired video input paths and it is able to switch
  * between them by pressing keys 0-9
  */
 
 /**
  * HOW TO COMPILE:
  * g++ Example1.cpp -o Example1 -std=c++17 -lzuazo -lavutil -lavformat -lavcodec -lswscale -lglfw -lMagick++-6.Q16 -lMagickWand-6.Q16 -lMagickCore-6.Q16
+ * HOW TO RUN:
+ * LD_LIBRARY_PATH=/usr/local/lib ./Example1 <file1> <file2> ... <file10>
+ *
+ * where file(n) equals a JPG, PNG, SVG, BMP, MP4, AVI... file or a V4L2 input (/dev/video0, /dev/video1 ...)
  */
 int main(int argc, char *argv[]){
 	//Check if the user has given at least one argument
@@ -32,7 +36,7 @@ int main(int argc, char *argv[]){
 	//10 number keys on the keyboard
 	if(argc < 2){
 		std::cout << "You need to specify at least one input!" << std::endl;
-		std::cout << "Usage: " << std::string(argv[0]) << "<file1> <file2> ... <file10>" << std::endl;
+		std::cout << "Usage: " << std::string(argv[0]) << " <file1> <file2> ... <file10>" << std::endl;
 		std::terminate();
 	}else if(argc > 11){
 		std::cout << "More than 10 inputs were given" << std::endl;
