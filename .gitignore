@@ -30,8 +30,6 @@
 *.exe
 *.out
 *.app
-test
-build/
 
 #Eclipse project
 .settings/
@@ -39,3 +37,14 @@ build/
 .project
 .directory
 Debug/
+
+#CMake files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+cmake_manifest.txt
+Makefile
+libzuazo.so.*
+
+#Example buils
+examples/Example1
