@@ -107,7 +107,7 @@ void FFmpeg::open(){
 	);
 
 	Utils::TimeInterval duration=std::chrono::duration<int64_t, std::ratio<1, AV_TIME_BASE>>(dur);
-	Utils::Rational rate(m_formatCtx->streams[m_videoStream]->nb_frames, duration.count());
+	Utils::Rational rate(m_formatCtx->streams[m_videoStream]->nb_frames * AV_TIME_BASE, duration.count());
 	bool isProgressive = m_formatCtx->streams[m_videoStream]->parser->field_order == AV_FIELD_PROGRESSIVE;
 
 	Timing::NonLinear<Timing::UPDATE_ORDER_FF_DEC>::setInfo(

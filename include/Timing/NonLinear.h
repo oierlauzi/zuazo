@@ -152,7 +152,7 @@ inline void	NonLinear<order>::advance(const Utils::TimeInterval& time){
 
 template <u_int32_t order>
 inline void NonLinear<order>::setState(States state){
-	std::lock_guard<std::mutex> lock(s_player.updateMutex);
+	std::lock_guard<std::mutex> lock(s_player.m_updateMutex);
 	m_state=state;
 }
 
@@ -163,7 +163,7 @@ inline typename NonLinear<order>::States NonLinear<order>::getState() const{
 
 template <u_int32_t order>
 inline void NonLinear<order>::setPlaySpeed(double speed){
-	std::lock_guard<std::mutex> lock(s_player.updateMutex);
+	std::lock_guard<std::mutex> lock(s_player.m_updateMutex);
 	if(speed >= 0){
 		m_playSpeed=speed;
 		m_playRev=false;
@@ -180,7 +180,7 @@ inline double NonLinear<order>::getPlaySpeed() const{
 
 template <u_int32_t order>
 inline void NonLinear<order>::setRepeat(bool rep){
-	std::lock_guard<std::mutex> lock(s_player.updateMutex);
+	std::lock_guard<std::mutex> lock(s_player.m_updateMutex);
 	m_repeat=rep;
 
 	if(rep)
