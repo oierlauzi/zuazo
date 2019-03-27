@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Video/VideoOutputBase.h"
+#include "../Video/VideoSourceBase.h"
 #include "../Video/VideoStream.h"
 #include "../ZuazoBase.h"
 
@@ -8,7 +8,7 @@
 
 namespace Zuazo::Sources{
 class SVG :
-		public Video::TVideoOutputBase<Video::VideoSourcePad<SVG>>,
+		public Video::TVideoSourceBase<Video::VideoSourcePad<SVG>>,
 		public ZuazoBase
 {
 public:

@@ -9,8 +9,8 @@
 #include "../Utils/Resolution.h"
 #include "../Utils/ScalingModes.h"
 #include "../Utils/Vector.h"
-#include "../Video/VideoInputBase.h"
 #include "../Video/VideoStream.h"
+#include "../Video/VideoConsumerBase.h"
 #include "../ZuazoBase.h"
 
 #include <GLFW/glfw3.h>
@@ -24,7 +24,7 @@
 namespace Zuazo::Consumers{
 
 class Window :
-	public Video::TVideoInputBase<Video::VideoConsumerPad<Window>>,
+	public Video::TVideoConsumerBase<Video::VideoConsumerPad<Window>>,
 	public ZuazoBase,
 	private Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>
 {

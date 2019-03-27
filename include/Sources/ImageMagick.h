@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Video/VideoOutputBase.h"
+#include "../Video/VideoSourceBase.h"
 #include "../Video/VideoStream.h"
 #include "../ZuazoBase.h"
 
@@ -14,7 +14,7 @@ class Image;
 namespace Zuazo::Sources{
 
 class ImageMagick :
-	public Video::TVideoOutputBase<Video::VideoSourcePad<ImageMagick>>,
+	public Video::TVideoSourceBase<Video::VideoSourcePad<ImageMagick>>,
 	public ZuazoBase
 {
 public:

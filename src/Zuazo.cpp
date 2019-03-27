@@ -3,7 +3,6 @@
 #include <Consumers/Window.h>
 #include <Graphics/Context.h>
 #include <Timing/Timings.h>
-#include <Video/VideoOutputBase.h>
 #include <Sources/ImageMagick.h>
 #include <Sources/SVG.h>
 #include <Sources/V4L2.h>
@@ -13,6 +12,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <Magick++/Functions.h>
+#include <Video/VideoSourceBase.h>
 
 namespace Zuazo{
 
@@ -81,12 +81,12 @@ Errors end(){
     return Errors::NONE; //TODO
 }
 
-std::unique_ptr<Video::VideoOutputBase> videoOutputFromFile(const std::string& file){
+std::unique_ptr<Video::VideoSourceBase> videoSourceFromFile(const std::string& file){
 	const std::string fileExtension=file.substr(file.find_last_of(".") + 1);
 
 	//Check V4L2 compatibility
 	if(file.find("/dev/video") == 0)
-		return std::unique_ptr<Video::VideoOutputBase>(new Sources::V4L2(file));
+		return std::unique_ptr<Video::VideoSourceBase>(new Sources::V4L2(file));
 
 	//Check SVG compatibility
 	const std::set<std::string> svgSupportedExtensions{
@@ -94,7 +94,7 @@ std::unique_ptr<Video::VideoOutputBase> videoOutputFromFile(const std::string& f
 	};
 
 	if(svgSupportedExtensions.find(fileExtension) != svgSupportedExtensions.end())
-		return std::unique_ptr<Video::VideoOutputBase>(new Sources::SVG(file, 96));
+		return std::unique_ptr<Video::VideoSourceBase>(new Sources::SVG(file, 96));
 
 	//Check ImageMagick compatibility
 	const std::set<std::string> magickppSupportedExtensions{
@@ -105,7 +105,7 @@ std::unique_ptr<Video::VideoOutputBase> videoOutputFromFile(const std::string& f
 	}; //TODO complete list
 
 	if(magickppSupportedExtensions.find(fileExtension) != magickppSupportedExtensions.end())
-		return std::unique_ptr<Video::VideoOutputBase>(new Sources::ImageMagick(file));
+		return std::unique_ptr<Video::VideoSourceBase>(new Sources::ImageMagick(file));
 
 
 	//Check FFmpeg compatibility
@@ -117,9 +117,9 @@ std::unique_ptr<Video::VideoOutputBase> videoOutputFromFile(const std::string& f
 	}; //TODO complete list
 
 	if(ffSupportedExtensions.find(fileExtension) != ffSupportedExtensions.end())
-		return std::unique_ptr<Video::VideoOutputBase>(new Sources::FFmpeg(file));
+		return std::unique_ptr<Video::VideoSourceBase>(new Sources::FFmpeg(file));
 
-	return std::unique_ptr<Video::VideoOutputBase>(); //No luck :-<
+	return std::unique_ptr<Video::VideoSourceBase>(); //No luck :-<
 }
 
 

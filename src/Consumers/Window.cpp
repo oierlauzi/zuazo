@@ -1,10 +1,12 @@
 #include <Consumers/Window.h>
-#include <glm/detail/type_vec2.hpp>
+
 #include <Graphics/Context.h>
 #include <Graphics/Frame.h>
 #include <Graphics/GL/Texture2D.h>
 #include <Graphics/GL/UniqueBinding.h>
 #include <Graphics/Shapes/Quads.h>
+
+#include <glm/detail/type_vec2.hpp>
 #include <algorithm>
 #include <map>
 #include <utility>

@@ -5,8 +5,8 @@
 #include "../Utils/PixelFormat.h"
 #include "../Utils/VideoMode.h"
 #include "../Video/VideoBase.h"
-#include "../Video/VideoOutputBase.h"
 #include "../Video/VideoStream.h"
+#include "../Video/VideoSourceBase.h"
 #include "../ZuazoBase.h"
 
 #include <stddef.h>
@@ -27,7 +27,7 @@ struct v4l2_buffer;
 namespace Zuazo::Sources{
 
 class V4L2:
-		public Video::TVideoOutputBase<Video::AsyncVideoSourcePad<V4L2>>,
+		public Video::TVideoSourceBase<Video::AsyncVideoSourcePad<V4L2>>,
 		public Utils::FileBase,
 		public ZuazoBase
 {

@@ -5,7 +5,7 @@
 
 namespace Zuazo {
 namespace Video {
-class VideoOutputBase;
+class VideoSourceBase;
 } /* namespace Video */
 } /* namespace Zuazo */
 
@@ -33,6 +33,6 @@ extern std::unique_ptr<Timing::Timings> timings;
 Errors				init();
 Errors 				end();
 
-extern std::unique_ptr<Video::VideoOutputBase> videoOutputFromFile(const std::string& file);
+extern std::unique_ptr<Video::VideoSourceBase> videoSourceFromFile(const std::string& file);
 
 }

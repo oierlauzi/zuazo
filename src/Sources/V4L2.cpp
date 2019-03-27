@@ -549,6 +549,8 @@ void V4L2::compressedCapturingThread(){
 				decodedImgBuf.att.pixFmt = Utils::PixelFormats::YUV440P;
 			else if(decodedImgBuf.att.pixFmt == Utils::PixelFormats::YUVJ444P)
 				decodedImgBuf.att.pixFmt = Utils::PixelFormats::YUV444P;
+
+			m_videoMode.pixFmt=decodedImgBuf.att.pixFmt;
 		}
 
 		std::unique_ptr<const Graphics::Frame> frame;

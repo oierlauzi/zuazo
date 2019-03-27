@@ -33,7 +33,7 @@ using namespace Zuazo::Sources;
 
 
 FFmpeg::FFmpeg(const std::string& dir) :
-		Video::VideoOutputBase(m_videoSourcePad),
+		Video::VideoSourceBase(m_videoSourcePad),
 		Utils::FileBase(dir),
 		m_videoSourcePad(*this)
 {

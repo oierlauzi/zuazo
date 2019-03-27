@@ -5,7 +5,7 @@
 #include "../Timing/UpdateOrder.h"
 #include "../Utils/FileBase.h"
 #include "../Utils/TimeInterval.h"
-#include "../Video/VideoOutputBase.h"
+#include "../Video/VideoSourceBase.h"
 #include "../Video/VideoStream.h"
 #include "../ZuazoBase.h"
 
@@ -46,7 +46,7 @@ namespace Zuazo::Stream{
 namespace Zuazo::Sources{
 
 class FFmpeg :
-		public Video::VideoOutputBase,
+		public Video::VideoSourceBase,
 		public Utils::FileBase,
 		public Timing::NonLinear<Timing::UPDATE_ORDER_FF_DEC>,
 		public ZuazoBase

@@ -3,7 +3,7 @@
 #include <zuazo/Stream/Source.h>
 #include <zuazo/Utils/Resolution.h>
 #include <zuazo/Utils/VideoMode.h>
-#include <zuazo/Video/VideoOutputBase.h>
+#include <zuazo/Video/VideoSourceBase.h>
 #include <zuazo/Zuazo.h>
 
 #include <cstdio>
@@ -51,14 +51,14 @@ int main(int argc, char *argv[]){
 	}
 
 	 //Create a vector of pointers to video sources
-	std::vector<std::unique_ptr<Zuazo::Video::VideoOutputBase>> videoSources;
+	std::vector<std::unique_ptr<Zuazo::Video::VideoSourceBase>> videoSources;
 	//As the size of the vector is known, its more efficient to allocate it in advance
 	videoSources.resize(10);
 
 	//Iterate through the list and create sources with each file
 	for(int i=0; (i < argc - 1) && (i < 10); i++){
 		const std::string path(argv[i + 1]);
-		videoSources[i]=Zuazo::videoOutputFromFile(path); //Create a video source from it
+		videoSources[i]=Zuazo::videoSourceFromFile(path); //Create a video source from it
 
 		if(!videoSources[i]){
 			std::cout << "Failed to open " << path << std::endl;
@@ -101,6 +101,9 @@ int main(int argc, char *argv[]){
 		}
 	}while(key != 'q');
 
+	for(auto& source : videoSources){
+		source.reset();
+	}
 
 	//It would be a good practice to destroy zuazo objects before calling end()
 	Zuazo::end();
