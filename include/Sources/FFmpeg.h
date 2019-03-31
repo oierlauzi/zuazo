@@ -5,6 +5,7 @@
 #include "../Timing/UpdateOrder.h"
 #include "../Utils/FileBase.h"
 #include "../Utils/TimeInterval.h"
+#include "../Graphics/Context.h"
 #include "../Video/VideoSourceBase.h"
 #include "../Video/VideoStream.h"
 #include "../ZuazoBase.h"
@@ -57,6 +58,13 @@ public:
 	FFmpeg(const FFmpeg& other);
 	~FFmpeg();
 
+	SUPPORTS_GETTING_PIXELFORMAT
+	SUPPORTS_GETTING_RESOLUTION
+	SUPPORTS_GETTING_CODEC
+	SUPPORTS_GETTING_FRAMERATE
+	SUPPORTS_GETTING_PROGRESSIVE
+	SUPPORTS_GETTING_VIDEOMODE
+
 	void							open() override;
 	void							close() override;
 
@@ -85,7 +93,17 @@ private:
 
 template<typename T>
 inline std::shared_ptr<const T> Zuazo::Stream::FFmpegSourcePad<T>::get() const{
-	std::lock_guard<std::mutex> lock(m_owner.m_decodeMutex); //Wait until decoding has finished
+	const Graphics::Context* ctx(Graphics::Context::getCurrentCtx());
+
+	if(ctx){
+		//Unuse the main ctx to avoid deadlocks
+		ctx->unuse();
+		std::lock_guard<std::mutex> lock(m_owner.m_decodeMutex); //Wait until decoding has finished
+		ctx->use();
+	}else{
+		std::lock_guard<std::mutex> lock(m_owner.m_decodeMutex); //Wait until decoding has finished
+	}
+
 	return Source<T>::get();
 }
 

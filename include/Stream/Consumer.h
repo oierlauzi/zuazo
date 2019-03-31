@@ -37,13 +37,15 @@ private:
 	std::shared_ptr<const T>			reqElement() const;
 };
 
-
-
-template <typename T, typename Q>
+template <typename T>
 class ConsumerPad :
 		public Consumer<T>
 {
-	friend Q;
+public:
+	using Consumer<T>::get;
+	using Consumer<T>::hasChanged;
+	using Consumer<T>::reset;
+	using Consumer<T>::Consumer;
 };
 
 

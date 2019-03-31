@@ -4,7 +4,6 @@
 #include <Graphics/Frame.h>
 #include <Graphics/GL/Texture2D.h>
 #include <Graphics/GL/UniqueBinding.h>
-#include <Graphics/Shapes/Quads.h>
 
 #include <glm/detail/type_vec2.hpp>
 #include <algorithm>
@@ -13,18 +12,20 @@
 
 using namespace Zuazo::Consumers;
 
-const Zuazo::Graphics::Shapes::Rectangle::RectangleVertices Window::WindowResources::screenVertices={
-		Zuazo::Utils::Vec2f(-1.0, 	-1.0),
-		Zuazo::Utils::Vec2f(+1.0, 	+1.0)
+const Zuazo::Utils::Vec2f Window::WindowResources::screenVertices[4]={
+		Zuazo::Utils::Vec2f(-1.0, 	-1.0), 	//Bottom left
+		Zuazo::Utils::Vec2f(-1.0,	+1.0),	//Top left
+		Zuazo::Utils::Vec2f(+1.0,	-1.0),	//Bottom right
+		Zuazo::Utils::Vec2f(+1.0,	+1.0),	//Top right
 };
 
-const std::string Window::WindowResources::vertexShader=
-		#include "../../data/shaders/copy.vert"
-		;
+const std::string Window::WindowResources::vertexShader(
+		#include "../../data/shaders/window.vert"
+);
 
-const std::string Window::WindowResources::fragmentShader=
-		#include "../../data/shaders/copy.frag"
-		;
+const std::string Window::WindowResources::fragmentShader(
+		#include "../../data/shaders/window.frag"
+);
 
 
 /*
@@ -128,7 +129,7 @@ void Window::open(){
 		glEnable(GL_TEXTURE_2D);
 
 		//Initialize the OpenGL resources
-		m_glResources=std::unique_ptr<WindowResources>(new WindowResources);
+		m_resources=std::unique_ptr<WindowResources>(new WindowResources);
 
 		//Turn v-sync on/off
 		if(m_vSync)
@@ -171,7 +172,7 @@ void Window::close(){
 		//Release OpenGL resources
 		GLFWwindow* previousCtx=glfwGetCurrentContext();
 		glfwMakeContextCurrent(m_glfwWindow);
-		m_glResources.reset();
+		m_resources.reset();
 		glfwMakeContextCurrent(previousCtx);
 
 		//Destroy the window
@@ -278,8 +279,6 @@ void Window::draw() const{
 
 void Window::update() const{
 	if(m_videoConsumerPad.hasChanged() || m_forceDraw){
-		m_forceDraw=false;
-
 		std::shared_ptr<const Graphics::Frame> frame=m_videoConsumerPad.get();
 		const Graphics::GL::Texture2D* tex=nullptr;
 
@@ -291,22 +290,88 @@ void Window::update() const{
 		glfwMakeContextCurrent(m_glfwWindow);
 
 		//Clear
-		glClearColor(0.0, 0.0, 0.0, 1.0);
+		glClearColor(0.0, 0.0, 0.0, 0.0);
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		if(tex){
-			Graphics::GL::UniqueBinding<Graphics::GL::Texture2D> textureBinding(*tex);
-			Graphics::GL::UniqueBinding<Graphics::GL::Shader> shaderBinding(m_glResources->shader);
+			const Utils::Resolution& srcRes=frame->getAttributes().res;
+			if((m_lastFrameRes != srcRes || m_forceDraw) && srcRes){
+				//Vertex buffer needs to be updated
 
-			m_glResources->rectangle.upload(frame->scaleFrame(
-					m_videoMode.res,
-					m_scalingMode
-			));
-			m_glResources->rectangle.draw();
+				const Utils::Resolution& dstRes=m_videoMode.res;
+				float sX, sY, s;
+
+				//Calculate the scale
+				sX=(float)dstRes.width / srcRes.width;
+				sY=(float)dstRes.height / srcRes.height;
+
+
+				//Evaluate drawing area's dimensions
+				switch(m_scalingMode){
+				case Utils::ScalingMode::Boxed:
+					//Scale with the minimum factor
+					s=std::min(sX, sY);
+					sX=s;
+					sY=s;
+					break;
+				case Utils::ScalingMode::Cropped:
+					//Scale with the maximum factor
+					s=std::max(sX, sY);
+					sX=s;
+					sY=s;
+					break;
+				case Utils::ScalingMode::Stretched:
+					//Scale independently.
+					//Neither sX nor sY needs to be modified
+					break;
+				case Utils::ScalingMode::ClampVert:
+					//Scale according to sY
+					sX=sY;
+					break;
+				case Utils::ScalingMode::ClampHor:
+					//Scale according to sX
+					sY=sX;
+					break;
+				default:
+					//This should not happen
+					//Don't show anything
+					sX=0;
+					sY=0;
+					break;
+				}
+
+				float diffX = (float)dstRes.width / (2 * srcRes.width * sX);
+				float diffY = (float)dstRes.height / (2 * srcRes.height * sY);
+
+				Zuazo::Utils::Vec2f vertices[4]={  //Invert Y coordinates
+						Zuazo::Utils::Vec2f(0.5f - diffX, 	0.5f + diffY),
+						Zuazo::Utils::Vec2f(0.5f - diffX, 	0.5f - diffY),
+						Zuazo::Utils::Vec2f(0.5f + diffX, 	0.5f + diffY),
+						Zuazo::Utils::Vec2f(0.5f + diffX, 	0.5f - diffY),
+				};
+
+				Graphics::GL::UniqueBinding<Graphics::GL::VertexArrayBuffer> vboBind(m_resources->texVbo);
+
+				Graphics::GL::VertexArrayBuffer::bufferSubData(
+						sizeof(vertices),
+						0,
+						vertices
+				);
+
+				m_lastFrameRes=srcRes;
+			}
+
+			//Finaly draw everithing
+			Graphics::GL::UniqueBinding<Graphics::GL::VertexArray> vaoBind(m_resources->vao);
+			Graphics::GL::UniqueBinding<Graphics::GL::Shader> shaderBind(m_resources->shader);
+			Graphics::GL::UniqueBinding<Graphics::GL::Texture2D> texBind(*tex);
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		}
 
 		glfwMakeContextCurrent(previousCtx);
 		draw();
+
+		m_forceDraw=false;
 	}
 }
 
@@ -388,4 +453,101 @@ void Window::Screen::glfwMonitorCbk(GLFWmonitor * mon, int event){
 
 Window::Screen::Screen(GLFWmonitor * monitor){
 	m_glfwMonitor=monitor;
+}
+
+Window::WindowResources::WindowResources() :
+	shader(vertexShader, fragmentShader)
+{
+	Graphics::GL::UniqueBinding<Graphics::GL::VertexArray> vaoBind(vao);
+
+	Graphics::GL::VertexArray::enableAttribute(0);
+	Graphics::GL::VertexArray::enableAttribute(1);
+
+	{
+	Graphics::GL::UniqueBinding<Graphics::GL::VertexArrayBuffer> vboBind(vertVbo);
+
+	Graphics::GL::VertexArrayBuffer::bufferData(
+			sizeof(screenVertices),
+			Graphics::GL::VertexArrayBuffer::Usage::StaticDraw,
+			screenVertices
+	);
+	Graphics::GL::VertexArray::attributePtr<float, 2>(0);
+
+	}
+
+	{
+	Graphics::GL::UniqueBinding<Graphics::GL::VertexArrayBuffer> vboBind(texVbo);
+
+	Graphics::GL::VertexArrayBuffer::bufferData(
+			sizeof(float) * 2 * 4,
+			Graphics::GL::VertexArrayBuffer::Usage::DynamicDraw,
+			nullptr
+	);
+	Graphics::GL::VertexArray::attributePtr<float, 2>(1);
+
+	}
+}
+
+
+std::string Window::Screen::getName() const{
+	std::lock_guard<std::mutex> lock(s_cbkMutex);
+
+	if(m_glfwMonitor){
+		return std::string(glfwGetMonitorName(m_glfwMonitor));
+	}else
+		return "";
+}
+
+Zuazo::Utils::Resolution Window::Screen::getRes() const{
+	std::lock_guard<std::mutex> lock(s_cbkMutex);
+
+	if(m_glfwMonitor){
+		const GLFWvidmode* videoMode=glfwGetVideoMode(m_glfwMonitor);
+		return Utils::Resolution(videoMode->width, videoMode->height);
+	}else
+		return Utils::Resolution();
+}
+
+Zuazo::Utils::Vec2<int> Window::Screen::getSize() const{
+	std::lock_guard<std::mutex> lock(s_cbkMutex);
+
+	if(m_glfwMonitor){
+		int width, height;
+		glfwGetMonitorPhysicalSize(m_glfwMonitor, &width, &height);
+		return Utils::Vec2<int>(width, height);
+	}else
+		return Utils::Vec2<int>(-1, -1);
+}
+
+Zuazo::Utils::Vec2<int> Window::Screen::getPos() const{
+	std::lock_guard<std::mutex> lock(s_cbkMutex);
+
+	if(m_glfwMonitor){
+		int x, y;
+		glfwGetMonitorPos(m_glfwMonitor, &x, &y);
+		return Utils::Vec2<int>(x, y);
+	}else
+		return Utils::Vec2<int>(-1, -1);
+}
+
+Zuazo::Utils::Rational Window::Screen::getRate() const{
+	std::lock_guard<std::mutex> lock(s_cbkMutex);
+
+	if(m_glfwMonitor){
+		const GLFWvidmode* videoMode=glfwGetVideoMode(m_glfwMonitor);
+		return Utils::Rational(videoMode->refreshRate, 1);
+	}else
+		return Utils::Rational();
+}
+
+bool Window::Screen::isAvalible() const{
+	std::lock_guard<std::mutex> lock(s_cbkMutex);
+
+	return m_glfwMonitor != nullptr;
+}
+
+std::set<std::shared_ptr<Window::Screen>> Window::Screen::getScreens(){
+	std::lock_guard<std::mutex> lock(s_cbkMutex);
+
+	return s_screens;
 }

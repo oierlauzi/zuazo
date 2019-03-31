@@ -14,7 +14,7 @@ class Image;
 namespace Zuazo::Sources{
 
 class ImageMagick :
-	public Video::TVideoSourceBase<Video::VideoSourcePad<ImageMagick>>,
+	public Video::TVideoSourceBase<Video::VideoSourcePad>,
 	public ZuazoBase
 {
 public:
@@ -28,6 +28,10 @@ public:
 
 	void									replace(const std::shared_ptr<const Magick::Image>& img);
 	void 									reload();
+
+	SUPPORTS_GETTING_PIXELFORMAT
+	SUPPORTS_GETTING_RESOLUTION
+	SUPPORTS_GETTING_VIDEOMODE
 
 	void 									open() override;
 	void 									close() override;

@@ -1,11 +1,13 @@
 #pragma once
 
 namespace Zuazo::Utils{
-enum class ScalingModes{
+
+enum class ScalingMode{
 	Stretched,
 	Boxed,
 	Cropped,
 	ClampVert,
 	ClampHor
 };
+
 }

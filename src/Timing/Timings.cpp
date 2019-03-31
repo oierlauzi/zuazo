@@ -3,6 +3,8 @@
 
 namespace Zuazo::Timing{
 
+std::unique_ptr<Timings> timings;
+
 /*
  * TIMING'S METHOD DEFINITIONS
  */
@@ -21,7 +23,6 @@ Timings::~Timings(){
 
 void Timings::threadFunc(){
 	std::unique_lock<std::mutex> lock(m_mutex);
-	Graphics::UniqueContext ctx(m_ctx);
 
 	while(!m_exit){
 
@@ -41,11 +42,14 @@ void Timings::threadFunc(){
 			 * No need, its actually sorted by default
 			 */
 
-			//Update all
-			for(auto ite=updates.updateables.begin(); ite!=updates.updateables.end(); ++ite){
-				for(const UpdateableBase * updateable : ite->second){
-					std::lock_guard<const UpdateableBase> lock(*updateable);
-					updateable->update();
+			//Update all pending updates
+			{
+				Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
+				for(auto ite=updates.updateables.begin(); ite!=updates.updateables.end(); ++ite){
+					for(const UpdateableBase * updateable : ite->second){
+						std::lock_guard<const UpdateableBase> lock(*updateable);
+						updateable->update();
+					}
 				}
 			}
 

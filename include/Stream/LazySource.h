@@ -23,12 +23,12 @@ public:
 
 	virtual void						enable() override;
 	virtual void						disable() override;
+
+	virtual std::shared_ptr<const T>	get() const override;
 protected:
 	bool 								m_isEnabled=true;
 	u_int32_t							m_maxUpdateRecursion=1;
 	mutable u_int32_t					m_updateRecursion=0;
-
-	virtual std::shared_ptr<const T>	get() const override;
 };
 
 
@@ -75,32 +75,34 @@ inline std::shared_ptr<const T> LazySource<T>::get() const{
 	return Stream::Source<T>::get();
 }
 
-template <typename T, typename Q>
+template <typename T>
 class LazySourcePad :
 		public LazySource<T>
 {
-	friend Q;
 public:
 	LazySourcePad(const Timing::UpdateableBase& owner);
 
 	void update() const override;
+	using Source<T>::push;
+	using Source<T>::reset;
 protected:
 	using LazySource<T>::m_updateRecursion;
 private:
 	const Timing::UpdateableBase& m_owner;
 };
+
 /*
  * METHOD DEFINITIONS
  */
 
-template <typename T, typename Q>
-inline LazySourcePad<T, Q>::LazySourcePad(const Timing::UpdateableBase& owner) :
+template <typename T>
+inline LazySourcePad<T>::LazySourcePad(const Timing::UpdateableBase& owner) :
 	m_owner(owner)
 {
 }
 
-template <typename T, typename Q>
-inline void LazySourcePad<T, Q>::update() const{
+template <typename T>
+inline void LazySourcePad<T>::update() const{
 	if(m_updateRecursion == 1){
 		std::lock_guard<const Timing::UpdateableBase> lock(m_owner);
 		m_owner.update();

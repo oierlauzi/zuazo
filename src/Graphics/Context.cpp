@@ -60,10 +60,14 @@ Context::Context() {
 }
 
 Context::~Context() {
+	use();
+	m_shaderPool.clear();
+	unuse();
+
 	glfwDestroyWindow(m_glfwCtx);
 }
 
-const Context& Context::getAvalibleCtx(){
+const Context& Context::getAvailableCtx(){
 	auto ite=s_sharedCtxs.begin();
 
 	while((*ite)->tryUse() == false){

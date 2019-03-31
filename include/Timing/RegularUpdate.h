@@ -10,11 +10,9 @@ namespace Zuazo::Timing{
 	class Timings;
 }
 
-namespace Zuazo{
-extern std::unique_ptr<Timing::Timings> timings;
-}
-
 namespace Zuazo::Timing{
+
+extern std::unique_ptr<Timing::Timings> timings;
 
 template <u_int32_t order>
 class RegularUpdate :

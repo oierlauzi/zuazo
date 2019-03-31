@@ -22,6 +22,10 @@ struct ImageAttributes{
 	ImageAttributes(const ImageAttributes& other)=default;
 	~ImageAttributes()=default;
 
+	constexpr operator bool() const{
+		return res && pixFmt;
+	}
+
 	constexpr int operator==(const ImageAttributes& other) const{
 		return res == other.res && pixFmt == other.pixFmt;
 	}

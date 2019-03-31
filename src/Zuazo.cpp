@@ -2,21 +2,20 @@
 
 #include <Consumers/Window.h>
 #include <Graphics/Context.h>
+#include <Graphics/ShaderPool.h>
 #include <Timing/Timings.h>
 #include <Sources/ImageMagick.h>
 #include <Sources/SVG.h>
 #include <Sources/V4L2.h>
 #include <Sources/FFmpeg.h>
-
-
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <Magick++/Functions.h>
 #include <Video/VideoSourceBase.h>
 
-namespace Zuazo{
+#include <GLFW/glfw3.h>
+#include <Magick++/Functions.h>
 
-std::unique_ptr<Timing::Timings> timings;
+#include <iostream>
+
+namespace Zuazo{
 
 /***************************************************
  *  INITIALIZATION / QUIT FUNCTIONS                *
@@ -55,7 +54,8 @@ Errors init(){
     Magick::InitializeMagick(nullptr);
 
     //Initialize timing
-    timings=std::unique_ptr<Timing::Timings>(new Timing::Timings);
+    Timing::timings=std::unique_ptr<Timing::Timings>(new Timing::Timings);
+
 
 //TODO
     /*err=Shapes::Base::init();
@@ -76,7 +76,7 @@ Errors init(){
  **/
 Errors end(){
 	Consumers::Window::end();
-	timings.reset();
+	Timing::timings.reset();
 	Graphics::Context::end();
     return Errors::NONE; //TODO
 }

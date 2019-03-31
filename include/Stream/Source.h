@@ -33,12 +33,14 @@ private:
 	mutable std::set<Consumer<T>*>		m_consumers;
 };
 
-
-template <typename T, typename Q>
+template <typename T>
 class SourcePad :
 		public Source<T>
 {
-	friend Q;
+public:
+	using Source<T>::push;
+	using Source<T>::reset;
+	using Source<T>::Source;
 };
 
 /*

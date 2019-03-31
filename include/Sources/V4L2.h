@@ -27,7 +27,7 @@ struct v4l2_buffer;
 namespace Zuazo::Sources{
 
 class V4L2:
-		public Video::TVideoSourceBase<Video::AsyncVideoSourcePad<V4L2>>,
+		public Video::TVideoSourceBase<Video::AsyncVideoSourcePad>,
 		public Utils::FileBase,
 		public ZuazoBase
 {
@@ -39,6 +39,13 @@ public:
 
 	void						open() override;
 	void						close() override;
+
+	SUPPORTS_GETTING_PIXELFORMAT
+	SUPPORTS_GETTING_RESOLUTION
+	SUPPORTS_GETTING_CODEC
+	SUPPORTS_GETTING_FRAMERATE
+	SUPPORTS_GETTING_PROGRESSIVE
+	SUPPORTS_GETTING_VIDEOMODE
 
 	SUPPORTS_SETTING_VIDEOMODE
 	void						setVideoMode(const Utils::VideoMode& mode) override;

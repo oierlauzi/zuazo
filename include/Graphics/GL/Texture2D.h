@@ -6,10 +6,8 @@
 #include <sys/types.h>
 
 namespace Zuazo::Graphics::GL{
-class FrameBuffer;
 
 class Texture2D{
-	friend FrameBuffer;
 public:
 	Texture2D();
 	Texture2D(const Texture2D& other)=delete;

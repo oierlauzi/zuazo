@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../Utils/ScalingMode.h"
+
 #include "VideoBase.h"
 #include "VideoStream.h"
 
@@ -17,13 +19,14 @@ public:
 	VideoConsumerBase(const VideoConsumerBase& other)=default;
 	virtual ~VideoConsumerBase()=default;
 
+	virtual bool			supportsGettingScalingMode() const{ return false; }
 	virtual bool			supportsSettingScalingMode() const{ return false; }
+	#define SUPPORTS_GETTING_SCALINGMODE  virtual bool supportsGettingScalingMode() const override{ return true; }
 	#define SUPPORTS_SETTING_SCALINGMODE  virtual bool supportsSettingScalingMode() const override{ return true; }
-
-	virtual void			setScalingMode(Utils::ScalingModes scaling){};
-	Utils::ScalingModes		getScalingMode() const;
+	Utils::ScalingMode		getScalingMode() const;
+	virtual void			setScalingMode(Utils::ScalingMode scaling){};
 protected:
-	Utils::ScalingModes		m_scalingMode=Utils::ScalingModes::Stretched;
+	Utils::ScalingMode		m_scalingMode=Utils::ScalingMode::Stretched;
 };
 
 
@@ -38,7 +41,7 @@ inline VideoConsumerBase::VideoConsumerBase(VideoConsumer& consumer, const Utils
 {
 }
 
-inline Utils::ScalingModes VideoConsumerBase::getScalingMode() const{
+inline Utils::ScalingMode VideoConsumerBase::getScalingMode() const{
 	return m_scalingMode;
 }
 

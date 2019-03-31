@@ -8,13 +8,17 @@
 
 namespace Zuazo::Sources{
 class SVG :
-		public Video::TVideoSourceBase<Video::VideoSourcePad<SVG>>,
+		public Video::TVideoSourceBase<Video::VideoSourcePad>,
 		public ZuazoBase
 {
 public:
 	SVG(const std::string& dir, float dpi);
 	SVG(const SVG& other);
 	~SVG();
+
+	SUPPORTS_GETTING_PIXELFORMAT
+	SUPPORTS_GETTING_RESOLUTION
+	SUPPORTS_GETTING_VIDEOMODE
 
 	void							open() override;
 	void							close() override;

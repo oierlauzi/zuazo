@@ -43,7 +43,7 @@ private:
 
 		QueueElement(const std::shared_ptr<const T>& el) :
 			element(el),
-			ts(timings->now())
+			ts(Timing::timings->now())
 		{
 		}
 	};
@@ -97,7 +97,7 @@ inline void Delay<T>::update() const{
 
 		//Advance the queue until an element with the desired time-stamp is found
 		while(m_queue.size()){
-			if(m_queue.front().ts <= timings->now() - m_delay){
+			if(m_queue.front().ts <= Timing::timings->now() - m_delay){
 				lastElement=m_queue.front().element;
 				m_queue.pop();
 			}else

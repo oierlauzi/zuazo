@@ -95,8 +95,6 @@ private:
 
 	TimingTable									m_timingTable;
 
-	Graphics::Context							m_ctx;
-
 	Utils::TimePoint							m_currTime;
 	Utils::TimeInterval							m_elapsed;
 
@@ -107,6 +105,8 @@ private:
 
 	void										threadFunc();
 };
+
+extern std::unique_ptr<Timings> timings;
 
 /*
  * TIMING'S INLINE METHOD DEFINITIONS
@@ -119,8 +119,6 @@ inline const Utils::TimePoint& Timings::now() const{
 inline const Utils::TimeInterval& Timings::getElapsed() const{
 	return m_elapsed;
 }
-
-
 
 inline void Timings::lock(){
 	m_mutex.lock();

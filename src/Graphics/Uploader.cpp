@@ -78,9 +78,11 @@ std::unique_ptr<const Frame> Uploader::getFrame(const Utils::ImageBuffer& buf) c
 	//Get a Pixel Unpack Buffer
 	std::unique_ptr<GL::PixelUnpackBuffer> pbo=Frame::createPixelUnpackBuffer(m_destSize);
 	if(!pbo){
-		UniqueContext ctx(Context::getMainCtx());
+		UniqueContext mainCtx(Context::getMainCtx());
 		pbo=std::unique_ptr<GL::PixelUnpackBuffer> (new GL::PixelUnpackBuffer);
 	}
+
+	UniqueContext ctx;
 
 	//Bind the PBO
 	GL::UniqueBinding<GL::PixelUnpackBuffer> bufferBinding(*pbo);
@@ -123,27 +125,9 @@ std::unique_ptr<const Frame> Uploader::getFrame(const Utils::ImageBuffer& buf) c
 }
 
 ImageAttributes	Uploader::getBestMatch(const Utils::ImageAttributes& other){
-	const AVPixelFormat compatiblePixelFormats[]={
-			AV_PIX_FMT_GRAY8,
-			AV_PIX_FMT_RGB24,
-			AV_PIX_FMT_BGR24,
-			AV_PIX_FMT_RGB32,
-			AV_PIX_FMT_BGR32,
-
-			AV_PIX_FMT_GRAY16,
-			AV_PIX_FMT_RGB48,
-			AV_PIX_FMT_BGR48,
-			AV_PIX_FMT_RGBA64,
-			AV_PIX_FMT_BGRA64,
-
-			AV_PIX_FMT_GRAYF32,
-
-			AV_PIX_FMT_NONE, //List needs to be terminated with AV_PIX_FMT_NONE
-	};
-
 	int loss=0; //Needs to be set to 0, otherwise, erratic conversions will occur.
 	Utils::PixelFormat fmt(avcodec_find_best_pix_fmt_of_list(
-			compatiblePixelFormats,
+			(const AVPixelFormat*)compatiblePixelFormats,
 			other.pixFmt.toAVPixelFormat(),
 			other.pixFmt.hasAlpha(),
 			&loss

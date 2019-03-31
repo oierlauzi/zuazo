@@ -62,32 +62,42 @@ inline TVideoSourceBase<T>::TVideoSourceBase(const Utils::VideoMode& videoMode) 
 
 
 
-template<typename Q>
-class TVideoSourceBase<LazyVideoSourcePad<Q>> :
+template<>
+class TVideoSourceBase<LazyVideoSourcePad> :
 	public VideoSourceBase,
-	private virtual Timing::UpdateableBase
+	public Timing::UpdateableBase
 {
 public:
 	TVideoSourceBase();
 	TVideoSourceBase(const Utils::VideoMode& videoMode);
 	TVideoSourceBase(const TVideoSourceBase& other)=default;
 	virtual ~TVideoSourceBase()=default;
+
 protected:
-	LazyVideoSourcePad<Q> m_videoSourcePad;
+	LazyVideoSourcePad m_videoSourcePad;
+
+	virtual void enable() override;
+	virtual void disable() override;
 };
 
-template <typename Q>
-inline TVideoSourceBase<LazyVideoSourcePad<Q>>::TVideoSourceBase() :
+inline TVideoSourceBase<LazyVideoSourcePad>::TVideoSourceBase() :
 	VideoSourceBase(m_videoSourcePad),
 	m_videoSourcePad(*this)
 {
 }
 
-template <typename Q>
-inline TVideoSourceBase<LazyVideoSourcePad<Q>>::TVideoSourceBase(const Utils::VideoMode& videoMode) :
+inline TVideoSourceBase<LazyVideoSourcePad>::TVideoSourceBase(const Utils::VideoMode& videoMode) :
 	VideoSourceBase(m_videoSourcePad, videoMode),
 	m_videoSourcePad(*this)
 {
+}
+
+inline void TVideoSourceBase<LazyVideoSourcePad>::enable(){
+	m_videoSourcePad.enable();
+}
+
+inline void TVideoSourceBase<LazyVideoSourcePad>::disable(){
+	m_videoSourcePad.disable();
 }
 
 }

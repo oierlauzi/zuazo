@@ -74,6 +74,7 @@ private:
 
 typedef Buffer<BufferTypes::PixelUnpack> PixelUnpackBuffer;
 typedef Buffer<BufferTypes::Array> VertexArrayBuffer;
+typedef Buffer<BufferTypes::Uniform> UniformBuffer;
 
 /*
  * METHOD DEFINITIONS

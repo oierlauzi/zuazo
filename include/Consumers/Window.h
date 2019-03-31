@@ -2,12 +2,12 @@
 
 #include "../glad/glad.h"
 #include "../Graphics/GL/Shader.h"
-#include "../Graphics/Shapes/Rectangle.h"
+#include "../Graphics/GL/Buffer.h"
+#include "../Graphics/GL/VertexArray.h"
 #include "../Timing/PeriodicUpdate.h"
 #include "../Timing/UpdateOrder.h"
 #include "../Utils/Rational.h"
 #include "../Utils/Resolution.h"
-#include "../Utils/ScalingModes.h"
 #include "../Utils/Vector.h"
 #include "../Video/VideoStream.h"
 #include "../Video/VideoConsumerBase.h"
@@ -24,7 +24,7 @@
 namespace Zuazo::Consumers{
 
 class Window :
-	public Video::TVideoConsumerBase<Video::VideoConsumerPad<Window>>,
+	public Video::TVideoConsumerBase<Video::VideoConsumerPad>,
 	public ZuazoBase,
 	private Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>
 {
@@ -66,13 +66,16 @@ public:
 	void										open() override;
 	void										close() override;
 
+	SUPPORTS_GETTING_RESOLUTION
 	SUPPORTS_SETTING_RESOLUTION
 	SUPPORTS_ANY_RESOLUTION
 	void										setResolution(const Utils::Resolution& res) override;
 
+	SUPPORTS_GETTING_SCALINGMODE
 	SUPPORTS_SETTING_SCALINGMODE
-	void										setScalingMode(Utils::ScalingModes mode) override;
+	void										setScalingMode(Utils::ScalingMode mode) override;
 
+	SUPPORTS_GETTING_FRAMERATE
 	SUPPORTS_SETTING_FRAMERATE
 	SUPPORTS_ANY_FRAMERATE
 	void										setFramerate(const Utils::Rational& rate) override;
@@ -96,20 +99,18 @@ private:
 	};
 
 	struct WindowResources{
-		WindowResources() :
-			shader(vertexShader, fragmentShader),
-			rectangle(screenVertices)
-		{
-		}
+		WindowResources();
 		WindowResources(const WindowResources& other)=delete;
 		~WindowResources()=default;
 
 		Graphics::GL::Shader						shader;
-		Graphics::Shapes::Rectangle					rectangle;
+		Graphics::GL::VertexArrayBuffer				vertVbo;
+		Graphics::GL::VertexArrayBuffer				texVbo;
+		Graphics::GL::VertexArray					vao;
 	private:
 		static const std::string					vertexShader;
 		static const std::string					fragmentShader;
-		static const Graphics::Shapes::Rectangle::RectangleVertices screenVertices;
+		static const Utils::Vec2f 					screenVertices[4];
 	};
 
  	//The GLFW window
@@ -126,7 +127,9 @@ private:
 	mutable std::condition_variable 			m_drawCond;
 	bool										m_exit;
 
-	std::unique_ptr<WindowResources> 			m_glResources;
+	std::unique_ptr<WindowResources> 			m_resources;
+
+	mutable Utils::Resolution					m_lastFrameRes;
 	mutable bool								m_forceDraw;
 
 	void										draw() const;
@@ -145,73 +148,6 @@ private:
 };
 
 /*
- * SCREEN'S INLINE METHOD DEFINITIONS
- */
-
-inline std::string Window::Screen::getName() const{
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
-
-	if(m_glfwMonitor){
-		return std::string(glfwGetMonitorName(m_glfwMonitor));
-	}else
-		return "";
-}
-
-inline Utils::Resolution Window::Screen::getRes() const{
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
-
-	if(m_glfwMonitor){
-		const GLFWvidmode* videoMode=glfwGetVideoMode(m_glfwMonitor);
-		return Utils::Resolution(videoMode->width, videoMode->height);
-	}else
-		return Utils::Resolution();
-}
-
-inline Utils::Vec2<int> Window::Screen::getSize() const{
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
-
-	if(m_glfwMonitor){
-		int width, height;
-		glfwGetMonitorPhysicalSize(m_glfwMonitor, &width, &height);
-		return Utils::Vec2<int>(width, height);
-	}else
-		return Utils::Vec2<int>(-1, -1);
-}
-
-inline Utils::Vec2<int> Window::Screen::getPos() const{
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
-
-	if(m_glfwMonitor){
-		int x, y;
-		glfwGetMonitorPos(m_glfwMonitor, &x, &y);
-		return Utils::Vec2<int>(x, y);
-	}else
-		return Utils::Vec2<int>(-1, -1);
-}
-
-inline Utils::Rational Window::Screen::getRate() const{
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
-
-	if(m_glfwMonitor){
-		const GLFWvidmode* videoMode=glfwGetVideoMode(m_glfwMonitor);
-		return Utils::Rational(videoMode->refreshRate, 1);
-	}else
-		return Utils::Rational();
-}
-
-inline bool Window::Screen::isAvalible() const{
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
-
-	return m_glfwMonitor != nullptr;
-}
-
-inline std::set<std::shared_ptr<Window::Screen>> Window::Screen::getScreens(){
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
-
-	return s_screens;
-}
-
-/*
  * WINDOW INLINE METHOD DEFINITIONS
  */
 
@@ -225,9 +161,10 @@ inline void Window::setResolution(const Utils::Resolution& res) {
 	}
 }
 
-inline void	Window::setScalingMode(Utils::ScalingModes mode){
+inline void	Window::setScalingMode(Utils::ScalingMode mode){
 	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_scalingMode=mode;
+	m_forceDraw=true;
 }
 
 inline void Window::setTitle(const std::string& title){

@@ -25,7 +25,7 @@
  * HOW TO COMPILE:
  * g++ Example2.cpp -o Example2 -std=c++17 -lzuazo -lavutil -lavformat -lavcodec -lswscale -lglfw -lMagick++-6.Q16 -lMagickWand-6.Q16 -lMagickCore-6.Q16
  * HOW TO RUN:
- * LD_LIBRARY_PATH=/usr/local/lib ./Example2 <video file>
+ * ./Example2 <video file>
  */
 int main(int argc, char *argv[]){
 	//We need to have 2 arguments passed (1 is always filled with the name of the executable)
@@ -137,6 +137,11 @@ int main(int argc, char *argv[]){
 	}while(key != 'q');
 
 
-	//It would be a good practice to destroy zuazo objects before calling end()
+
+	//You should always close the objects before calling end()
+	//Deleting them is also OK
+	window.close();
+	player.close();
+
 	Zuazo::end();
 }

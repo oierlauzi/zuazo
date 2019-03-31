@@ -1,6 +1,8 @@
 #pragma once
 
 #include "../glad/glad.h" //Needs to be included before GLFW
+#include "ShaderPool.h"
+
 #include <GLFW/glfw3.h>
 #include <sys/types.h>
 #include <array>
@@ -31,13 +33,18 @@ public:
 	bool						tryUse() const;
 	void 						unuse() const;
 
+	const ShaderPool&			getShaderPool() const;
+
+	static const Context*		getCurrentCtx();
 	static const Context&		getMainCtx();
-	static const Context&		getAvalibleCtx();
+	static const Context&		getAvailableCtx();
 private:
 	static const u_int32_t 		SHARED_CONTEXTS=32;
 
 	GLFWwindow *				m_glfwCtx;
 	mutable std::mutex			m_mutex;
+
+	ShaderPool					m_shaderPool;
 
 	static GLFWwindow *			s_mainGlfwCtx;
 	static thread_local std::stack<const Context*> s_activeContext;
@@ -52,6 +59,7 @@ private:
  */
 class UniqueContext{
 public:
+	UniqueContext();
 	UniqueContext(const Context& ctx);
 	UniqueContext(const UniqueContext& ctx)=delete;
 	~UniqueContext();
@@ -94,7 +102,8 @@ inline bool	Context::tryUse() const{
 
 			s_activeContext.push(this);
 			return true;
-		} else return false; //Could not lock the mutex
+		} else
+			return false; //Could not lock the mutex
 	} else {
 		s_activeContext.push(this);
 		return true; //It was already active
@@ -118,8 +127,21 @@ inline void Context::unuse() const{
 	}
 }
 
+inline const ShaderPool& Context::getShaderPool() const{
+	return m_shaderPool;
+}
+
+inline const Context* Context::getCurrentCtx(){
+	return s_activeContext.top();
+}
+
 inline const Context& Context::getMainCtx(){
 	return *s_mainCtx;
+}
+
+inline UniqueContext::UniqueContext() :
+		m_ctx(Context::getAvailableCtx())
+{
 }
 
 inline UniqueContext::UniqueContext(const Context& ctx) :

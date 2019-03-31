@@ -8,8 +8,6 @@
 #include "ImageAttributes.h"
 #include "ImageBuffer.h"
 #include "Pool.h"
-#include "Shapes/Rectangle.h"
-#include "../Utils/ScalingModes.h"
 
 namespace Zuazo::Graphics{
 
@@ -23,16 +21,8 @@ public:
 	virtual ~Frame();
 
 	const GL::Texture2D& 								getTexture() const;
-	void												bind() const;
-	void												unbind() const;
-	void												bindFill() const;
-	void												unbindFill() const;
-	void												bindKey() const;
-	void												unbindKey() const;
 
 	const ImageAttributes& 								getAttributes() const;
-	Shapes::Rectangle::RectangleTexCoords				scaleFrame(const Resolution& dstRes, Utils::ScalingModes scaling) const;
-
 
 	static std::unique_ptr<GL::Texture2D>				createTexture(const ImageAttributes& attrib);
 	static std::unique_ptr<GL::PixelUnpackBuffer>		createPixelUnpackBuffer(size_t size);
@@ -49,29 +39,6 @@ private:
 /*
  * INLINE METHOD DEFINITIONS
  */
-
-inline void Frame::bind() const{
-	bindFill();
-	bindKey();
-}
-inline void	Frame::unbind() const{
-	unbindFill();
-	unbindKey();
-}
-
-inline void	Frame::bindFill() const{
-	getTexture().bind(0);
-}
-inline void	Frame::unbindFill() const{
-	getTexture().unbind(0);
-}
-
-inline void	Frame::bindKey() const{
-	getTexture().bind(1);
-}
-inline void	Frame::unbindKey() const{
-	getTexture().unbind(1);
-}
 
 inline const ImageAttributes& Frame::getAttributes() const{
 	return m_attributes;

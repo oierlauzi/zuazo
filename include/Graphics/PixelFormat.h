@@ -145,6 +145,24 @@ constexpr std::pair<PixelFormat, Utils::PixelFormat> pixelConversions[]={
 		{PixelFormats::NONE,	Utils::PixelFormats::NONE		},
 };
 
+constexpr Utils::PixelFormat compatiblePixelFormats[]={
+		Utils::PixelFormats::GRAY8,
+		Utils::PixelFormats::RGB24,
+		Utils::PixelFormats::BGR24,
+		Utils::PixelFormats::RGB32,
+		Utils::PixelFormats::BGR32,
+
+		Utils::PixelFormats::GRAY16,
+		Utils::PixelFormats::RGB48,
+		Utils::PixelFormats::BGR48,
+		Utils::PixelFormats::RGBA64,
+		Utils::PixelFormats::BGRA64,
+
+		Utils::PixelFormats::GRAYF32,
+
+		Utils::PixelFormats::NONE
+};
+
 constexpr PixelFormat::PixelFormat(const Utils::PixelFormat& other) :
 			PixelFormat()
 {

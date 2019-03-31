@@ -130,13 +130,13 @@ void FFmpeg::open(){
 }
 
 void FFmpeg::close(){
+	Timing::NonLinear<Timing::UPDATE_ORDER_FF_DEC>::disable();
+
 	m_videoSourcePad.reset();
 	m_exit=true;
 	m_decodeCondition.notify_one();
 	if(m_decodingThread.joinable())
 		m_decodingThread.join();
-
-	Timing::NonLinear<Timing::UPDATE_ORDER_FF_DEC>::disable();
 
 	if(m_formatCtx){
 		avformat_close_input(&m_formatCtx);
@@ -151,6 +151,12 @@ void FFmpeg::close(){
 }
 
 void FFmpeg::update() const{
+	const Graphics::Context* ctx(Graphics::Context::getCurrentCtx());
+
+	//Unuse the main ctx to avoid deadlocks
+	if(ctx)
+		ctx->unuse();
+
 	std::lock_guard<std::mutex> lock(m_decodeMutex);
 
 	int64_t newTs=av_rescale_q(
@@ -163,6 +169,10 @@ void FFmpeg::update() const{
 		m_currTs=newTs;
 		m_decodeCondition.notify_one();
 	}
+
+	//Use the main ctx to avoid deadlocks
+	if(ctx)
+		ctx->use();
 }
 
 void FFmpeg::decodingFunc(){
@@ -252,17 +262,12 @@ void FFmpeg::decodingFunc(){
 
 			}while((decodedTs + decodedDur) < m_currTs);
 
-			//At least one frame was decoded
-			std::unique_ptr<const Graphics::Frame> newFrame;
-
 			//Upload image to the source
 			memcpy(decodedImgBuf.data, decodedFrame->data, sizeof(decodedImgBuf.data)); //Copy plane pointers
-			{
-				Graphics::UniqueContext ctx(Graphics::Context::getAvalibleCtx());
-				newFrame=frameConverter.getFrame(decodedImgBuf);
-			}
 
-			m_videoSourcePad.push(std::move(newFrame));
+			m_videoSourcePad.push(
+					frameConverter.getFrame(decodedImgBuf)
+			);
 		}
 		m_decodeCondition.wait(lock);
 	}

@@ -70,12 +70,51 @@ Shader::~Shader() {
 	}
 }
 
-GLint Shader::getUniformLoc(const std::string& name) const{
-	return glGetUniformLocation(m_program, name.c_str());
+GLint Shader::getAttributeLoc(const std::string& name) const{
+	const auto& ite=m_attribLocations.find(name); //Try to find it in the cache
+
+	GLuint result;
+	if(ite!=m_attribLocations.end()){
+		result=ite->second;
+	}else{
+		result=glGetAttribLocation(m_program, name.c_str()); //Cache it for the future
+		m_attribLocations.emplace(name, result);
+	}
+
+	return result;
 }
 
-GLint Shader::getAttributeLoc(const std::string& name) const{
-	return glGetAttribLocation(m_program, name.c_str());
+GLint Shader::getUniformLoc(const std::string& name) const{
+	const auto& ite=m_uniformLocations.find(name); //Try to fin it in the cache
+
+	GLuint result;
+	if(ite != m_uniformLocations.end()){
+		result=ite->second;
+	}else{
+		result=glGetUniformLocation(m_program, name.c_str()); //Cache it for the future
+		m_uniformLocations.emplace(name, result);
+	}
+
+	return result;
+}
+
+GLint Shader::getUniformBlockIndex(const std::string& name) const{
+	const auto& ite=m_uniformBlockLocations.find(name); //Try to fin it in the cache
+
+	GLuint result;
+	if(ite != m_uniformBlockLocations.end()){
+		result=ite->second;
+	}else{
+		result=glGetUniformBlockIndex(m_program, name.c_str()); //Cache it for the future
+		m_uniformBlockLocations.emplace(name, result);
+	}
+
+	return result;
+}
+
+void Shader::setUniformBlockBinding(const std::string& name, u_int32_t binding) const{
+	u_int32_t idx=getUniformBlockIndex(name);
+	glUniformBlockBinding(m_program, idx, binding);
 }
 
 int Shader::compile(GLuint shader, const char* src) {

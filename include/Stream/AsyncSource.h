@@ -50,11 +50,16 @@ private:
 	mutable std::queue<std::unique_ptr<const T>> m_buffer;
 };
 
-template <typename T, typename Q>
+template <typename T>
 class AsyncSourcePad :
 		public AsyncSource<T>
 {
-	friend Q;
+public:
+	using AsyncSource<T>::push;
+	using AsyncSource<T>::reset;
+	using AsyncSource<T>::enable;
+	using AsyncSource<T>::disable;
+	using AsyncSource<T>::AsyncSource;
 };
 
 template <typename T>

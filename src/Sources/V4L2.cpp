@@ -553,14 +553,9 @@ void V4L2::compressedCapturingThread(){
 			m_videoMode.pixFmt=decodedImgBuf.att.pixFmt;
 		}
 
-		std::unique_ptr<const Graphics::Frame> frame;
-
-		{
-			Graphics::UniqueContext ctx(Graphics::Context::getAvalibleCtx());
-			frame=uplo.getFrame(decodedImgBuf);
-		}
-
-		m_videoSourcePad.push(std::move(frame));
+		m_videoSourcePad.push(
+				uplo.getFrame(decodedImgBuf)
+		);
     }
 
     //Free everything
@@ -587,16 +582,11 @@ void V4L2::rawCapturingThread(){
 
     	decodedImgBuf.fillData(m_buffers[buf.index].buffer);
 
-		std::unique_ptr<const Graphics::Frame> frame;
-
-		{
-			Graphics::UniqueContext ctx(Graphics::Context::getAvalibleCtx());
-			frame=uplo.getFrame(decodedImgBuf);
-		}
+		m_videoSourcePad.push(
+				uplo.getFrame(decodedImgBuf)
+		);
 
 		freeBuffer(&buf); //V4L2 buffer no longer needed
-
-		m_videoSourcePad.push(std::move(frame));
     }
 }
 

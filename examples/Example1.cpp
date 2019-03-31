@@ -24,7 +24,7 @@
  * HOW TO COMPILE:
  * g++ Example1.cpp -o Example1 -std=c++17 -lzuazo -lavutil -lavformat -lavcodec -lswscale -lglfw -lMagick++-6.Q16 -lMagickWand-6.Q16 -lMagickCore-6.Q16
  * HOW TO RUN:
- * LD_LIBRARY_PATH=/usr/local/lib ./Example1 <file1> <file2> ... <file10>
+ * LD_LIBRARY_PATH=./Example1 <file1> <file2> ... <file10>
  *
  * where file(n) equals a JPG, PNG, SVG, BMP, MP4, AVI... file or a V4L2 input (/dev/video0, /dev/video1 ...)
  */
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]){
 		std::terminate();
 	}
 
-	 //Create a vector of pointers to video sources
+	//Create a vector of pointers to video sources
 	std::vector<std::unique_ptr<Zuazo::Video::VideoSourceBase>> videoSources;
 	//As the size of the vector is known, its more efficient to allocate it in advance
 	videoSources.resize(10);
@@ -101,10 +101,14 @@ int main(int argc, char *argv[]){
 		}
 	}while(key != 'q');
 
+	//Delete the sources
 	for(auto& source : videoSources){
 		source.reset();
 	}
 
-	//It would be a good practice to destroy zuazo objects before calling end()
+	//You should always close the objects before calling end()
+	//Deleting them is also OK
+	window.close();
+
 	Zuazo::end();
 }

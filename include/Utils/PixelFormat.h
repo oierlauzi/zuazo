@@ -22,6 +22,7 @@ public:
 	PixelFormat(const PixelFormat& other)=default;
 	~PixelFormat()=default;
 
+	constexpr 				operator bool() const;
 	constexpr int 			operator==(const PixelFormat& other) const;
 	constexpr int 			operator!=(const PixelFormat& other) const;
 	constexpr int 			operator<(const PixelFormat& other) const;
@@ -49,6 +50,10 @@ constexpr PixelFormat::PixelFormat() :
 constexpr PixelFormat::PixelFormat(AVPixelFormat fmt) :
 		fmt(fmt)
 {
+}
+
+constexpr PixelFormat::operator bool() const{
+	return fmt != AV_PIX_FMT_NONE;
 }
 
 constexpr int PixelFormat::operator==(const PixelFormat& other) const{

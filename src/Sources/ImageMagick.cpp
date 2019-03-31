@@ -51,7 +51,7 @@ void ImageMagick::open(){
 		std::unique_ptr<Graphics::GL::Texture2D> tex=Graphics::Frame::createTexture(att);
 		if(tex){
 			//There was an available texture in the pool
-			Graphics::UniqueContext ctx(Graphics::Context::getAvalibleCtx());
+			Graphics::UniqueContext ctx(Graphics::Context::getAvailableCtx());
 			Graphics::GL::UniqueBinding<Graphics::GL::Texture2D> texBinding(*tex);
 			imgBuf.textureSubImage();
 		}else{

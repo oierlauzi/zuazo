@@ -28,8 +28,6 @@ enum class Errors{
     TEXT_INIT
 };
 
-extern std::unique_ptr<Timing::Timings> timings;
-
 Errors				init();
 Errors 				end();
 
