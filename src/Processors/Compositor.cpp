@@ -113,13 +113,14 @@ void Compositor::update() const{
 		//Set the viewport for rendering
 		glViewport(0, 0, m_videoMode.res.width, m_videoMode.res.height);
 
-		//glEnable(GL_DEPTH_TEST);
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LESS);
 
 		for(auto& layer : m_layers){
 			layer->draw();
 		}
 
-		//glDisable(GL_DEPTH_TEST);
+		glDisable(GL_DEPTH_TEST);
 
 		m_videoSourcePad.push(m_drawtable->finish());
 	}
