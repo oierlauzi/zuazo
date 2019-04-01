@@ -2,7 +2,7 @@
 
 ## Description
 
-Zuazo is library for manipulating real-time video. It's designed to take advantege of the GPU by offloading most of the work to OpenGL. It features a simple but powerful signal routing, compatibility with several video sources such as a video file, Video for Linux 2 (V4L2) device, still images, ImageMagick images, SVG files... Currently it can combine several video sources by using the Compositor class.  It has been written in C++17, including the API so it is *NOT* compatible with older versions of C++.
+Zuazo is library for manipulating real-time video. It's designed to take advantege of the GPU by offloading most of the work to OpenGL. It features a simple but powerful signal routing, compatibility with several video sources such as a video file, Video for Linux 2 (V4L2) devices, such as web-cameras, still images, ImageMagick surfaces, SVG files... Currently it can combine several video sources by using the Compositor class, but it is still WIP. It has been written in C++17, including the API, so it is *NOT* compatible with older versions of C++.
 
 ## Requirements
 
