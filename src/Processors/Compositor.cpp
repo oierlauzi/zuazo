@@ -42,8 +42,6 @@ Compositor::Compositor(const Utils::VideoMode& videoMode) :
 	m_cameraPos=getDefaultCameraPosition();
 	m_fov=getDefaultFov();
 
-	m_fov=getDefaultFov();
-
 	calculateViewMatrix();
 	calculateProjectionMatrix();
 
@@ -183,6 +181,7 @@ void Compositor::resize(){
 				Graphics::PixelFormat(m_videoMode.pixFmt)
 		);
 
+		Graphics::UniqueContext ctx;
 		m_drawtable->resize(att);
 	}
 
@@ -203,7 +202,10 @@ void Compositor::calculateViewMatrix(){
 
 void Compositor::calculateProjectionMatrix(){
 	std::lock_guard<std::mutex> lock(m_updateMutex);
-	m_projectionMatrix=Graphics::MatrixOperations::perspective(m_videoMode.res, m_fov, m_nearClip, m_farClip);
+	if(m_videoMode.res)
+		m_projectionMatrix=Graphics::MatrixOperations::perspective(m_videoMode.res, m_fov, m_nearClip, m_farClip);
+	else
+		m_projectionMatrix=Utils::Mat4x4f();
 
 	//Flip vertically, as we are treating texture's data from top to bottom
 	m_projectionMatrix=Graphics::MatrixOperations::scale(m_projectionMatrix, Utils::Vec3f(1, -1, 1));
@@ -225,7 +227,7 @@ Compositor::LayerBase::LayerBase() :
 	m_scale(Utils::Vec3f(1, 1, 1)),
 	m_position(Utils::Vec3f(0, 0, 0)),
 	m_opacity(1.0),
-	m_forceChange(true)
+	m_forceRender(true)
 {
 	calculateModelMatrix();
 }
@@ -235,13 +237,13 @@ void Compositor::LayerBase::open(){
 	m_opacityUbo=std::unique_ptr<Graphics::ShaderUniform<float>> (new Graphics::ShaderUniform<float>(OPACITY_INDEX));
 	m_modelMatrixUbo->setData(m_modelMatrix);
 	m_opacityUbo->setData(m_opacity);
-	m_forceChange=true;
+	m_forceRender=true;
 }
 
 void Compositor::LayerBase::close(){
 	m_modelMatrixUbo.reset();
 	m_opacityUbo.reset();
-	m_forceChange=true;
+	m_forceRender=true;
 }
 
 
@@ -251,19 +253,24 @@ void Compositor::LayerBase::setup() const{
 }
 
 bool Compositor::LayerBase::hasChanged() const{
-	return m_forceChange;
+	return m_forceRender;
 }
 
 void Compositor::LayerBase::calculateModelMatrix(){
 	std::lock_guard<std::mutex> lock(m_mutex);
-	m_modelMatrix=Graphics::MatrixOperations::eulerAngle(m_rotation);
-	m_modelMatrix=Graphics::MatrixOperations::scale(m_modelMatrix, m_scale);
-	m_modelMatrix=Graphics::MatrixOperations::translate(m_modelMatrix, m_position);
+	//m_modelMatrix=Graphics::MatrixOperations::eulerAngle(m_rotation);
+	//m_modelMatrix=Graphics::MatrixOperations::scale(m_modelMatrix, m_scale);
+	//m_modelMatrix=Graphics::MatrixOperations::translate(m_modelMatrix, m_position);
+
+	const Utils::Mat4x4f rotationMatrix(Graphics::MatrixOperations::eulerAngle(m_rotation));
+	const Utils::Mat4x4f scaleMatrix(Graphics::MatrixOperations::scale(m_scale));
+	const Utils::Mat4x4f translationMatrix(Graphics::MatrixOperations::translate(m_position));
+	m_modelMatrix=translationMatrix * scaleMatrix * rotationMatrix;
 
 	if(m_modelMatrixUbo){
 		Graphics::UniqueContext ctx;
 		m_modelMatrixUbo->setData(m_modelMatrix);
-		m_forceChange=true;
+		m_forceRender=true;
 	}
 }
 
@@ -280,15 +287,6 @@ const std::string Compositor::VideoLayer::s_fragmentShaderSrc(
 		#include "../../data/shaders/video_layer.frag"
 );
 
-static const Zuazo::Graphics::Rectangle defaultRect={
-		.center	=Zuazo::Utils::Vec3f(640, 360, 0),
-		.size	=Zuazo::Utils::Vec2f(1280, 720)
-};
-
-Compositor::VideoLayer::VideoLayer() : VideoLayer(defaultRect)
-{
-}
-
 Compositor::VideoLayer::VideoLayer(const Graphics::Rectangle& rect) :
 		m_rectangle(rect)
 {
@@ -304,7 +302,7 @@ void Compositor::VideoLayer::setRect(const Graphics::Rectangle& rect){
 	if(m_frameGeom){
 		Graphics::UniqueContext ctx;
 		m_frameGeom->setGeometry(rect);
-		m_forceChange=true;
+		m_forceRender=true;
 	}
 }
 
@@ -314,7 +312,7 @@ void Compositor::VideoLayer::setScalingMode(Utils::ScalingMode scaling){
 	if(m_frameGeom){
 		Graphics::UniqueContext ctx;
 		m_frameGeom->setScalingMode(m_scalingMode);
-		m_forceChange=true;
+		m_forceRender=true;
 	}
 }
 
@@ -331,7 +329,7 @@ void Compositor::VideoLayer::draw() const{
 }
 
 bool Compositor::VideoLayer::hasChanged() const{
-	return m_videoConsumerPad.hasChanged() || m_forceChange;
+	return m_videoConsumerPad.hasChanged() || m_forceRender;
 }
 
 void Compositor::VideoLayer::open(){

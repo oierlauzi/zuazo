@@ -10,12 +10,14 @@ include(GNUInstallDirs)
 #Set up project's properties
 set (CMAKE_CXX_STANDARD 17) #Set compile parameters
 
+#Check if the needed libraries are installed
+find_package(ImageMagick REQUIRED Magick++)
+find_package(glfw3 REQUIRED)
 
 #zuazo's include path
 include_directories(include)
 
 #Include ImageMagick (Magick++)
-find_package(ImageMagick COMPONENTS Magick++)
 include_directories(${ImageMagick_INCLUDE_DIRS})
 add_compile_definitions(MAGICKCORE_QUANTUM_DEPTH=16)
 add_compile_definitions(MAGICKCORE_HDRI_ENABLE=false)
@@ -30,7 +32,8 @@ file(GLOB_RECURSE HEADERS include/*.h)
 
 # Create shared library
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
-set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 0.1.0)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION ${PROJECT_VERSION})
 
 # Install library
 install(TARGETS ${PROJECT_NAME} DESTINATION lib/)

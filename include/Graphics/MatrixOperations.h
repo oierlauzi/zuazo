@@ -21,13 +21,28 @@ inline typename Utils::Mat4x4<T> rotate(const Utils::Mat4x4<T>& matrix, const Ut
 }
 
 template<typename T>
+inline typename Utils::Mat4x4<T> rotate(const Utils::Vec3<T>& axis, T angle){
+	return glm::rotate(Utils::Mat4x4<T>(1.0), angle, axis);
+}
+
+template<typename T>
 inline typename Utils::Mat4x4<T> scale(const Utils::Mat4x4<T>& matrix, const Utils::Vec3<T>& scales){
 	return glm::scale(matrix, scales);
 }
 
 template<typename T>
+inline typename Utils::Mat4x4<T> scale(const Utils::Vec3<T>& scales){
+	return glm::scale(Utils::Mat4x4<T>(1.0), scales);
+}
+
+template<typename T>
 inline typename Utils::Mat4x4<T> translate(const Utils::Mat4x4<T>& matrix, const Utils::Vec3<T>& position){
 	return glm::translate(matrix, position);
+}
+
+template<typename T>
+inline typename Utils::Mat4x4<T> translate(const Utils::Vec3<T>& position){
+	return glm::translate(Utils::Mat4x4<T>(1.0), position);
 }
 
 template<typename T>

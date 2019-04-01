@@ -55,7 +55,7 @@ public:
 		void									setup() const;
 
 		mutable std::mutex						m_mutex;
-		bool									m_forceChange;
+		bool									m_forceRender;
 	private:
 		Utils::Vec3f							m_rotation;
 		Utils::Vec3f							m_scale;
@@ -74,18 +74,18 @@ public:
 			public Video::TVideoConsumerBase<Video::VideoConsumerPad>
 	{
 	public:
-		VideoLayer();
+		VideoLayer()=default;
 		VideoLayer(const Graphics::Rectangle& rect);
 		VideoLayer(const VideoLayer& other)=delete;
 		VideoLayer(VideoLayer&& other)=default;
 		virtual ~VideoLayer()=default;
+
+		const Graphics::Rectangle& 				getRect() const;
+		void									setRect(const Graphics::Rectangle& rect);
 	private:
 		Graphics::Rectangle						m_rectangle;
 
 		std::unique_ptr<Graphics::FrameGeometry> m_frameGeom;
-
-		const Graphics::Rectangle& 				getRect() const;
-		void									setRect(const Graphics::Rectangle& rect);
 
 		SUPPORTS_GETTING_SCALINGMODE
 		SUPPORTS_SETTING_SCALINGMODE
@@ -150,7 +150,7 @@ public:
 	void									setDefaultClipping();
 
 	template<typename T = LayerBase>
-	const std::unique_ptr<T>&				getLayer(u_int32_t idx) const;
+	T*										getLayer(u_int32_t idx) const;
 	u_int32_t								getLayerCount() const;
 	template<typename T = LayerBase>
 	void									addLayer(std::unique_ptr<T> layer);
@@ -300,11 +300,11 @@ inline void Compositor::setDefaultClipping(){
 }
 
 template<typename T>
-inline const std::unique_ptr<T>& Compositor::getLayer(u_int32_t idx) const{
+inline T* Compositor::getLayer(u_int32_t idx) const{
 	if(isValidIndex(idx)){
-		return dynamic_cast<std::unique_ptr<T>>(m_layers[idx]);
+		return dynamic_cast<T*>(m_layers[idx].get());
 	}else
-		return std::unique_ptr<T>();
+		return nullptr;
 }
 
 inline u_int32_t Compositor::getLayerCount() const{
