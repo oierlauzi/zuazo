@@ -24,6 +24,9 @@
 
 /**
  * DESCRIPTION:
+ * Renders in 3D space a random video sources, with a random position, rotation and size
+ * Sometimes adding a new layer won't make much of a difference in the final rendering.
+ * This is due to the layer is being placed out of sight, or perpendicular to the projection plane
  *
  */
 
@@ -47,6 +50,9 @@ int main(int argc, char *argv[]){
 		std::cout << "Usage: " << std::string(argv[0]) << " <file1> <file2> ... <filen>" << std::endl;
 		std::terminate();
 	}
+
+	//Initialize the random number generator
+	srand (time(NULL));
 
 	//Create a vector of pointers to video sources
 	std::vector<std::unique_ptr<Zuazo::Video::VideoSourceBase>> videoSources;
