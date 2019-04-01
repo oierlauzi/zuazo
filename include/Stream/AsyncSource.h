@@ -40,7 +40,7 @@ protected:
 
 	void								push(std::unique_ptr<const T> element);
 private:
-	static constexpr u_int32_t			DEFAULT_MAX_DROPPED=3;
+	static constexpr u_int32_t			DEFAULT_MAX_DROPPED=10;
 	static constexpr u_int32_t			DEFAULT_MAX_BUFFER_SIZE=3;
 
 	u_int32_t							m_maxDropped;
@@ -146,10 +146,11 @@ inline void AsyncSource<T>::update() const{
 		//There is at least an element at the buffer. Push it into the source
 		Source<T>::push(std::move(m_buffer.front()));
 		m_buffer.pop();
+		m_dropped=0;
 	}else{
 		//Missing element -> dropped
 		m_dropped++;
-		if(m_dropped>m_maxDropped && m_maxDropped>=0){
+		if(m_dropped > m_maxDropped && m_maxDropped >= 0){
 			//More than tolerable dropped elements
 			Source<T>::push();
 		}

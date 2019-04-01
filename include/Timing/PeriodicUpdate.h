@@ -37,7 +37,7 @@ public:
 	virtual void 						enable() override;
 	virtual void 						disable() override;
 private:
-	Utils::Rational						m_updateInterval;
+	Utils::TimeInterval					m_updateInterval;
 };
 
 /*
@@ -64,7 +64,6 @@ inline PeriodicUpdate<order>::~PeriodicUpdate(){
 template <u_int32_t order>
 inline void PeriodicUpdate<order>::setInterval(const Utils::TimeInterval& interval){
 	m_updateInterval=interval;
-
 	timings->modifyTiming(this);
 }
 
@@ -84,7 +83,7 @@ inline Utils::TimeInterval PeriodicUpdate<order>::getInterval() const {
 
 template <u_int32_t order>
 inline Utils::Rational PeriodicUpdate<order>::getRate() const {
-	return 1/m_updateInterval;
+	return Utils::Rational(Utils::TimeInterval::TIME_UNITS_PER_SECOND, m_updateInterval.count());
 }
 
 template <u_int32_t order>

@@ -97,6 +97,7 @@ inline typename NonLinear<order>::Player NonLinear<order>::s_player;
 
 template <u_int32_t order>
 inline NonLinear<order>::NonLinear() :
+		m_currTime(0),
 		m_state(States::Playing),
 		m_repeat(true),
 		m_playSpeed(1.0),
@@ -106,6 +107,7 @@ inline NonLinear<order>::NonLinear() :
 
 template <u_int32_t order>
 inline NonLinear<order>::NonLinear(const Utils::TimeInterval& duration) :
+		m_currTime(0),
 		m_duration(duration),
 		m_state(States::Playing),
 		m_repeat(true),
