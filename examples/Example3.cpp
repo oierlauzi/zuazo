@@ -105,6 +105,8 @@ int main(int argc, char *argv[]){
 	std::cout << "Use [-] to delete the newest layer" << std::endl;
 	std::cout << "Use [Q] to exit" << std::endl;
 
+	u_int32_t layerCount=0;
+
 	//Main loop
 	char key;
 	do{
@@ -112,6 +114,15 @@ int main(int argc, char *argv[]){
 		key=getchar();
 
 		switch(key){
+		case '-':
+			if(layerCount){
+				composer.deleteLayer(--layerCount);
+				std::cout << "Deleting a layer:" << std::endl;
+				std::cout << "Layer count:	" << layerCount << std::endl << std::endl;
+			}else{
+				std::cout << "Can't delete a layer!" << std::endl;
+			}
+			break;
 		case '+':
 			//Add a layer
 
@@ -131,7 +142,7 @@ int main(int argc, char *argv[]){
 			//Choose a random input for the layer
 			u_int32_t inputIndex=(u_int32_t)RAND_IN_RANGE(0, argc - 1);
 			if(videoSources[inputIndex])
-				layer->videoIn << videoSources[0]->videoOut;
+				layer->videoIn << videoSources[inputIndex]->videoOut;
 
 			//Choose a random position in space
 			Zuazo::Utils::Vec3f position(
@@ -151,13 +162,14 @@ int main(int argc, char *argv[]){
 
 			//Insert the newly create layer into the composer
 			composer.addLayer(std::move(layer));
+			layerCount++;
 
 			std::cout << "Adding a layer:" << std::endl;
 			std::cout << "Input index: 	" << inputIndex << std::endl;
 			std::cout << "Resolution: 	" << width << "x" << height << std::endl;
 			std::cout << "Position: 	(" << position.x << ", " << position.y << ", " << position.z << ")"<< std::endl;
-			std::cout << "Rotation: 	(" << rotation.x << ", " << rotation.y << ", " << rotation.z << ")"<< std::endl;
-
+			std::cout << "Rotation: 	(" << glm::degrees(rotation.x) << "º, " << glm::degrees(rotation.y) << "º, " << glm::degrees(rotation.z) << "º)" << std::endl;
+			std::cout << "Layer count:	" << layerCount << std::endl << std::endl;
 			break;
 		}
 	}while(key != 'q');

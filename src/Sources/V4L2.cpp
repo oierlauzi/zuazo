@@ -268,9 +268,9 @@ void V4L2::open(){
 	std::set<Utils::VideoMode>::iterator vidMode=vidModes.find(m_videoMode);
 	if(vidMode==vidModes.end()){
 		//Requested video mode does not exist
-		//Set the lowest video mode as current
+		//Set the highest video mode as current
 		if(vidModes.begin() != vidModes.end()){
-			m_videoMode=*(vidModes.begin());
+			m_videoMode=*(--vidModes.end());
 		}else{
 			//There are no video modes available
 			close();

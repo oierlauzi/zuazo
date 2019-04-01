@@ -58,7 +58,6 @@ void Drawtable::begin(){
 
 	if(!m_renderTarget){
 		//There wasn't an available texture in the pool, create it
-		UniqueContext ctx(Context::getMainCtx()); //Use main context to create stuff
 		m_renderTarget=std::unique_ptr<GL::Texture2D>(new GL::Texture2D);
 
 		GL::UniqueBinding<GL::Texture2D> texBinding(*m_renderTarget);

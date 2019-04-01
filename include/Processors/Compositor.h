@@ -181,6 +181,8 @@ private:
 	Utils::Mat4x4f							m_projectionMatrix;
 	std::unique_ptr<Graphics::ShaderUniform<Utils::Mat4x4f>> m_projectionMatrixUbo;
 
+	mutable bool							m_forceRender;
+
 	void 									resize();
 	void									calculateViewMatrix();
 	void									calculateProjectionMatrix();
@@ -300,7 +302,7 @@ inline void Compositor::setDefaultClipping(){
 template<typename T>
 inline const std::unique_ptr<T>& Compositor::getLayer(u_int32_t idx) const{
 	if(isValidIndex(idx)){
-		return dynamic_cast<T>(m_layers[idx]);
+		return dynamic_cast<std::unique_ptr<T>>(m_layers[idx]);
 	}else
 		return std::unique_ptr<T>();
 }
@@ -311,22 +313,27 @@ inline u_int32_t Compositor::getLayerCount() const{
 
 template<typename T>
 inline void	Compositor::addLayer(std::unique_ptr<T> layer){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
-	m_layers.push_back(std::move(layer));
-	if(isOpen() && m_layers.back()){
+	std::unique_ptr<LayerBase> newLayer(std::move(layer));
+	if(isOpen() && newLayer){
 		Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
-		m_layers.back()->open();
+		newLayer->open();
 	}
+
+	std::lock_guard<std::mutex> lock(m_updateMutex);
+	m_layers.push_back(std::move(newLayer));
+	m_forceRender=true;
 }
 
 inline void	Compositor::deleteLayer(u_int32_t idx){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
 	if(isValidIndex(idx)){
 		if(m_layers[idx] && isOpen()){
 			Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
 			m_layers[idx]->close();
 		}
+
+		std::lock_guard<std::mutex> lock(m_updateMutex);
 		m_layers.erase(m_layers.begin() + idx);
+		m_forceRender=true;
 	}
 }
 
@@ -334,6 +341,7 @@ inline void	Compositor::swapLayers(u_int32_t idx1, u_int32_t idx2){
 	std::lock_guard<std::mutex> lock(m_updateMutex);
 	if(isValidIndex(idx1) && isValidIndex(idx2)){
 		//TODO
+		m_forceRender=true;
 	}
 }
 

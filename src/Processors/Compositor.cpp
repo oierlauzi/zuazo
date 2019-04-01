@@ -103,7 +103,9 @@ void Compositor::update() const{
 		}
 	}
 
-	if(hasChanged){
+	if(hasChanged || m_forceRender){
+		m_forceRender=false;
+
 		m_drawtable->begin();
 
 		//Attach the view and projection matrix to the shader
@@ -114,12 +116,14 @@ void Compositor::update() const{
 		glViewport(0, 0, m_videoMode.res.width, m_videoMode.res.height);
 
 		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
 		glDepthFunc(GL_LESS);
 
 		for(auto& layer : m_layers){
 			layer->draw();
 		}
 
+		glDisable(GL_BLEND);
 		glDisable(GL_DEPTH_TEST);
 
 		m_videoSourcePad.push(m_drawtable->finish());
@@ -148,6 +152,8 @@ void Compositor::open(){
 	for(auto& layer : m_layers){
 		layer->open();
 	}
+
+	m_forceRender=true;
 
 	Video::TVideoSourceBase<Video::LazyVideoSourcePad>::enable();
 	ZuazoBase::open();
@@ -179,6 +185,7 @@ void Compositor::resize(){
 
 		m_drawtable->resize(att);
 	}
+
 	calculateProjectionMatrix();
 }
 
@@ -190,6 +197,8 @@ void Compositor::calculateViewMatrix(){
 		Graphics::UniqueContext ctx;
 		m_viewMatrixUbo->setData(m_viewMatrix);
 	}
+
+	m_forceRender=true;
 }
 
 void Compositor::calculateProjectionMatrix(){
@@ -203,6 +212,8 @@ void Compositor::calculateProjectionMatrix(){
 		Graphics::UniqueContext ctx;
 		m_projectionMatrixUbo->setData(m_projectionMatrix);
 	}
+
+	m_forceRender=true;
 }
 
 /*
