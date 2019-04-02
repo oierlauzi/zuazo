@@ -18,6 +18,10 @@ Install build tools:
 
 ``sudo apt-get install git cmake g++``
 
+If you want to generate a doxygen document for Zuazo install doxygen and graphviz:
+
+``sudo apt-get install doxygen graphviz``
+
 Install 3rd party dependencies
 
 ``sudo apt-get install libavutil libavcodec libavformat libswscale libglfw3 libmagick++-6.q16-dev libglm-dev ``

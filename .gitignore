@@ -36,16 +36,23 @@
 .cproject
 .project
 .directory
-Debug/
+
+#Binaries
+libzuazo.so.*
+
+#doxygen doc
+doc/doxygen/html
 
 #CMake files
 CMakeCache.txt
+CMakeDoxyfile.in
+CMakeDoxygenDefaults.cmake
+doc/doxygen/Doxyfile
 CMakeFiles/
 cmake_install.cmake
 cmake_manifest.txt
 install_manifest.txt
 Makefile
-libzuazo.so.*
 
 #Example buils
 examples/Example1

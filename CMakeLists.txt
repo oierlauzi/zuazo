@@ -29,6 +29,22 @@ include_directories(lib/nanosvg/include)
 file(GLOB_RECURSE SOURCES src/*.cpp src/*.c)
 file(GLOB_RECURSE HEADERS include/*.h)
 
+#Generate documentation
+find_package(Doxygen)
+if (DOXYGEN_FOUND)
+    set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in)
+    set(DOXYGEN_OUT ${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile)
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+    
+    message("Building doxygen documentation")
+
+    add_custom_target( doxygen_doc ALL
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM )
+        
+endif (DOXYGEN_FOUND)
 
 # Create shared library
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
