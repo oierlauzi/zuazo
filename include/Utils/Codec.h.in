@@ -1,0 +1,66 @@
+#pragma once
+
+extern "C"{
+	#include <libavcodec/avcodec.h>
+}
+
+namespace Zuazo::Utils{
+
+class Codec{
+public:
+	constexpr Codec();
+	constexpr Codec(AVCodecID codec);
+	Codec(const Codec& other)=default;
+	~Codec()=default;
+
+	constexpr int operator==(const Codec& other) const;
+	constexpr int operator!=(const Codec& other) const;
+	constexpr int operator<(const Codec& other) const;
+	constexpr int operator>(const Codec& other) const;
+	constexpr int operator<=(const Codec& other) const;
+	constexpr int operator>=(const Codec& other) const;
+
+	constexpr AVCodecID toAVCodecID() const;
+private:
+	AVCodecID	codecId;
+};
+
+constexpr Codec::Codec() :
+		codecId(AV_CODEC_ID_NONE)
+{
+}
+constexpr Codec::Codec(AVCodecID codec) :
+		codecId(codec)
+{
+}
+
+constexpr int Codec::operator==(const Codec& other) const{
+	return codecId==other.codecId;
+}
+constexpr int Codec::operator!=(const Codec& other) const{
+	return codecId!=other.codecId;
+}
+constexpr int Codec::operator<(const Codec& other) const{
+	return codecId<other.codecId;
+}
+constexpr int Codec::operator>(const Codec& other) const{
+	return codecId>other.codecId;
+}
+constexpr int Codec::operator<=(const Codec& other) const{
+	return codecId<=other.codecId;
+}
+constexpr int Codec::operator>=(const Codec& other) const{
+	return codecId>=other.codecId;
+}
+
+constexpr AVCodecID Codec::toAVCodecID() const{
+	return codecId;
+}
+
+namespace Codecs{
+
+@CODEC_LIST@
+}
+
+@CODEC_SUPPORT_DEFINITIONS@
+}

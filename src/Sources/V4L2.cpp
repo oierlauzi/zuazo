@@ -7,7 +7,6 @@
 #include <Utils/ImageAttributes.h>
 #include <Utils/ImageBuffer.h>
 #include <Utils/Codec.h>
-#include <Utils/PixelFormat.h>
 #include <Utils/Rational.h>
 #include <Utils/Resolution.h>
 #include <Utils/VideoMode.h>
@@ -25,6 +24,7 @@
 #include <map>
 #include <memory>
 #include <utility>
+#include "../../include/Utils/PixelFormat.h"
 
 extern "C"{
 	#include <libavcodec/avcodec.h>
@@ -53,51 +53,51 @@ static int xioctl(int fd, int req, void *arg){
 using namespace Zuazo::Sources;
 
 const V4L2::PixelFormatMap V4L2::s_pixFmtConverisons[]={
-    { Utils::PixelFormats::YUV420P,		Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_YUV420  },
-    { Utils::PixelFormats::YUV420P, 	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_YVU420  },
-    { Utils::PixelFormats::YUV422P, 	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_YUV422P },
-    { Utils::PixelFormats::YUYV422, 	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_YUYV    },
-    { Utils::PixelFormats::UYVY422, 	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_UYVY    },
-    { Utils::PixelFormats::YUV411P, 	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_YUV411P },
-    { Utils::PixelFormats::YUV410P, 	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_YUV410  },
-    { Utils::PixelFormats::YUV410P, 	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_YVU410  },
-    { Utils::PixelFormats::RGB555LE,	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_RGB555  },
-    { Utils::PixelFormats::RGB555BE,	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_RGB555X },
-    { Utils::PixelFormats::RGB565LE,	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_RGB565  },
-    { Utils::PixelFormats::RGB565BE,	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_RGB565X },
-    { Utils::PixelFormats::BGR24,   	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_BGR24   },
-    { Utils::PixelFormats::RGB24,   	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_RGB24   },
+    { Utils::PixelFormats::PIX_FMT_YUV420P,		Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_YUV420  },
+    { Utils::PixelFormats::PIX_FMT_YUV420P, 	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_YVU420  },
+    { Utils::PixelFormats::PIX_FMT_YUV422P, 	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_YUV422P },
+    { Utils::PixelFormats::PIX_FMT_YUYV422, 	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_YUYV    },
+    { Utils::PixelFormats::PIX_FMT_UYVY422, 	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_UYVY    },
+    { Utils::PixelFormats::PIX_FMT_YUV411P, 	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_YUV411P },
+    { Utils::PixelFormats::PIX_FMT_YUV410P, 	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_YUV410  },
+    { Utils::PixelFormats::PIX_FMT_YUV410P, 	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_YVU410  },
+    { Utils::PixelFormats::PIX_FMT_RGB555LE,	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_RGB555  },
+    { Utils::PixelFormats::PIX_FMT_RGB555BE,	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_RGB555X },
+    { Utils::PixelFormats::PIX_FMT_RGB565LE,	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_RGB565  },
+    { Utils::PixelFormats::PIX_FMT_RGB565BE,	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_RGB565X },
+    { Utils::PixelFormats::PIX_FMT_BGR24,   	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_BGR24   },
+    { Utils::PixelFormats::PIX_FMT_RGB24,   	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_RGB24   },
 #ifdef V4L2_PIX_FMT_XBGR32
-    { Utils::PixelFormats::BGRX,    	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_XBGR32  },
-    { Utils::PixelFormats::XRGB,    	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_XRGB32  },
-    { Utils::PixelFormats::BGRA,    	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_ABGR32  },
-    { Utils::PixelFormats::ARGB,    	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_ARGB32  },
+    { Utils::PixelFormats::PIX_FMT_BGR0,    	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_XBGR32  },
+    { Utils::PixelFormats::PIX_FMT_0RGB,    	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_XRGB32  },
+    { Utils::PixelFormats::PIX_FMT_BGRA,    	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_ABGR32  },
+    { Utils::PixelFormats::PIX_FMT_ARGB,    	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_ARGB32  },
 #endif
-    { Utils::PixelFormats::BGRX,    	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_BGR32   },
-    { Utils::PixelFormats::XRGB,    	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_RGB32   },
-    { Utils::PixelFormats::GRAY8,   	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_GREY    },
+    { Utils::PixelFormats::PIX_FMT_BGR0,    	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_BGR32   },
+    { Utils::PixelFormats::PIX_FMT_0RGB,    	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_RGB32   },
+    { Utils::PixelFormats::PIX_FMT_GRAY8,   	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_GREY    },
 #ifdef V4L2_PIX_FMT_Y16
-    { Utils::PixelFormats::GRAY16LE,	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_Y16     },
+    { Utils::PixelFormats::PIX_FMT_GRAY16LE,	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_Y16     },
 #endif
-    { Utils::PixelFormats::NV12,    	Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_NV12    },
-    { Utils::PixelFormats::NONE,   		Utils::Codecs::MJPEG,    V4L2_PIX_FMT_MJPEG   },
-    { Utils::PixelFormats::NONE,		Utils::Codecs::MJPEG,    V4L2_PIX_FMT_JPEG    },
+    { Utils::PixelFormats::PIX_FMT_NV12,    	Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_NV12    },
+    { Utils::PixelFormats::PIX_FMT_NONE,   		Utils::Codecs::CODEC_MJPEG,    V4L2_PIX_FMT_MJPEG   },
+    { Utils::PixelFormats::PIX_FMT_NONE,		Utils::Codecs::CODEC_MJPEG,    V4L2_PIX_FMT_JPEG    },
 #ifdef V4L2_PIX_FMT_H264
-    { Utils::PixelFormats::NONE,   		Utils::Codecs::H264,     V4L2_PIX_FMT_H264    },
+    { Utils::PixelFormats::PIX_FMT_NONE,   		Utils::Codecs::CODEC_H264,     V4L2_PIX_FMT_H264    },
 #endif
 #ifdef V4L2_PIX_FMT_MPEG4
-    { Utils::PixelFormats::NONE,    	Utils::Codecs::MPEG4,    V4L2_PIX_FMT_MPEG4   },
+    { Utils::PixelFormats::PIX_FMT_NONE,    	Utils::Codecs::CODEC_MPEG4,    V4L2_PIX_FMT_MPEG4   },
 #endif
 #ifdef V4L2_PIX_FMT_CPIA1
-    { Utils::PixelFormats::NONE,    	Utils::Codecs::CPIA,     V4L2_PIX_FMT_CPIA1   },
+    { Utils::PixelFormats::PIX_FMT_NONE,    	Utils::Codecs::CODEC_CPIA,     V4L2_PIX_FMT_CPIA1   },
 #endif
 #ifdef V4L2_PIX_FMT_SRGGB8
-    { Utils::PixelFormats::BAYER_BGGR8, Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_SBGGR8 },
-    { Utils::PixelFormats::BAYER_GBRG8, Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_SGBRG8 },
-    { Utils::PixelFormats::BAYER_GRBG8, Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_SGRBG8 },
-    { Utils::PixelFormats::BAYER_RGGB8, Utils::Codecs::RAWVIDEO, V4L2_PIX_FMT_SRGGB8 },
+    { Utils::PixelFormats::PIX_FMT_BAYER_BGGR8, Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_SBGGR8 },
+    { Utils::PixelFormats::PIX_FMT_BAYER_GBRG8, Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_SGBRG8 },
+    { Utils::PixelFormats::PIX_FMT_BAYER_GRBG8, Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_SGRBG8 },
+    { Utils::PixelFormats::PIX_FMT_BAYER_RGGB8, Utils::Codecs::CODEC_RAWVIDEO, V4L2_PIX_FMT_SRGGB8 },
 #endif
-    { Utils::PixelFormats::NONE,    	Utils::Codecs::NONE,     0                    },
+    { Utils::PixelFormats::PIX_FMT_NONE,    	Utils::Codecs::CODEC_NONE,     0                    },
 };
 
 
@@ -384,7 +384,7 @@ void V4L2::open(){
 	}
 
 	m_threadExit=false;
-	if(m_videoMode.codec == Utils::Codecs::RAWVIDEO)
+	if(m_videoMode.codec == Utils::Codecs::CODEC_RAWVIDEO)
 		m_capturingThread=std::thread(&V4L2::rawCapturingThread, this);
 	else
 		m_capturingThread=std::thread(&V4L2::compressedCapturingThread, this);
@@ -537,18 +537,18 @@ void V4L2::compressedCapturingThread(){
 
 		memcpy(decodedImgBuf.data, decodedFrame->data, sizeof(decodedImgBuf.data)); //Copy plane pointers
 
-		if(decodedImgBuf.att.pixFmt == Utils::PixelFormats::NONE){
+		if(decodedImgBuf.att.pixFmt == Utils::PixelFormats::PIX_FMT_NONE){
 			decodedImgBuf.att.pixFmt=Utils::PixelFormat(codecCtx->pix_fmt);
 
 			//Change deprecated formats
-			if(decodedImgBuf.att.pixFmt == Utils::PixelFormats::YUVJ420P)
-				decodedImgBuf.att.pixFmt = Utils::PixelFormats::YUV420P;
-			else if(decodedImgBuf.att.pixFmt == Utils::PixelFormats::YUVJ422P)
-				decodedImgBuf.att.pixFmt = Utils::PixelFormats::YUV422P;
-			else if(decodedImgBuf.att.pixFmt == Utils::PixelFormats::YUVJ440P)
-				decodedImgBuf.att.pixFmt = Utils::PixelFormats::YUV440P;
-			else if(decodedImgBuf.att.pixFmt == Utils::PixelFormats::YUVJ444P)
-				decodedImgBuf.att.pixFmt = Utils::PixelFormats::YUV444P;
+			if(decodedImgBuf.att.pixFmt == Utils::PixelFormats::PIX_FMT_YUVJ420P)
+				decodedImgBuf.att.pixFmt = Utils::PixelFormats::PIX_FMT_YUV420P;
+			else if(decodedImgBuf.att.pixFmt == Utils::PixelFormats::PIX_FMT_YUVJ422P)
+				decodedImgBuf.att.pixFmt = Utils::PixelFormats::PIX_FMT_YUV422P;
+			else if(decodedImgBuf.att.pixFmt == Utils::PixelFormats::PIX_FMT_YUVJ440P)
+				decodedImgBuf.att.pixFmt = Utils::PixelFormats::PIX_FMT_YUV440P;
+			else if(decodedImgBuf.att.pixFmt == Utils::PixelFormats::PIX_FMT_YUVJ444P)
+				decodedImgBuf.att.pixFmt = Utils::PixelFormats::PIX_FMT_YUV444P;
 
 			m_videoMode.pixFmt=decodedImgBuf.att.pixFmt;
 		}

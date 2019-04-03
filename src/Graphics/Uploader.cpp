@@ -4,7 +4,6 @@
 #include <Graphics/GL/Buffer.h>
 #include <Graphics/GL/UniqueBinding.h>
 #include <Graphics/PixelFormat.h>
-#include <Utils/PixelFormat.h>
 #include <Utils/Resolution.h>
 #include <Graphics/Context.h>
 
@@ -12,6 +11,7 @@
 #include <sys/types.h>
 #include <algorithm>
 #include <cstring>
+#include "../../include/Utils/PixelFormat.h"
 
 extern "C"{
 	#include <libavcodec/avcodec.h>

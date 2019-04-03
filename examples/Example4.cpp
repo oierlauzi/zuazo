@@ -225,21 +225,19 @@ int main(int argc, char *argv[]){
 	//Create a window for outputting the resulting mix
 	//Window only cares about "res" "frameRate" parameters of the given VideoMode
 	//A window title can be provided after the VideoMode
+	Zuazo::Utils::VideoMode windowVideoMode;
+	windowVideoMode.res=Zuazo::Utils::Resolution(1280, 720);
+	windowVideoMode.frameRate=Zuazo::Utils::Rational(30.0);
 	Zuazo::Consumers::Window window(
-			Zuazo::Utils::VideoMode{
-				.res=Zuazo::Utils::Resolution(1280, 720),
-				.frameRate=Zuazo::Utils::Rational(30.0)
-			},
+			windowVideoMode,
 			"Example 4"
 	);
 
 	//Create the previously defined side-by-side generator
-	SideBySide sbsGenerator(
-			Zuazo::Utils::VideoMode{
-				.pixFmt=Zuazo::Utils::PixelFormats::RGB32,
-				.res=Zuazo::Utils::Resolution(1280, 720),
-			}
-	);
+	Zuazo::Utils::VideoMode sbsVideoMode;
+	sbsVideoMode.pixFmt=Zuazo::Utils::PixelFormats::PIX_FMT_RGB32;
+	sbsVideoMode.res=Zuazo::Utils::Resolution(1280, 720);
+	SideBySide sbsGenerator(sbsVideoMode);
 
 
 	//Feed the composer into the window

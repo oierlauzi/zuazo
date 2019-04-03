@@ -52,7 +52,9 @@ cmake_install.cmake
 cmake_manifest.txt
 install_manifest.txt
 doc/doxygen/Doxyfile
-includes/Includes.h
+include/Includes.h
+include/Utils/PixelFormat.h
+include/Utils/Codec.h
 Makefile
 
 #Example buils

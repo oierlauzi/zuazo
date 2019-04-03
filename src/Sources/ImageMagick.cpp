@@ -1,6 +1,5 @@
 #include <Sources/ImageMagick.h>
 
-#include <Utils/PixelFormat.h>
 #include <Utils/Resolution.h>
 #include <Graphics/Frame.h>
 #include <Graphics/Uploader.h>
@@ -9,6 +8,7 @@
 #include <Graphics/ImageBuffer.h>
 
 #include <Magick++.h>
+#include "../../include/Utils/PixelFormat.h"
 
 using namespace Zuazo::Sources;
 
