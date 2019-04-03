@@ -56,7 +56,7 @@ void FFmpeg::open(){
 
 	m_currTs=-1;
 
-#if LIBAVUTIL_VERSION_MAJOR < 4
+#if LIBAVUTIL_VERSION_MAJOR < 56
 	//Register all supported codecs
 	av_register_all();
 #endif
