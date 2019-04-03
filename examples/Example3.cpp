@@ -74,7 +74,7 @@ int main(int argc, char *argv[]){
 	//Compositor only cares of parameters pixel format and resolution
 	Zuazo::Utils::VideoMode compVideoMode;
 	compVideoMode.pixFmt=Zuazo::Utils::PixelFormats::PIX_FMT_RGB32;
-	windowVideoMode.res=Zuazo::Utils::Resolution(1280, 720);
+	compVideoMode.res=Zuazo::Utils::Resolution(1280, 720);
 	Zuazo::Processors::Compositor composer(compVideoMode);
 
 	//Feed the composer into the window
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]){
 			break;
 		case '+':
 			//Add a layer
-
+            
 			//Create a rectangle with a random size
 			const float width=RAND_IN_RANGE(wMin, wMax);
 			const float height=RAND_IN_RANGE(hMin, hMax);
