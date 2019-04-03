@@ -26,6 +26,7 @@ public:
 	void								bind() const;
 
 	void								setData(const T& data);
+	void								setSubset(const void* data, size_t offset, size_t size);
 private:
 	std::unique_ptr<GL::UniformBuffer>	m_uniformBuffer;
 	u_int32_t							m_binding;
@@ -79,6 +80,16 @@ inline void ShaderUniform<T>::setData(const T& data){
 			sizeof(T),
 			0,
 			&data
+	);
+}
+
+template <typename T>
+inline void	ShaderUniform<T>::setSubset(const void* data, size_t offset, size_t size){
+	GL::UniqueBinding<GL::UniformBuffer> bufBinding(*m_uniformBuffer);
+	GL::UniformBuffer::bufferSubData(
+			size,
+			offset,
+			data
 	);
 }
 }

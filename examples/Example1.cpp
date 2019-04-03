@@ -1,18 +1,3 @@
-#include <zuazo/Consumers/Window.h>
-#include <zuazo/Stream/Consumer.h>
-#include <zuazo/Stream/Source.h>
-#include <zuazo/Utils/Resolution.h>
-#include <zuazo/Utils/VideoMode.h>
-#include <zuazo/Video/VideoSourceBase.h>
-#include <zuazo/Zuazo.h>
-
-#include <cstdio>
-#include <exception>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-
 /**
  * DESCRIPTION:
  * This example shows how to make a simple video-switcher with zuazo.
@@ -28,6 +13,16 @@
  *
  * where file(n) equals a JPG, PNG, SVG, BMP, MP4, AVI... file or a V4L2 input (/dev/video0, /dev/video1 ...)
  */
+
+#include <zuazo/Includes.h>
+
+#include <cstdio>
+#include <exception>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
+
 int main(int argc, char *argv[]){
 	//Check if the user has given at least one argument
 	//The first position is always filled with the name of the executable

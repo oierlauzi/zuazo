@@ -1,19 +1,3 @@
-#include <zuazo/Consumers/Window.h>
-#include <zuazo/Stream/Consumer.h>
-#include <zuazo/Stream/Source.h>
-#include <zuazo/Utils/Resolution.h>
-#include <zuazo/Utils/VideoMode.h>
-#include <zuazo/Sources/FFmpeg.h>
-#include <zuazo/Timing/NonLinear.h>
-#include <zuazo/Zuazo.h>
-
-#include <cstdio>
-#include <exception>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-
 /**
  * DESCRIPTION:
  * This example shows the usage of classes which inherit from Timing::NonLinear
@@ -27,6 +11,16 @@
  * HOW TO RUN:
  * ./Example2 <video file>
  */
+
+#include <zuazo/Includes.h>
+
+#include <cstdio>
+#include <exception>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
+
 int main(int argc, char *argv[]){
 	//We need to have 2 arguments passed (1 is always filled with the name of the executable)
 	if(argc != 2){

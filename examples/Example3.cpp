@@ -1,27 +1,3 @@
-#include <zuazo/Consumers/Window.h>
-#include <zuazo/Stream/Consumer.h>
-#include <zuazo/Stream/Source.h>
-#include <zuazo/Utils/Resolution.h>
-#include <zuazo/Utils/VideoMode.h>
-#include <zuazo/Video/VideoSourceBase.h>
-#include <zuazo/Processors/Compositor.h>
-#include <zuazo/Sources/FFmpeg.h>
-#include <zuazo/Zuazo.h>
-
-
-#include <cstdio>
-#include <exception>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-#include <glm/glm.hpp>
-
-#define RAND_IN_RANGE(min, max) ((int)(min) + (rand() % ((int)(max) - (int)(min))))
-
-
-
-
 /**
  * DESCRIPTION:
  * Renders in 3D space a random video sources, with a random position, rotation and size
@@ -37,6 +13,18 @@
  * ./Example3 <file1> <file2> ... <filen>
  *
  */
+
+#include <zuazo/Includes.h>
+
+#include <cstdio>
+#include <exception>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
+#include <glm/glm.hpp>
+
+#define RAND_IN_RANGE(min, max) ((int)(min) + (rand() % ((int)(max) - (int)(min))))
 
 int main(int argc, char *argv[]){
 	//Initialize zuazo

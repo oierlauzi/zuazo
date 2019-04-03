@@ -1,28 +1,3 @@
-#include <zuazo/Consumers/Window.h>
-#include <zuazo/Stream/Consumer.h>
-#include <zuazo/Stream/Source.h>
-#include <zuazo/Utils/Resolution.h>
-#include <zuazo/Utils/VideoMode.h>
-#include <zuazo/Video/VideoSourceBase.h>
-#include <zuazo/Processors/Compositor.h>
-#include <zuazo/Sources/FFmpeg.h>
-#include <zuazo/Stream/DummyPad.h>
-#include <zuazo/Zuazo.h>
-
-
-#include <cstdio>
-#include <exception>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-#include <glm/glm.hpp>
-
-#define RAND_IN_RANGE(min, max) ((int)(min) + (rand() % ((int)(max) - (int)(min))))
-
-
-
-
 /**
  * DESCRIPTION:
  * This example shows how to combine several zuazo elements in to a single class to create your own modules
@@ -37,6 +12,18 @@
  *
  */
 
+#include <zuazo/Includes.h>
+
+#include <cstdio>
+#include <exception>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
+#include <glm/glm.hpp>
+
+#define RAND_IN_RANGE(min, max) ((int)(min) + (rand() % ((int)(max) - (int)(min))))
+
 class SideBySide :
 		public Zuazo::Video::TVideoSourceBase<Zuazo::Video::DummyVideoPad>, //It might be useful to inherit from VideoBase, as it has methods for getting several video parameters
 		public Zuazo::ZuazoBase //You also should inherit from zuazo base and override open() and close()
@@ -47,8 +34,10 @@ public:
 	 * Note that they are just references, the actual pads will be declared private afterwards
 	 * This is done to protect some of the methods that shouldn't be accessible outside the module
 	 * If the module has a single video input / output, it might be easier to declare the pads by inheriting
-	 * However, for multiple inputs or outputs, it is compulsory to declare them manually
-	 * from TVideoConsumerBase<> / TVideoSourceBase<>
+     * from TVideoConsumerBase<> / TVideoSourceBase<>
+	 * However, for multiple inputs or outputs, it is compulsory to declare them manually.
+     * In this case we have multiple inputs, so we need to declare them manually, but a single output,
+     * so we can inherit from TVideoSourceBase<>. Choosing the pad type will be covered later
 	 */
 	Zuazo::Video::VideoConsumer& 		leftVideoIn;
 	Zuazo::Video::VideoConsumer& 		rightVideoIn;
@@ -198,7 +187,9 @@ public:
 	}
 private:
 	/*
-	 * Here we declare the actual pads, as promised above
+	 * Here we declare the actual pads, as promised above. As you might have noticed, there are different
+     * types of pads. For now we will be sticking with DummyVideoPads. Their job is to simply to 
+     * forward their input. Other types are used to create your own modules. They will be covered in a later example
 	 */
 	Zuazo::Video::DummyVideoPad		m_leftVideoSourcePad;
 	Zuazo::Video::DummyVideoPad		m_rightVideoSourcePad;

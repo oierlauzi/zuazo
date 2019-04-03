@@ -29,6 +29,14 @@ include_directories(lib/nanosvg/include)
 file(GLOB_RECURSE SOURCES src/*.cpp src/*.c)
 file(GLOB_RECURSE HEADERS include/*.h)
 
+#Generate a include file for all the headers
+foreach(HEADER ${HEADERS})
+    string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/include/" "" HEADER ${HEADER}) #Delete absolute the directory part
+    set(INCLUDE_LIST "${INCLUDE_LIST}#include \"${HEADER}\"\n") #Append a include to the include list
+endforeach()
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/Includes.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/Includes.h)
+
 #Generate documentation
 find_package(Doxygen)
 if (DOXYGEN_FOUND)
@@ -38,7 +46,7 @@ if (DOXYGEN_FOUND)
     
     message("Building doxygen documentation")
 
-    add_custom_target( doxygen_doc ALL
+    add_custom_target( doxygen
         COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generating API documentation with Doxygen"

@@ -43,15 +43,16 @@ libzuazo.so.*
 #doxygen doc
 doc/doxygen/html
 
-#CMake files
+#CMake generated files
 CMakeCache.txt
 CMakeDoxyfile.in
 CMakeDoxygenDefaults.cmake
-doc/doxygen/Doxyfile
 CMakeFiles/
 cmake_install.cmake
 cmake_manifest.txt
 install_manifest.txt
+doc/doxygen/Doxyfile
+includes/Includes.h
 Makefile
 
 #Example buils

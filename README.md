@@ -26,7 +26,7 @@ Install 3rd party dependencies
 
 ``sudo apt-get install libavutil libavcodec libavformat libswscale libglfw3 libmagick++-6.q16-dev libglm-dev ``
 
-Download the repository from github
+Download the repository from GitHub
  
 ``git clone https://github.com/oierlauzi/zuazo.git``
 
@@ -41,6 +41,12 @@ Build it
 Alternatively run ``make -j##`` where ## is the number of cores in your system, to speed up the building process
 
 ``sudo make install``
+
+Optionally you can generate Doxygen documentation
+
+``make doxygen``
+
+This documentation will be placed in ``doc/doxygen/html``. To access it open ``index.html`` with your browser.
 
 You're done!
 
