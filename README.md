@@ -18,7 +18,7 @@ Install build tools:
 
 ``sudo apt-get install git cmake g++``
 
-If you want to generate a doxygen document for Zuazo install doxygen and graphviz:
+If you want to generate a doxygen document in HTML for Zuazo install doxygen and graphviz:
 
 ``sudo apt-get install doxygen graphviz``
 
@@ -38,11 +38,11 @@ Build it
 
 ``make ``
 
-Alternatively run ``make -j##`` where ## is the number of cores in your system, to speed up the building process
+Alternatively run ``make -j##`` where ## is the number of threads in your system, to speed up the building process
 
 ``sudo make install``
 
-Optionally you can generate Doxygen documentation
+Optionally you can generate the Doxygen documentation
 
 ``make doxygen``
 
@@ -52,7 +52,7 @@ You're done!
 
 ## Examples
 
-In the examples folder you can find the source code for several application that show the usage of the API. Inside each source file there is a brief description, build instructions, and instructions for executing the program.
+In the examples folder you can find the source code for several applications that show the usage of the API. Inside each source file there is a brief description, build instructions, and instructions for executing the program.
 
 ## Linking your aplication
 
