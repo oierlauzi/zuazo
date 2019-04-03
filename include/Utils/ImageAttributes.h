@@ -32,7 +32,7 @@ struct ImageAttributes{
 
 constexpr ImageAttributes::ImageAttributes() :
 	res(),
-	pixFmt(PixelFormats::NONE)
+	pixFmt(PixelFormats::PIX_FMT_NONE)
 {
 }
 
@@ -43,7 +43,7 @@ constexpr ImageAttributes::ImageAttributes(const Resolution& res, PixelFormat pi
 }
 
 constexpr ImageAttributes::operator bool() const{
-	return res.operator bool() && pixFmt != PixelFormats::NONE;
+	return res.operator bool() && pixFmt != PixelFormats::PIX_FMT_NONE;
 }
 
 constexpr int ImageAttributes::operator==(const ImageAttributes& right)const{

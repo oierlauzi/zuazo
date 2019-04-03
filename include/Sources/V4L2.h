@@ -2,7 +2,6 @@
 
 #include "../Utils/Codec.h"
 #include "../Utils/FileBase.h"
-#include "../Utils/PixelFormat.h"
 #include "../Utils/VideoMode.h"
 #include "../Video/VideoBase.h"
 #include "../Video/VideoStream.h"
@@ -15,6 +14,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include "../Utils/PixelFormat.h"
 
 namespace Zuazo {
 namespace Utils {

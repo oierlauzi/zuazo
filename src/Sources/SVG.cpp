@@ -7,11 +7,11 @@
 #include <Graphics/ImageAttributes.h>
 #include <Graphics/ImageBuffer.h>
 #include <Graphics/PixelFormat.h>
-#include <Utils/PixelFormat.h>
 #include <Utils/Resolution.h>
 
 #include <algorithm>
 #include <memory>
+#include "../../include/Utils/PixelFormat.h"
 
 #define NANOSVG_IMPLEMENTATION
 #define NANOSVGRAST_IMPLEMENTATION

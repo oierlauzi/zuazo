@@ -46,11 +46,11 @@ int main(int argc, char *argv[]){
 	//Create a window for outputting the resulting mix
 	//Window only cares about "res" "frameRate" parameters of the given VideoMode
 	//A window title can be provided after the VideoMode
+	Zuazo::Utils::VideoMode windowVideoMode;
+	windowVideoMode.res=Zuazo::Utils::Resolution(1280, 720);
+	windowVideoMode.frameRate=Zuazo::Utils::Rational(30.0);
 	Zuazo::Consumers::Window window(
-			Zuazo::Utils::VideoMode{
-				.res=Zuazo::Utils::Resolution(1280, 720),
-				.frameRate=Zuazo::Utils::Rational(30.0)
-			},
+			windowVideoMode,
 			"Example 2"
 	);
 

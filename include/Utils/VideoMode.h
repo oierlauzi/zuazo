@@ -8,9 +8,9 @@
 namespace Zuazo::Utils{
 
 struct VideoMode{
-	PixelFormat		pixFmt			=PixelFormats::NONE;
+	PixelFormat		pixFmt			=PixelFormats::PIX_FMT_NONE;
 	Resolution		res				=Resolution(0, 0);
-	Codec			codec			=Codecs::NONE;
+	Codec			codec			=Codecs::CODEC_NONE;
 	Rational		frameRate		=Rational(0, 0);
 	bool			progressive		=true;
 

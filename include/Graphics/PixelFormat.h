@@ -1,12 +1,12 @@
 #pragma once
 
 #include "GL/Types.h"
-#include "../Utils/PixelFormat.h"
 #include "../glad/glad.h"
 
 #include <stddef.h>
 #include <sys/types.h>
 #include <utility>
+#include "../Utils/PixelFormat.h"
 
 extern "C"{
 	#include <libavutil/pixfmt.h>
@@ -119,48 +119,92 @@ constexpr PixelFormat BGRA128f	=PixelFormat(GL_BGRA, 	GL::GLType<float>);
 }
 
 constexpr std::pair<PixelFormat, Utils::PixelFormat> pixelConversions[]={
-		{PixelFormats::RED8,	Utils::PixelFormats::GRAY8		},
-		{PixelFormats::GREEN8,	Utils::PixelFormats::GRAY8		},
-		{PixelFormats::BLUE8,	Utils::PixelFormats::GRAY8		},
-		{PixelFormats::ALPHA8,	Utils::PixelFormats::GRAY8		},
-		{PixelFormats::RGB24,	Utils::PixelFormats::RGB24		},
-		{PixelFormats::BGR24,	Utils::PixelFormats::BGR24		},
-		{PixelFormats::RGBA32,	Utils::PixelFormats::RGB32		},
-		{PixelFormats::BGRA32,	Utils::PixelFormats::BGR32		},
+#ifdef PIX_FMT_GRAY8_SUPPORT
+		{PixelFormats::RED8,	Utils::PixelFormats::PIX_FMT_GRAY8		},
+		{PixelFormats::GREEN8,	Utils::PixelFormats::PIX_FMT_GRAY8		},
+		{PixelFormats::BLUE8,	Utils::PixelFormats::PIX_FMT_GRAY8		},
+		{PixelFormats::ALPHA8,	Utils::PixelFormats::PIX_FMT_GRAY8		},
+#endif
+#ifdef PIX_FMT_RGB24_SUPPORT
+		{PixelFormats::RGB24,	Utils::PixelFormats::PIX_FMT_RGB24		},
+#endif
+#ifdef PIX_FMT_BGR24_SUPPORT
+		{PixelFormats::BGR24,	Utils::PixelFormats::PIX_FMT_BGR24		},
+#endif
+#ifdef PIX_FMT_RGB32_SUPPORT
+		{PixelFormats::RGBA32,	Utils::PixelFormats::PIX_FMT_RGB32		},
+#endif
+#ifdef PIX_FMT_BGR32_SUPPORT
+		{PixelFormats::BGRA32,	Utils::PixelFormats::PIX_FMT_BGR32		},
+#endif
 
-		{PixelFormats::RED16,	Utils::PixelFormats::GRAY16		},
-		{PixelFormats::GREEN16,	Utils::PixelFormats::GRAY16		},
-		{PixelFormats::BLUE16,	Utils::PixelFormats::GRAY16		},
-		{PixelFormats::ALPHA16,	Utils::PixelFormats::GRAY16		},
-		{PixelFormats::RGB48,	Utils::PixelFormats::RGB48		},
-		{PixelFormats::BGR48,	Utils::PixelFormats::BGR48		},
-		{PixelFormats::RGBA64,	Utils::PixelFormats::RGBA64		},
-		{PixelFormats::BGRA64,	Utils::PixelFormats::BGRA64		},
+#ifdef PIX_FMT_GRAY16_SUPPORT
+		{PixelFormats::RED16,	Utils::PixelFormats::PIX_FMT_GRAY16		},
+		{PixelFormats::GREEN16,	Utils::PixelFormats::PIX_FMT_GRAY16		},
+		{PixelFormats::BLUE16,	Utils::PixelFormats::PIX_FMT_GRAY16		},
+		{PixelFormats::ALPHA16,	Utils::PixelFormats::PIX_FMT_GRAY16		},
+#endif
+#ifdef PIX_FMT_RGB48_SUPPORT
+		{PixelFormats::RGB48,	Utils::PixelFormats::PIX_FMT_RGB48		},
+#endif
+#ifdef PIX_FMT_BGR48_SUPPORT
+		{PixelFormats::BGR48,	Utils::PixelFormats::PIX_FMT_BGR48		},
+#endif
+#ifdef PIX_FMT_RGBA64_SUPPORT
+		{PixelFormats::RGBA64,	Utils::PixelFormats::PIX_FMT_RGBA64		},
+#endif
+#ifdef PIX_FMT_BGRA64_SUPPORT
+		{PixelFormats::BGRA64,	Utils::PixelFormats::PIX_FMT_BGRA64		},
+#endif
 
-		{PixelFormats::RED32f,	Utils::PixelFormats::GRAYF32	},
-		{PixelFormats::GREEN32f,Utils::PixelFormats::GRAYF32	},
-		{PixelFormats::BLUE32f,	Utils::PixelFormats::GRAYF32	},
-		{PixelFormats::ALPHA32f,Utils::PixelFormats::GRAYF32	},
+#ifdef PIX_FMT_GRAYF32_SUPPORT
+		{PixelFormats::RED32f,	Utils::PixelFormats::PIX_FMT_GRAYF32	},
+		{PixelFormats::GREEN32f,Utils::PixelFormats::PIX_FMT_GRAYF32	},
+		{PixelFormats::BLUE32f,	Utils::PixelFormats::PIX_FMT_GRAYF32	},
+		{PixelFormats::ALPHA32f,Utils::PixelFormats::PIX_FMT_GRAYF32	},
+#endif
 
-		{PixelFormats::NONE,	Utils::PixelFormats::NONE		},
+		{PixelFormats::NONE,	Utils::PixelFormats::PIX_FMT_NONE		},
 };
 
 constexpr Utils::PixelFormat compatiblePixelFormats[]={
-		Utils::PixelFormats::GRAY8,
-		Utils::PixelFormats::RGB24,
-		Utils::PixelFormats::BGR24,
-		Utils::PixelFormats::RGB32,
-		Utils::PixelFormats::BGR32,
+#ifdef PIX_FMT_GRAY8_SUPPORT
+		Utils::PixelFormats::PIX_FMT_GRAY8,
+#endif
+#ifdef PIX_FMT_RGB24_SUPPORT
+		Utils::PixelFormats::PIX_FMT_RGB24,
+#endif
+#ifdef PIX_FMT_BGR24_SUPPORT
+		Utils::PixelFormats::PIX_FMT_BGR24,
+#endif
+#ifdef PIX_FMT_RGB32_SUPPORT
+		Utils::PixelFormats::PIX_FMT_RGB32,
+#endif
+#ifdef PIX_FMT_BGR32_SUPPORT
+		Utils::PixelFormats::PIX_FMT_BGR32,
+#endif
 
-		Utils::PixelFormats::GRAY16,
-		Utils::PixelFormats::RGB48,
-		Utils::PixelFormats::BGR48,
-		Utils::PixelFormats::RGBA64,
-		Utils::PixelFormats::BGRA64,
+#ifdef PIX_FMT_GRAY16_SUPPORT
+		Utils::PixelFormats::PIX_FMT_GRAY16,
+#endif
+#ifdef PIX_FMT_RGB48_SUPPORT
+		Utils::PixelFormats::PIX_FMT_RGB48,
+#endif
+#ifdef PIX_FMT_BGR48_SUPPORT
+		Utils::PixelFormats::PIX_FMT_BGR48,
+#endif
+#ifdef PIX_FMT_RGBA64_SUPPORT
+		Utils::PixelFormats::PIX_FMT_RGBA64,
+#endif
+#ifdef PIX_FMT_BGRA64_SUPPORT
+		Utils::PixelFormats::PIX_FMT_BGRA64,
+#endif
 
-		Utils::PixelFormats::GRAYF32,
+#ifdef PIX_FMT_GRAYF32_SUPPORT
+		Utils::PixelFormats::PIX_FMT_GRAYF32,
+#endif
 
-		Utils::PixelFormats::NONE
+		Utils::PixelFormats::PIX_FMT_NONE
 };
 
 constexpr PixelFormat::PixelFormat(const Utils::PixelFormat& other) :
@@ -176,7 +220,7 @@ constexpr PixelFormat::PixelFormat(const Utils::PixelFormat& other) :
 }
 
 constexpr Utils::PixelFormat PixelFormat::toPixelFormat() const{
-	Utils::PixelFormat result=Utils::PixelFormats::NONE;
+	Utils::PixelFormat result=Utils::PixelFormats::PIX_FMT_NONE;
 
 	for(u_int32_t i=0; pixelConversions[i].first; i++){
 		if(pixelConversions[i].first == *this){

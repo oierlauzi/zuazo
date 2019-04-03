@@ -12,7 +12,7 @@ Zuazo is library for manipulating real-time video. It's designed to take advante
 
 ## Install instructions
 
-### Debian 10
+### Debian 10 and Ubuntu 18.04 LTS
 
 Install build tools:
 
@@ -24,7 +24,7 @@ If you want to generate a doxygen document for Zuazo install doxygen and graphvi
 
 Install 3rd party dependencies
 
-``sudo apt-get install libavutil libavcodec libavformat libswscale libglfw3 libmagick++-6.q16-dev libglm-dev ``
+``sudo apt-get install libavutil-dev libavcodec-dev libavformat-dev libswscale-dev libglfw3-dev libmagick++-6.q16-dev libglm-dev ``
 
 Download the repository from GitHub
  
@@ -32,7 +32,7 @@ Download the repository from GitHub
 
 Build it
 
- ``cd Zuazo``
+ ``cd zuazo``
 
 ``cmake CMakeLists.txt``
 
