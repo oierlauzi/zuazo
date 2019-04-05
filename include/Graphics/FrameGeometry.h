@@ -3,6 +3,7 @@
 #include "../Utils/Resolution.h"
 #include "../Utils/ScalingMode.h"
 #include "DrawableBase.h"
+#include "VertexArray.h"
 #include "Geometry.h"
 #include "GL/Shader.h"
 #include "GL/Texture2D.h"
@@ -41,10 +42,7 @@ private:
 	const GL::Shader&						m_shader;
 	const GLuint							m_vertAttribLoc;
 	const GLuint							m_texAttribLoc;
-	std::unique_ptr<GL::VertexArray>		m_vao;
-	std::unique_ptr<GL::VertexArrayBuffer>	m_quadVbo;
-	std::unique_ptr<GL::VertexArrayBuffer>	m_texCoordVbo;
-
+	std::unique_ptr<VertexArray>			m_vertexArray;
 	void									calculateTexCoords();
 };
 }

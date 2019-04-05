@@ -20,37 +20,9 @@ FrameGeometry::FrameGeometry(const GL::Shader& shader, const std::string& vertAt
 	m_vertAttribLoc(m_shader.getAttributeLoc(vertAtrrib)),
 	m_texAttribLoc(m_shader.getAttributeLoc(texAtrrib))
 {
-	m_vao=std::unique_ptr<GL::VertexArray>(new GL::VertexArray);
-	m_quadVbo=std::unique_ptr<GL::VertexArrayBuffer>(new GL::VertexArrayBuffer);
-	m_texCoordVbo=std::unique_ptr<GL::VertexArrayBuffer>(new GL::VertexArrayBuffer);
-
-
-	Graphics::GL::UniqueBinding<Graphics::GL::VertexArray> vaoBind(*m_vao);
-
-	Graphics::GL::VertexArray::enableAttribute(m_vertAttribLoc);
-	Graphics::GL::VertexArray::enableAttribute(m_texAttribLoc);
-
-	{
-	Graphics::GL::UniqueBinding<Graphics::GL::VertexArrayBuffer> vboBind(*m_quadVbo);
-
-	Graphics::GL::VertexArrayBuffer::bufferData(
-			sizeof(Quad),
-			Graphics::GL::VertexArrayBuffer::Usage::StaticDraw,
-			nullptr
-	);
-	Graphics::GL::VertexArray::attributePtr<float, 3>(m_vertAttribLoc);
-	}
-
-	{
-	Graphics::GL::UniqueBinding<Graphics::GL::VertexArrayBuffer> vboBind(*m_texCoordVbo);
-
-	Graphics::GL::VertexArrayBuffer::bufferData(
-			sizeof(Utils::Vec2f) * 4,
-			Graphics::GL::VertexArrayBuffer::Usage::DynamicDraw,
-			nullptr
-	);
-	Graphics::GL::VertexArray::attributePtr<float, 2>(m_texAttribLoc);
-	}
+	m_vertexArray=std::unique_ptr<VertexArray>(new VertexArray);
+	m_vertexArray->enableAttribute<VectorComponent, 3>(m_vertAttribLoc, 4);
+	m_vertexArray->enableAttribute<float, 2>(m_texAttribLoc, 4);
 }
 
 void FrameGeometry::setScalingMode(Utils::ScalingMode scaling){
@@ -65,12 +37,7 @@ void FrameGeometry::setGeometry(const Graphics::Rectangle& rect){
 		m_rectangle=rect;
 
 		Quad quad(m_rectangle);
-		Graphics::GL::UniqueBinding<Graphics::GL::VertexArrayBuffer> vboBind(*m_quadVbo);
-		Graphics::GL::VertexArrayBuffer::bufferSubData(
-				sizeof(Quad),
-				0,
-				&quad
-		);
+		m_vertexArray->uploadVertices<VectorComponent, 3>(m_vertAttribLoc, quad.toVertexBuffer());
 
 		calculateTexCoords();
 	}
@@ -87,9 +54,9 @@ void FrameGeometry::setFrame(std::shared_ptr<const Frame>& frame){
 
 void FrameGeometry::draw() const{
 	if(m_frame){
-		Graphics::GL::UniqueBinding<Graphics::GL::Shader> shaderBind(m_shader);
-		Graphics::GL::UniqueBinding<Graphics::GL::VertexArray> vaoBind(*m_vao);
-		Graphics::GL::UniqueBinding<Graphics::GL::Texture2D> texBind(m_frame->getTexture());
+		Graphics::GL::UniqueBinding<GL::Shader> shaderBind(m_shader);
+		Graphics::GL::UniqueBinding<VertexArray> vaoBind(*m_vertexArray);
+		Graphics::GL::UniqueBinding<GL::Texture2D> texBind(m_frame->getTexture());
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	}
 }
@@ -147,12 +114,6 @@ void FrameGeometry::calculateTexCoords(){
 				Zuazo::Utils::Vec2f(0.5f + diffX, 	0.5f - diffY),
 		};
 
-		Graphics::GL::UniqueBinding<Graphics::GL::VertexArrayBuffer> vboBind(*m_texCoordVbo);
-
-		Graphics::GL::VertexArrayBuffer::bufferSubData(
-				sizeof(texCoords),
-				0,
-				texCoords
-		);
+		m_vertexArray->uploadVertices<float, 2>(m_texAttribLoc, texCoords);
 	}
 }

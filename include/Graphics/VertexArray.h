@@ -3,6 +3,7 @@
 #include "Context.h"
 #include "GL/Shader.h"
 #include "GL/Buffer.h"
+#include "GL/VertexArray.h"
 #include "GL/UniqueBinding.h"
 #include "../Utils/Vector.h"
 #include "../glad/glad.h"
@@ -58,15 +59,17 @@ template<typename T, int dim>
 inline void VertexArray::enableAttribute(GLuint attribute, u_int32_t nVertices){
 	if(m_vbos.find(attribute) == m_vbos.end()){
 		UniqueContext ctx(Context::getMainCtx());
-		m_vbos.emplace(attribute);
+		m_vbos[attribute];
 	}
 
+	size_t vboSize=sizeof(T) * dim * nVertices;
 	GL::UniqueBinding<GL::VertexArrayBuffer> vboBind(m_vbos[attribute].vbo);
 	GL::VertexArrayBuffer::bufferData(
-			sizeof(T) * dim * nVertices,
+			vboSize,
 			GL::VertexArrayBuffer::Usage::DynamicDraw,
 			nullptr
 	);
+	m_vbos[attribute].size=vboSize;
 
 	GL::UniqueBinding<GL::VertexArray> vaoBind(m_vao);
 	GL::VertexArray::enableAttribute(attribute);
@@ -77,15 +80,17 @@ template<typename T, int dim>
 inline void VertexArray::enableAttribute(GLuint attribute, u_int32_t nVertices, const Utils::Vec<T, dim>* data){
 	if(m_vbos.find(attribute) == m_vbos.end()){
 		UniqueContext ctx(Context::getMainCtx());
-		m_vbos.emplace(attribute);
+		m_vbos[attribute];
 	}
 
+	size_t vboSize=sizeof(T) * dim * nVertices;
 	GL::UniqueBinding<GL::VertexArrayBuffer> vboBind(m_vbos[attribute].vbo);
 	GL::VertexArrayBuffer::bufferData(
-			sizeof(T) * dim * nVertices,
+			vboSize,
 			GL::VertexArrayBuffer::Usage::StaticDraw,
 			data
 	);
+	m_vbos[attribute].size=vboSize;
 
 	GL::UniqueBinding<GL::VertexArray> vaoBind(m_vao);
 	GL::VertexArray::enableAttribute(attribute);

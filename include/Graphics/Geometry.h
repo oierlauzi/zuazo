@@ -36,6 +36,8 @@ struct Quad{
 	Quad(const Quad& other)=default;
 	Quad(const Rectangle& rect);
 	~Quad()=default;
+
+	const Utils::Vec<VectorComponent, 3>* toVertexBuffer() const;
 };
 
 inline Quad::Quad(const Rectangle& rect) :
@@ -44,6 +46,10 @@ inline Quad::Quad(const Rectangle& rect) :
 	bottomRight(-rect.center.x + rect.size.x,	-rect.center.y, 				-rect.center.z),
 	topRight(	-rect.center.x + rect.size.x,	-rect.center.y + rect.size.y,	-rect.center.z)
 {
+}
+
+inline const Utils::Vec<VectorComponent, 3>* Quad::toVertexBuffer() const{
+	return reinterpret_cast<const Utils::Vec<VectorComponent, 3>*>(this);
 }
 
 }
