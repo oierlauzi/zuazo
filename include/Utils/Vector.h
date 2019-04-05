@@ -8,33 +8,33 @@
 
 namespace Zuazo::Utils{
 
-template <int dim, typename T>
+template <typename T, int dim>
 using Vec = glm::vec<dim, T, glm::qualifier::defaultp>;
 
 template <typename T>
-using Vec2 = Vec<2, T>;
+using Vec2 = Vec<T, 2>;
 
 template <typename T>
-using Vec3 = Vec<3, T>;
+using Vec3 = Vec<T, 3>;
 
 template <typename T>
-using Vec4 = Vec<4, T>;
+using Vec4 = Vec<T, 4>;
 
-using Vec2f = Vec<2, float>;
-using Vec3f = Vec<3, float>;
-using Vec4f = Vec<4, float>;
+using Vec2f = Vec<float, 2>;
+using Vec3f = Vec<float, 3>;
+using Vec4f = Vec<float, 4>;
 
-using Vec2d = Vec<2, double>;
-using Vec3d = Vec<3, double>;
-using Vec4d = Vec<4, double>;
+using Vec2d = Vec<double, 2>;
+using Vec3d = Vec<double, 3>;
+using Vec4d = Vec<double, 4>;
 
-using Vec2i = Vec<2, int>;
-using Vec3i = Vec<3, int>;
-using Vec4i = Vec<4, int>;
+using Vec2i = Vec<int, 2>;
+using Vec3i = Vec<int, 3>;
+using Vec4i = Vec<int, 4>;
 
-using Vec2u = Vec<2, uint32_t>;
-using Vec3u = Vec<3, uint32_t>;
-using Vec4u = Vec<4, uint32_t>;
+using Vec2u = Vec<uint32_t, 2>;
+using Vec3u = Vec<uint32_t, 3>;
+using Vec4u = Vec<uint32_t, 4>;
 
 
 }

@@ -16,29 +16,29 @@
 
 namespace Zuazo::Utils{
 
-template <int N, int M, typename T>
+template <typename T, int N, int M>
 using Mat = glm::mat<N, M, T, glm::qualifier::defaultp>;
 
 template <typename T>
-using Mat2x2 = Mat<2, 2, T>;
+using Mat2x2 = Mat<T, 2, 2>;
 template <typename T>
-using Mat2x3 = Mat<2, 3, T>;
+using Mat2x3 = Mat<T, 2, 3>;
 template <typename T>
-using Mat2x4 = Mat<2, 4, T>;
+using Mat2x4 = Mat<T, 2, 4>;
 
 template <typename T>
-using Mat3x2 = Mat<3, 2, T>;
+using Mat3x2 = Mat<T, 3, 2>;
 template <typename T>
-using Mat3x3 = Mat<3, 3, T>;
+using Mat3x3 = Mat<T, 3, 3>;
 template <typename T>
-using Mat3x4 = Mat<3, 4, T>;
+using Mat3x4 = Mat<T, 3, 4>;
 
 template <typename T>
-using Mat4x2 = Mat<4, 2, T>;
+using Mat4x2 = Mat<T, 4, 2>;
 template <typename T>
-using Mat4x3 = Mat<4, 3, T>;
+using Mat4x3 = Mat<T, 4, 3>;
 template <typename T>
-using Mat4x4 = Mat<4, 4, T>;
+using Mat4x4 = Mat<T, 4, 4>;
 
 typedef Mat2x2<float> Mat2x2f;
 typedef Mat2x3<float> Mat2x3f;

@@ -7,8 +7,8 @@ namespace Zuazo::Graphics{
 typedef float VectorComponent;
 
 struct Rectangle{
-	Utils::Vec<3, VectorComponent>	center;
-	Utils::Vec<2, VectorComponent>	size;
+	Utils::Vec<VectorComponent, 3>	center;
+	Utils::Vec<VectorComponent, 2>	size;
 
 	Rectangle()=default;
 	Rectangle(const Rectangle& other)=default;
@@ -27,10 +27,10 @@ inline int Rectangle::operator!=(const Rectangle& other){
 }
 
 struct Quad{
-	Utils::Vec<3, VectorComponent>	bottomLeft;
-	Utils::Vec<3, VectorComponent>	topLeft;
-	Utils::Vec<3, VectorComponent>	bottomRight;
-	Utils::Vec<3, VectorComponent>	topRight;
+	Utils::Vec<VectorComponent, 3>	bottomLeft;
+	Utils::Vec<VectorComponent, 3>	topLeft;
+	Utils::Vec<VectorComponent, 3>	bottomRight;
+	Utils::Vec<VectorComponent, 3>	topRight;
 
 	Quad()=default;
 	Quad(const Quad& other)=default;
