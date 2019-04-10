@@ -2061,7 +2061,7 @@ ENABLE_PREPROCESSING   = YES
 # The default value is: NO.
 # This tag requires that the tag ENABLE_PREPROCESSING is set to YES.
 
-MACRO_EXPANSION        = NO
+MACRO_EXPANSION        = YES
 
 # If the EXPAND_ONLY_PREDEF and MACRO_EXPANSION tags are both set to YES then
 # the macro expansion is limited to the macros specified with the PREDEFINED and
@@ -2069,7 +2069,7 @@ MACRO_EXPANSION        = NO
 # The default value is: NO.
 # This tag requires that the tag ENABLE_PREPROCESSING is set to YES.
 
-EXPAND_ONLY_PREDEF     = NO
+EXPAND_ONLY_PREDEF     = YES
 
 # If the SEARCH_INCLUDES tag is set to YES, the include files in the
 # INCLUDE_PATH will be searched if a #include is found.
@@ -2101,7 +2101,30 @@ INCLUDE_FILE_PATTERNS  =
 # recursively expanded use the := operator instead of the = operator.
 # This tag requires that the tag ENABLE_PREPROCESSING is set to YES.
 
-PREDEFINED             = 
+PREDEFINED             =    "SUPPORTS_GETTING_PIXELFORMAT" \
+                            "SUPPORTS_SETTING_PIXELFORMAT" \
+                            "SUPPORTS_ANY_PIXELFORMAT" \
+                            "SUPPORTS_LISTING_PIXELFORMATS" \
+                            "SUPPORTS_GETTING_RESOLUTION" \
+                            "SUPPORTS_SETTING_RESOLUTION" \
+                            "SUPPORTS_ANY_RESOLUTION" \
+                            "SUPPORTS_LISTING_RESOLUTIONS" \
+                            "SUPPORTS_GETTING_CODEC" \
+                            "SUPPORTS_SETTING_CODEC" \
+                            "SUPPORTS_ANY_CODEC" \
+                            "SUPPORTS_LISTING_CODECS" \
+                            "SUPPORTS_GETTING_FRAMERATE" \
+                            "SUPPORTS_SETTING_FRAMERATE" \
+                            "SUPPORTS_ANY_FRAMERATE" \
+                            "SUPPORTS_LISTING_FRAMERATES" \
+                            "SUPPORTS_GETTING_PROGRESSIVE" \
+                            "SUPPORTS_SETTING_PROGRESSIVE" \
+                            "SUPPORTS_GETTING_VIDEOMODE" \
+                            "SUPPORTS_SETTING_VIDEOMODE" \
+                            "SUPPORTS_ANY_VIDEOMODE" \
+                            "SUPPORTS_LISTING_VIDEOMODES" \
+                            "SUPPORTS_GETTING_SCALINGMODE" \
+                            "SUPPORTS_SETTING_SCALINGMODE" \
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The

@@ -4,6 +4,7 @@
 #include "../Graphics/FrameGeometry.h"
 #include "../Graphics/ShaderUniform.h"
 #include "../Graphics/Context.h"
+#include "../Graphics/SharedObject.h"
 #include "../Graphics/GL/Buffer.h"
 #include "../Graphics/GL/Shader.h"
 #include "../Video/VideoSourceBase.h"
@@ -83,8 +84,17 @@ public:
 		const Graphics::Rectangle& 				getRect() const;
 		void									setRect(const Graphics::Rectangle& rect);
 	private:
+		class Shader : public Graphics::GL::Shader{
+		public:
+			Shader();
+			Shader(const Shader& other)=default;
+			Shader(Shader&& other)=default;
+			~Shader()=default;
+		};
+
 		Graphics::Rectangle						m_rectangle;
 
+		std::unique_ptr<Graphics::SharedObject<Shader>> m_shader;
 		std::unique_ptr<Graphics::FrameGeometry> m_frameGeom;
 
 		SUPPORTS_GETTING_SCALINGMODE
@@ -96,9 +106,6 @@ public:
 
 		virtual void							draw() const override;
 		virtual bool							hasChanged() const override;
-
-		static const std::string				s_vertexShaderSrc;
-		static const std::string				s_fragmentShaderSrc;
 	};
 
 	Compositor();

@@ -12,7 +12,7 @@ public:
 	Shader();
 	Shader(const Shader& shader)=delete;
 	Shader(const std::string&  vertSrc, const std::string& fragSrc);
-	~Shader();
+	virtual ~Shader();
 
 	void							bind() const;
 	void							unbind() const;

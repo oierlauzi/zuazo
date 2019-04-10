@@ -75,10 +75,12 @@ public:
 
 	virtual bool							supportsGettingVideoMode() const { return false; }
 	virtual bool							supportsSettingVideoMode() const { return false; }
+	virtual bool							supportsAnyVideoMode() const { return false; }
 	virtual bool							supportsListingVideoModes() const { return false; }
 	virtual std::set<Utils::VideoMode> 		getSupportedVideoModes() const{ return std::set<Utils::VideoMode>(); }
 	#define SUPPORTS_GETTING_VIDEOMODE 		virtual bool supportsGettingVideoMode() const override { return true; }
 	#define SUPPORTS_SETTING_VIDEOMODE 		virtual bool supportsSettingVideoMode() const override { return true; }
+	#define SUPPORTS_ANY_VIDEOMODE		 	virtual bool supportsAnyVideoMode() const override { return true; }
 	#define SUPPORTS_LISTING_VIDEOMODES 	virtual bool supportsListingVideoModes() const override { return true; }
 	const Utils::VideoMode& 				getVideoMode() const;
 	virtual void							setVideoMode(const Utils::VideoMode& videoMode){}

@@ -7,7 +7,7 @@
 #include "GL/Texture2D.h"
 #include "ImageAttributes.h"
 #include "ImageBuffer.h"
-#include "Pool.h"
+#include "Pools.h"
 
 namespace Zuazo::Graphics{
 

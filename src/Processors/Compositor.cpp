@@ -279,14 +279,6 @@ void Compositor::LayerBase::calculateModelMatrix(){
  * VIDEO LAYER
  */
 
-const std::string Compositor::VideoLayer::s_vertexShaderSrc(
-		#include "../../data/shaders/video_layer.vert"
-);
-
-const std::string Compositor::VideoLayer::s_fragmentShaderSrc(
-		#include "../../data/shaders/video_layer.frag"
-);
-
 Compositor::VideoLayer::VideoLayer(const Graphics::Rectangle& rect) :
 		m_rectangle(rect)
 {
@@ -333,16 +325,8 @@ bool Compositor::VideoLayer::hasChanged() const{
 }
 
 void Compositor::VideoLayer::open(){
-	const Graphics::GL::Shader& shader(
-			Graphics::Context::getMainCtx().getShaderPool().get(s_vertexShaderSrc, s_fragmentShaderSrc)
-	);
-
-	shader.setUniformBlockBinding("model", MODEL_MATRIX_INDEX);
-	shader.setUniformBlockBinding("view", VIEW_MATRIX_INDEX);
-	shader.setUniformBlockBinding("projection", PROJECTION_MATRIX_INDEX);
-	shader.setUniformBlockBinding("data", OPACITY_INDEX);
-
-	m_frameGeom=std::unique_ptr<Graphics::FrameGeometry>(new Graphics::FrameGeometry(shader, "in_vertex", "in_uv"));
+	m_shader=std::unique_ptr<Graphics::SharedObject<Shader>>(new Graphics::SharedObject<Shader>);
+	m_frameGeom=std::unique_ptr<Graphics::FrameGeometry>(new Graphics::FrameGeometry(m_shader->get(), "in_vertex", "in_uv"));
 
 	m_frameGeom->setGeometry(m_rectangle);
 	m_frameGeom->setScalingMode(m_scalingMode);
@@ -353,4 +337,20 @@ void Compositor::VideoLayer::open(){
 void Compositor::VideoLayer::close(){
 	m_frameGeom.reset();
 	LayerBase::close();
+}
+
+Compositor::VideoLayer::Shader::Shader() :
+	Graphics::GL::Shader(
+		std::string(
+			#include "../../data/shaders/video_layer.vert"
+		),
+		std::string(
+			#include "../../data/shaders/video_layer.frag"
+		)
+	)
+{
+	setUniformBlockBinding("model", MODEL_MATRIX_INDEX);
+	setUniformBlockBinding("view", VIEW_MATRIX_INDEX);
+	setUniformBlockBinding("projection", PROJECTION_MATRIX_INDEX);
+	setUniformBlockBinding("data", OPACITY_INDEX);
 }
