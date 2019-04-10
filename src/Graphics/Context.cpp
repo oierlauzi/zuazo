@@ -60,10 +60,7 @@ Context::Context() {
 }
 
 Context::~Context() {
-	use();
-	m_shaderPool.clear();
-	unuse();
-
+	std::lock_guard<std::mutex> lock(m_mutex);
 	glfwDestroyWindow(m_glfwCtx);
 }
 

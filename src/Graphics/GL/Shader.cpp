@@ -2,75 +2,65 @@
 
 using namespace Zuazo::Graphics::GL;
 
-Shader::Shader() {
-	m_program=0;
+Program::Program(const std::string&  vertSrc, const std::string& fragSrc) :
+		Program(VertexShader(vertSrc), FragmentShader(fragSrc))
+{
 }
 
-Shader::Shader(const std::string&  vertSrc, const std::string& fragSrc){
+Program::Program(const VertexShader& vert, const FragmentShader& frag){
 	//Initialize program to 0
 	m_program=0;
-	m_log+="*Compiling vertex shader...*\n";
 
-
-	//Compile the vertex shader
-	GLuint vertShader=glCreateShader(GL_VERTEX_SHADER);
-	if(compile(vertShader, vertSrc.c_str()) < 0){
-		//Error
-		m_log+=getCompilationLog(vertShader) + "\n";
-
-		glDeleteShader(vertShader);
+	//Check if the vertex shader has been successfully compiled
+	m_log+="*VERTEX SHADER COMPILATION RESULT:*\n\n";
+	m_log+=vert.getLog();
+	if(!vert.getSuccess()){
+		m_success=false;
 		return;
 	}
 
-	m_log+="*Compiling fragment shader...*\n";
-
-	//Compile the fragment shader
-	GLuint  fragShader=glCreateShader(GL_FRAGMENT_SHADER);
-	if(compile(fragShader, fragSrc.c_str()) < 0){
-		//Error
-		m_log+=getCompilationLog(fragShader) + "\n";
-
-		glDeleteShader(vertShader);
-		glDeleteShader(fragShader);
+	//Check if the fragment shader has been successfully compiled
+	m_log+="*FRAGMENT SHADER COMPILATION RESULT:*\n\n";
+	m_log+=frag.getLog();
+	if(!frag.getSuccess()){
+		m_success=false;
 		return;
 	}
-
-	m_log+="*Linking...*\n";
-
 
 	//Link the program
-	GLuint program=glCreateProgram();
-	if(link(program, vertShader, fragShader) < 0){
-		//Error
-		m_log+=getLinkLog(program) + "\n";
+	m_program=linkShaders(vert, frag);
 
-		glDeleteShader(vertShader);
-		glDeleteShader(fragShader);
-		glDeleteProgram(program);
+	m_log+="*PROGRAM LINKAGE RESULT:*\n\n";
+	m_log+=getLinkLog(m_program);
+	if(!getLinkSuccess(m_program)){
+		m_success=false;
+		glDeleteProgram(m_program);
+		m_program=0;
 		return;
 	}
 
-	m_log+="*Success!*\n";
-
-
-
-	//Successfuly compiled and linked shaders
-	//Delete shaders (not needed)
-	glDeleteShader(vertShader);
-	glDeleteShader(fragShader);
-
-	//Assign progam
-	m_program=program;
+	m_log+="*SUCCESS!*\n";
 }
 
+Program::Program(Program&& other) :
+	m_program(other.m_program),
+	m_success(other.m_success),
+	m_log(std::move(other.m_log)),
 
-Shader::~Shader() {
+	m_attribLocations(std::move(other.m_attribLocations)),
+	m_uniformLocations(std::move(other.m_uniformLocations)),
+	m_uniformBlockLocations(std::move(other.m_uniformBlockLocations))
+{
+	other.m_program=0;
+}
+
+Program::~Program() {
 	if(m_program){
 		glDeleteProgram(m_program);
 	}
 }
 
-GLint Shader::getAttributeLoc(const std::string& name) const{
+GLint Program::getAttributeLoc(const std::string& name) const{
 	const auto& ite=m_attribLocations.find(name); //Try to find it in the cache
 
 	GLuint result;
@@ -84,7 +74,7 @@ GLint Shader::getAttributeLoc(const std::string& name) const{
 	return result;
 }
 
-GLint Shader::getUniformLoc(const std::string& name) const{
+GLint Program::getUniformLoc(const std::string& name) const{
 	const auto& ite=m_uniformLocations.find(name); //Try to fin it in the cache
 
 	GLuint result;
@@ -98,7 +88,7 @@ GLint Shader::getUniformLoc(const std::string& name) const{
 	return result;
 }
 
-GLint Shader::getUniformBlockIndex(const std::string& name) const{
+GLint Program::getUniformBlockIndex(const std::string& name) const{
 	const auto& ite=m_uniformBlockLocations.find(name); //Try to fin it in the cache
 
 	GLuint result;
@@ -112,62 +102,36 @@ GLint Shader::getUniformBlockIndex(const std::string& name) const{
 	return result;
 }
 
-void Shader::setUniformBlockBinding(const std::string& name, u_int32_t binding) const{
+void Program::setUniformBlockBinding(const std::string& name, u_int32_t binding) const{
 	u_int32_t idx=getUniformBlockIndex(name);
 	glUniformBlockBinding(m_program, idx, binding);
 }
 
-int Shader::compile(GLuint shader, const char* src) {
-	//Compile the shader
-	glShaderSource(shader, 1, &src, NULL);
-	glCompileShader(shader);
+GLuint Program::linkShaders(const VertexShader& vert, const FragmentShader& frag){
+	//Create the program and link the shaders
+	GLuint program=glCreateProgram();
 
-	//Check if the compilation was successful
-	int success;
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-
-	if(success == GL_FALSE)
-		return -1; //Compilation error
-	else
-		return 0; //Compiled successfully
-}
-
-int Shader::link(GLuint program, GLuint vertShader, GLuint fragShader){
 	//Attach the shaders
-	glAttachShader(program, vertShader);
-	glAttachShader(program, fragShader);
+	glAttachShader(program, vert.get());
+	glAttachShader(program, frag.get());
 
 	//Link the program
 	glLinkProgram(program);
 
 	//Detach the shaders
-	glDetachShader(program, vertShader);
-	glDetachShader(program, fragShader);
+	glDetachShader(program, vert.get());
+	glDetachShader(program, frag.get());
 
+	return program;
+}
+
+bool Program::getLinkSuccess(GLuint program){
 	int success;
 	glGetProgramiv(program, GL_LINK_STATUS, &success);
-	if(success == GL_FALSE){
-		return -1;
-	}else
-		return 0;
+	return (success == GL_TRUE);
 }
 
-std::string Shader::getCompilationLog(GLuint shader) {
-	//Query the size of the log
-	GLint len = 0;
-	glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &len);
-
-	//Query the log
-	GLchar* log=new GLchar[len];
-	glGetShaderInfoLog(shader, len, &len, log);
-
-	std::string strLog(log);
-	delete[] log;
-
-	return strLog;
-}
-
-std::string Shader::getLinkLog(GLuint program) {
+std::string Program::getLinkLog(GLuint program) {
 	//Query the size of the log
 	GLint len = 0;
 	glGetProgramiv(program, GL_INFO_LOG_LENGTH, &len);

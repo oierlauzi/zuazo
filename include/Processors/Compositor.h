@@ -64,8 +64,8 @@ public:
 		float									m_opacity;
 
 		Utils::Mat4x4f							m_modelMatrix;
-		std::unique_ptr<Graphics::ShaderUniform<Utils::Mat4x4f>> 	m_modelMatrixUbo;
-		std::unique_ptr<Graphics::ShaderUniform<float>> 			m_opacityUbo;
+		std::unique_ptr<Graphics::ShaderUniform>m_modelMatrixUbo;
+		std::unique_ptr<Graphics::ShaderUniform>m_opacityUbo;
 
 		void									calculateModelMatrix();
 	};
@@ -84,7 +84,7 @@ public:
 		const Graphics::Rectangle& 				getRect() const;
 		void									setRect(const Graphics::Rectangle& rect);
 	private:
-		class Shader : public Graphics::GL::Shader{
+		class Shader : public Graphics::GL::Program{
 		public:
 			Shader();
 			Shader(const Shader& other)=default;
@@ -184,9 +184,9 @@ private:
 	Utils::Vec3f							m_cameraUpDir;
 
 	Utils::Mat4x4f							m_viewMatrix;
-	std::unique_ptr<Graphics::ShaderUniform<Utils::Mat4x4f>> m_viewMatrixUbo;
+	std::unique_ptr<Graphics::ShaderUniform>m_viewMatrixUbo;
 	Utils::Mat4x4f							m_projectionMatrix;
-	std::unique_ptr<Graphics::ShaderUniform<Utils::Mat4x4f>> m_projectionMatrixUbo;
+	std::unique_ptr<Graphics::ShaderUniform>m_projectionMatrixUbo;
 
 	mutable bool							m_forceRender;
 
@@ -395,7 +395,7 @@ inline void Compositor::LayerBase::setOpacity(float alpha){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_opacity=alpha;
 	Graphics::UniqueContext ctx;
-	m_opacityUbo->setData(m_opacity);
+	m_opacityUbo->setData(&m_opacity);
 }
 
 inline void  Compositor::LayerBase::setRSP(const Utils::Vec3f& rotation, const Utils::Vec3f& scale, const Utils::Vec3f& position){

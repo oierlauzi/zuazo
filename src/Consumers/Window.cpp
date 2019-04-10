@@ -363,7 +363,7 @@ void Window::update() const{
 
 			//Finaly draw everithing
 			Graphics::GL::UniqueBinding<Graphics::GL::VertexArray> vaoBind(m_resources->vao);
-			Graphics::GL::UniqueBinding<Graphics::GL::Shader> shaderBind(m_resources->shader);
+			Graphics::GL::UniqueBinding<Graphics::GL::Program> shaderBind(m_resources->shader);
 			Graphics::GL::UniqueBinding<Graphics::GL::Texture2D> texBind(*tex);
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		}

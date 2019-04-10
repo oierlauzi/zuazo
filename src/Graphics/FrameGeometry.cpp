@@ -13,7 +13,7 @@
 
 using namespace Zuazo::Graphics;
 
-FrameGeometry::FrameGeometry(const GL::Shader& shader, const std::string& vertAtrrib, const std::string& texAtrrib) :
+FrameGeometry::FrameGeometry(const GL::Program& shader, const std::string& vertAtrrib, const std::string& texAtrrib) :
 	m_scalingMode(Utils::ScalingMode::Stretched),
 	m_frame(nullptr),
 	m_shader(shader),
@@ -54,7 +54,7 @@ void FrameGeometry::setFrame(std::shared_ptr<const Frame>& frame){
 
 void FrameGeometry::draw() const{
 	if(m_frame){
-		Graphics::GL::UniqueBinding<GL::Shader> shaderBind(m_shader);
+		Graphics::GL::UniqueBinding<GL::Program> shaderBind(m_shader);
 		Graphics::GL::UniqueBinding<VertexArray> vaoBind(*m_vertexArray);
 		Graphics::GL::UniqueBinding<GL::Texture2D> texBind(m_frame->getTexture());
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

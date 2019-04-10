@@ -9,14 +9,10 @@
 
 namespace Zuazo::Graphics{
 
-template <typename T>
-constexpr size_t uniformSize=sizeof(T);
-
-template <typename T>
 class ShaderUniform{
 public:
-	ShaderUniform();
-	ShaderUniform(u_int32_t binding);
+	ShaderUniform(size_t size);
+	ShaderUniform(u_int32_t binding, size_t size);
 	ShaderUniform(const ShaderUniform& other)=delete;
 	ShaderUniform(ShaderUniform&& other)=default;
 	~ShaderUniform()=default;
@@ -25,71 +21,79 @@ public:
 	void								setBinding(u_int32_t binding);
 	void								bind() const;
 
-	void								setData(const T& data);
+	void								setData(const void* data);
 	void								setSubset(const void* data, size_t offset, size_t size);
+
+	template<typename T>
+	void								setParam(const T& data, size_t offset=0);
 private:
 	std::unique_ptr<GL::UniformBuffer>	m_uniformBuffer;
+	size_t								m_uniformBlockSize;
 	u_int32_t							m_binding;
 };
 
-template <typename T>
-inline ShaderUniform<T>::ShaderUniform() :
+
+inline ShaderUniform::ShaderUniform(size_t size) :
 		m_uniformBuffer(new GL::UniformBuffer),
+		m_uniformBlockSize(size),
 		m_binding(0)
 {
 	GL::UniqueBinding<GL::UniformBuffer> bufBinding(*m_uniformBuffer);
 	GL::UniformBuffer::bufferData(
-			uniformSize<T>,
+			m_uniformBlockSize,
 			GL::UniformBuffer::Usage::DynamicDraw,
 			nullptr
 	);
 }
 
-template <typename T>
-inline ShaderUniform<T>::ShaderUniform(u_int32_t binding) :
-		ShaderUniform()
+
+inline ShaderUniform::ShaderUniform(u_int32_t binding, size_t size) :
+		ShaderUniform(size)
 {
 	m_binding=binding;
 }
 
-template <typename T>
-inline u_int32_t ShaderUniform<T>::getBinding() const{
+
+inline u_int32_t ShaderUniform::getBinding() const{
 	return m_binding;
 }
 
-template <typename T>
-inline void ShaderUniform<T>::setBinding(u_int32_t binding){
+
+inline void ShaderUniform::setBinding(u_int32_t binding){
 	m_binding=binding;
 }
 
-template <typename T>
-inline void ShaderUniform<T>::bind() const{
+
+inline void ShaderUniform::bind() const{
 	glBindBufferRange(
 			GL_UNIFORM_BUFFER,		//Target
 			m_binding, 				//Index
 			m_uniformBuffer->get(),	//Uniform buffer name
 			0,						//Offset
-			uniformSize<T>			//Size
+			m_uniformBlockSize		//Size
 	);
 }
 
-template <typename T>
-inline void ShaderUniform<T>::setData(const T& data){
+inline void ShaderUniform::setData(const void* data){
 	GL::UniqueBinding<GL::UniformBuffer> bufBinding(*m_uniformBuffer);
 	GL::UniformBuffer::bufferSubData(
-			sizeof(T),
+			m_uniformBlockSize,
 			0,
-			&data
+			data
 	);
 }
 
-template <typename T>
-inline void	ShaderUniform<T>::setSubset(const void* data, size_t offset, size_t size){
+inline void	ShaderUniform::setSubset(const void* data, size_t offset, size_t size){
 	GL::UniqueBinding<GL::UniformBuffer> bufBinding(*m_uniformBuffer);
 	GL::UniformBuffer::bufferSubData(
 			size,
 			offset,
 			data
 	);
+}
+
+template<typename T>
+inline void ShaderUniform::setParam(const T& data, size_t offset){
+	setSubset(&data, offset, sizeof(T));
 }
 }

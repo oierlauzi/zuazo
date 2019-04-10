@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../glad/glad.h" //Needs to be included before GLFW
-#include "ShaderPool.h"
 
 #include <GLFW/glfw3.h>
 #include <sys/types.h>
@@ -33,8 +32,6 @@ public:
 	bool						tryUse() const;
 	void 						unuse() const;
 
-	const ShaderPool&			getShaderPool() const;
-
 	static const Context*		getCurrentCtx();
 	static const Context&		getMainCtx();
 	static const Context&		getAvailableCtx();
@@ -43,8 +40,6 @@ private:
 
 	GLFWwindow *				m_glfwCtx;
 	mutable std::mutex			m_mutex;
-
-	ShaderPool					m_shaderPool;
 
 	static GLFWwindow *			s_mainGlfwCtx;
 	static thread_local std::stack<const Context*> s_activeContext;
@@ -125,10 +120,6 @@ inline void Context::unuse() const{
 
 		m_mutex.unlock();
 	}
-}
-
-inline const ShaderPool& Context::getShaderPool() const{
-	return m_shaderPool;
 }
 
 inline const Context* Context::getCurrentCtx(){

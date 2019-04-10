@@ -24,7 +24,7 @@ class FrameGeometry :
 public:
 	typedef std::array<Utils::Vec<VectorComponent, 2>, 4> TextureCoordenates;
 
-	FrameGeometry(const GL::Shader& shader, const std::string& vertAtrrib, const std::string& texAtrrib);
+	FrameGeometry(const GL::Program& shader, const std::string& vertAtrrib, const std::string& texAtrrib);
 	FrameGeometry(const FrameGeometry& other)=delete;
 	FrameGeometry(FrameGeometry&& other)=default;
 	virtual ~FrameGeometry()=default;
@@ -39,7 +39,7 @@ private:
 	std::shared_ptr<const Frame>			m_frame;
 	Utils::ScalingMode						m_scalingMode;
 
-	const GL::Shader&						m_shader;
+	const GL::Program&						m_shader;
 	const GLuint							m_vertAttribLoc;
 	const GLuint							m_texAttribLoc;
 	std::unique_ptr<VertexArray>			m_vertexArray;

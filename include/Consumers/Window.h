@@ -103,7 +103,7 @@ private:
 		WindowResources(const WindowResources& other)=delete;
 		~WindowResources()=default;
 
-		Graphics::GL::Shader						shader;
+		Graphics::GL::Program						shader;
 		Graphics::GL::VertexArrayBuffer				vertVbo;
 		Graphics::GL::VertexArrayBuffer				texVbo;
 		Graphics::GL::VertexArray					vao;

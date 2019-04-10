@@ -2,7 +2,6 @@
 
 #include <Consumers/Window.h>
 #include <Graphics/Context.h>
-#include <Graphics/ShaderPool.h>
 #include <Timing/Timings.h>
 #include <Sources/ImageMagick.h>
 #include <Sources/SVG.h>

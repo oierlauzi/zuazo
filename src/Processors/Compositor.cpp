@@ -2,7 +2,6 @@
 
 #include <Graphics/ImageAttributes.h>
 #include <Graphics/MatrixOperations.h>
-#include <Graphics/ShaderPool.h>
 #include <Graphics/Context.h>
 #include <Graphics/GL/UniqueBinding.h>
 #include <Graphics/GL/Error.h>
@@ -137,15 +136,15 @@ void Compositor::open(){
 	Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
 	m_drawtable=std::unique_ptr<Graphics::Drawtable>(new Graphics::Drawtable(att));
 
-	m_viewMatrixUbo=std::unique_ptr<Graphics::ShaderUniform<Utils::Mat4x4f>>(
-			new Graphics::ShaderUniform<Utils::Mat4x4f>(VIEW_MATRIX_INDEX)
+	m_viewMatrixUbo=std::unique_ptr<Graphics::ShaderUniform>(
+			new Graphics::ShaderUniform(VIEW_MATRIX_INDEX, sizeof(Utils::Mat4x4f))
 	);
-	m_viewMatrixUbo->setData(m_viewMatrix);
+	m_viewMatrixUbo->setData(&m_viewMatrix);
 
-	m_projectionMatrixUbo=std::unique_ptr<Graphics::ShaderUniform<Utils::Mat4x4f>>(
-			new Graphics::ShaderUniform<Utils::Mat4x4f>(PROJECTION_MATRIX_INDEX)
+	m_projectionMatrixUbo=std::unique_ptr<Graphics::ShaderUniform>(
+			new Graphics::ShaderUniform(PROJECTION_MATRIX_INDEX, sizeof(Utils::Mat4x4f))
 	);
-	m_projectionMatrixUbo->setData(m_projectionMatrix);
+	m_projectionMatrixUbo->setData(&m_projectionMatrix);
 
 	for(auto& layer : m_layers){
 		layer->open();
@@ -194,7 +193,7 @@ void Compositor::calculateViewMatrix(){
 
 	if(m_viewMatrixUbo){
 		Graphics::UniqueContext ctx;
-		m_viewMatrixUbo->setData(m_viewMatrix);
+		m_viewMatrixUbo->setData(&m_viewMatrix);
 	}
 
 	m_forceRender=true;
@@ -212,7 +211,7 @@ void Compositor::calculateProjectionMatrix(){
 
 	if(m_projectionMatrixUbo){
 		Graphics::UniqueContext ctx;
-		m_projectionMatrixUbo->setData(m_projectionMatrix);
+		m_projectionMatrixUbo->setData(&m_projectionMatrix);
 	}
 
 	m_forceRender=true;
@@ -233,10 +232,14 @@ Compositor::LayerBase::LayerBase() :
 }
 
 void Compositor::LayerBase::open(){
-	m_modelMatrixUbo=std::unique_ptr<Graphics::ShaderUniform<Utils::Mat4x4f>> (new Graphics::ShaderUniform<Utils::Mat4x4f>(MODEL_MATRIX_INDEX));
-	m_opacityUbo=std::unique_ptr<Graphics::ShaderUniform<float>> (new Graphics::ShaderUniform<float>(OPACITY_INDEX));
-	m_modelMatrixUbo->setData(m_modelMatrix);
-	m_opacityUbo->setData(m_opacity);
+	m_modelMatrixUbo=std::unique_ptr<Graphics::ShaderUniform> (
+			new Graphics::ShaderUniform(MODEL_MATRIX_INDEX, sizeof(Utils::Mat4x4f))
+	);
+	m_modelMatrixUbo->setData(&m_modelMatrix);
+	m_opacityUbo=std::unique_ptr<Graphics::ShaderUniform> (
+			new Graphics::ShaderUniform(OPACITY_INDEX, sizeof(float))
+	);
+	m_opacityUbo->setData(&m_opacity);
 	m_forceRender=true;
 }
 
@@ -269,7 +272,7 @@ void Compositor::LayerBase::calculateModelMatrix(){
 
 	if(m_modelMatrixUbo){
 		Graphics::UniqueContext ctx;
-		m_modelMatrixUbo->setData(m_modelMatrix);
+		m_modelMatrixUbo->setData(&m_modelMatrix);
 		m_forceRender=true;
 	}
 }
@@ -340,7 +343,7 @@ void Compositor::VideoLayer::close(){
 }
 
 Compositor::VideoLayer::Shader::Shader() :
-	Graphics::GL::Shader(
+	Graphics::GL::Program(
 		std::string(
 			#include "../../data/shaders/video_layer.vert"
 		),
