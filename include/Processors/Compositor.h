@@ -4,7 +4,6 @@
 #include "../Graphics/FrameGeometry.h"
 #include "../Graphics/ShaderUniform.h"
 #include "../Graphics/Context.h"
-#include "../Graphics/SharedObject.h"
 #include "../Graphics/GL/Buffer.h"
 #include "../Graphics/GL/Shader.h"
 #include "../Video/VideoSourceBase.h"
@@ -57,6 +56,11 @@ public:
 
 		mutable std::mutex						m_mutex;
 		bool									m_forceRender;
+
+		static const u_int32_t 					MODEL_MATRIX_INDEX		=0;
+		static const u_int32_t 					VIEW_MATRIX_INDEX 		=1;
+		static const u_int32_t 					PROJECTION_MATRIX_INDEX =2;
+		static const u_int32_t 					OPACITY_INDEX 			=3;
 	private:
 		Utils::Vec3f							m_rotation;
 		Utils::Vec3f							m_scale;
@@ -84,18 +88,11 @@ public:
 		const Graphics::Rectangle& 				getRect() const;
 		void									setRect(const Graphics::Rectangle& rect);
 	private:
-		class Shader : public Graphics::GL::Program{
-		public:
-			Shader();
-			Shader(const Shader& other)=default;
-			Shader(Shader&& other)=default;
-			~Shader()=default;
-		};
-
 		Graphics::Rectangle						m_rectangle;
+		std::unique_ptr<Graphics::FrameGeometry>m_frameGeom;
+		std::shared_ptr<Graphics::GL::Program> 	m_shader;
 
-		std::unique_ptr<Graphics::SharedObject<Shader>> m_shader;
-		std::unique_ptr<Graphics::FrameGeometry> m_frameGeom;
+		static std::weak_ptr<Graphics::GL::Program>	s_shader;
 
 		SUPPORTS_GETTING_SCALINGMODE
 		SUPPORTS_SETTING_SCALINGMODE

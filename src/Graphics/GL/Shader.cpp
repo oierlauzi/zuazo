@@ -45,11 +45,7 @@ Program::Program(const VertexShader& vert, const FragmentShader& frag){
 Program::Program(Program&& other) :
 	m_program(other.m_program),
 	m_success(other.m_success),
-	m_log(std::move(other.m_log)),
-
-	m_attribLocations(std::move(other.m_attribLocations)),
-	m_uniformLocations(std::move(other.m_uniformLocations)),
-	m_uniformBlockLocations(std::move(other.m_uniformBlockLocations))
+	m_log(std::move(other.m_log))
 {
 	other.m_program=0;
 }
@@ -58,53 +54,6 @@ Program::~Program() {
 	if(m_program){
 		glDeleteProgram(m_program);
 	}
-}
-
-GLint Program::getAttributeLoc(const std::string& name) const{
-	const auto& ite=m_attribLocations.find(name); //Try to find it in the cache
-
-	GLuint result;
-	if(ite!=m_attribLocations.end()){
-		result=ite->second;
-	}else{
-		result=glGetAttribLocation(m_program, name.c_str()); //Cache it for the future
-		m_attribLocations.emplace(name, result);
-	}
-
-	return result;
-}
-
-GLint Program::getUniformLoc(const std::string& name) const{
-	const auto& ite=m_uniformLocations.find(name); //Try to fin it in the cache
-
-	GLuint result;
-	if(ite != m_uniformLocations.end()){
-		result=ite->second;
-	}else{
-		result=glGetUniformLocation(m_program, name.c_str()); //Cache it for the future
-		m_uniformLocations.emplace(name, result);
-	}
-
-	return result;
-}
-
-GLint Program::getUniformBlockIndex(const std::string& name) const{
-	const auto& ite=m_uniformBlockLocations.find(name); //Try to fin it in the cache
-
-	GLuint result;
-	if(ite != m_uniformBlockLocations.end()){
-		result=ite->second;
-	}else{
-		result=glGetUniformBlockIndex(m_program, name.c_str()); //Cache it for the future
-		m_uniformBlockLocations.emplace(name, result);
-	}
-
-	return result;
-}
-
-void Program::setUniformBlockBinding(const std::string& name, u_int32_t binding) const{
-	u_int32_t idx=getUniformBlockIndex(name);
-	glUniformBlockBinding(m_program, idx, binding);
 }
 
 GLuint Program::linkShaders(const VertexShader& vert, const FragmentShader& frag){

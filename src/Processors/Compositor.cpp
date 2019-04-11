@@ -8,11 +8,6 @@
 
 using namespace Zuazo::Processors;
 
-const u_int32_t MODEL_MATRIX_INDEX			=0;
-const u_int32_t VIEW_MATRIX_INDEX 			=1;
-const u_int32_t PROJECTION_MATRIX_INDEX 	=2;
-const u_int32_t OPACITY_INDEX 				=3;
-
 /*
  * COMPOSITOR
  */
@@ -137,12 +132,12 @@ void Compositor::open(){
 	m_drawtable=std::unique_ptr<Graphics::Drawtable>(new Graphics::Drawtable(att));
 
 	m_viewMatrixUbo=std::unique_ptr<Graphics::ShaderUniform>(
-			new Graphics::ShaderUniform(VIEW_MATRIX_INDEX, sizeof(Utils::Mat4x4f))
+			new Graphics::ShaderUniform(LayerBase::VIEW_MATRIX_INDEX, sizeof(Utils::Mat4x4f))
 	);
 	m_viewMatrixUbo->setData(&m_viewMatrix);
 
 	m_projectionMatrixUbo=std::unique_ptr<Graphics::ShaderUniform>(
-			new Graphics::ShaderUniform(PROJECTION_MATRIX_INDEX, sizeof(Utils::Mat4x4f))
+			new Graphics::ShaderUniform(LayerBase::PROJECTION_MATRIX_INDEX, sizeof(Utils::Mat4x4f))
 	);
 	m_projectionMatrixUbo->setData(&m_projectionMatrix);
 
@@ -215,145 +210,4 @@ void Compositor::calculateProjectionMatrix(){
 	}
 
 	m_forceRender=true;
-}
-
-/*
- * LAYER BASE
- */
-
-Compositor::LayerBase::LayerBase() :
-	m_rotation(Utils::Vec3f(0, 0, 0)),
-	m_scale(Utils::Vec3f(1, 1, 1)),
-	m_position(Utils::Vec3f(0, 0, 0)),
-	m_opacity(1.0),
-	m_forceRender(true)
-{
-	calculateModelMatrix();
-}
-
-void Compositor::LayerBase::open(){
-	m_modelMatrixUbo=std::unique_ptr<Graphics::ShaderUniform> (
-			new Graphics::ShaderUniform(MODEL_MATRIX_INDEX, sizeof(Utils::Mat4x4f))
-	);
-	m_modelMatrixUbo->setData(&m_modelMatrix);
-	m_opacityUbo=std::unique_ptr<Graphics::ShaderUniform> (
-			new Graphics::ShaderUniform(OPACITY_INDEX, sizeof(float))
-	);
-	m_opacityUbo->setData(&m_opacity);
-	m_forceRender=true;
-}
-
-void Compositor::LayerBase::close(){
-	m_modelMatrixUbo.reset();
-	m_opacityUbo.reset();
-	m_forceRender=true;
-}
-
-
-void Compositor::LayerBase::setup() const{
-	m_modelMatrixUbo->bind();
-	m_opacityUbo->bind();
-}
-
-bool Compositor::LayerBase::hasChanged() const{
-	return m_forceRender;
-}
-
-void Compositor::LayerBase::calculateModelMatrix(){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	//m_modelMatrix=Graphics::MatrixOperations::eulerAngle(m_rotation);
-	//m_modelMatrix=Graphics::MatrixOperations::scale(m_modelMatrix, m_scale);
-	//m_modelMatrix=Graphics::MatrixOperations::translate(m_modelMatrix, m_position);
-
-	const Utils::Mat4x4f rotationMatrix(Graphics::MatrixOperations::eulerAngle(m_rotation));
-	const Utils::Mat4x4f scaleMatrix(Graphics::MatrixOperations::scale(m_scale));
-	const Utils::Mat4x4f translationMatrix(Graphics::MatrixOperations::translate(m_position));
-	m_modelMatrix=translationMatrix * scaleMatrix * rotationMatrix;
-
-	if(m_modelMatrixUbo){
-		Graphics::UniqueContext ctx;
-		m_modelMatrixUbo->setData(&m_modelMatrix);
-		m_forceRender=true;
-	}
-}
-
-
-/*
- * VIDEO LAYER
- */
-
-Compositor::VideoLayer::VideoLayer(const Graphics::Rectangle& rect) :
-		m_rectangle(rect)
-{
-}
-
-const Zuazo::Graphics::Rectangle& Compositor::VideoLayer::getRect() const{
-	return m_rectangle;
-}
-
-void Compositor::VideoLayer::setRect(const Graphics::Rectangle& rect){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	m_rectangle=rect;
-	if(m_frameGeom){
-		Graphics::UniqueContext ctx;
-		m_frameGeom->setGeometry(rect);
-		m_forceRender=true;
-	}
-}
-
-void Compositor::VideoLayer::setScalingMode(Utils::ScalingMode scaling){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	m_scalingMode=scaling;
-	if(m_frameGeom){
-		Graphics::UniqueContext ctx;
-		m_frameGeom->setScalingMode(m_scalingMode);
-		m_forceRender=true;
-	}
-}
-
-void Compositor::VideoLayer::draw() const{
-	std::lock_guard<std::mutex> lock(m_mutex);
-	setup();
-
-	std::shared_ptr<const Graphics::Frame> fr=m_videoConsumerPad.get();
-
-	if(fr){
-		m_frameGeom->setFrame(fr);
-		m_frameGeom->draw();
-	}
-}
-
-bool Compositor::VideoLayer::hasChanged() const{
-	return m_videoConsumerPad.hasChanged() || m_forceRender;
-}
-
-void Compositor::VideoLayer::open(){
-	m_shader=std::unique_ptr<Graphics::SharedObject<Shader>>(new Graphics::SharedObject<Shader>);
-	m_frameGeom=std::unique_ptr<Graphics::FrameGeometry>(new Graphics::FrameGeometry(m_shader->get(), "in_vertex", "in_uv"));
-
-	m_frameGeom->setGeometry(m_rectangle);
-	m_frameGeom->setScalingMode(m_scalingMode);
-
-	LayerBase::open();
-}
-
-void Compositor::VideoLayer::close(){
-	m_frameGeom.reset();
-	LayerBase::close();
-}
-
-Compositor::VideoLayer::Shader::Shader() :
-	Graphics::GL::Program(
-		std::string(
-			#include "../../data/shaders/video_layer.vert"
-		),
-		std::string(
-			#include "../../data/shaders/video_layer.frag"
-		)
-	)
-{
-	setUniformBlockBinding("model", MODEL_MATRIX_INDEX);
-	setUniformBlockBinding("view", VIEW_MATRIX_INDEX);
-	setUniformBlockBinding("projection", PROJECTION_MATRIX_INDEX);
-	setUniformBlockBinding("data", OPACITY_INDEX);
 }

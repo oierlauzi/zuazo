@@ -39,8 +39,20 @@ public:
 	void							unbind() const;
 
 	GLint							getAttributeLoc(const std::string& name) const;
-	GLint							getUniformLoc(const std::string& name) const;
+	GLint							getUniformCount() const;
+	GLint							getUniformIndex(const std::string& name) const;
+	std::string						getUniformName(GLint idx) const;
+	GLint							getUniformOffset(GLuint idx) const;
+	GLint							getUniformOffset(const std::string& name) const;
+	GLint							getUniformSize(GLuint idx) const;
+	GLint							getUniformSize(const std::string& name) const;
+	GLint							getUniformBlock(GLuint idx) const;
+	GLint							getUniformBlock(const std::string& name) const;
 	GLint							getUniformBlockIndex(const std::string& name) const;
+	std::string						getUniformBlockName(GLint idx) const;
+	GLint							getUniformBlockSize(GLuint idx) const;
+	GLint							getUniformBlockSize(const std::string& name) const;
+	void							setUniformBlockBinding(GLuint idx, u_int32_t binding) const;
 	void							setUniformBlockBinding(const std::string& name, u_int32_t binding) const;
 
 	GLuint							get() const;
@@ -51,14 +63,14 @@ private:
 	bool							m_success;
 	std::string 					m_log;
 
-	mutable std::map<std::string, GLuint> m_attribLocations;
-	mutable std::map<std::string, GLuint> m_uniformLocations;
-	mutable std::map<std::string, GLuint> m_uniformBlockLocations;
+	GLint							getUniformParam(GLuint idx, GLenum param) const;
+	GLint							getUniformBlockParam(GLuint idx, GLenum param) const;
 
 	static GLuint					linkShaders(const VertexShader& vert, const FragmentShader& frag);
 	static bool						getLinkSuccess(GLuint program);
 	static std::string				getLinkLog(GLuint program);
 };
+
 
 /*
  * INLINE FUNCTIONS
@@ -139,6 +151,128 @@ inline bool Program::getSuccess() const{
 
 inline const std::string Program::getLog() const{
 	return m_log;
+}
+
+
+inline GLint Program::getAttributeLoc(const std::string& name) const{
+	return glGetAttribLocation(m_program, name.c_str());
+}
+
+inline GLint Program::getUniformCount() const{
+	GLint result;
+	glGetProgramiv(m_program, GL_ACTIVE_UNIFORMS, &result);
+	return result;
+}
+
+inline GLint Program::getUniformIndex(const std::string& name) const{
+	return glGetUniformLocation(m_program, name.c_str());
+}
+
+inline std::string Program::getUniformName(GLint idx) const{
+	GLint size=getUniformParam(idx, GL_UNIFORM_NAME_LENGTH);
+	GLchar* charName=(GLchar*)malloc((size + 1) * sizeof(GLchar));
+
+	glGetActiveUniformName(
+			m_program,		//Program name
+			idx,			//Uniform index
+			size,			//Buffer size
+			&size,			//Characters written
+			charName		//Character buffer
+	);
+
+	std::string name(charName);
+	free(charName);
+
+	return name;
+}
+
+inline GLint Program::getUniformOffset(GLuint idx) const{
+	return getUniformParam(idx, GL_UNIFORM_OFFSET);
+}
+
+inline GLint Program::getUniformOffset(const std::string& name) const{
+	return getUniformOffset(getUniformIndex(name));
+}
+
+inline GLint Program::getUniformSize(GLuint idx) const{
+	return getUniformParam(idx, GL_UNIFORM_SIZE);
+}
+
+inline GLint Program::getUniformSize(const std::string& name) const{
+	return getUniformSize(getUniformIndex(name));
+}
+
+inline GLint Program::getUniformBlock(GLuint idx) const{
+	return getUniformParam(idx, GL_UNIFORM_BLOCK_INDEX);
+}
+
+inline GLint Program::getUniformBlock(const std::string& name) const{
+	return getUniformBlock(getUniformIndex(name));
+}
+
+inline GLint Program::getUniformBlockIndex(const std::string& name) const{
+	return glGetUniformBlockIndex(m_program, name.c_str());
+}
+
+inline std::string Program::getUniformBlockName(GLint idx) const{
+	GLint size=getUniformBlockParam(idx, GL_UNIFORM_BLOCK_NAME_LENGTH);
+	GLchar* charName=(GLchar*)malloc((size + 1) * sizeof(GLchar));
+
+	glGetActiveUniformBlockName(
+			m_program,		//Program name
+			idx,			//Uniform index
+			size,			//Buffer size
+			&size,			//Characters written
+			charName		//Character buffer
+	);
+
+	std::string name(charName);
+	free(charName);
+
+	return name;
+}
+
+inline GLint Program::getUniformBlockSize(GLuint idx) const{
+	return getUniformBlockParam(idx, GL_UNIFORM_BLOCK_DATA_SIZE);
+}
+
+inline GLint Program::getUniformBlockSize(const std::string& name) const{
+	return getUniformBlockSize(getUniformBlockIndex(name));
+}
+
+inline void Program::setUniformBlockBinding(GLuint idx, u_int32_t binding) const{
+	glUniformBlockBinding(m_program, idx, binding);
+}
+
+inline void Program::setUniformBlockBinding(const std::string& name, u_int32_t binding) const{
+	setUniformBlockBinding(getUniformBlockIndex(name), binding);
+}
+
+inline GLint Program::getUniformParam(GLuint idx, GLenum param) const{
+	GLint result;
+
+	glGetActiveUniformsiv(
+			m_program,		//Program name
+			1,				//Query count
+			&idx,			//Uniform indices
+			param,			//Query type
+			&result			//Query result
+	);
+
+	return result;
+}
+
+inline GLint Program::getUniformBlockParam(GLuint idx, GLenum param) const{
+	GLint result;
+
+	glGetActiveUniformBlockiv(
+			m_program,		//Program name
+			idx,			//Uniform indices
+			param,			//Query type
+			&result			//Query result
+	);
+
+	return result;
 }
 
 }

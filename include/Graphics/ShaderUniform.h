@@ -21,6 +21,8 @@ public:
 	void								setBinding(u_int32_t binding);
 	void								bind() const;
 
+	size_t								getSize() const;
+
 	void								setData(const void* data);
 	void								setSubset(const void* data, size_t offset, size_t size);
 
@@ -72,6 +74,10 @@ inline void ShaderUniform::bind() const{
 			0,						//Offset
 			m_uniformBlockSize		//Size
 	);
+}
+
+inline size_t ShaderUniform::getSize() const{
+	return m_uniformBlockSize;
 }
 
 inline void ShaderUniform::setData(const void* data){
