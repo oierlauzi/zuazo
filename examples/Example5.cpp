@@ -53,14 +53,10 @@ int main(int argc, char *argv[]){
 	fxVideoMode.pixFmt=Zuazo::Utils::PixelFormats::PIX_FMT_RGB32;
 	fxVideoMode.res=Zuazo::Utils::Resolution(1280, 720);
 
-	Zuazo::Processors::ShaderEffect fx(
-		fxVideoMode,
-		std::string(
-			#include "../data/shaders/black_and_white.frag"
-		)
-	);
+	Zuazo::Processors::Grayscale fx(fxVideoMode);
 
 	std::cout << fx.getShaderLog();
+	fx.setGain(2.0);
 
 	//Feed the composer into the window
 	window.videoIn << fx.videoOut;

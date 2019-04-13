@@ -58,7 +58,6 @@ private:
 	struct UniformLayout{
 		GLint	index;
 		size_t	offset;
-		size_t	size;
 	};
 
 	std::string											m_fragShaderSrc;
@@ -81,16 +80,13 @@ void ShaderEffect::setParam(const std::string& pname, const T& data){
 		//Requested parameter exists
 		const UniformLayout& layout=ite->second;
 
-		if(sizeof(T) == layout.size){
-			//Parameter type is coherent (sort of)
-			//Save the changes on the memory buffer
-			memcpy(m_data->get() + layout.offset, &data, layout.size);
+		//Save the changes on the memory buffer
+		memcpy(m_data->get() + layout.offset, &data, sizeof(T));
 
-			if(m_ubo){
-				//Also update the data on the uniform buffer
-				Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
-				m_ubo->setParam(data, layout.offset);
-			}
+		if(m_ubo){
+			//Also update the data on the uniform buffer
+			Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
+			m_ubo->setParam(data, layout.offset);
 		}
 	}
 }
@@ -102,11 +98,8 @@ const T* ShaderEffect::getParam(const std::string& pname) const{
 		//Requested parameter exists
 		const UniformLayout& layout=ite->second;
 
-		if(sizeof(T) == layout.size){
-			//Parameter type is coherent (sort of)
-			//Return the requested value
-			return m_data->get() + layout.offset;
-		}
+		//Return the requested value
+		return static_cast<const T*>(m_data->get() + layout.offset);
 	}
 
 	//Failed

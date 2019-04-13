@@ -51,7 +51,6 @@ ShaderEffect::ShaderEffect(const Utils::VideoMode& vidMode, const std::string& f
 			UniformLayout layout;
 			layout.index=i;
 			layout.offset=m_shader->getUniformOffset(i);
-			layout.size=m_shader->getUniformSize(i);
 
 			m_layout.emplace(name, layout);
 		}
@@ -199,6 +198,7 @@ void ShaderEffect::update() const{
 		Graphics::GL::UniqueBinding<Graphics::GL::Texture2D> texBinding(tex);
 		Graphics::GL::UniqueBinding<Graphics::GL::Program> pgmBinding(*m_shader);
 		Graphics::GL::UniqueBinding<Graphics::VertexArray> vaoBinding(*m_vertexArray);
+		m_ubo->bind();
 
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	}
