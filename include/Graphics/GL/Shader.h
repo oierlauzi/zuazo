@@ -19,7 +19,7 @@ public:
 
 		GLuint							get() const;
 		bool							getSuccess() const;
-		const std::string 				getLog() const;
+		const std::string& 				getLog() const;
 	private:
 		GLuint							m_shader;
 		bool							m_success;
@@ -57,7 +57,7 @@ public:
 
 	GLuint							get() const;
 	bool							getSuccess() const;
-	const std::string 				getLog() const;
+	const std::string& 				getLog() const;
 private:
 	GLuint							m_program;
 	bool							m_success;
@@ -127,7 +127,7 @@ inline bool Program::Shader<type>::getSuccess() const{
 }
 
 template <GLenum type>
-inline const std::string Program::Shader<type>::getLog() const{
+inline const std::string& Program::Shader<type>::getLog() const{
 	return m_log;
 }
 
@@ -149,7 +149,7 @@ inline bool Program::getSuccess() const{
 	return m_success;
 }
 
-inline const std::string Program::getLog() const{
+inline const std::string& Program::getLog() const{
 	return m_log;
 }
 

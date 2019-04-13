@@ -75,6 +75,8 @@ void Drawtable::begin(){
 			0								//Mip-map level
 	);
 
+	glViewport(0, 0, m_attributes.res.width, m_attributes.res.height);
+
 	glClearColor(0, 0, 0, 0);
 	glClearDepth(1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

@@ -8,7 +8,7 @@
  * HOW TO COMPILE:
  * g++ Example4.cpp -o Example4 -std=c++17 -lzuazo -lavutil -lavformat -lavcodec -lswscale -lglfw -lMagick++-6.Q16 -lMagickWand-6.Q16 -lMagickCore-6.Q16
  * HOW TO RUN:
- * ./Example3 <file1> <file2> <file3>
+ * ./Example4 <file1> <file2> <file3>
  *
  */
 
@@ -21,8 +21,6 @@
 #include <string>
 #include <vector>
 #include <glm/glm.hpp>
-
-#define RAND_IN_RANGE(min, max) ((int)(min) + (rand() % ((int)(max) - (int)(min))))
 
 class SideBySide :
 		public Zuazo::Video::TVideoSourceBase<Zuazo::Video::DummyVideoPad>, //It might be useful to inherit from VideoBase, as it has methods for getting several video parameters
@@ -213,7 +211,7 @@ int main(int argc, char *argv[]){
 	}
 
 	if(argc != 4){
-		std::cout << "You need to specify at least one input!" << std::endl;
+		std::cout << "You need to specify 3 inputs!" << std::endl;
 		std::cout << "Usage: " << std::string(argv[0]) << " <file1> <file2> <file3>" << std::endl;
 		std::terminate();
 	}

@@ -2,6 +2,7 @@
 
 #include "PixelFormat.h"
 #include "../Utils/Resolution.h"
+#include "../Utils/ImageAttributes.h"
 
 #include <stddef.h>
 
@@ -17,6 +18,12 @@ struct ImageAttributes{
 	constexpr ImageAttributes(const Resolution& res, const PixelFormat& pixFmt):
 		res(res),
 		pixFmt(pixFmt)
+	{
+	}
+
+	constexpr ImageAttributes(const Utils::ImageAttributes& att):
+		res(att.res),
+		pixFmt(att.pixFmt)
 	{
 	}
 	ImageAttributes(const ImageAttributes& other)=default;

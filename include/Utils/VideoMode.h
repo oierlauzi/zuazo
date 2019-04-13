@@ -4,6 +4,7 @@
 #include "PixelFormat.h"
 #include "Rational.h"
 #include "Resolution.h"
+#include "ImageAttributes.h"
 
 namespace Zuazo::Utils{
 
@@ -24,6 +25,8 @@ struct VideoMode{
 	constexpr int 	operator>(const VideoMode& other) const;
 	constexpr int 	operator<=(const VideoMode& other) const;
 	constexpr int 	operator>=(const VideoMode& other) const;
+
+	constexpr ImageAttributes toImageAttributes() const;
 };
 
 
@@ -77,5 +80,8 @@ constexpr int VideoMode::operator>=(const VideoMode& other) const{
 	return !operator<(other);
 }
 
+constexpr ImageAttributes VideoMode::toImageAttributes() const{
+	return ImageAttributes(res, pixFmt);
+}
 
 }

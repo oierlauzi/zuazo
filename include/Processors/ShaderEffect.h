@@ -13,8 +13,12 @@
 #include <string>
 #include <memory>
 
-namespace Zuazo::Processors{
+#define UNIFORM_BLOCK_NAME "shaderFxBlock"
+#define VERTEX_ATTRIB_NAME "in_vertices"
+#define TEXTURE_COORD_ATTRIB_NAME "in_texCoords"
+#define TEXTURE_COORD_EXCHANGE_NAME "ex_texCoords"
 
+namespace Zuazo::Processors{
 
 class ShaderEffect :
 	public Video::TVideoSourceBase<Video::LazyVideoSourcePad>,
@@ -22,7 +26,8 @@ class ShaderEffect :
 	public ZuazoBase
 {
 public:
-	ShaderEffect(const std::string& fragShader, const std::string& uboName);
+	ShaderEffect(const Utils::VideoMode& vidMode, const std::string& fragShader);
+	ShaderEffect(const std::string& fragShader);
 	ShaderEffect(const ShaderEffect& other)=delete;
 	ShaderEffect(ShaderEffect&& other)=default;
 	virtual ~ShaderEffect();
@@ -31,6 +36,8 @@ public:
 	void												setParam(const std::string& pname, const T& data);
 	template<typename T>
 	const T*											getParam(const std::string& pname) const;
+
+	std::string											getShaderLog() const;
 
 	SUPPORTS_GETTING_PIXELFORMAT
 	SUPPORTS_SETTING_PIXELFORMAT
@@ -48,46 +55,66 @@ public:
 
 	void												update() const override;
 private:
+	struct UniformLayout{
+		GLint	index;
+		size_t	offset;
+		size_t	size;
+	};
+
 	std::string											m_fragShaderSrc;
-	std::string											m_uboName;
+	std::map<std::string, UniformLayout>				m_layout;
 	std::unique_ptr<Utils::Buffer>						m_data;
 
-	std::unique_ptr<Graphics::Drawtable>				m_drawtable;
-	std::unique_ptr<Graphics::ShaderUniform>			m_ubo;
 	std::shared_ptr<Graphics::GL::Program>				m_shader;
 	std::shared_ptr<Graphics::VertexArray>				m_vertexArray;
-
-	static std::weak_ptr<Graphics::VertexArray>			s_vertexArray;
+	std::unique_ptr<Graphics::ShaderUniform>			m_ubo;
+	std::unique_ptr<Graphics::Drawtable>				m_drawtable;
+	
+	static std::map<std::string, std::weak_ptr<Graphics::VertexArray>> s_vertexArrays;
 	static std::map<std::string, std::weak_ptr<Graphics::GL::Program>> s_shaders;
 };
 
 template<typename T>
 void ShaderEffect::setParam(const std::string& pname, const T& data){
-	if(m_shader){
-		Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
+	auto ite=m_layout.find(pname);
+	if(ite != m_layout.end()){
+		//Requested parameter exists
+		const UniformLayout& layout=ite->second;
 
-		GLint idx=m_shader->getUniformIndex(pname);
-		size_t offset=m_shader->getUniformOffset(idx);
-		size_t size=m_shader->getUniformSize(idx);
+		if(sizeof(T) == layout.size){
+			//Parameter type is coherent (sort of)
+			//Save the changes on the memory buffer
+			memcpy(m_data->get() + layout.offset, &data, layout.size);
 
-		if(sizeof(T) == size && m_ubo){
-			m_ubo->setParam(data, offset);
+			if(m_ubo){
+				//Also update the data on the uniform buffer
+				Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
+				m_ubo->setParam(data, layout.offset);
+			}
 		}
 	}
 }
 
 template<typename T>
 const T* ShaderEffect::getParam(const std::string& pname) const{
-	if(m_shader){
-		Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
+	auto ite=m_layout.find(pname);
+	if(ite != m_layout.end()){
+		//Requested parameter exists
+		const UniformLayout& layout=ite->second;
 
-		GLint idx=m_shader->getUniformIndex(pname);
-		size_t offset=m_shader->getUniformOffset(idx);
-		size_t size=m_shader->getUniformSize(idx);
-
-		if(sizeof(T) == size && m_data)
-			return m_data->get() + offset;
+		if(sizeof(T) == layout.size){
+			//Parameter type is coherent (sort of)
+			//Return the requested value
+			return m_data->get() + layout.offset;
+		}
 	}
+
+	//Failed
 	return nullptr;
 }
+
+inline std::string ShaderEffect::getShaderLog() const{
+	return m_shader ? m_shader->getLog() : "";
+}
+
 }
