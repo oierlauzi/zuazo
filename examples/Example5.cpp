@@ -1,6 +1,6 @@
 /**
  * DESCRIPTION:
- * Takes an input and diplays it in grayscale with a gain in luminance of 2
+ * 
  */
 
 /**
@@ -36,15 +36,24 @@ int main(int argc, char *argv[]){
 
 	std::unique_ptr<Zuazo::Video::VideoSourceBase> src(Zuazo::videoSourceFromFile(std::string(argv[1])));
 
-	//Create a window for outputting the resulting mix
-	//Window only cares about "res" "frameRate" parameters of the given VideoMode
-	//A window title can be provided after the VideoMode
+	//Create 2 windows
+	//In the first the source will be shown in black and white
+	//In the second it will be shown with an increase in saturation and hue shift
 	Zuazo::Utils::VideoMode windowVideoMode;
 	windowVideoMode.res=Zuazo::Utils::Resolution(1280, 720);
 	windowVideoMode.frameRate=Zuazo::Utils::Rational(30.0);
-	Zuazo::Consumers::Window window(
+	Zuazo::Consumers::Window window1(
 			windowVideoMode,
-			"Example 5"
+			"Example 5: Original"
+	);
+	Zuazo::Consumers::Window window2(
+			windowVideoMode,
+			"Example 5: Grayscale"
+	);
+
+	Zuazo::Consumers::Window window3(
+			windowVideoMode,
+			"Example 5: Hue shifted"
 	);
 
 	//Create the previously defined side-by-side generator
@@ -54,16 +63,28 @@ int main(int argc, char *argv[]){
 
 	Zuazo::Processors::Grayscale fx1(fxVideoMode);
 	Zuazo::Processors::BrightnessContrast fx2(fxVideoMode);
+	Zuazo::Processors::HueSaturationLuminosisty fx3(fxVideoMode);
 
 	fx2.setBrightness(0.75); //A bit brighter
 
-	//Route the signal src -> fx1 -> fx2 -> window
+	fx3.setSaturation(2.0); //More saturation
+	fx3.setHue(+90.0); //90º of hue shift
+
+	//Route the signal: 
+	//      +-> window1 (Original)
+	//      |
+	// src -+-> fx1 -> fx2 -> window2 (Grayscale)
+	//	    |
+	//	    +-> fx3 -> window3 (Hue shifted)
+
+	if(src) window1.videoIn << src->videoOut;
+
 	if(src) fx1.videoIn << src->videoOut;
 	fx2.videoIn << fx1.videoOut;
-	window.videoIn << fx2.videoOut;
+	window2.videoIn << fx2.videoOut;
 
-
-	std::cout << fx2.getShaderLog() << std::endl;
+	if(src) fx3.videoIn << src->videoOut;
+	window3.videoIn << fx3.videoOut;
 
 	std::cout << "Program running... Press enter to quit" << std::endl;
 
@@ -71,9 +92,12 @@ int main(int argc, char *argv[]){
 
 	//You should always close the objects before calling end()
 	//Deleting them is also OK
-	window.close();
+	window1.close();
+	window2.close();
+	window3.close();
 	fx1.close();
 	fx2.close();
+	fx3.close();
 
 	Zuazo::end();
 }
