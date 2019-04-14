@@ -81,7 +81,7 @@ void ShaderEffect::setParam(const std::string& pname, const T& data){
 		const UniformLayout& layout=ite->second;
 
 		//Save the changes on the memory buffer
-		memcpy(m_data->get() + layout.offset, &data, sizeof(T));
+		memcpy((int8_t*)m_data->get() + layout.offset, &data, sizeof(T));
 
 		if(m_ubo){
 			//Also update the data on the uniform buffer
@@ -99,7 +99,7 @@ const T* ShaderEffect::getParam(const std::string& pname) const{
 		const UniformLayout& layout=ite->second;
 
 		//Return the requested value
-		return static_cast<const T*>(m_data->get() + layout.offset);
+		return static_cast<const T*>(m_data->get()) + layout.offset;
 	}
 
 	//Failed

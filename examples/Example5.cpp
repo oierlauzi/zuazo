@@ -1,7 +1,6 @@
 /**
  * DESCRIPTION:
- * This example shows how to combine several zuazo elements in to a single class to create your own modules
- * The final result will be a module which shows 2 video sources side-by-side over a background
+ * Takes an input and diplays it in grayscale with a gain in luminance of 2
  */
 
 /**
@@ -53,26 +52,28 @@ int main(int argc, char *argv[]){
 	fxVideoMode.pixFmt=Zuazo::Utils::PixelFormats::PIX_FMT_RGB32;
 	fxVideoMode.res=Zuazo::Utils::Resolution(1280, 720);
 
-	Zuazo::Processors::Grayscale fx(fxVideoMode);
+	Zuazo::Processors::Grayscale fx1(fxVideoMode);
+	Zuazo::Processors::BrightnessContrast fx2(fxVideoMode);
 
-	std::cout << fx.getShaderLog();
-	fx.setGain(2.0);
+	fx2.setBrightness(0.75); //A bit brighter
 
-	//Feed the composer into the window
-	window.videoIn << fx.videoOut;
+	//Route the signal src -> fx1 -> fx2 -> window
+	if(src) fx1.videoIn << src->videoOut;
+	fx2.videoIn << fx1.videoOut;
+	window.videoIn << fx2.videoOut;
 
-	//Feed the side by side generator's inputs
-	if(src)
-		fx.videoIn << src->videoOut;
 
+	std::cout << fx2.getShaderLog() << std::endl;
 
 	std::cout << "Program running... Press enter to quit" << std::endl;
+
 	getchar();
 
 	//You should always close the objects before calling end()
 	//Deleting them is also OK
 	window.close();
-	fx.close();
+	fx1.close();
+	fx2.close();
 
 	Zuazo::end();
 }

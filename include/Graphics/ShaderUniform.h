@@ -67,13 +67,18 @@ inline void ShaderUniform::setBinding(u_int32_t binding){
 
 
 inline void ShaderUniform::bind() const{
-	glBindBufferRange(
+	/*glBindBufferRange(
 			GL_UNIFORM_BUFFER,		//Target
 			m_binding, 				//Index
 			m_uniformBuffer->get(),	//Uniform buffer name
 			0,						//Offset
 			m_uniformBlockSize		//Size
-	);
+	);*/
+	glBindBufferBase(
+			GL_UNIFORM_BUFFER, 		//Target
+			m_binding,				//Index
+			m_uniformBuffer->get()	//Buffer name
+	);	
 }
 
 inline size_t ShaderUniform::getSize() const{

@@ -189,19 +189,25 @@ void ShaderEffect::close(){
 }
 
 void ShaderEffect::update() const{
-	m_drawtable->begin();
-
 	std::shared_ptr<const Graphics::Frame> frame=m_videoConsumerPad.get();
+
 	if(frame){
 		const Graphics::GL::Texture2D& tex=frame->getTexture();
 		
+		//Start drawing
+		m_drawtable->begin();
+
+		//Bind everything
 		Graphics::GL::UniqueBinding<Graphics::GL::Texture2D> texBinding(tex);
 		Graphics::GL::UniqueBinding<Graphics::GL::Program> pgmBinding(*m_shader);
 		Graphics::GL::UniqueBinding<Graphics::VertexArray> vaoBinding(*m_vertexArray);
 		m_ubo->bind();
 
+		//Draw the frame
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	}
 
-	m_videoSourcePad.push(m_drawtable->finish());
+		m_videoSourcePad.push(m_drawtable->finish());
+	}else{
+		m_videoSourcePad.push(); //No frame
+	}
 }
