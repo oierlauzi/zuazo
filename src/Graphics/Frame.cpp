@@ -12,43 +12,16 @@ namespace Zuazo::Graphics{
 MultiPool<size_t, GL::PixelUnpackBuffer> Frame::s_pboPool;
 MultiPool<ImageAttributes, GL::Texture2D>  Frame::s_texPool;
 
-
-Frame::Frame(const ImageBuffer& buf){
-	m_attributes=buf.att;
-	size_t bufSize=m_attributes.getSize();
-
-	m_pbo=createPixelUnpackBuffer(bufSize);
-	if(!m_pbo){
-		UniqueContext ctx(Context::getMainCtx());
-		//Create the PBO
-		m_pbo=std::unique_ptr<GL::PixelUnpackBuffer>(new GL::PixelUnpackBuffer);
-	}
-
-	//Upload the buffer to GL
-	GL::UniqueBinding<GL::PixelUnpackBuffer> bufBinding(*m_pbo);
-	GL::PixelUnpackBuffer::bufferData(
-			bufSize,
-			GL::PixelUnpackBuffer::Usage::StreamDraw,
-			buf.data
-	);
+Frame::Frame(std::unique_ptr<GL::PixelUnpackBuffer> buf, const ImageAttributes& att) :
+	m_attributes(att),
+	m_pbo(std::move(buf))
+{
 }
 
-Frame::Frame(std::unique_ptr<GL::PixelUnpackBuffer> buf, const ImageAttributes& att){
-	m_attributes=att;
-	m_pbo=std::move(buf);
-}
-
-Frame::Frame(std::unique_ptr<GL::Texture2D> tex, const ImageAttributes& att){
-	m_attributes=att;
-	m_texture=std::move(tex);
-}
-
-Frame::Frame(Frame&& other){
-	m_attributes=other.m_attributes;
-	other.m_attributes=ImageAttributes();
-
-	m_texture=std::move(other.m_texture);
-	m_pbo=std::move(other.m_pbo);
+Frame::Frame(std::unique_ptr<GL::Texture2D> tex, const ImageAttributes& att) :
+	m_attributes(att),
+	m_texture(std::move(tex))
+{
 }
 
 Frame::~Frame(){

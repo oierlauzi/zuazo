@@ -20,6 +20,10 @@ public:
 	void							unbind(u_int32_t no) const;
 
 	GLuint							get() const;
+
+	static void						swizzleMask(const GLint* comp);
+	static void						swizzleMask();
+	static void						swizzleMask(GLint R, GLint G, GLint B, GLint A);
 private:
 	GLuint							m_texture;
 };
@@ -75,4 +79,19 @@ inline void	Texture2D::unbind(u_int32_t no) const{
 inline GLuint Texture2D::get() const{
 	return m_texture;
 }
+
+inline void	Texture2D::swizzleMask(const GLint* comp){
+	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, comp);
+}
+
+inline void	Texture2D::swizzleMask(){
+	const GLint mask[]={ GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA };
+	swizzleMask(mask);
+}
+
+inline void	Texture2D::swizzleMask(GLint R, GLint G, GLint B, GLint A){
+	const GLint mask[]={ R, G, B, A };
+	swizzleMask(mask);
+}
+
 }

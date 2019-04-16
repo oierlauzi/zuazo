@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PixelFormat.h"
+#include "GL/Texture2D.h"
 #include "../Utils/Resolution.h"
 #include "../Utils/ImageAttributes.h"
 
@@ -82,6 +83,7 @@ inline void	ImageAttributes::textureImage() const{
 			pixFmt.getType(),
 			0
 	);
+	GL::Texture2D::swizzleMask(pixFmt.getSwizzleMaskComp());
 }
 
 inline void	ImageAttributes::textureSubImage() const{
@@ -96,6 +98,7 @@ inline void	ImageAttributes::textureSubImage() const{
 			pixFmt.getType(),
 			0
 	);
+	GL::Texture2D::swizzleMask(pixFmt.getSwizzleMaskComp());
 }
 
 }

@@ -14,10 +14,10 @@ namespace Zuazo::Graphics{
 class Frame{
 public:
 	Frame()=default;
-	Frame(const ImageBuffer& buf);
 	Frame(std::unique_ptr<GL::PixelUnpackBuffer> buf, const ImageAttributes& att);
 	Frame(std::unique_ptr<GL::Texture2D> tex, const ImageAttributes& att);
-	Frame(Frame&& other);
+	Frame(const Frame& other)=delete;
+	Frame(Frame&& other)=default;
 	virtual ~Frame();
 
 	const GL::Texture2D& 								getTexture() const;

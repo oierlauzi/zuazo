@@ -29,9 +29,10 @@ void ImageMagick::open(){
 		//Get all the pixels
 		const Magick::PixelPacket* pixels=m_image->getConstPixels(0, 0, size.width(), size.height());
 
+		
 		Graphics::ImageAttributes att(
 				Graphics::Resolution(size.width(), size.height()),
-				Graphics::PixelFormat(GL_RGBA, Graphics::GL::GLType<Magick::Quantum>)
+				Graphics::PixelFormat(GL_RGBA, Graphics::GL::GLType<Magick::Quantum>, SWIZZLE_MASK_RGBA)
 		);
 
 		Graphics::ImageBuffer imgBuf(att);

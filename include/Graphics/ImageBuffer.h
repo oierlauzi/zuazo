@@ -70,6 +70,7 @@ inline void	ImageBuffer::textureImage() const{
 			att.pixFmt.getType(),
 			data
 	);
+	GL::Texture2D::swizzleMask(att.pixFmt.getSwizzleMaskComp());
 }
 
 inline void	ImageBuffer::textureSubImage() const{
@@ -84,5 +85,6 @@ inline void	ImageBuffer::textureSubImage() const{
 			att.pixFmt.getType(),
 			data
 	);
+	GL::Texture2D::swizzleMask(att.pixFmt.getSwizzleMaskComp());
 }
 }
