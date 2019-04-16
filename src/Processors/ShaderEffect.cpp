@@ -70,12 +70,6 @@ ShaderEffect::~ShaderEffect(){
 	close();
 }
 
-
-std::set<Zuazo::Utils::PixelFormat> ShaderEffect::getSupportedPixelFormats() const{
-	return std::set<Zuazo::Utils::PixelFormat>(); 
-	//TODO
-}
-
 void ShaderEffect::setPixelFormat(const Utils::PixelFormat& pixFmt){
 	m_videoMode.pixFmt=pixFmt;
 

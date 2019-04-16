@@ -2,11 +2,12 @@
 
 #include "GL/Types.h"
 #include "../glad/glad.h"
+#include "../Utils/PixelFormat.h"
 
 #include <stddef.h>
 #include <sys/types.h>
 #include <utility>
-#include "../Utils/PixelFormat.h"
+#include <set>
 
 extern "C"{
 	#include <libavutil/pixfmt.h>
@@ -36,6 +37,8 @@ public:
 	constexpr size_t 				getComponentSize() const;
 	constexpr size_t 				getSize() const;
 	constexpr bool 					hasAlpha() const;
+
+	static std::set<Utils::PixelFormat> getSupportedPixelFormats();
 private:
 	GLenum fmt;
 	GLenum type;
@@ -118,6 +121,46 @@ constexpr PixelFormat BGRA128f	=PixelFormat(GL_BGRA, 	GL::GLType<float>);
 
 }
 
+constexpr Utils::PixelFormat compatiblePixelFormats[]={
+#ifdef PIX_FMT_GRAY8_SUPPORT
+		Utils::PixelFormats::PIX_FMT_GRAY8,
+#endif
+#ifdef PIX_FMT_RGB24_SUPPORT
+		Utils::PixelFormats::PIX_FMT_RGB24,
+#endif
+#ifdef PIX_FMT_BGR24_SUPPORT
+		Utils::PixelFormats::PIX_FMT_BGR24,
+#endif
+#ifdef PIX_FMT_RGB32_SUPPORT
+		Utils::PixelFormats::PIX_FMT_RGB32,
+#endif
+#ifdef PIX_FMT_BGR32_SUPPORT
+		Utils::PixelFormats::PIX_FMT_BGR32,
+#endif
+
+#ifdef PIX_FMT_GRAY16_SUPPORT
+		Utils::PixelFormats::PIX_FMT_GRAY16,
+#endif
+#ifdef PIX_FMT_RGB48_SUPPORT
+		Utils::PixelFormats::PIX_FMT_RGB48,
+#endif
+#ifdef PIX_FMT_BGR48_SUPPORT
+		Utils::PixelFormats::PIX_FMT_BGR48,
+#endif
+#ifdef PIX_FMT_RGBA64_SUPPORT
+		Utils::PixelFormats::PIX_FMT_RGBA64,
+#endif
+#ifdef PIX_FMT_BGRA64_SUPPORT
+		Utils::PixelFormats::PIX_FMT_BGRA64,
+#endif
+
+#ifdef PIX_FMT_GRAYF32_SUPPORT
+		Utils::PixelFormats::PIX_FMT_GRAYF32,
+#endif
+
+		Utils::PixelFormats::PIX_FMT_NONE
+};
+
 constexpr std::pair<PixelFormat, Utils::PixelFormat> pixelConversions[]={
 #ifdef PIX_FMT_GRAY8_SUPPORT
 		{PixelFormats::RED8,	Utils::PixelFormats::PIX_FMT_GRAY8		},
@@ -165,46 +208,6 @@ constexpr std::pair<PixelFormat, Utils::PixelFormat> pixelConversions[]={
 #endif
 
 		{PixelFormats::NONE,	Utils::PixelFormats::PIX_FMT_NONE		},
-};
-
-constexpr Utils::PixelFormat compatiblePixelFormats[]={
-#ifdef PIX_FMT_GRAY8_SUPPORT
-		Utils::PixelFormats::PIX_FMT_GRAY8,
-#endif
-#ifdef PIX_FMT_RGB24_SUPPORT
-		Utils::PixelFormats::PIX_FMT_RGB24,
-#endif
-#ifdef PIX_FMT_BGR24_SUPPORT
-		Utils::PixelFormats::PIX_FMT_BGR24,
-#endif
-#ifdef PIX_FMT_RGB32_SUPPORT
-		Utils::PixelFormats::PIX_FMT_RGB32,
-#endif
-#ifdef PIX_FMT_BGR32_SUPPORT
-		Utils::PixelFormats::PIX_FMT_BGR32,
-#endif
-
-#ifdef PIX_FMT_GRAY16_SUPPORT
-		Utils::PixelFormats::PIX_FMT_GRAY16,
-#endif
-#ifdef PIX_FMT_RGB48_SUPPORT
-		Utils::PixelFormats::PIX_FMT_RGB48,
-#endif
-#ifdef PIX_FMT_BGR48_SUPPORT
-		Utils::PixelFormats::PIX_FMT_BGR48,
-#endif
-#ifdef PIX_FMT_RGBA64_SUPPORT
-		Utils::PixelFormats::PIX_FMT_RGBA64,
-#endif
-#ifdef PIX_FMT_BGRA64_SUPPORT
-		Utils::PixelFormats::PIX_FMT_BGRA64,
-#endif
-
-#ifdef PIX_FMT_GRAYF32_SUPPORT
-		Utils::PixelFormats::PIX_FMT_GRAYF32,
-#endif
-
-		Utils::PixelFormats::PIX_FMT_NONE
 };
 
 constexpr PixelFormat::PixelFormat(const Utils::PixelFormat& other) :
@@ -291,5 +294,13 @@ constexpr bool PixelFormat::hasAlpha() const{
 		return false;
 }
 
+inline std::set<Utils::PixelFormat> PixelFormat::getSupportedPixelFormats(){
+	std::set<Utils::PixelFormat> pixFmts;
+
+	for(u_int32_t i=0; compatiblePixelFormats[i]; i++){
+		pixFmts.insert(compatiblePixelFormats[i]);
+	}
+	return pixFmts;
+}
 
 }

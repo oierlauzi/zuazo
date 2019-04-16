@@ -110,4 +110,7 @@ inline std::string ShaderEffect::getShaderLog() const{
 	return m_shader ? m_shader->getLog() : "";
 }
 
+inline std::set<Zuazo::Utils::PixelFormat> ShaderEffect::getSupportedPixelFormats() const{
+	return Graphics::PixelFormat::getSupportedPixelFormats();
+}
 }
