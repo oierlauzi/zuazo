@@ -29,24 +29,22 @@ void ImageMagick::open(){
 		//Get all the pixels
 		const Magick::PixelPacket* pixels=m_image->getConstPixels(0, 0, size.width(), size.height());
 
-		
+#ifdef MAGICK_PIXEL_RGBA
 		Graphics::ImageAttributes att(
 				Graphics::Resolution(size.width(), size.height()),
 				Graphics::PixelFormat(GL_RGBA, Graphics::GL::GLType<Magick::Quantum>, SWIZZLE_MASK_RGBA)
 		);
+#else
+		Graphics::ImageAttributes att(
+				Graphics::Resolution(size.width(), size.height()),
+				Graphics::PixelFormat(GL_RGBA, Graphics::GL::GLType<Magick::Quantum>, SWIZZLE_MASK_BGRA)
+		);
+		printf("Hola\n");
+#endif
 
-		Graphics::ImageBuffer imgBuf(att);
 
-		//Reorder pixels
-		size_t nPixels=size.width() * size.height();
-		Magick::PixelPacket* bufPtr=(Magick::PixelPacket*) imgBuf.data;
 
-		for(size_t i=0; i<nPixels; i++){
-			bufPtr[i].blue		=pixels[i].red;
-			bufPtr[i].green		=pixels[i].green;
-			bufPtr[i].red		=pixels[i].blue;
-			bufPtr[i].opacity	=pixels[i].red;
-		}
+		Graphics::ImageBuffer imgBuf(att, (u_int8_t*)pixels);
 
 		//Try to create a texture with the image
 		std::unique_ptr<Graphics::GL::Texture2D> tex=Graphics::Frame::createTexture(att);

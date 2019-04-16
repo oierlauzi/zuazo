@@ -29,6 +29,7 @@ namespace Zuazo::Graphics{
 #define GL2MASK_COMP(x) ((x) == GL_ZERO ? SWIZZLE_MASK_COMP_ZERO : ( (x) == GL_ONE ? SWIZZLE_MASK_COMP_ONE : (x) - GL_RED + SWIZZLE_MASK_COMP_R) )
 
 #define SWIZZLE_MASK_NONE 		SWIZZLE_MASK(SWIZZLE_MASK_COMP_ZERO, SWIZZLE_MASK_COMP_ZERO, SWIZZLE_MASK_COMP_ZERO, SWIZZLE_MASK_COMP_ZERO)
+
 #define SWIZZLE_MASK_RGBA 		SWIZZLE_MASK(SWIZZLE_MASK_COMP_R, SWIZZLE_MASK_COMP_G, SWIZZLE_MASK_COMP_B, SWIZZLE_MASK_COMP_A)
 #define SWIZZLE_MASK_ARGB 		SWIZZLE_MASK(SWIZZLE_MASK_COMP_A, SWIZZLE_MASK_COMP_R, SWIZZLE_MASK_COMP_G, SWIZZLE_MASK_COMP_B)
 #define SWIZZLE_MASK_BGRA 		SWIZZLE_MASK(SWIZZLE_MASK_COMP_B, SWIZZLE_MASK_COMP_G, SWIZZLE_MASK_COMP_R, SWIZZLE_MASK_COMP_A)
@@ -144,9 +145,9 @@ constexpr PixelFormat ALPHA8		=PixelFormat(GL_ALPHA, 	GL::GLType<u_int8_t>,	SWIZ
 constexpr PixelFormat LUMMA8		=PixelFormat(GL_RED, 	GL::GLType<u_int8_t>,	SWIZZLE_MASK_R2Y);
 constexpr PixelFormat LUMMA_ALPHA8	=PixelFormat(GL_RG, 	GL::GLType<u_int8_t>,	SWIZZLE_MASK_RG2YA);
 constexpr PixelFormat RGB24			=PixelFormat(GL_RGB, 	GL::GLType<u_int8_t>,	SWIZZLE_MASK_RGBA);
-constexpr PixelFormat BGR24			=PixelFormat(GL_BGR, 	GL::GLType<u_int8_t>,	SWIZZLE_MASK_RGBA);
+constexpr PixelFormat BGR24			=PixelFormat(GL_RGB, 	GL::GLType<u_int8_t>,	SWIZZLE_MASK_BGRA);
 constexpr PixelFormat RGBA32		=PixelFormat(GL_RGBA, 	GL::GLType<u_int8_t>,	SWIZZLE_MASK_RGBA);
-constexpr PixelFormat BGRA32		=PixelFormat(GL_BGRA, 	GL::GLType<u_int8_t>,	SWIZZLE_MASK_RGBA);
+constexpr PixelFormat BGRA32		=PixelFormat(GL_RGBA, 	GL::GLType<u_int8_t>,	SWIZZLE_MASK_BGRA);
 constexpr PixelFormat ARGB32		=PixelFormat(GL_RGBA, 	GL::GLType<u_int8_t>,	SWIZZLE_MASK_GBAR);
 constexpr PixelFormat ABGR32		=PixelFormat(GL_RGBA, 	GL::GLType<u_int8_t>,	SWIZZLE_MASK_ABGR);
 
@@ -157,9 +158,9 @@ constexpr PixelFormat ALPHA16		=PixelFormat(GL_ALPHA, 	GL::GLType<u_int16_t>,	SW
 constexpr PixelFormat LUMMA16		=PixelFormat(GL_RED, 	GL::GLType<u_int16_t>,	SWIZZLE_MASK_R2Y);
 constexpr PixelFormat LUMMA_ALPHA16	=PixelFormat(GL_RG, 	GL::GLType<u_int16_t>,	SWIZZLE_MASK_RG2YA);
 constexpr PixelFormat RGB48			=PixelFormat(GL_RGB, 	GL::GLType<u_int16_t>,	SWIZZLE_MASK_RGBA);
-constexpr PixelFormat BGR48			=PixelFormat(GL_BGR, 	GL::GLType<u_int16_t>,	SWIZZLE_MASK_RGBA);
+constexpr PixelFormat BGR48			=PixelFormat(GL_RGB, 	GL::GLType<u_int16_t>,	SWIZZLE_MASK_BGRA);
 constexpr PixelFormat RGBA64		=PixelFormat(GL_RGBA, 	GL::GLType<u_int16_t>,	SWIZZLE_MASK_RGBA);
-constexpr PixelFormat BGRA64		=PixelFormat(GL_BGRA, 	GL::GLType<u_int16_t>,	SWIZZLE_MASK_RGBA);
+constexpr PixelFormat BGRA64		=PixelFormat(GL_RGBA, 	GL::GLType<u_int16_t>,	SWIZZLE_MASK_BGRA);
 constexpr PixelFormat ARGB64		=PixelFormat(GL_RGBA, 	GL::GLType<u_int16_t>,	SWIZZLE_MASK_GBAR);
 constexpr PixelFormat ABGR64		=PixelFormat(GL_RGBA, 	GL::GLType<u_int16_t>,	SWIZZLE_MASK_ABGR);
 
@@ -170,9 +171,9 @@ constexpr PixelFormat ALPHA32		=PixelFormat(GL_ALPHA, 	GL::GLType<u_int32_t>,	SW
 constexpr PixelFormat LUMMA32		=PixelFormat(GL_RED, 	GL::GLType<u_int32_t>,	SWIZZLE_MASK_R2Y);
 constexpr PixelFormat LUMMA_ALPHA32	=PixelFormat(GL_RG, 	GL::GLType<u_int32_t>,	SWIZZLE_MASK_RG2YA);
 constexpr PixelFormat RGB96			=PixelFormat(GL_RGB, 	GL::GLType<u_int32_t>,	SWIZZLE_MASK_RGBA);
-constexpr PixelFormat BGR96			=PixelFormat(GL_BGR, 	GL::GLType<u_int32_t>,	SWIZZLE_MASK_RGBA);
+constexpr PixelFormat BGR96			=PixelFormat(GL_RGB, 	GL::GLType<u_int32_t>,	SWIZZLE_MASK_BGRA);
 constexpr PixelFormat RGBA128		=PixelFormat(GL_RGBA, 	GL::GLType<u_int32_t>,	SWIZZLE_MASK_RGBA);
-constexpr PixelFormat BGRA128		=PixelFormat(GL_BGRA, 	GL::GLType<u_int32_t>,	SWIZZLE_MASK_RGBA);
+constexpr PixelFormat BGRA128		=PixelFormat(GL_RGBA, 	GL::GLType<u_int32_t>,	SWIZZLE_MASK_BGRA);
 constexpr PixelFormat ARGB128		=PixelFormat(GL_RGBA, 	GL::GLType<u_int32_t>,	SWIZZLE_MASK_GBAR);
 constexpr PixelFormat ABGR128		=PixelFormat(GL_RGBA, 	GL::GLType<u_int32_t>,	SWIZZLE_MASK_ABGR);
 
@@ -183,9 +184,9 @@ constexpr PixelFormat ALPHA32f		=PixelFormat(GL_ALPHA, 	GL::GLType<float>,		SWIZ
 constexpr PixelFormat LUMMA32f		=PixelFormat(GL_RED, 	GL::GLType<float>,		SWIZZLE_MASK_R2Y);
 constexpr PixelFormat LUMMA_ALPHA32f=PixelFormat(GL_RG, 	GL::GLType<float>,		SWIZZLE_MASK_RG2YA);
 constexpr PixelFormat RGB96f		=PixelFormat(GL_RGB, 	GL::GLType<float>,		SWIZZLE_MASK_RGBA);
-constexpr PixelFormat BGR96f		=PixelFormat(GL_BGR, 	GL::GLType<float>,		SWIZZLE_MASK_RGBA);
+constexpr PixelFormat BGR96f		=PixelFormat(GL_RGB, 	GL::GLType<float>,		SWIZZLE_MASK_BGRA);
 constexpr PixelFormat RGBA128f		=PixelFormat(GL_RGBA, 	GL::GLType<float>,		SWIZZLE_MASK_RGBA);
-constexpr PixelFormat BGRA128f		=PixelFormat(GL_BGRA, 	GL::GLType<float>,		SWIZZLE_MASK_RGBA);
+constexpr PixelFormat BGRA128f		=PixelFormat(GL_RGBA, 	GL::GLType<float>,		SWIZZLE_MASK_BGRA);
 constexpr PixelFormat ARGB128f		=PixelFormat(GL_RGBA, 	GL::GLType<float>,		SWIZZLE_MASK_GBAR);
 constexpr PixelFormat ABGR128f		=PixelFormat(GL_RGBA, 	GL::GLType<float>,		SWIZZLE_MASK_ABGR);
 
