@@ -6,7 +6,7 @@ Zuazo is library for manipulating real-time video. It's designed to take advante
 
 ## Requirements
 
-- OpenGL 3.2+ compatible video card
+- OpenGL 3.3+ compatible video card
 
 - Debian based OS
 
