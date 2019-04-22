@@ -42,15 +42,15 @@ void Compositor::VideoLayer::draw() const{
 	std::lock_guard<std::mutex> lock(m_mutex);
 	setup();
 
-	std::shared_ptr<const Graphics::Frame> fr=m_videoConsumerPad.get();
+	std::shared_ptr<const Graphics::Frame> frame=m_videoConsumerPad.get();
 
-	if(fr){
-		m_frameGeom->setFrame(fr);
+	if(frame){
+		m_frameGeom->setFrame(frame);
 		m_frameGeom->draw();
 	}
 }
 
-bool Compositor::VideoLayer::hasChanged() const{
+bool Compositor::VideoLayer::needsRender() const{
 	return m_videoConsumerPad.hasChanged() || m_forceRender;
 }
 

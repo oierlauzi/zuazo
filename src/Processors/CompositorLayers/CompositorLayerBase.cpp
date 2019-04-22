@@ -39,10 +39,7 @@ void Compositor::LayerBase::close(){
 void Compositor::LayerBase::setup() const{
 	m_modelMatrixUbo->bind();
 	m_opacityUbo->bind();
-}
-
-bool Compositor::LayerBase::hasChanged() const{
-	return m_forceRender;
+	m_forceRender=false;
 }
 
 void Compositor::LayerBase::calculateModelMatrix(){

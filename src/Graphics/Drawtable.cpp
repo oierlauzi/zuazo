@@ -10,6 +10,9 @@
 
 using namespace Zuazo::Graphics;
 
+thread_local std::stack<const Zuazo::Graphics::Drawtable*> Drawtable::s_activeDrawtables;
+
+
 Drawtable::Drawtable()
 {
 	m_frameBuffer=std::unique_ptr<GL::FrameBuffer>(new GL::FrameBuffer); //Create a frame buffer for it
@@ -64,6 +67,7 @@ void Drawtable::begin(){
 		m_attributes.textureImage(); //Resize the texture accordingly
 	}
 
+	s_activeDrawtables.push(this);
 	m_frameBuffer->bind(); //Bind the fbo to start drawing to it
 
 	//Attach the texture to the FBO
@@ -92,7 +96,13 @@ std::unique_ptr<const Frame> Drawtable::finish(){
 			0								//Mip-map level
 	);
 
-	m_frameBuffer->unbind();
+	s_activeDrawtables.pop();
+	if(s_activeDrawtables.empty()){
+		m_frameBuffer->unbind();
+	}else{
+		//There was an active drawtable before, bind its framebuffer again
+		s_activeDrawtables.top()->m_frameBuffer->bind();
+	}
 
 	return std::unique_ptr<const Frame>(new Frame(std::move(m_renderTarget), m_attributes));
 }

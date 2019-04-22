@@ -6,6 +6,7 @@
 #include "GL/FrameBuffer.h"
 
 #include <memory>
+#include <stack>
 
 namespace Zuazo::Graphics{
 
@@ -35,5 +36,7 @@ private:
 	std::unique_ptr<GL::RenderBuffer>	m_depthBuffer;
 
 	std::unique_ptr<GL::Texture2D>		m_renderTarget;
+
+	static thread_local	std::stack<const Drawtable*> s_activeDrawtables;
 };
 }

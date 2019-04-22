@@ -6,6 +6,8 @@
 #include <Graphics/GL/UniqueBinding.h>
 #include <Graphics/GL/Error.h>
 
+#include <algorithm>
+
 using namespace Zuazo::Processors;
 
 /*
@@ -85,17 +87,17 @@ float Compositor::getDefaultFov() const{
 }
 
 void Compositor::update() const{
-	bool hasChanged=false;
+	bool needsRender=false;
 	for(auto& layer : m_layers){
 		if(layer){
-			if(layer->hasChanged()){
-				hasChanged=true;
+			if(layer->needsRender()){
+				needsRender=true;
 				break;
 			}
 		}
 	}
 
-	if(hasChanged || m_forceRender){
+	if(needsRender || m_forceRender){
 		m_forceRender=false;
 
 		m_drawtable->begin();
@@ -111,7 +113,8 @@ void Compositor::update() const{
 		glEnable(GL_BLEND);
 		glDepthFunc(GL_LESS);
 
-		for(auto& layer : m_layers){
+		//Draw all the layers
+		for(auto& layer : m_depthOrderedLayers){
 			layer->draw();
 		}
 

@@ -51,11 +51,12 @@ public:
 		virtual void							close()=0;
 
 		virtual void							draw() const=0;
-		virtual bool							hasChanged() const;
 		void									setup() const;
 
+		virtual bool							needsRender() const;
+
 		mutable std::mutex						m_mutex;
-		bool									m_forceRender;
+		mutable bool							m_forceRender;
 
 		static const u_int32_t 					MODEL_MATRIX_INDEX		=0;
 		static const u_int32_t 					VIEW_MATRIX_INDEX 		=1;
@@ -102,7 +103,7 @@ public:
 		virtual void							close();
 
 		virtual void							draw() const override;
-		virtual bool							hasChanged() const override;
+		virtual bool							needsRender() const override;
 	};
 
 	Compositor();
@@ -168,10 +169,17 @@ public:
 	virtual void							open() override;
 	virtual void							close() override;
 private:
+	struct LayerComp{
+		bool operator()(const LayerBase* a, const LayerBase* b) const{
+			return a->getPosition().z < b->getPosition().z; //Returns if a is further away b
+		}
+	};
+
 	using UpdateableBase::m_updateMutex;
 
 	std::unique_ptr<Graphics::Drawtable>	m_drawtable;
 	std::vector<std::unique_ptr<LayerBase>>	m_layers;
+	std::set<const LayerBase*, LayerComp>	m_depthOrderedLayers;
 
 	float									m_nearClip;
 	float									m_farClip;
@@ -325,6 +333,7 @@ inline void	Compositor::addLayer(std::unique_ptr<T> layer){
 
 	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_layers.push_back(std::move(newLayer));
+	m_depthOrderedLayers.insert(m_layers.back().get());
 	m_forceRender=true;
 }
 
@@ -336,7 +345,9 @@ inline void	Compositor::deleteLayer(u_int32_t idx){
 		}
 
 		std::lock_guard<std::mutex> lock(m_updateMutex);
-		m_layers.erase(m_layers.begin() + idx);
+		auto ite=m_layers.begin() + idx;
+		m_depthOrderedLayers.erase(ite->get());
+		m_layers.erase(ite);
 		m_forceRender=true;
 	}
 }
@@ -400,5 +411,9 @@ inline void  Compositor::LayerBase::setRSP(const Utils::Vec3f& rotation, const U
 	m_scale=scale;
 	m_position=position;
 	calculateModelMatrix();
+}
+
+inline bool	Compositor::LayerBase::needsRender() const{
+	return m_forceRender;
 }
 }
