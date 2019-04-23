@@ -4,13 +4,13 @@
 
 namespace Zuazo::Processors{
 
-class Grayscale : public ShaderEffect{
+class Alpha2Luma : public ShaderEffect{
 public:
-    Grayscale();
-    Grayscale(const Utils::VideoMode& vidMode);
-    Grayscale(const Grayscale& other)=delete;
-    Grayscale(Grayscale&& other)=default;
-    virtual ~Grayscale()=default;
+    Alpha2Luma();
+    Alpha2Luma(const Utils::VideoMode& vidMode);
+    Alpha2Luma(const Alpha2Luma& other)=delete;
+    Alpha2Luma(Alpha2Luma&& other)=default;
+    virtual ~Alpha2Luma()=default;
 
     void    setBrightness(float brightness);
     float   getBrightness() const;   
@@ -19,20 +19,20 @@ public:
     float   getContrast() const;   
 };
 
-inline void Grayscale::setBrightness(float brightness){
+inline void Alpha2Luma::setBrightness(float brightness){
     ShaderEffect::setParam("brightness", brightness);
 }
 
-inline float Grayscale::getBrightness() const{
+inline float Alpha2Luma::getBrightness() const{
     const float* brightness=ShaderEffect::getParam<float>("brightness");
     return brightness ? *brightness : 0.0;
 }   
 
-inline void Grayscale::setContrast(float contrast){
+inline void Alpha2Luma::setContrast(float contrast){
     ShaderEffect::setParam("contrast", contrast);
 }
 
-inline float Grayscale::getContrast() const{
+inline float Alpha2Luma::getContrast() const{
     const float* contrast=ShaderEffect::getParam<float>("contrast");
     return contrast ? *contrast : 0.0;
 } 

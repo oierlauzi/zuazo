@@ -6,12 +6,14 @@ Grayscale::Grayscale() :
 ShaderEffect(std::string(
     #include "../../data/shaders/grayscale.frag"
 )){
-    setGain(1.0);
+    setBrightness(0.5);
+    setContrast(0.5);
 }
 
 Grayscale::Grayscale(const Utils::VideoMode& vidMode) : 
 ShaderEffect(vidMode, std::string(
     #include "../../data/shaders/grayscale.frag"
 )){
-    setGain(1.0);
+    setBrightness(0.5);
+    setContrast(0.5);
 }

@@ -6,8 +6,8 @@ in vec2             ex_texCoords;
 uniform sampler2D   tex;
 
 uniform shaderFxBlock{
-    float brightness;
     float contrast;
+    float brightness;
 };
 
 void main(){
