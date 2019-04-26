@@ -66,7 +66,7 @@ int Window::init(){
 	return 0;
 }
 
-int Window::end(){
+int Window::terminate(){
 	s_exit=true;
 	glfwPostEmptyEvent(); //Indicate to the event thread that it should finish
 	s_eventThread.join();

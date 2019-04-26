@@ -34,6 +34,8 @@ int main(int argc, char *argv[]){
 		std::terminate();
 	}
 
+	Zuazo::begin();
+
 	std::unique_ptr<Zuazo::Video::VideoSourceBase> src(Zuazo::videoSourceFromFile(std::string(argv[1])));
 
 	//Create 2 windows
@@ -109,9 +111,13 @@ int main(int argc, char *argv[]){
 	if(src) fx4.videoIn << src->videoOut;
 	window4.videoIn << fx4.videoOut;
 
+	Zuazo::end();
+
 	std::cout << "Program running... Press enter to quit" << std::endl;
 
 	getchar();
+
+	Zuazo::begin();
 
 	//You should always close the objects before calling end()
 	//Deleting them is also OK
@@ -127,4 +133,6 @@ int main(int argc, char *argv[]){
 	fx4.close();
 
 	Zuazo::end();
+
+	Zuazo::terminate();
 }

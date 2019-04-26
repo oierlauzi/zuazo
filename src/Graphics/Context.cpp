@@ -41,7 +41,7 @@ int Context::init() {
  * @brief terminates the context environment
  * @return generated error
  */
-int Context::end() {
+int Context::terminate() {
 	for(auto& sharedCtx : s_sharedCtxs){
 		sharedCtx.reset();
 	}

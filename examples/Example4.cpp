@@ -134,13 +134,8 @@ public:
 		Zuazo::Processors::Compositor::VideoLayer* rightLayer=m_videoCompositor.getLayer<Zuazo::Processors::Compositor::VideoLayer>(1);
 		Zuazo::Processors::Compositor::VideoLayer* bkgdLayer=m_videoCompositor.getLayer<Zuazo::Processors::Compositor::VideoLayer>(2);
 
-		//Stop the timings, so that all the changes happen at one frame
-		std::lock_guard<Zuazo::Timing::Timings> timingLock(*Zuazo::Timing::timings);
-
 		//Set compositor's video mode
-		//m_videoCompositor.close();
 		m_videoCompositor.setVideoMode(m_videoMode);
-		//m_videoCompositor.open();
 
 		//Set default viewing parameters (vary from one resolution to another)
 		m_videoCompositor.setDefaultClipping();
@@ -216,6 +211,8 @@ int main(int argc, char *argv[]){
 		std::terminate();
 	}
 
+	Zuazo::begin();
+
 	std::unique_ptr<Zuazo::Video::VideoSourceBase> leftSource(Zuazo::videoSourceFromFile(std::string(argv[1])));
 	std::unique_ptr<Zuazo::Video::VideoSourceBase> rightSource(Zuazo::videoSourceFromFile(std::string(argv[2])));
 	std::unique_ptr<Zuazo::Video::VideoSourceBase> backgroud(Zuazo::videoSourceFromFile(std::string(argv[3])));
@@ -250,8 +247,12 @@ int main(int argc, char *argv[]){
 		sbsGenerator.bkgdVideoIn << backgroud->videoOut;
 
 
+	Zuazo::end();
+
 	std::cout << "Program running... Press enter to quit" << std::endl;
 	getchar();
+
+	Zuazo::begin();
 
 	//You should always close the objects before calling end()
 	//Deleting them is also OK
@@ -259,4 +260,6 @@ int main(int argc, char *argv[]){
 	sbsGenerator.close();
 
 	Zuazo::end();
+
+	Zuazo::terminate();
 }

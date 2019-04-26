@@ -47,6 +47,8 @@ int main(int argc, char *argv[]){
 	//As the size of the vector is known, its more efficient to allocate it in advance
 	videoSources.resize(argc - 1);
 
+	Zuazo::begin();
+
 	//Iterate through the list and create sources with each file
 	for(int i=0; i < argc - 1; i++){
 		const std::string path(argv[i + 1]);
@@ -80,6 +82,8 @@ int main(int argc, char *argv[]){
 	//Feed the composer into the window
 	window.videoIn << composer.videoOut;
 
+	Zuazo::end();
+
 	//Get all needed variables
 	const float zMax=composer.getNearClip();
 	const float zMin=-composer.getNearClip();
@@ -104,6 +108,8 @@ int main(int argc, char *argv[]){
 	do{
 		//Register a key press
 		key=getchar();
+
+		Zuazo::Context ctx;
 
 		switch(key){
 		case '-':
@@ -166,6 +172,7 @@ int main(int argc, char *argv[]){
 		}
 	}while(key != 'q');
 
+	Zuazo::begin();
 
 	for(auto& source : videoSources){
 		source.reset();
@@ -177,4 +184,6 @@ int main(int argc, char *argv[]){
 	composer.close();
 
 	Zuazo::end();
+
+	Zuazo::terminate();
 }

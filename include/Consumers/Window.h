@@ -55,7 +55,7 @@ public:
 	};
 
 	static int init();
-	static int end();
+	static int terminate();
 
 	Window()=delete;
 	Window(const Utils::VideoMode& videoMode, std::string name="Zuazo");

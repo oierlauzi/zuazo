@@ -22,7 +22,7 @@ class Context{
 	friend Consumers::Window;
 public:
 	static int init();
-	static int end();
+	static int terminate();
 
 	Context();
 	Context(const Context& ctx)=delete;

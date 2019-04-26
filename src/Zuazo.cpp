@@ -75,8 +75,8 @@ Errors init(){
  **/
 Errors terminate(){
 	Timing::end();
-	Consumers::Window::end();
-	Graphics::Context::end();
+	Consumers::Window::terminate();
+	Graphics::Context::terminate();
     return Errors::NONE; //TODO
 }
 
