@@ -39,10 +39,7 @@ void ImageMagick::open(){
 				Graphics::Resolution(size.width(), size.height()),
 				Graphics::PixelFormat(GL_RGBA, Graphics::GL::GLType<Magick::Quantum>, SWIZZLE_MASK_BGRA)
 		);
-		printf("Hola\n");
 #endif
-
-
 
 		Graphics::ImageBuffer imgBuf(att, (u_int8_t*)pixels);
 
@@ -50,12 +47,10 @@ void ImageMagick::open(){
 		std::unique_ptr<Graphics::GL::Texture2D> tex=Graphics::Frame::createTexture(att);
 		if(tex){
 			//There was an available texture in the pool
-			Graphics::UniqueContext ctx(Graphics::Context::getAvailableCtx());
 			Graphics::GL::UniqueBinding<Graphics::GL::Texture2D> texBinding(*tex);
 			imgBuf.textureSubImage();
 		}else{
 			//There wasn't an available texture in the pool -> create it
-			Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
 			tex=std::unique_ptr<Graphics::GL::Texture2D>(new Graphics::GL::Texture2D);
 
 			Graphics::GL::UniqueBinding<Graphics::GL::Texture2D> texBinding(*tex);

@@ -4,6 +4,7 @@
 #include <Graphics/Uploader.h>
 #include <Graphics/Context.h>
 #include <Graphics/Frame.h>
+#include <Graphics/Context.h>
 #include <Utils/ImageAttributes.h>
 #include <Utils/ImageBuffer.h>
 #include <Utils/Rational.h>
@@ -34,8 +35,8 @@ using namespace Zuazo::Sources;
 
 FFmpeg::FFmpeg(const std::string& dir) :
 		Video::VideoSourceBase(m_videoSourcePad),
-		Utils::FileBase(dir),
-		m_videoSourcePad(*this)
+		NonLinearUpdate(UpdatePriorities::FF_DEC),
+		Utils::FileBase(dir)
 {
 	open();
 }
@@ -99,20 +100,25 @@ void FFmpeg::open(){
 	if(avcodec_open2(m_codecCtx, m_codec, NULL)<0)
 		return; //Error opening the codec
 
-
-
+	//Calculate all the parameters
 	int64_t dur=av_rescale_q(
 			m_formatCtx->streams[m_videoStream]->duration,
 			m_formatCtx->streams[m_videoStream]->time_base, AV_TIME_BASE_Q
 	);
 
-	Utils::TimeInterval duration=std::chrono::duration<int64_t, std::ratio<1, AV_TIME_BASE>>(dur);
-	Utils::Rational rate(m_formatCtx->streams[m_videoStream]->nb_frames * AV_TIME_BASE, duration.count());
+	Timing::Duration duration(
+		std::chrono::duration_cast<Timing::Duration>(std::chrono::duration<int64_t, std::ratio<AV_TIME_BASE_Q.num, AV_TIME_BASE_Q.den>>(dur))
+	);
+
+	Utils::Rational rate(
+		m_formatCtx->streams[m_videoStream]->nb_frames * AV_TIME_BASE_Q.den, 
+		dur * AV_TIME_BASE_Q.num
+	);
+
 	bool isProgressive = m_formatCtx->streams[m_videoStream]->parser->field_order == AV_FIELD_PROGRESSIVE;
 
-	Timing::NonLinear<Timing::UPDATE_ORDER_FF_DEC>::setInfo(
-			duration
-	);
+	//Set them
+	NonLinearUpdate::setData(duration);
 
 	m_videoMode=Utils::VideoMode{
 			.pixFmt		=Utils::PixelFormat(m_codecCtx->pix_fmt),
@@ -125,12 +131,12 @@ void FFmpeg::open(){
 	m_exit=false;
 	m_decodingThread=std::thread(&FFmpeg::decodingFunc, this);
 
-	Timing::NonLinear<Timing::UPDATE_ORDER_FF_DEC>::enable();
+	NonLinearUpdate::enable();
 	ZuazoBase::open();
 }
 
 void FFmpeg::close(){
-	Timing::NonLinear<Timing::UPDATE_ORDER_FF_DEC>::disable();
+	NonLinearUpdate::disable();
 
 	m_videoSourcePad.reset();
 	m_exit=true;
@@ -157,10 +163,10 @@ void FFmpeg::update() const{
 	if(ctx)
 		ctx->unuse();
 
-	std::lock_guard<std::mutex> lock(m_decodeMutex);
+	std::lock_guard<std::mutex> lock(m_videoSourcePad.m_decodeMutex);
 
 	int64_t newTs=av_rescale_q(
-			Timing::NonLinear<Timing::UPDATE_ORDER_FF_DEC>::getCurrentTime().count(),
+			NonLinearUpdate::getCurrentTime().time_since_epoch().count(),
 			ZUAZO_TIME_BASE_Q,
 			m_formatCtx->streams[m_videoStream]->time_base
 	);
@@ -176,7 +182,7 @@ void FFmpeg::update() const{
 }
 
 void FFmpeg::decodingFunc(){
-	std::unique_lock<std::mutex> lock(m_decodeMutex);
+	std::unique_lock<std::mutex> lock(m_videoSourcePad.m_decodeMutex);
 
 	//Create the destination for the original frame
 	AVFrame* decodedFrame=av_frame_alloc();
@@ -265,6 +271,7 @@ void FFmpeg::decodingFunc(){
 			//Upload image to the source
 			memcpy(decodedImgBuf.data, decodedFrame->data, sizeof(decodedImgBuf.data)); //Copy plane pointers
 
+			Graphics::UniqueContext ctx(Graphics::Context::useAvailableCtx());
 			m_videoSourcePad.push(
 					frameConverter.getFrame(decodedImgBuf)
 			);
@@ -274,4 +281,19 @@ void FFmpeg::decodingFunc(){
 
 	//Free everything
 	av_frame_unref(decodedFrame);
+}
+
+std::shared_ptr<const Zuazo::Video::VideoElement> FFmpeg::SourcePad::get() const{
+	const Graphics::Context* ctx(Graphics::Context::getCurrentCtx());
+
+	if(ctx){
+		//Unuse the main ctx to avoid deadlocks
+		ctx->unuse();
+		std::lock_guard<std::mutex> lock(m_decodeMutex); //Wait until decoding has finished
+		ctx->use();
+        return Source<Video::VideoElement>::get();
+	}else{
+		std::lock_guard<std::mutex> lock(m_decodeMutex); //Wait until decoding has finished
+        return Source<Video::VideoElement>::get();
+	}
 }

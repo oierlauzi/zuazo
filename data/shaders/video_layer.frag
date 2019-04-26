@@ -11,6 +11,12 @@ uniform data{
 
 
 void main(){
-  gl_FragColor=vec4(texture(tex, ex_uv).rgb, texture(tex, ex_uv).a * opacity);
+  vec4 texColor=texture(tex, ex_uv);
+  float alpha=texture(tex, ex_uv).a * opacity;
+
+  if(alpha == 0.0)
+    discard; //This fragment isn't visible
+
+  gl_FragColor=vec4(texColor.rgb, alpha);
 }
 )""

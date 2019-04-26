@@ -2,7 +2,6 @@
 
 #include <Graphics/ImageAttributes.h>
 #include <Graphics/MatrixOperations.h>
-#include <Graphics/Context.h>
 #include <Graphics/GL/UniqueBinding.h>
 
 using namespace Zuazo::Processors;
@@ -19,27 +18,26 @@ const Zuazo::Graphics::Rectangle& Compositor::VideoLayer::getRect() const{
 }
 
 void Compositor::VideoLayer::setRect(const Graphics::Rectangle& rect){
-	std::lock_guard<std::mutex> lock(m_mutex);
 	m_rectangle=rect;
 	if(m_frameGeom){
-		Graphics::UniqueContext ctx;
 		m_frameGeom->setGeometry(rect);
 		m_forceRender=true;
 	}
 }
 
 void Compositor::VideoLayer::setScalingMode(Utils::ScalingMode scaling){
-	std::lock_guard<std::mutex> lock(m_mutex);
 	m_scalingMode=scaling;
 	if(m_frameGeom){
-		Graphics::UniqueContext ctx;
 		m_frameGeom->setScalingMode(m_scalingMode);
 		m_forceRender=true;
 	}
 }
 
+Zuazo::Utils::Vec3f Compositor::VideoLayer::getAvgPosition() const{
+	return getPosition() - m_rectangle.center;
+}
+
 void Compositor::VideoLayer::draw() const{
-	std::lock_guard<std::mutex> lock(m_mutex);
 	setup();
 
 	std::shared_ptr<const Graphics::Frame> frame=m_videoConsumerPad.get();

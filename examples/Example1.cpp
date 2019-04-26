@@ -9,7 +9,7 @@
  * HOW TO COMPILE:
  * g++ Example1.cpp -o Example1 -std=c++17 -lzuazo -lavutil -lavformat -lavcodec -lswscale -lglfw -lMagick++-6.Q16 -lMagickWand-6.Q16 -lMagickCore-6.Q16
  * HOW TO RUN:
- * LD_LIBRARY_PATH=./Example1 <file1> <file2> ... <file10>
+ * ./Example1 <file1> <file2> ... <file10>
  *
  * where file(n) equals a JPG, PNG, SVG, BMP, MP4, AVI... file or a V4L2 input (/dev/video0, /dev/video1 ...)
  */
@@ -50,6 +50,17 @@ int main(int argc, char *argv[]){
 	//As the size of the vector is known, its more efficient to allocate it in advance
 	videoSources.resize(10);
 
+	//To use Zuazo funcions (except init() and end()) you need to have a context active.
+	//In can be done in two ways:
+	// 1. Calling Zuazo::Context::begin() at the begining and Zuazo::Context::end() at the end
+	// 2. In a RAII stype by creating a Zuazo::Context object
+
+	// All the funtions called between begin() and end() or in the lifetime of a Context object will take effect on
+	// the same frame.
+	// Please note that while a context is active, rendering pipeline will be paused, so try to minimize the
+	// time where a context is active
+	Zuazo::begin();
+
 	//Iterate through the list and create sources with each file
 	for(int i=0; (i < argc - 1) && (i < 10); i++){
 		const std::string path(argv[i + 1]);
@@ -73,6 +84,8 @@ int main(int argc, char *argv[]){
 			"Example 1"
 	);
 
+	Zuazo::end();
+
 	//Show instructions on screen
 	std::cout << "Use keys 0-9 to switch between inputs" << std::endl;
 	std::cout << "Use [Q] to exit" << std::endl;
@@ -88,13 +101,19 @@ int main(int argc, char *argv[]){
 		if(key >= '0' && key <= '9'){
 			int idx=key - '0'; //Translate from ASCII to an integer
 
+			Zuazo::Context ctx; //RAII style context adquisition
+
 			//Check if a valid source is available with that index
 			if(videoSources[idx]){
 				window.videoIn << videoSources[idx]->videoOut; //It's this easy to switch inputs in zuazo
-			}else
+			}else{
 				window.videoIn << nullptr;
+			}
+			//Here the context will be automatically freed
 		}
 	}while(key != 'q');
+
+	Zuazo::begin();
 
 	//Delete the sources
 	for(auto& source : videoSources){
@@ -106,4 +125,6 @@ int main(int argc, char *argv[]){
 	window.close();
 
 	Zuazo::end();
+
+	Zuazo::terminate();
 }

@@ -36,7 +36,11 @@ struct Rational{
 		return num;
 	}
 
-	constexpr operator int() const{
+	constexpr operator int32_t() const{
+		return num/den;
+	}
+
+	constexpr operator int64_t() const{
 		return num/den;
 	}
 
@@ -79,11 +83,11 @@ struct Rational{
      * operator*
      */
 
-	constexpr Rational operator*(const Rational& right){
+	constexpr Rational operator*(const Rational& right) const{
     	return Rational(num*right.num, den*right.den);
     }
 
-	constexpr Rational operator*(int right){
+	constexpr Rational operator*(int64_t right) const{
     	return Rational(num*right, den);
     }
 
@@ -91,7 +95,7 @@ struct Rational{
     	return Rational(left * right.num, right.den);
     }
 
-    constexpr Rational operator*(double right){
+    constexpr Rational operator*(double right) const{
     	return (*this) * Rational(right);
     }
 
@@ -103,7 +107,7 @@ struct Rational{
      * operator/
      */
 
-    constexpr Rational operator/(const Rational& right){
+    constexpr Rational operator/(const Rational& right) const{
     	return Rational (num*right.den, den*right.num);
     }
 
@@ -111,11 +115,11 @@ struct Rational{
     	return Rational(left * right.den, right.num);
     }
 
-    constexpr Rational operator/(int right){
+    constexpr Rational operator/(int64_t right) const{
     	return Rational(num, den*right);
     }
 
-    constexpr Rational operator/(double right){
+    constexpr Rational operator/(double right) const{
     	return (*this) / Rational(right);
     }
 

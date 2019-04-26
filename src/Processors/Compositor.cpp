@@ -2,7 +2,6 @@
 
 #include <Graphics/ImageAttributes.h>
 #include <Graphics/MatrixOperations.h>
-#include <Graphics/Context.h>
 #include <Graphics/GL/UniqueBinding.h>
 #include <Graphics/GL/Error.h>
 
@@ -131,7 +130,6 @@ void Compositor::open(){
 			Graphics::PixelFormat(m_videoMode.pixFmt)
 	);
 
-	Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
 	m_drawtable=std::unique_ptr<Graphics::Drawtable>(new Graphics::Drawtable(att));
 
 	m_viewMatrixUbo=std::unique_ptr<Graphics::ShaderUniform>(
@@ -157,8 +155,6 @@ void Compositor::open(){
 void Compositor::close(){
 	Video::TVideoSourceBase<Video::LazyVideoSourcePad>::disable();
 
-	Graphics::UniqueContext ctx;
-
 	for(auto& layer : m_layers){
 		layer->close();
 	}
@@ -178,7 +174,6 @@ void Compositor::resize(){
 				Graphics::PixelFormat(m_videoMode.pixFmt)
 		);
 
-		Graphics::UniqueContext ctx;
 		m_drawtable->resize(att);
 	}
 
@@ -186,11 +181,9 @@ void Compositor::resize(){
 }
 
 void Compositor::calculateViewMatrix(){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_viewMatrix=Graphics::MatrixOperations::lookAt(m_cameraPos, m_cameraTarget, m_cameraUpDir);
 
 	if(m_viewMatrixUbo){
-		Graphics::UniqueContext ctx;
 		m_viewMatrixUbo->setData(&m_viewMatrix);
 	}
 
@@ -198,7 +191,6 @@ void Compositor::calculateViewMatrix(){
 }
 
 void Compositor::calculateProjectionMatrix(){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
 	if(m_videoMode.res)
 		m_projectionMatrix=Graphics::MatrixOperations::perspective(m_videoMode.res, m_fov, m_nearClip, m_farClip);
 	else
@@ -208,7 +200,6 @@ void Compositor::calculateProjectionMatrix(){
 	m_projectionMatrix=Graphics::MatrixOperations::scale(m_projectionMatrix, Utils::Vec3f(1, -1, 1));
 
 	if(m_projectionMatrixUbo){
-		Graphics::UniqueContext ctx;
 		m_projectionMatrixUbo->setData(&m_projectionMatrix);
 	}
 

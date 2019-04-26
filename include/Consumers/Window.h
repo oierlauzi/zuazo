@@ -4,13 +4,12 @@
 #include "../Graphics/GL/Shader.h"
 #include "../Graphics/GL/Buffer.h"
 #include "../Graphics/GL/VertexArray.h"
-#include "../Timing/PeriodicUpdate.h"
-#include "../Timing/UpdateOrder.h"
 #include "../Utils/Rational.h"
 #include "../Utils/Resolution.h"
 #include "../Utils/Vector.h"
 #include "../Video/VideoStream.h"
 #include "../Video/VideoConsumerBase.h"
+#include "../Timing.h"
 #include "../ZuazoBase.h"
 
 #include <GLFW/glfw3.h>
@@ -26,7 +25,7 @@ namespace Zuazo::Consumers{
 class Window :
 	public Video::TVideoConsumerBase<Video::VideoConsumerPad>,
 	public ZuazoBase,
-	private Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>
+	private Timing::PeriodicUpdate
 {
 public:
 	class Screen{
@@ -59,7 +58,7 @@ public:
 	static int end();
 
 	Window()=delete;
-	Window(const Utils::VideoMode& videoMode, std::string name="");
+	Window(const Utils::VideoMode& videoMode, std::string name="Zuazo");
 	Window(const Window& win)=delete;
 	virtual ~Window();
 
@@ -124,6 +123,7 @@ private:
 
 	//Drawing thread options
 	std::thread									m_drawingThread;
+	mutable	std::mutex							m_mutex;
 	mutable std::condition_variable 			m_drawCond;
 	bool										m_exit;
 
@@ -162,7 +162,6 @@ inline void Window::setResolution(const Utils::Resolution& res) {
 }
 
 inline void	Window::setScalingMode(Utils::ScalingMode mode){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_scalingMode=mode;
 	m_forceDraw=true;
 }

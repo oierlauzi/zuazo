@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Source.h"
-#include "../Timing/UpdateableBase.h"
+#include "../UpdateableBase.h"
 
 #include <sys/types.h>
 #include <memory>
@@ -12,7 +12,7 @@ namespace Zuazo::Stream{
 template <typename T>
 class LazySource :
 		public Source<T>,
-		public Timing::UpdateableBase
+		public UpdateableBase
 {
 public:
 	using Source<T>::Source;
@@ -25,7 +25,7 @@ public:
 	virtual void						disable() override;
 
 	virtual std::shared_ptr<const T>	get() const override;
-protected:
+private:
 	bool 								m_isEnabled=true;
 	u_int32_t							m_maxUpdateRecursion=1;
 	mutable u_int32_t					m_updateRecursion=0;
@@ -34,7 +34,6 @@ protected:
 
 template <typename T>
 void LazySource<T>::setMaxRecursion(u_int32_t rec){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_maxUpdateRecursion=rec;
 }
 
@@ -45,13 +44,11 @@ u_int32_t LazySource<T>::getMaxRecursion() const{
 
 template <typename T>
 inline void LazySource<T>::enable(){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_isEnabled=true;
 }
 
 template <typename T>
 inline void LazySource<T>::disable(){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_isEnabled=false;
 }
 
@@ -63,7 +60,7 @@ inline std::shared_ptr<const T> LazySource<T>::get() const{
 
 		if(m_updateRecursion == 1){
 			//To avoid deadlocks, lock the mutex only in the first update
-			std::lock_guard<std::mutex> lock(m_updateMutex);
+	
 			update();
 		}else{
 			update();
@@ -80,15 +77,13 @@ class LazySourcePad :
 		public LazySource<T>
 {
 public:
-	LazySourcePad(const Timing::UpdateableBase& owner);
+	LazySourcePad(const UpdateableBase& owner);
 
 	void update() const override;
 	using Source<T>::push;
 	using Source<T>::reset;
-protected:
-	using LazySource<T>::m_updateRecursion;
 private:
-	const Timing::UpdateableBase& m_owner;
+	const UpdateableBase& m_owner;
 };
 
 /*
@@ -96,18 +91,14 @@ private:
  */
 
 template <typename T>
-inline LazySourcePad<T>::LazySourcePad(const Timing::UpdateableBase& owner) :
+inline LazySourcePad<T>::LazySourcePad(const UpdateableBase& owner) :
 	m_owner(owner)
 {
 }
 
 template <typename T>
 inline void LazySourcePad<T>::update() const{
-	if(m_updateRecursion == 1){
-		std::lock_guard<const Timing::UpdateableBase> lock(m_owner);
-		m_owner.update();
-	}else
-		m_owner.update();
+	m_owner.update();
 }
 
 }

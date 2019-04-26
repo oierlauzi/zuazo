@@ -1,6 +1,5 @@
 #include <Graphics/FrameGeometry.h>
 
-#include <Timing/Timings.h>
 #include <Graphics/Frame.h>
 #include <Graphics/Context.h>
 #include <Graphics/GL/UniqueBinding.h>

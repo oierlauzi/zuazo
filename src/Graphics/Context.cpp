@@ -64,7 +64,7 @@ Context::~Context() {
 	glfwDestroyWindow(m_glfwCtx);
 }
 
-const Context& Context::getAvailableCtx(){
+const Context* Context::useAvailableCtx(){
 	auto ite=s_sharedCtxs.begin();
 
 	while((*ite)->tryUse() == false){
@@ -76,5 +76,5 @@ const Context& Context::getAvailableCtx(){
 		}
 	}
 
-	return **ite;
+	return ite->get();
 }

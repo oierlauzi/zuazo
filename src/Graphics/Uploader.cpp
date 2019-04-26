@@ -78,11 +78,10 @@ std::unique_ptr<const Frame> Uploader::getFrame(const Utils::ImageBuffer& buf) c
 	//Get a Pixel Unpack Buffer
 	std::unique_ptr<GL::PixelUnpackBuffer> pbo=Frame::createPixelUnpackBuffer(m_destSize);
 	if(!pbo){
-		UniqueContext mainCtx(Context::getMainCtx());
+		//There wasn't an avaible PBO in the pool -> create it using the main context
+		UniqueContext mainCtx(*Context::getMainCtx());
 		pbo=std::unique_ptr<GL::PixelUnpackBuffer> (new GL::PixelUnpackBuffer);
 	}
-
-	UniqueContext ctx;
 
 	//Bind the PBO
 	GL::UniqueBinding<GL::PixelUnpackBuffer> bufferBinding(*pbo);

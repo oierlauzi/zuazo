@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Source.h"
-#include "../Timing/PeriodicUpdate.h"
-#include "../Timing/UpdateOrder.h"
+#include "../Timing.h"
 #include "../Utils/Rational.h"
 
 #include <sys/types.h>
@@ -15,7 +14,7 @@ namespace Zuazo::Stream{
 template <typename T>
 class AsyncSource :
 		public Source<T>,
-		public Timing::PeriodicUpdate<Timing::UPDATE_ORDER_SOURCE>
+		public Timing::PeriodicUpdate
 {
 public:
 	AsyncSource();
@@ -33,11 +32,10 @@ public:
 	u_int32_t							getBufferSize() const;
 	void								flushBuffer();
 
+	void								reset();
+
 	virtual void 						update() const override;
 protected:
-	using Timing::PeriodicUpdate<Timing::UPDATE_ORDER_SOURCE>::enable;
-	using Timing::PeriodicUpdate<Timing::UPDATE_ORDER_SOURCE>::disable;
-
 	void								push(std::unique_ptr<const T> element);
 private:
 	static constexpr u_int32_t			DEFAULT_MAX_DROPPED=10;
@@ -63,7 +61,9 @@ public:
 };
 
 template <typename T>
-AsyncSource<T>::AsyncSource(){
+AsyncSource<T>::AsyncSource() :
+		Timing::PeriodicUpdate(UpdatePriorities::SOURCE)
+{
 	m_maxBufferSize=DEFAULT_MAX_BUFFER_SIZE;
 	m_maxDropped=DEFAULT_MAX_DROPPED;
 	m_dropped=0;
@@ -71,7 +71,7 @@ AsyncSource<T>::AsyncSource(){
 
 template <typename T>
 AsyncSource<T>::AsyncSource(const Utils::Rational& rat) :
-		Timing::PeriodicUpdate<Timing::UPDATE_ORDER_SOURCE>(rat)
+		Timing::PeriodicUpdate(UpdatePriorities::SOURCE, rat)
 {
 	m_maxBufferSize=DEFAULT_MAX_BUFFER_SIZE;
 	m_maxDropped=DEFAULT_MAX_DROPPED;
@@ -83,25 +83,21 @@ AsyncSource<T>::AsyncSource(const Utils::Rational& rat) :
 
 template <typename T>
 inline void AsyncSource<T>::setMaxDropped(u_int32_t max){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_maxDropped=max;
 }
 
 template <typename T>
 inline u_int32_t AsyncSource<T>::getMaxDropped() const{
-	std::lock_guard<std::mutex> lock(m_updateMutex);
 	return m_maxDropped;
 }
 
 template <typename T>
 inline u_int32_t AsyncSource<T>::getDropped() const{
-	std::lock_guard<std::mutex> lock(m_updateMutex);
 	return m_dropped;
 }
 
 template <typename T>
 inline void AsyncSource<T>::resetDropped(){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_dropped=0;
 }
 
@@ -111,25 +107,21 @@ inline void AsyncSource<T>::resetDropped(){
 
 template <typename T>
 inline void	AsyncSource<T>::setMaxBufferSize(u_int32_t size){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_maxBufferSize=size;
 }
 
 template <typename T>
 inline u_int32_t AsyncSource<T>::getMaxBufferSize() const{
-	std::lock_guard<std::mutex> lock(m_updateMutex);
 	return m_maxBufferSize;
 }
 
 template <typename T>
 inline u_int32_t AsyncSource<T>::getBufferSize() const{
-	std::lock_guard<std::mutex> lock(m_updateMutex);
 	return m_buffer.size();
 }
 
 template <typename T>
 inline void AsyncSource<T>::flushBuffer(){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
 
 	while(m_buffer.size())
 		m_buffer.pop();
@@ -139,6 +131,12 @@ inline void AsyncSource<T>::flushBuffer(){
 /*
  * GENERAL METHODS
  */
+
+template <typename T>
+void AsyncSource<T>::reset(){
+	flushBuffer();
+	Source<T>::reset();
+}
 
 template <typename T>
 inline void AsyncSource<T>::update() const{
@@ -160,7 +158,6 @@ inline void AsyncSource<T>::update() const{
 
 template <typename T>
 inline void AsyncSource<T>::push(std::unique_ptr<const T> element){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
 
 	if(m_buffer.size()>=m_maxBufferSize){
 		//Buffer is full. Discard it

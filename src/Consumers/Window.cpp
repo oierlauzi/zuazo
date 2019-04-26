@@ -82,6 +82,7 @@ int Window::end(){
  ********************************/
 
 Window::Window(const Utils::VideoMode& videoMode, std::string name) :
+		Timing::PeriodicUpdate(UpdatePriorities::CONSUMER),
 		m_title(name)
 {
 	m_videoMode=videoMode;
@@ -147,15 +148,15 @@ void Window::open(){
 		m_forceDraw=true;
 
 		//Open the consumer so updates are called
-		Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>::setRate(m_videoMode.frameRate);
-		Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>::enable();
+		Timing::PeriodicUpdate::setRate(m_videoMode.frameRate);
+		Timing::PeriodicUpdate::enable();
 
 		ZuazoBase::open();
 	}
 }
 void Window::close(){
 	//Close the sync consumer -> no more updates will be requested
-	Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>::disable();
+	Timing::PeriodicUpdate::disable();
 
 	m_videoConsumerPad.reset();
 
@@ -216,7 +217,7 @@ void Window::setFramerate(const Utils::Rational& rate){
 	m_videoMode.frameRate=rate;
 
 	if(isOpen())
-		Timing::PeriodicUpdate<Timing::UPDATE_ORDER_CONSUMER>::setRate(m_videoMode.frameRate);
+		Timing::PeriodicUpdate::setRate(m_videoMode.frameRate);
 }
 
 void Window::setWindowed(){
@@ -254,8 +255,6 @@ void Window::setWindowed(){
  */
 void Window::setVSync(bool value) {
 	if(m_vSync != value){
-		std::lock_guard<std::mutex> lock(m_updateMutex);
-
 		//vSync setting needs to be changed
 		glfwMakeContextCurrent(m_glfwWindow);
 		if(value){
@@ -278,6 +277,7 @@ void Window::draw() const{
 }
 
 void Window::update() const{
+	std::lock_guard<std::mutex> lockUpdate(m_mutex);
 	if(m_videoConsumerPad.hasChanged() || m_forceDraw){
 		std::shared_ptr<const Graphics::Frame> frame=m_videoConsumerPad.get();
 		const Graphics::GL::Texture2D* tex=nullptr;
@@ -379,7 +379,7 @@ void Window::update() const{
  * @brief Whenever there is a available source, it draws it on screen
  */
 void Window::drawThread(){
-	std::unique_lock<std::mutex> lock(m_updateMutex);
+	std::unique_lock<std::mutex> lock(m_mutex);
 	while(!m_exit){
 		m_drawCond.wait(lock); //Wait until drawing is signaled
 		glfwSwapBuffers(m_glfwWindow);
@@ -387,8 +387,7 @@ void Window::drawThread(){
 }
 
 void Window::resize(const Utils::Resolution& res){
-	std::lock_guard<std::mutex> lockUpdate(m_updateMutex);
-	std::lock_guard<std::mutex> lockVideoMode(m_videoModeMutex);
+	std::lock_guard<std::mutex> lockUpdate(m_mutex);
 
 	m_videoMode.res=res;
 	m_forceDraw=true;

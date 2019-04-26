@@ -1,6 +1,5 @@
 #include <Processors/ShaderEffect.h>
 
-#include <Graphics/Context.h>
 #include <Graphics/Frame.h>
 #include <Graphics/GL/UniqueBinding.h>
 
@@ -15,8 +14,6 @@ std::map<std::string, std::weak_ptr<Zuazo::Graphics::GL::Program>> ShaderEffect:
 ShaderEffect::ShaderEffect(const Utils::VideoMode& vidMode, const std::string& fragShader) :
 		m_fragShaderSrc(fragShader)
 {
-	Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
-
 	//Check if the shader exists
 	auto ite=s_shaders.find(m_fragShaderSrc);
 	if(ite == s_shaders.end()){
@@ -74,7 +71,6 @@ void ShaderEffect::setPixelFormat(const Utils::PixelFormat& pixFmt){
 	m_videoMode.pixFmt=pixFmt;
 
 	if(m_drawtable){
-		Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
 		m_drawtable->resize(m_videoMode.toImageAttributes());
 	}
 }
@@ -83,14 +79,11 @@ void ShaderEffect::setResolution(const Utils::Resolution& res){
 	m_videoMode.res=res;
 
 	if(m_drawtable){
-		Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
 		m_drawtable->resize(m_videoMode.toImageAttributes());
 	}
 }
 
 void ShaderEffect::open(){
-	Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
-
 	//Check if the shader exists
 	auto shaderIte=s_shaders.find(m_fragShaderSrc);
 	if(shaderIte == s_shaders.end()){
@@ -154,7 +147,6 @@ void ShaderEffect::open(){
 }
 
 void ShaderEffect::close(){
-	Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
 	m_drawtable.reset();
 	m_ubo.reset();
 	m_shader.reset();

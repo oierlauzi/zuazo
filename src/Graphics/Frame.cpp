@@ -50,10 +50,6 @@ const GL::Texture2D& Frame::getTexture() const{
 
 		if(m_pbo){
 			if (!m_texture){
-				//There was not an available texture in the pool
-				//Set the main context active to create the texture
-				UniqueContext ctx(Context::getMainCtx());
-
 				//Create the texture
 				m_texture=std::unique_ptr<GL::Texture2D>(new GL::Texture2D);
 

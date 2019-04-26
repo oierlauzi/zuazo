@@ -3,9 +3,9 @@
 #include "../Graphics/Drawtable.h"
 #include "../Graphics/FrameGeometry.h"
 #include "../Graphics/ShaderUniform.h"
-#include "../Graphics/Context.h"
 #include "../Graphics/GL/Buffer.h"
 #include "../Graphics/GL/Shader.h"
+#include "../Graphics/VectorOperations.h"
 #include "../Video/VideoSourceBase.h"
 #include "../Video/VideoStream.h"
 #include "../Utils/Resolution.h"
@@ -40,6 +40,7 @@ public:
 		void									setScale(const Utils::Vec3f& scale);
 
 		const Utils::Vec3f&						getPosition() const;
+		virtual Utils::Vec3f					getAvgPosition() const;
 		void									setPosition(const Utils::Vec3f& pos);
 
 		float									getOpacity() const;
@@ -55,7 +56,6 @@ public:
 
 		virtual bool							needsRender() const;
 
-		mutable std::mutex						m_mutex;
 		mutable bool							m_forceRender;
 
 		static const u_int32_t 					MODEL_MATRIX_INDEX		=0;
@@ -88,6 +88,8 @@ public:
 
 		const Graphics::Rectangle& 				getRect() const;
 		void									setRect(const Graphics::Rectangle& rect);
+
+		virtual Utils::Vec3f					getAvgPosition() const override;
 	private:
 		Graphics::Rectangle						m_rectangle;
 		std::unique_ptr<Graphics::FrameGeometry>m_frameGeom;
@@ -169,13 +171,25 @@ public:
 	virtual void							open() override;
 	virtual void							close() override;
 private:
-	struct LayerComp{
-		bool operator()(const LayerBase* a, const LayerBase* b) const{
-			return a->getPosition().z < b->getPosition().z; //Returns if a is further away b
+	class LayerComp{
+	public:
+		LayerComp()=default;
+		LayerComp(const Utils::Vec3f& camPos)  : m_cameraPos(camPos){}
+		LayerComp(const LayerComp& other)=default;
+		LayerComp(LayerComp&& other)=default;
+		~LayerComp()=default;
+		
+		bool operator()(const LayerBase* a, const LayerBase* b) const{ //Returns if a is further than b
+			return 
+				Graphics::VectorOperations::distance(a->getAvgPosition(), m_cameraPos) 
+				>= 
+				Graphics::VectorOperations::distance(b->getAvgPosition(), m_cameraPos);
 		}
-	};
 
-	using UpdateableBase::m_updateMutex;
+		LayerComp& operator=(const LayerComp& other)=default;
+	private:
+		Utils::Vec3f 							m_cameraPos;
+	};
 
 	std::unique_ptr<Graphics::Drawtable>	m_drawtable;
 	std::vector<std::unique_ptr<LayerBase>>	m_layers;
@@ -228,6 +242,14 @@ inline Utils::Vec3f	Compositor::getDefaultCameraUpDirection() const{
 
 inline void Compositor::setCameraPosition(const Utils::Vec3f& pos){
 	m_cameraPos=pos;
+
+	//Reorder the layers based on the distance to the camera
+	m_depthOrderedLayers=std::set<const LayerBase*, LayerComp>(
+		m_depthOrderedLayers.begin(),
+		m_depthOrderedLayers.end(),
+		LayerComp(m_cameraPos)
+	);
+
 	calculateViewMatrix();
 }
 
@@ -245,6 +267,14 @@ inline void Compositor::setCamera(const Utils::Vec3f& pos, const Utils::Vec3f& t
 	m_cameraPos=pos;
 	m_cameraTarget=tgt;
 	m_cameraUpDir=up;
+
+	//Reorder the layers based on the distance to the camera
+	m_depthOrderedLayers=std::set<const LayerBase*, LayerComp>(
+		m_depthOrderedLayers.begin(),
+		m_depthOrderedLayers.end(),
+		LayerComp(m_cameraPos)
+	);
+
 	calculateViewMatrix();
 }
 
@@ -327,11 +357,9 @@ template<typename T>
 inline void	Compositor::addLayer(std::unique_ptr<T> layer){
 	std::unique_ptr<LayerBase> newLayer(std::move(layer));
 	if(isOpen() && newLayer){
-		Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
 		newLayer->open();
 	}
 
-	std::lock_guard<std::mutex> lock(m_updateMutex);
 	m_layers.push_back(std::move(newLayer));
 	m_depthOrderedLayers.insert(m_layers.back().get());
 	m_forceRender=true;
@@ -340,11 +368,10 @@ inline void	Compositor::addLayer(std::unique_ptr<T> layer){
 inline void	Compositor::deleteLayer(u_int32_t idx){
 	if(isValidIndex(idx)){
 		if(m_layers[idx] && isOpen()){
-			Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
 			m_layers[idx]->close();
 		}
 
-		std::lock_guard<std::mutex> lock(m_updateMutex);
+
 		auto ite=m_layers.begin() + idx;
 		m_depthOrderedLayers.erase(ite->get());
 		m_layers.erase(ite);
@@ -353,7 +380,6 @@ inline void	Compositor::deleteLayer(u_int32_t idx){
 }
 
 inline void	Compositor::swapLayers(u_int32_t idx1, u_int32_t idx2){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
 	if(isValidIndex(idx1) && isValidIndex(idx2)){
 		//TODO
 		m_forceRender=true;
@@ -400,9 +426,7 @@ inline float Compositor::LayerBase::getOpacity() const{
 }
 
 inline void Compositor::LayerBase::setOpacity(float alpha){
-	std::lock_guard<std::mutex> lock(m_mutex);
 	m_opacity=alpha;
-	Graphics::UniqueContext ctx;
 	m_opacityUbo->setData(&m_opacity);
 }
 

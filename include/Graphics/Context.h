@@ -28,13 +28,15 @@ public:
 	Context(const Context& ctx)=delete;
 	~Context();
 
-	void						use()const;
+	void						use() const;
 	bool						tryUse() const;
 	void 						unuse() const;
 
 	static const Context*		getCurrentCtx();
-	static const Context&		getMainCtx();
-	static const Context&		getAvailableCtx();
+	static const Context*		getMainCtx();
+	static const Context*		useAvailableCtx();
+	static const Context*		useMainCtx();
+	static const Context*		unuseCurrentCtx();
 private:
 	static const u_int32_t 		SHARED_CONTEXTS=32;
 
@@ -54,8 +56,8 @@ private:
  */
 class UniqueContext{
 public:
-	UniqueContext();
 	UniqueContext(const Context& ctx);
+	UniqueContext(const Context* ctx);
 	UniqueContext(const UniqueContext& ctx)=delete;
 	~UniqueContext();
 private:
@@ -123,22 +125,39 @@ inline void Context::unuse() const{
 }
 
 inline const Context* Context::getCurrentCtx(){
-	return s_activeContext.top();
+	if(s_activeContext.size()){
+		return s_activeContext.top();
+	}else{
+		return nullptr;
+	}
+	
 }
 
-inline const Context& Context::getMainCtx(){
-	return *s_mainCtx;
+inline const Context* Context::getMainCtx(){
+	return s_mainCtx.get();
 }
 
-inline UniqueContext::UniqueContext() :
-		m_ctx(Context::getAvailableCtx())
-{
+inline const Context* Context::useMainCtx(){
+	const Context* ctx=getMainCtx();
+	if(ctx) ctx->use();
+	return ctx;
+}
+
+inline const Context* Context::unuseCurrentCtx(){
+	const Context* ctx=getCurrentCtx();
+	if(ctx) ctx->unuse();
+	return ctx;
 }
 
 inline UniqueContext::UniqueContext(const Context& ctx) :
 		m_ctx(ctx)
 {
 	m_ctx.use();
+}
+
+inline UniqueContext::UniqueContext(const Context* ctx) :
+		m_ctx(*ctx)
+{
 }
 
 inline UniqueContext::~UniqueContext(){

@@ -1,10 +1,8 @@
 #pragma once
 
+#include "../NonLinearUpdate.h"
 #include "../Stream/Source.h"
-#include "../Timing/NonLinear.h"
-#include "../Timing/UpdateOrder.h"
 #include "../Utils/FileBase.h"
-#include "../Utils/TimeInterval.h"
 #include "../Graphics/Context.h"
 #include "../Video/VideoSourceBase.h"
 #include "../Video/VideoStream.h"
@@ -26,33 +24,13 @@ struct AVCodecContext;
 struct AVFormatContext;
 
 namespace Zuazo::Sources{
-	class FFmpeg;
-}
-
-namespace Zuazo::Stream{
-	template<typename T>
-	class FFmpegSourcePad :
-		public Source<T>
-	{
-		friend Sources::FFmpeg;
-	public:
-		std::shared_ptr<const T> get() const override;
-	private:
-		FFmpegSourcePad(const Sources::FFmpeg& owner);
-
-		const Sources::FFmpeg& m_owner;
-	};
-}
-
-namespace Zuazo::Sources{
 
 class FFmpeg :
 		public Video::VideoSourceBase,
 		public Utils::FileBase,
-		public Timing::NonLinear<Timing::UPDATE_ORDER_FF_DEC>,
+		public NonLinearUpdate,
 		public ZuazoBase
 {
-	friend Stream::FFmpegSourcePad<Video::VideoElement>;
 public:
 	FFmpeg(const std::string& dir);
 	FFmpeg(const FFmpeg& other);
@@ -70,9 +48,20 @@ public:
 
 	void							update() const override;
 private:
+	class SourcePad :  public Stream::SourcePad<Video::VideoElement>{
+	public:
+		SourcePad()=default;
+    	SourcePad(const SourcePad& other)=default;
+		SourcePad(SourcePad&& other)=default;
+    	virtual ~SourcePad()=default;
+
+    	std::shared_ptr<const Video::VideoElement> get() const override;
+
+    	mutable std::mutex 				m_decodeMutex;
+	};
+
 	bool							m_exit;
 	std::thread						m_decodingThread;
-	mutable std::mutex				m_decodeMutex;
 	mutable std::condition_variable	m_decodeCondition;
 
 	AVFormatContext*				m_formatCtx;
@@ -80,36 +69,14 @@ private:
 	AVCodec*						m_codec;
 	int								m_videoStream;
 
-	Stream::FFmpegSourcePad<Video::VideoElement> m_videoSourcePad;
+	SourcePad 						m_videoSourcePad;
 
 	mutable int64_t					m_currTs;
 
-	static constexpr AVRational		ZUAZO_TIME_BASE_Q={1, (int)Utils::TimeInterval::TIME_UNITS_PER_SECOND};
+	static constexpr AVRational		ZUAZO_TIME_BASE_Q={Timing::duationPeriod.num, Timing::duationPeriod.den};
 
 	void							decodingFunc();
 };
 
-}
-
-template<typename T>
-inline std::shared_ptr<const T> Zuazo::Stream::FFmpegSourcePad<T>::get() const{
-	const Graphics::Context* ctx(Graphics::Context::getCurrentCtx());
-
-	if(ctx){
-		//Unuse the main ctx to avoid deadlocks
-		ctx->unuse();
-		std::lock_guard<std::mutex> lock(m_owner.m_decodeMutex); //Wait until decoding has finished
-		ctx->use();
-	}else{
-		std::lock_guard<std::mutex> lock(m_owner.m_decodeMutex); //Wait until decoding has finished
-	}
-
-	return Source<T>::get();
-}
-
-template<typename T>
-inline Zuazo::Stream::FFmpegSourcePad<T>::FFmpegSourcePad(const Sources::FFmpeg& owner) :
-	m_owner(owner)
-{
 }
 

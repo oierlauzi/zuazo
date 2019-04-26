@@ -397,8 +397,17 @@ void V4L2::close(){
 	if(m_dev>=0){
 		//End capture theread
 		m_threadExit=true;
-		if(m_capturingThread.joinable())
-			m_capturingThread.join();
+		if(m_capturingThread.joinable()){
+			const Graphics::Context* ctx=Graphics::Context::getCurrentCtx();
+			if(ctx){
+				//Unuse main context to avoid deadlocks
+				ctx->unuse();
+				m_capturingThread.join();
+				ctx->use();
+			}else{
+				m_capturingThread.join();
+			}
+		}
 
 		//Stop streaming
 		enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -419,7 +428,6 @@ void V4L2::close(){
 	}
 
 	m_videoSourcePad.disable();
-	m_videoSourcePad.flushBuffer();
 	m_videoSourcePad.reset();
 
 	ZuazoBase::close();
@@ -553,6 +561,8 @@ void V4L2::compressedCapturingThread(){
 			m_videoMode.pixFmt=decodedImgBuf.att.pixFmt;
 		}
 
+		Graphics::UniqueContext ctx(Graphics::Context::useAvailableCtx());
+
 		m_videoSourcePad.push(
 				uplo.getFrame(decodedImgBuf)
 		);
@@ -582,9 +592,12 @@ void V4L2::rawCapturingThread(){
 
     	decodedImgBuf.fillData(m_buffers[buf.index].buffer);
 
-		m_videoSourcePad.push(
-				uplo.getFrame(decodedImgBuf)
-		);
+		{
+			Graphics::UniqueContext ctx(Graphics::Context::useAvailableCtx());
+			m_videoSourcePad.push(
+					uplo.getFrame(decodedImgBuf)
+			);
+		}
 
 		freeBuffer(&buf); //V4L2 buffer no longer needed
     }

@@ -9,10 +9,6 @@ class VideoSourceBase;
 } /* namespace Video */
 } /* namespace Zuazo */
 
-namespace Zuazo::Timing {
-class Timings;
-} /* namespace Zuazo */
-
 namespace Zuazo{
 
 //Errors that initialization and terminating can produce
@@ -28,8 +24,8 @@ enum class Errors{
     TEXT_INIT
 };
 
-Errors				init();
-Errors 				end();
+extern Errors		init();
+extern Errors 		terminate();
 
 extern std::unique_ptr<Video::VideoSourceBase> videoSourceFromFile(const std::string& file);
 

@@ -35,12 +35,15 @@ int main(int argc, char *argv[]){
 		std::terminate();
 	}
 
-	//Create the player for the video clip
 	std::string path(argv[1]);
+
+	Zuazo::begin(); //Get a context
+
+	//Create the player for the video clip
 	Zuazo::Sources::FFmpeg player(path);
 
 	//By default is playing. Pause it and rewind
-	player.setState(Zuazo::Sources::FFmpeg::States::Paused);
+	player.setState(Zuazo::NonLinearUpdate::States::Paused);
 	player.gotoTime(std::chrono::seconds(0));
 
 	//Create a window for outputting the resulting mix
@@ -56,6 +59,8 @@ int main(int argc, char *argv[]){
 
 	window.videoIn << player.videoOut; //Show the player on the recently created window
 
+	Zuazo::end();
+
 	//Show instructions on screen
 	std::cout << "Use [P] to play/pause" << std::endl;
 	std::cout << "Use [L] to toggle repeat" << std::endl;
@@ -67,7 +72,9 @@ int main(int argc, char *argv[]){
 	std::cout << "Remember to push [ENTER] after your selection" << std::endl;
 
 	//Calculate the frame interval
-	Zuazo::Utils::TimeInterval frameInterval(1 / player.getFramerate());
+	Zuazo::Timing::Duration frameInterval(
+		static_cast<Zuazo::Timing::Duration::rep>(1 / (player.getFramerate() * Zuazo::Timing::duationPeriod))
+	);
 
 	//Main loop
 	char key;
@@ -75,15 +82,17 @@ int main(int argc, char *argv[]){
 		//Register a key press
 		key=getchar();
 
+		Zuazo::Context ctx;
+
 		switch(key){
 		case 'p':
 			if(player.getState() == Zuazo::Sources::FFmpeg::States::Playing){
 				//It was on play mode. pause it
-				player.setState(Zuazo::Sources::FFmpeg::States::Paused);
+				player.setState(Zuazo::NonLinearUpdate::States::Paused);
 				std::cout << "Player's state set to paused" << std::endl;
 			}else{
 				//It was paused. Set it on playing mode
-				player.setState(Zuazo::Sources::FFmpeg::States::Playing);
+				player.setState(Zuazo::NonLinearUpdate::States::Playing);
 				std::cout << "Player's state set to playing" << std::endl;
 			}
 			break;
@@ -111,13 +120,13 @@ int main(int argc, char *argv[]){
 		 case 'n':
 			 player.addTime(frameInterval);
 
-			 std::cout << "Advanced " << frameInterval.count() << "us"<< std::endl;
+			 std::cout << "Advanced " << frameInterval.count() << "ns"<< std::endl;
 			 break;
 
 		 case 'b':
 
 			 player.subsTime(frameInterval);
-			 std::cout << "Rewinded " << frameInterval.count() << "us"<< std::endl;
+			 std::cout << "Rewinded " << frameInterval.count() << "ns"<< std::endl;
 			 break;
 
 		 case 'r':
@@ -130,7 +139,7 @@ int main(int argc, char *argv[]){
 
 	}while(key != 'q');
 
-
+	Zuazo::begin();
 
 	//You should always close the objects before calling end()
 	//Deleting them is also OK
@@ -138,4 +147,6 @@ int main(int argc, char *argv[]){
 	player.close();
 
 	Zuazo::end();
+
+	Zuazo::terminate();
 }

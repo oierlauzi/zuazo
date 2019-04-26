@@ -73,7 +73,4 @@ inline typename Utils::Mat4x4<T> perspective(const Utils::Resolution& res, T fov
 	);
 }
 
-
-
-
 }

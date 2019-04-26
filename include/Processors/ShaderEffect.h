@@ -85,7 +85,6 @@ void ShaderEffect::setParam(const std::string& pname, const T& data){
 
 		if(m_ubo){
 			//Also update the data on the uniform buffer
-			Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
 			m_ubo->setParam(data, layout.offset);
 		}
 	}

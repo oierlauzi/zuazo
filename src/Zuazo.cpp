@@ -2,7 +2,7 @@
 
 #include <Consumers/Window.h>
 #include <Graphics/Context.h>
-#include <Timing/Timings.h>
+#include <Timing.h>
 #include <Sources/ImageMagick.h>
 #include <Sources/SVG.h>
 #include <Sources/V4L2.h>
@@ -39,7 +39,7 @@ Errors init(){
     if(err)
     	return Errors::CONTEX_INIT;
 
-    Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
+    Graphics::UniqueContext ctx(Graphics::Context::useMainCtx());
 
     //Init GLAD
     if(!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
@@ -53,7 +53,7 @@ Errors init(){
     Magick::InitializeMagick(nullptr);
 
     //Initialize timing
-    Timing::timings=std::unique_ptr<Timing::Timings>(new Timing::Timings);
+    Timing::init();
 
 
 //TODO
@@ -73,9 +73,9 @@ Errors init(){
 	@brief ends Zuazo. No more zuazo functions can be called
 	@return Error generated destroying Error::NONE for all OK
  **/
-Errors end(){
+Errors terminate(){
+	Timing::end();
 	Consumers::Window::end();
-	Timing::timings.reset();
 	Graphics::Context::end();
     return Errors::NONE; //TODO
 }

@@ -68,12 +68,10 @@ void SVG::open(){
 		std::unique_ptr<Graphics::GL::Texture2D> tex=Graphics::Frame::createTexture(imgBuf.att);
 		if(tex){
 			//There was an available texture in the pool
-			Graphics::UniqueContext ctx;
 			Graphics::GL::UniqueBinding<Graphics::GL::Texture2D> texBinding(*tex);
 			imgBuf.textureSubImage();
 		}else{
 			//There wasn't an available texture in the pool -> create it
-			Graphics::UniqueContext ctx(Graphics::Context::getMainCtx());
 			tex=std::unique_ptr<Graphics::GL::Texture2D>(new Graphics::GL::Texture2D);
 
 			Graphics::GL::UniqueBinding<Graphics::GL::Texture2D> texBinding(*tex);

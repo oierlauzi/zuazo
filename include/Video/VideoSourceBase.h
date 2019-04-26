@@ -2,7 +2,7 @@
 
 #include "VideoBase.h"
 #include "VideoStream.h"
-#include "../Timing/UpdateableBase.h"
+#include "../Timing.h"
 
 #include <memory>
 
@@ -65,7 +65,7 @@ inline TVideoSourceBase<T>::TVideoSourceBase(const Utils::VideoMode& videoMode) 
 template<>
 class TVideoSourceBase<LazyVideoSourcePad> :
 	public VideoSourceBase,
-	public Timing::UpdateableBase
+	protected UpdateableBase
 {
 public:
 	TVideoSourceBase();

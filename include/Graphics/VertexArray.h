@@ -58,8 +58,11 @@ private:
 template<typename T, int dim>
 inline void VertexArray::enableAttribute(GLuint attribute, u_int32_t nVertices){
 	if(m_vbos.find(attribute) == m_vbos.end()){
-		UniqueContext ctx(Context::getMainCtx());
-		m_vbos[attribute];
+		m_vbos.emplace(
+			std::piecewise_construct,
+			std::forward_as_tuple(attribute),
+			std::forward_as_tuple()
+		);
 	}
 
 	size_t vboSize=sizeof(T) * dim * nVertices;
@@ -79,8 +82,11 @@ inline void VertexArray::enableAttribute(GLuint attribute, u_int32_t nVertices){
 template<typename T, int dim>
 inline void VertexArray::enableAttribute(GLuint attribute, u_int32_t nVertices, const Utils::Vec<T, dim>* data){
 	if(m_vbos.find(attribute) == m_vbos.end()){
-		UniqueContext ctx(Context::getMainCtx());
-		m_vbos[attribute];
+		m_vbos.emplace(
+			std::piecewise_construct,
+			std::forward_as_tuple(attribute),
+			std::forward_as_tuple()
+		);
 	}
 
 	size_t vboSize=sizeof(T) * dim * nVertices;

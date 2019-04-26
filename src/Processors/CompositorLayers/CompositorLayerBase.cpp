@@ -2,10 +2,13 @@
 
 #include <Graphics/ImageAttributes.h>
 #include <Graphics/MatrixOperations.h>
-#include <Graphics/Context.h>
 #include <Graphics/GL/UniqueBinding.h>
 
 using namespace Zuazo::Processors;
+
+Zuazo::Utils::Vec3f Compositor::LayerBase::getAvgPosition() const{
+	return getPosition();
+}
 
 Compositor::LayerBase::LayerBase() :
 	m_rotation(Utils::Vec3f(0, 0, 0)),
@@ -43,7 +46,6 @@ void Compositor::LayerBase::setup() const{
 }
 
 void Compositor::LayerBase::calculateModelMatrix(){
-	std::lock_guard<std::mutex> lock(m_mutex);
 	//m_modelMatrix=Graphics::MatrixOperations::eulerAngle(m_rotation);
 	//m_modelMatrix=Graphics::MatrixOperations::scale(m_modelMatrix, m_scale);
 	//m_modelMatrix=Graphics::MatrixOperations::translate(m_modelMatrix, m_position);
@@ -54,7 +56,6 @@ void Compositor::LayerBase::calculateModelMatrix(){
 	m_modelMatrix=translationMatrix * scaleMatrix * rotationMatrix;
 
 	if(m_modelMatrixUbo){
-		Graphics::UniqueContext ctx;
 		m_modelMatrixUbo->setData(&m_modelMatrix);
 		m_forceRender=true;
 	}

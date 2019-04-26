@@ -2,11 +2,7 @@
 
 #include "Consumer.h"
 #include "Source.h"
-#include "../Timing/RegularUpdate.h"
-#include "../Timing/Timings.h"
-#include "../Timing/UpdateOrder.h"
-#include "../Utils/TimeInterval.h"
-#include "../Utils/TimePoint.h"
+#include "../Timing.h"
 #include "../ZuazoBase.h"
 
 #include <chrono>
@@ -20,17 +16,18 @@ template <typename T>
 class Delay :
 		public Stream::Source<T>,
 		public Stream::Consumer<T>,
-		public Timing::RegularUpdate<Timing::UPDATE_ORDER_DELAY>,
+		public Timing::RegularUpdate,
 		public ZuazoBase
 {
 public:
 	Delay();
-	Delay(const Utils::TimeInterval& delay);
+	Delay(const Timing::Duration& delay);
 	Delay(const Delay& delay)=default;
+	Delay(Delay&& delay)=default;
 	virtual ~Delay();
 
-	void										setDelay(const Utils::TimeInterval& delay);
-	Utils::TimeInterval							getDelay();
+	void										setDelay(const Timing::Duration& delay);
+	const Timing::Duration&						getDelay();
 
 	virtual void								update() const override;
 
@@ -39,28 +36,30 @@ public:
 private:
 	struct QueueElement{
 		std::shared_ptr<const T> 					element;
-		Utils::TimePoint							ts;
+		Timing::TimePoint							ts;
 
 		QueueElement(const std::shared_ptr<const T>& el) :
 			element(el),
-			ts(Timing::timings->now())
+			ts(Timing::getTiming()->now())
 		{
 		}
 	};
 
-	Utils::TimeInterval 						m_delay;
+	Timing::Duration							m_delay;
 
 	mutable std::queue<QueueElement>			m_queue;
 };
 
 template <typename T>
-inline Delay<T>::Delay(){
+inline Delay<T>::Delay() :
+	Timing::RegularUpdate(UpdatePriorities::DELAY)
+{
 	open();
 }
 
 template <typename T>
-inline Delay<T>::Delay(const Utils::TimeInterval& delay) :
-	Timing::RegularUpdate<Timing::UPDATE_ORDER_DELAY>(),
+inline Delay<T>::Delay(const Timing::Duration& delay) :
+	Timing::RegularUpdate(UpdatePriorities::DELAY),
 	m_delay(delay)
 {
 	open();
@@ -72,8 +71,7 @@ inline Delay<T>::~Delay(){
 }
 
 template <typename T>
-inline void Delay<T>::setDelay(const Utils::TimeInterval& delay){
-	std::lock_guard<std::mutex> lock(m_updateMutex);
+inline void Delay<T>::setDelay(const Timing::Duration& delay){
 	m_delay=delay;
 
 	if(m_delay.count()==0) //Delay is disabled, empty the queue
@@ -82,7 +80,7 @@ inline void Delay<T>::setDelay(const Utils::TimeInterval& delay){
 }
 
 template <typename T>
-inline Zuazo::Utils::TimeInterval Delay<T>::getDelay(){
+inline const Zuazo::Timing::Duration& Delay<T>::getDelay(){
 	return m_delay;
 }
 
@@ -97,7 +95,7 @@ inline void Delay<T>::update() const{
 
 		//Advance the queue until an element with the desired time-stamp is found
 		while(m_queue.size()){
-			if(m_queue.front().ts <= Timing::timings->now() - m_delay){
+			if(m_queue.front().ts <= Timing::getTiming()->now() - m_delay){
 				lastElement=m_queue.front().element;
 				m_queue.pop();
 			}else
@@ -113,13 +111,13 @@ inline void Delay<T>::update() const{
 
 template <typename T>
 inline void Delay<T>::open(){
-	Timing::RegularUpdate<Timing::UPDATE_ORDER_DELAY>::enable();
+	Timing::RegularUpdate::enable();
 	ZuazoBase::open();
 }
 
 template <typename T>
 inline void Delay<T>::close(){
-	Timing::RegularUpdate<Timing::UPDATE_ORDER_DELAY>::disable();
+	Timing::RegularUpdate::disable();
 	Source<T>::reset();
 	Consumer<T>::reset();
 
