@@ -15,7 +15,6 @@ enum class BufferTypes{
 	CopyWrite			=GL_COPY_WRITE_BUFFER,
 	PixelUnpack			=GL_PIXEL_UNPACK_BUFFER,
 	PixelPack			=GL_PIXEL_PACK_BUFFER,
-	Texture				=GL_TEXTURE_BUFFER,
 	TransformFeedback	=GL_TRANSFORM_FEEDBACK_BUFFER,
 	Uniform				=GL_UNIFORM_BUFFER,
 };
@@ -37,13 +36,7 @@ public:
 
 	class BufferMapping{
 	public:
-		enum class Access{
-			Read		=GL_READ_ONLY,
-			Write		=GL_WRITE_ONLY,
-			ReadWrite	=GL_READ_WRITE
-		};
-
-		BufferMapping(Access ac);
+		BufferMapping(size_t off, size_t len, GLbitfield ac);
 		BufferMapping(const BufferMapping& other)=delete;
 		BufferMapping(BufferMapping&& other);
 		~BufferMapping();
@@ -141,10 +134,12 @@ inline void	Buffer<type>::bufferSubData(size_t size, size_t off, const void* dat
 
 
 template<BufferTypes type>
-inline Buffer<type>::BufferMapping::BufferMapping(Access ac){
-	m_glData=glMapBuffer(
-			Buffer<type>::GLType,
-			(GLenum)ac
+inline Buffer<type>::BufferMapping::BufferMapping(size_t off, size_t len, GLbitfield ac){
+	m_glData=glMapBufferRange(
+			Buffer<type>::GLType, 	//Target
+			off,					//Offset
+			len,					//Length
+			ac						//Access
 	);
 }
 

@@ -57,6 +57,8 @@ public:
 private:
 	struct UniformLayout{
 		GLint	index;
+		GLenum	type;
+		size_t	size;
 		size_t	offset;
 	};
 

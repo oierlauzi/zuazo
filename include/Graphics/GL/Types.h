@@ -11,8 +11,6 @@ constexpr GLenum GLType									=GL_NONE;
 template <>
 constexpr GLenum GLType<float> 							=GL_FLOAT;
 template <>
-constexpr GLenum GLType<double>							=GL_DOUBLE;
-template <>
 constexpr GLenum GLType<int16_t> 						=GL_SHORT;
 template <>
 constexpr GLenum GLType<int32_t> 						=GL_INT;

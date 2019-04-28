@@ -2,6 +2,7 @@
 
 #include "../glad/glad.h" //Needs to be included before GLFW
 
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <sys/types.h>
 #include <array>

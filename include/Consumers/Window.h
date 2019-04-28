@@ -12,6 +12,7 @@
 #include "../Timing.h"
 #include "../ZuazoBase.h"
 
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <condition_variable>
 #include <memory>

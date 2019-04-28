@@ -41,7 +41,7 @@ public:
 	GLint							getAttributeLoc(const std::string& name) const;
 	GLint							getUniformCount() const;
 	GLint							getUniformIndex(const std::string& name) const;
-	std::string						getUniformName(GLint idx) const;
+	void							getUniformInfo(GLint idx, std::string* name, GLenum* type, size_t* size) const;
 	GLint							getUniformOffset(GLuint idx) const;
 	GLint							getUniformOffset(const std::string& name) const;
 	GLint							getUniformSize(GLuint idx) const;
@@ -168,22 +168,27 @@ inline GLint Program::getUniformIndex(const std::string& name) const{
 	return glGetUniformLocation(m_program, name.c_str());
 }
 
-inline std::string Program::getUniformName(GLint idx) const{
-	GLint size=getUniformParam(idx, GL_UNIFORM_NAME_LENGTH);
-	GLchar* charName=(GLchar*)malloc((size + 1) * sizeof(GLchar));
+inline void	Program::getUniformInfo(GLint idx, std::string* name, GLenum* type, size_t* size) const{
+	GLint charBufSize=getUniformParam(idx, GL_UNIFORM_NAME_LENGTH) + 1;
+	GLchar* charBuf=(GLchar*)malloc(charBufSize * sizeof(GLchar));
 
-	glGetActiveUniformName(
-			m_program,		//Program name
-			idx,			//Uniform index
-			size,			//Buffer size
-			&size,			//Characters written
-			charName		//Character buffer
+	GLint written; //Dont care
+	GLint sizei=0;
+	GLint uniformSize;
+
+	glGetActiveUniform(
+		m_program,		//Program name
+		idx,			//Uniform index
+		charBufSize,	//Character buffer size
+		&written,		//Characters written
+		&sizei,			//Uniform size
+		type,			//Uniform type
+		charBuf			//Character buffer
 	);
 
-	std::string name(charName);
-	free(charName);
-
-	return name;
+	*size=sizei;
+	*name=std::string(charBuf); //Convert the char buffer into a string
+	free(charBuf);
 }
 
 inline GLint Program::getUniformOffset(GLuint idx) const{

@@ -36,14 +36,12 @@ inline Texture2D::Texture2D(){
 	glGenTextures(1, &m_texture);
 
 	UniqueBinding<Texture2D> binding(*this);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	//Set up default wrapping
-	float borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 inline Texture2D::Texture2D(Texture2D&& other){
@@ -81,17 +79,23 @@ inline GLuint Texture2D::get() const{
 }
 
 inline void	Texture2D::swizzleMask(const GLint* comp){
-	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, comp);
+	swizzleMask(
+		comp[0],
+		comp[1],
+		comp[2],
+		comp[3]
+	);
 }
 
 inline void	Texture2D::swizzleMask(){
-	const GLint mask[]={ GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA };
-	swizzleMask(mask);
+	swizzleMask(GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA);
 }
 
 inline void	Texture2D::swizzleMask(GLint R, GLint G, GLint B, GLint A){
-	const GLint mask[]={ R, G, B, A };
-	swizzleMask(mask);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, R);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, G);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, B);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, A);
 }
 
 }

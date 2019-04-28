@@ -44,10 +44,14 @@ ShaderEffect::ShaderEffect(const Utils::VideoMode& vidMode, const std::string& f
 	for(GLint i=0; i<uniformCount; ++i){
 		if(m_shader->getUniformBlock(i) == uniformBlockIndex){
 			//This uniform is owned by the requested block
-			std::string name(m_shader->getUniformName(i));
+			std::string name;
 			UniformLayout layout;
+
+			//Fill the data
 			layout.index=i;
+			m_shader->getUniformInfo(i, &name, &layout.type, &layout.size);
 			layout.offset=m_shader->getUniformOffset(i);
+			m_shader->getUniformOffset(i);
 
 			m_layout.emplace(name, layout);
 		}

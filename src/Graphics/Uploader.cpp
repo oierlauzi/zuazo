@@ -93,7 +93,13 @@ std::unique_ptr<const Frame> Uploader::getFrame(const Utils::ImageBuffer& buf) c
 	);
 
 	//Map the PBO's data into memory
-	u_int8_t* pboDataPtr=(u_int8_t*)glMapBuffer(pbo->GLType, GL_WRITE_ONLY); //Could be done using the implemented OOP mapping
+	u_int8_t* pboDataPtr=(u_int8_t*)glMapBufferRange(
+			GL::PixelUnpackBuffer::GLType, 	//Target
+			0,								//Offset
+			m_destSize,						//Length
+			GL_MAP_WRITE_BIT				//Access
+	);
+
 	if(pboDataPtr){
 		//Succesfuly maped PBO
 		u_int8_t* planes[4]={

@@ -42,7 +42,7 @@ Errors init(){
     Graphics::UniqueContext ctx(Graphics::Context::useMainCtx());
 
     //Init GLAD
-    if(!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
+    if(!gladLoadGLES2Loader((GLADloadproc) glfwGetProcAddress))
         return Errors::GLAD_INIT;
 
     //Initialize window class

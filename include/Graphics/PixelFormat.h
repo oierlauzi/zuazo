@@ -318,9 +318,7 @@ constexpr size_t PixelFormat::getPixelComponents() const{
 			{GL_ALPHA,	1	},
 			{GL_RG,		2	},
 			{GL_RGB,	3	},
-			{GL_BGR,	3	},
 			{GL_RGBA,	4	},
-			{GL_BGRA,	4	},
 			{GL_NONE,	0	},
 	};
 
@@ -342,7 +340,6 @@ constexpr size_t PixelFormat::getComponentSize() const{
 			{GL::GLType<u_int16_t>,		sizeof(u_int16_t)	},
 			{GL::GLType<u_int32_t>,		sizeof(u_int32_t)	},
 			{GL::GLType<float>,			sizeof(float)		},
-			{GL::GLType<double>,		sizeof(double)		},
 			//TODO non standard types
 			{GL_NONE,					0					},
 	};
@@ -362,7 +359,7 @@ constexpr size_t PixelFormat::getSize() const{
 }
 
 constexpr bool PixelFormat::hasAlpha() const{
-	if(fmt == GL_BGRA || fmt == GL_RGBA || fmt == GL_ALPHA)
+	if(fmt == GL_RGBA || fmt == GL_ALPHA)
 		return true;
 	else
 		return false;

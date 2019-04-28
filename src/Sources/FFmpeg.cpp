@@ -204,9 +204,9 @@ void FFmpeg::decodingFunc(){
 	int64_t decodedDur=-1;
 
 	while(!m_exit){
-		//check if the timestamp is larger than the duration
+		//Check if the timestamp is larger than the duration
 		if(m_currTs > lastTs)
-			m_currTs=lastTs;
+			m_currTs=lastTs - 1;
 
 
 		//Evaluate if seeking is needed
@@ -235,7 +235,7 @@ void FFmpeg::decodingFunc(){
 				//Try to decode a frame
 				int err=avcodec_receive_frame(m_codecCtx, decodedFrame);
 
-				if(err==0){
+				if(err == 0){
 					//Frame has been successfully decoded.
 					//Save it's timing values for future use cases
 					decodedTs=decodedFrame->pts;
@@ -245,7 +245,7 @@ void FFmpeg::decodingFunc(){
 					AVPacket packet;
 
 					//Read packet from file
-					if(av_read_frame(m_formatCtx, &packet)<0){
+					if(av_read_frame(m_formatCtx, &packet) < 0){
 						//File has ended
 						//Enter draining mode
 						avcodec_send_packet(m_codecCtx, NULL);
@@ -254,15 +254,16 @@ void FFmpeg::decodingFunc(){
 						//It needs to be a packet from the video stream
 						if(packet.stream_index==m_videoStream){
 							//Send the packet
-							if(avcodec_send_packet(m_codecCtx, &packet)<0){
-								//Something went wrong sending the packet
+							if(avcodec_send_packet(m_codecCtx, &packet) < 0){
+								//Something went wrong sending the packet. Free the packet
 								av_packet_unref(&packet);
 								break;
 							}
 						}
 
+						//Free the packet
 						av_packet_unref(&packet);
-						}
+					}
 				}else
 					break; //Error decoding the frame
 
@@ -276,6 +277,8 @@ void FFmpeg::decodingFunc(){
 					frameConverter.getFrame(decodedImgBuf)
 			);
 		}
+
+		//Wait until next decoding is signaled
 		m_decodeCondition.wait(lock);
 	}
 
