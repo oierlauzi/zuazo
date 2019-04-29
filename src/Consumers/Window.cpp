@@ -8,11 +8,12 @@
 #include <glm/detail/type_vec2.hpp>
 #include <algorithm>
 #include <map>
+#include <array>
 #include <utility>
 
 using namespace Zuazo::Consumers;
 
-const Zuazo::Utils::Vec2f Window::WindowResources::screenVertices[4]={
+const std::array<Zuazo::Utils::Vec2f, 4> Window::WindowResources::screenVertices{
 		Zuazo::Utils::Vec2f(-1.0, 	-1.0), 	//Bottom left
 		Zuazo::Utils::Vec2f(-1.0,	+1.0),	//Top left
 		Zuazo::Utils::Vec2f(+1.0,	-1.0),	//Bottom right
@@ -131,6 +132,10 @@ void Window::open(){
 
 		//Initialize the OpenGL resources
 		m_resources=std::unique_ptr<WindowResources>(new WindowResources);
+		m_resources->uniforms.setParam<int>(static_cast<int>(m_scalingFilter), 0);
+
+		//Return to the previous context
+		glfwMakeContextCurrent(previousCtx);
 
 		//Turn v-sync on/off
 		if(m_vSync)
@@ -138,14 +143,12 @@ void Window::open(){
 		else
 			glfwSwapInterval(0);
 
-		//Return to the previous context
-		glfwMakeContextCurrent(previousCtx);
-
 		//Initialize the thread
 		m_exit=false;
 		m_drawingThread=std::thread(&Window::drawThread, this);
 
 		m_forceDraw=true;
+		m_lastFrameRes=Utils::Resolution();
 
 		//Open the consumer so updates are called
 		Timing::PeriodicUpdate::setRate(m_videoMode.frameRate);
@@ -181,6 +184,13 @@ void Window::close(){
 		m_glfwWindow=nullptr;
 	}
 	ZuazoBase::close();
+}
+
+void Window::setScalingFilter(Utils::ScalingFilter fltr){
+	m_scalingFilter=fltr;
+	if(m_resources){
+		m_resources->uniforms.setParam<int>(static_cast<int>(m_scalingFilter), 0);
+	}
 }
 
 void Window::setFullScreen(const std::shared_ptr<Screen>& screen){
@@ -343,28 +353,22 @@ void Window::update() const{
 				float diffX = (float)dstRes.width / (2 * srcRes.width * sX);
 				float diffY = (float)dstRes.height / (2 * srcRes.height * sY);
 
-				Zuazo::Utils::Vec2f vertices[4]={  //Invert Y coordinates
+				std::array<Zuazo::Utils::Vec2f, 4> vertices{  //Invert Y coordinates
 						Zuazo::Utils::Vec2f(0.5f - diffX, 	0.5f + diffY),
 						Zuazo::Utils::Vec2f(0.5f - diffX, 	0.5f - diffY),
 						Zuazo::Utils::Vec2f(0.5f + diffX, 	0.5f + diffY),
 						Zuazo::Utils::Vec2f(0.5f + diffX, 	0.5f - diffY),
 				};
 
-				Graphics::GL::UniqueBinding<Graphics::GL::VertexArrayBuffer> vboBind(m_resources->texVbo);
-
-				Graphics::GL::VertexArrayBuffer::bufferSubData(
-						sizeof(vertices),
-						0,
-						vertices
-				);
-
+				m_resources->vertices.uploadVertices(m_resources->texCoordAttribIdx, vertices);
 				m_lastFrameRes=srcRes;
 			}
 
 			//Finaly draw everithing
-			Graphics::GL::UniqueBinding<Graphics::GL::VertexArray> vaoBind(m_resources->vao);
+			Graphics::GL::UniqueBinding<Graphics::VertexArray> vaoBind(m_resources->vertices);
 			Graphics::GL::UniqueBinding<Graphics::GL::Program> shaderBind(m_resources->shader);
 			Graphics::GL::UniqueBinding<Graphics::GL::Texture2D> texBind(*tex);
+			m_resources->uniforms.bind();
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		}
 
@@ -455,36 +459,14 @@ Window::Screen::Screen(GLFWmonitor * monitor){
 }
 
 Window::WindowResources::WindowResources() :
-	shader(vertexShader, fragmentShader)
-{
-	Graphics::GL::UniqueBinding<Graphics::GL::VertexArray> vaoBind(vao);
-
-	Graphics::GL::VertexArray::enableAttribute(0);
-	Graphics::GL::VertexArray::enableAttribute(1);
-
-	{
-	Graphics::GL::UniqueBinding<Graphics::GL::VertexArrayBuffer> vboBind(vertVbo);
-
-	Graphics::GL::VertexArrayBuffer::bufferData(
-			sizeof(screenVertices),
-			Graphics::GL::VertexArrayBuffer::Usage::StaticDraw,
-			screenVertices
-	);
-	Graphics::GL::VertexArray::attributePtr<float, 2>(0);
-
-	}
-
-	{
-	Graphics::GL::UniqueBinding<Graphics::GL::VertexArrayBuffer> vboBind(texVbo);
-
-	Graphics::GL::VertexArrayBuffer::bufferData(
-			sizeof(float) * 2 * 4,
-			Graphics::GL::VertexArrayBuffer::Usage::DynamicDraw,
-			nullptr
-	);
-	Graphics::GL::VertexArray::attributePtr<float, 2>(1);
-
-	}
+	shader(vertexShader, fragmentShader),
+	uniforms(0, shader.getUniformBlockSize("scalingFilterBlock")),
+	vertAttribIdx(shader.getAttributeLoc("in_vertex")),
+	texCoordAttribIdx(shader.getAttributeLoc("in_uv"))
+{	
+	vertices.enableAttribute(vertAttribIdx, screenVertices);
+	vertices.enableAttribute<float, 2>(texCoordAttribIdx, 4);
+	shader.setUniformBlockBinding("scalingFilterBlock", 0);
 }
 
 

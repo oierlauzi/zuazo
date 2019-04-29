@@ -86,7 +86,7 @@ public:
 	virtual void							setVideoMode(const Utils::VideoMode& videoMode){}
 protected:
 	mutable std::mutex						m_videoModeMutex;
-	Utils::VideoMode						m_videoMode;
+	mutable Utils::VideoMode				m_videoMode;
 };
 
 inline VideoBase::VideoBase(const Utils::VideoMode& vidMode) :

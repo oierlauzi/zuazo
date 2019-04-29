@@ -2,8 +2,8 @@
 
 #include "../glad/glad.h"
 #include "../Graphics/GL/Shader.h"
-#include "../Graphics/GL/Buffer.h"
-#include "../Graphics/GL/VertexArray.h"
+#include "../Graphics/ShaderUniform.h"
+#include "../Graphics/VertexArray.h"
 #include "../Utils/Rational.h"
 #include "../Utils/Resolution.h"
 #include "../Utils/Vector.h"
@@ -75,6 +75,10 @@ public:
 	SUPPORTS_SETTING_SCALINGMODE
 	void										setScalingMode(Utils::ScalingMode mode) override;
 
+	SUPPORTS_GETTING_SCALINGFILTER
+	SUPPORTS_SETTING_SCALINGFILTER
+	void										setScalingFilter(Utils::ScalingFilter fltr) override;
+
 	SUPPORTS_GETTING_FRAMERATE
 	SUPPORTS_SETTING_FRAMERATE
 	SUPPORTS_ANY_FRAMERATE
@@ -104,13 +108,15 @@ private:
 		~WindowResources()=default;
 
 		Graphics::GL::Program						shader;
-		Graphics::GL::VertexArrayBuffer				vertVbo;
-		Graphics::GL::VertexArrayBuffer				texVbo;
-		Graphics::GL::VertexArray					vao;
+		Graphics::VertexArray						vertices;
+		Graphics::ShaderUniform						uniforms;
+
+		const GLint									vertAttribIdx;
+		const GLint									texCoordAttribIdx;
 	private:
 		static const std::string					vertexShader;
 		static const std::string					fragmentShader;
-		static const Utils::Vec2f 					screenVertices[4];
+		static const std::array<Zuazo::Utils::Vec2f, 4> screenVertices;
 	};
 
  	//The GLFW window

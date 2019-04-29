@@ -5,6 +5,8 @@
 #include <string>
 #include <map>
 
+#define GLSL(x) #x
+
 namespace Zuazo::Graphics::GL{
 
 class Program{
@@ -87,6 +89,7 @@ inline Program::Shader<type>::Shader(const std::string& src) :
 	//Query the size of the log
 	GLint len = 0;
 	glGetShaderiv(m_shader, GL_INFO_LOG_LENGTH, &len);
+	len+=1;
 
 	//Check if successfully compiled
 	int success;

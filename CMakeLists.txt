@@ -72,7 +72,6 @@ endforeach()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/Utils/Codec.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/Utils/Codec.h @ONLY)
 
-
 #Register all source and header files
 file(GLOB_RECURSE SOURCES src/*.cpp src/*.c)
 file(GLOB_RECURSE HEADERS include/*.h)

@@ -46,9 +46,6 @@ public:
 	virtual void 										setPixelFormat(const Utils::PixelFormat& pixFmt) override;
 
 	SUPPORTS_GETTING_RESOLUTION
-	SUPPORTS_SETTING_RESOLUTION
-	SUPPORTS_ANY_RESOLUTION
-	virtual void										setResolution(const Utils::Resolution& res) override;
 
 	void												open() override;
 	void												close() override;

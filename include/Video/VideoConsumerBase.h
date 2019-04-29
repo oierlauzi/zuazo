@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Utils/ScalingMode.h"
+#include "../Utils/ScalingFilter.h"
 
 #include "VideoBase.h"
 #include "VideoStream.h"
@@ -21,12 +22,21 @@ public:
 
 	virtual bool			supportsGettingScalingMode() const{ return false; }
 	virtual bool			supportsSettingScalingMode() const{ return false; }
-	#define SUPPORTS_GETTING_SCALINGMODE  virtual bool supportsGettingScalingMode() const override{ return true; }
-	#define SUPPORTS_SETTING_SCALINGMODE  virtual bool supportsSettingScalingMode() const override{ return true; }
+	#define SUPPORTS_GETTING_SCALINGMODE virtual bool supportsGettingScalingMode() const override{ return true; }
+	#define SUPPORTS_SETTING_SCALINGMODE virtual bool supportsSettingScalingMode() const override{ return true; }
 	Utils::ScalingMode		getScalingMode() const;
 	virtual void			setScalingMode(Utils::ScalingMode scaling){};
+
+	virtual bool			supportsGettingScalingFilter() const{ return false; }
+	virtual bool			supportsSettingScalingFilter() const{ return false; }
+	#define SUPPORTS_GETTING_SCALINGFILTER virtual bool supportsGettingScalingFilter() const override{ return true; }
+	#define SUPPORTS_SETTING_SCALINGFILTER virtual bool supportsSettingScalingFilter() const override{ return true; }
+	Utils::ScalingFilter	getScalingFilter() const;
+	virtual void			setScalingFilter(Utils::ScalingFilter scaling){};
 protected:
 	Utils::ScalingMode		m_scalingMode=Utils::ScalingMode::Stretched;
+	Utils::ScalingFilter	m_scalingFilter=Utils::ScalingFilter::Nearest;
+
 };
 
 
@@ -42,10 +52,14 @@ inline VideoConsumerBase::VideoConsumerBase(VideoConsumer& consumer, const Utils
 }
 
 inline Utils::ScalingMode VideoConsumerBase::getScalingMode() const{
+	std::lock_guard<std::mutex> lock(m_videoModeMutex);
 	return m_scalingMode;
 }
 
-
+inline Utils::ScalingFilter VideoConsumerBase::getScalingFilter() const{
+	std::lock_guard<std::mutex> lock(m_videoModeMutex);
+	return m_scalingFilter;
+}
 
 
 

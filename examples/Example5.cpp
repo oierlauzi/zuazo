@@ -72,7 +72,6 @@ int main(int argc, char *argv[]){
 	//Create the previously defined side-by-side generator
 	Zuazo::Utils::VideoMode fxVideoMode;
 	fxVideoMode.pixFmt=Zuazo::Utils::PixelFormats::PIX_FMT_RGB32;
-	fxVideoMode.res=Zuazo::Utils::Resolution(1280, 720);
 
 	Zuazo::Processors::Invert fx0(fxVideoMode);
 	Zuazo::Processors::Grayscale fx1(fxVideoMode);

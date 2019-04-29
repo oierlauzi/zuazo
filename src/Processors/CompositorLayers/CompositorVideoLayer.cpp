@@ -33,17 +33,26 @@ void Compositor::VideoLayer::setScalingMode(Utils::ScalingMode scaling){
 	}
 }
 
+void Compositor::VideoLayer::setScalingFilter(Utils::ScalingFilter scaling){
+	m_scalingFilter=scaling;
+	if(m_scalingFilterUniform){
+		m_scalingFilterUniform->setParam<int>(static_cast<int>(m_scalingFilter), 0);
+		m_forceRender=true;
+	}
+}
+
 Zuazo::Utils::Vec3f Compositor::VideoLayer::getAvgPosition() const{
 	return getPosition() - m_rectangle.center;
 }
 
 void Compositor::VideoLayer::draw() const{
-	setup();
-
 	std::shared_ptr<const Graphics::Frame> frame=m_videoConsumerPad.get();
 
 	if(frame){
+		setup();
+		m_scalingFilterUniform->bind();
 		m_frameGeom->setFrame(frame);
+
 		m_frameGeom->draw();
 	}
 }
@@ -68,7 +77,8 @@ void Compositor::VideoLayer::open(){
 		m_shader->setUniformBlockBinding("model", MODEL_MATRIX_INDEX);
 		m_shader->setUniformBlockBinding("view", VIEW_MATRIX_INDEX);
 		m_shader->setUniformBlockBinding("projection", PROJECTION_MATRIX_INDEX);
-		m_shader->setUniformBlockBinding("data", OPACITY_INDEX);
+		m_shader->setUniformBlockBinding("dataBlock", OPACITY_INDEX);
+		m_shader->setUniformBlockBinding("scalingFilterBlock", SCALING_FILTER_INDEX);
 
 		//Save the shader for a future use by others
 		s_shader=m_shader;
@@ -76,7 +86,14 @@ void Compositor::VideoLayer::open(){
 		//Get the available shader
 		m_shader=s_shader.lock();
 	}
-	m_frameGeom=std::unique_ptr<Graphics::FrameGeometry>(new Graphics::FrameGeometry(*m_shader, "in_vertex", "in_uv"));
+
+	m_frameGeom=std::unique_ptr<Graphics::FrameGeometry>(
+		new Graphics::FrameGeometry(*m_shader, "in_vertex", "in_uv")
+	);
+	m_scalingFilterUniform=std::unique_ptr<Graphics::ShaderUniform>(
+		new Graphics::ShaderUniform(SCALING_FILTER_INDEX, m_shader->getUniformBlockSize("scalingFilterBlock"))
+	);
+	m_scalingFilterUniform->setParam<int>(static_cast<int>(m_scalingFilter), 0);
 
 	m_frameGeom->setGeometry(m_rectangle);
 	m_frameGeom->setScalingMode(m_scalingMode);

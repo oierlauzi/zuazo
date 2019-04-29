@@ -94,6 +94,7 @@ public:
 		Graphics::Rectangle						m_rectangle;
 		std::unique_ptr<Graphics::FrameGeometry>m_frameGeom;
 		std::shared_ptr<Graphics::GL::Program> 	m_shader;
+		std::unique_ptr<Graphics::ShaderUniform>m_scalingFilterUniform;
 
 		static std::weak_ptr<Graphics::GL::Program>	s_shader;
 
@@ -101,11 +102,17 @@ public:
 		SUPPORTS_SETTING_SCALINGMODE
 		virtual void							setScalingMode(Utils::ScalingMode scaling) override;
 
+		SUPPORTS_GETTING_SCALINGFILTER
+		SUPPORTS_SETTING_SCALINGFILTER
+		virtual void							setScalingFilter(Utils::ScalingFilter scaling) override;
+
 		virtual void							open();
 		virtual void							close();
 
 		virtual void							draw() const override;
 		virtual bool							needsRender() const override;
+
+		static const u_int32_t 					SCALING_FILTER_INDEX 			=4;
 	};
 
 	Compositor();

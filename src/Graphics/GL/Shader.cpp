@@ -84,6 +84,7 @@ std::string Program::getLinkLog(GLuint program) {
 	//Query the size of the log
 	GLint len = 0;
 	glGetProgramiv(program, GL_INFO_LOG_LENGTH, &len);
+	len+=1;
 
 	//Query the log
 	GLchar* log=new GLchar[len];

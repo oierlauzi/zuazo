@@ -79,14 +79,6 @@ void ShaderEffect::setPixelFormat(const Utils::PixelFormat& pixFmt){
 	}
 }
 
-void ShaderEffect::setResolution(const Utils::Resolution& res){
-	m_videoMode.res=res;
-
-	if(m_drawtable){
-		m_drawtable->resize(m_videoMode.toImageAttributes());
-	}
-}
-
 void ShaderEffect::open(){
 	//Check if the shader exists
 	auto shaderIte=s_shaders.find(m_fragShaderSrc);
@@ -182,6 +174,12 @@ void ShaderEffect::update() const{
 	std::shared_ptr<const Graphics::Frame> frame=m_videoConsumerPad.get();
 
 	if(frame){
+		auto& res=frame->getAttributes().res;
+		if(res != m_videoMode.res){
+			m_videoMode.res=res;
+			m_drawtable->resize(m_videoMode.toImageAttributes());
+		}
+
 		const Graphics::GL::Texture2D& tex=frame->getTexture();
 		
 		//Start drawing

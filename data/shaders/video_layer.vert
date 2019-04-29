@@ -1,5 +1,5 @@
 R""(
-#version 140
+#version 300 es
 
 in vec3     in_vertex;
 in vec2     in_uv;
