@@ -1,7 +1,10 @@
 R""(
-#version 140
+#version 300 es
+precision mediump float;
 
 in vec2             ex_texCoords;
+
+out vec4            out_fragColor;
 
 uniform sampler2D   tex;
 
@@ -22,7 +25,7 @@ void main(){
   hsl.y*=saturation; //Adjust saturation
   hsl.z*=luminosity; //Adjust luminosity
 
-  gl_FragColor=vec4(hsl2rgb(hsl), texColor.a);
+  out_fragColor=vec4(hsl2rgb(hsl), texColor.a);
 }
 
 float minOf3(vec3 values){
@@ -48,8 +51,8 @@ vec3 rgb2hsl(vec3 rgbColor){
   float sum=maxVal + minVal; //AKA luminosity times 2
 
   // The hue component
-  if(diff == 0){ //minVal == maxVal
-    HSLcolor.x=0;
+  if(diff == 0.0){ //minVal == maxVal
+    HSLcolor.x=0.0;
   }else if(maxVal == rgbColor.r){
     HSLcolor.x = mod((60.0 * (rgbColor.g - rgbColor.b) / diff + 360.0), 360.0);
   }else if(maxVal == rgbColor.g){
@@ -59,8 +62,8 @@ vec3 rgb2hsl(vec3 rgbColor){
   }
 
   //The saturation component
-  if(diff == 0){ //minVal == maxVal
-    HSLcolor.y=0;
+  if(diff == 0.0){ //minVal == maxVal
+    HSLcolor.y=0.0;
   }else if(sum <= 1.0){
     HSLcolor.y=diff / sum;
   }else{ // sum > 1.0
@@ -68,7 +71,7 @@ vec3 rgb2hsl(vec3 rgbColor){
   }
 
   // The luminosity component
-  HSLcolor.z=sum / 2;
+  HSLcolor.z=sum / 2.0;
 
   return HSLcolor;
 }
@@ -95,7 +98,7 @@ vec3 hsl2rgb(vec3 hslColor){
 
   RGBcolor+=vec3(m);*/
 
-  float a=hslColor.y * min(hslColor.z, 1 - hslColor.z);
+  float a=hslColor.y * min(hslColor.z, 1.0 - hslColor.z);
   vec3 k=vec3(
     mod(0.0 + hslColor.x / 30.0, 12.0),
     mod(8.0 + hslColor.x / 30.0, 12.0),

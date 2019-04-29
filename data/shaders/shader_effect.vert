@@ -1,5 +1,5 @@
 R""(
-#version 130
+#version 300 es
 
 in vec2     in_vertices;
 in vec2     in_texCoords;
