@@ -99,6 +99,8 @@ void Compositor::update() const{
 	if(needsRender || m_forceRender){
 		m_forceRender=false;
 
+		std::sort(m_depthOrderedLayers.begin(), m_depthOrderedLayers.end(), LayerComp(m_cameraPos));
+
 		m_drawtable->begin();
 
 		//Attach the view and projection matrix to the shader
@@ -125,46 +127,84 @@ void Compositor::update() const{
 }
 
 void Compositor::open(){
-	Graphics::ImageAttributes att(
-			m_videoMode.res,
-			Graphics::PixelFormat(m_videoMode.pixFmt)
-	);
+	if(!isOpen()){
+		Graphics::ImageAttributes att(
+				m_videoMode.res,
+				Graphics::PixelFormat(m_videoMode.pixFmt)
+		);
 
-	m_drawtable=std::unique_ptr<Graphics::Drawtable>(new Graphics::Drawtable(att));
+		m_drawtable=std::unique_ptr<Graphics::Drawtable>(new Graphics::Drawtable(att));
 
-	m_viewMatrixUbo=std::unique_ptr<Graphics::ShaderUniform>(
-			new Graphics::ShaderUniform(LayerBase::VIEW_MATRIX_INDEX, sizeof(Utils::Mat4x4f))
-	);
-	m_viewMatrixUbo->setData(&m_viewMatrix);
+		m_viewMatrixUbo=std::unique_ptr<Graphics::ShaderUniform>(
+				new Graphics::ShaderUniform(LayerBase::VIEW_MATRIX_INDEX, sizeof(Utils::Mat4x4f))
+		);
+		m_viewMatrixUbo->setData(&m_viewMatrix);
 
-	m_projectionMatrixUbo=std::unique_ptr<Graphics::ShaderUniform>(
-			new Graphics::ShaderUniform(LayerBase::PROJECTION_MATRIX_INDEX, sizeof(Utils::Mat4x4f))
-	);
-	m_projectionMatrixUbo->setData(&m_projectionMatrix);
+		m_projectionMatrixUbo=std::unique_ptr<Graphics::ShaderUniform>(
+				new Graphics::ShaderUniform(LayerBase::PROJECTION_MATRIX_INDEX, sizeof(Utils::Mat4x4f))
+		);
+		m_projectionMatrixUbo->setData(&m_projectionMatrix);
 
-	for(auto& layer : m_layers){
-		layer->open();
+		for(auto& layer : m_layers){
+			layer->use();
+		}
+
+		m_forceRender=true;
+
+		Video::TVideoSourceBase<Video::LazyVideoSourcePad>::enable();
+		ZuazoBase::open();
 	}
-
-	m_forceRender=true;
-
-	Video::TVideoSourceBase<Video::LazyVideoSourcePad>::enable();
-	ZuazoBase::open();
 }
 
 void Compositor::close(){
-	Video::TVideoSourceBase<Video::LazyVideoSourcePad>::disable();
+	if(isOpen()){
+		Video::TVideoSourceBase<Video::LazyVideoSourcePad>::disable();
 
-	for(auto& layer : m_layers){
-		layer->close();
+		for(auto& layer : m_layers){
+			layer->unuse();
+		}
+
+		m_drawtable.reset();
+		m_viewMatrixUbo.reset();
+		m_projectionMatrixUbo.reset();
+
+		m_drawtable.reset();
+		ZuazoBase::close();
+	}
+}
+
+void Compositor::setLayers(const std::vector<std::shared_ptr<LayerBase>>& layers){
+	if(isOpen()){
+		std::vector<std::shared_ptr<LayerBase>> addedLayers;
+		std::vector<std::shared_ptr<LayerBase>> deletedLayers;
+
+		//Calculate added layers
+		std::set_difference(
+			layers.begin(), layers.end(),
+			m_layers.begin(), m_layers.end(),
+			std::inserter(addedLayers, addedLayers.begin())
+		);
+
+		//Calculate added layers
+		std::set_difference(
+			m_layers.begin(), m_layers.end(),
+			layers.begin(), layers.end(),
+			std::inserter(deletedLayers, deletedLayers.begin())
+		);
+
+		for(auto& layer : addedLayers){
+			layer->use();
+		}
+
+		for(auto& layer : deletedLayers){
+			layer->unuse();
+		}
 	}
 
-	m_drawtable.reset();
-	m_viewMatrixUbo.reset();
-	m_projectionMatrixUbo.reset();
+	m_layers=layers;
+	m_depthOrderedLayers=m_layers;
 
-	m_drawtable.reset();
-	ZuazoBase::close();
+	m_forceRender=true;
 }
 
 void Compositor::resize(){

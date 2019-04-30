@@ -43,6 +43,7 @@ private:
 
 	u_int32_t							m_maxDropped;
 	mutable u_int32_t					m_dropped;
+	mutable std::mutex					m_mutex;
 
 	u_int32_t							m_maxBufferSize;
 	mutable std::queue<std::unique_ptr<const T>> m_buffer;
@@ -140,6 +141,7 @@ void AsyncSource<T>::reset(){
 
 template <typename T>
 inline void AsyncSource<T>::update() const{
+	std::lock_guard<std::mutex> lock(m_mutex);
 	if(m_buffer.size()){
 		//There is at least an element at the buffer. Push it into the source
 		Source<T>::push(std::move(m_buffer.front()));
@@ -158,7 +160,7 @@ inline void AsyncSource<T>::update() const{
 
 template <typename T>
 inline void AsyncSource<T>::push(std::unique_ptr<const T> element){
-
+	std::lock_guard<std::mutex> lock(m_mutex);
 	if(m_buffer.size()>=m_maxBufferSize){
 		//Buffer is full. Discard it
 		element.reset();

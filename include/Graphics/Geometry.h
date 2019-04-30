@@ -2,13 +2,12 @@
 
 #include "../Utils/Vector.h"
 
+#include <array>
+
 namespace Zuazo::Graphics{
 
-typedef float VectorComponent;
-
 struct Rectangle{
-	Utils::Vec<VectorComponent, 3>	center;
-	Utils::Vec<VectorComponent, 2>	size;
+	Utils::Vec2f			size;
 
 	Rectangle()=default;
 	Rectangle(const Rectangle& other)=default;
@@ -19,37 +18,29 @@ struct Rectangle{
 };
 
 inline int Rectangle::operator==(const Rectangle& other){
-	return center == other.center && size == other.size;
+	return size == other.size;
 }
 
 inline int Rectangle::operator!=(const Rectangle& other){
-	return center != other.center || size != other.size;
+	return size != other.size;
 }
 
 struct Quad{
-	Utils::Vec<VectorComponent, 3>	bottomLeft;
-	Utils::Vec<VectorComponent, 3>	topLeft;
-	Utils::Vec<VectorComponent, 3>	bottomRight;
-	Utils::Vec<VectorComponent, 3>	topRight;
+	std::array<Utils::Vec2f, 4>	vertices;
 
 	Quad()=default;
 	Quad(const Quad& other)=default;
 	Quad(const Rectangle& rect);
 	~Quad()=default;
-
-	const Utils::Vec<VectorComponent, 3>* toVertexBuffer() const;
 };
 
 inline Quad::Quad(const Rectangle& rect) :
-	bottomLeft(	-rect.center.x,					-rect.center.y,					-rect.center.z),
-	topLeft(	-rect.center.x,					-rect.center.y + rect.size.y,	-rect.center.z),
-	bottomRight(-rect.center.x + rect.size.x,	-rect.center.y, 				-rect.center.z),
-	topRight(	-rect.center.x + rect.size.x,	-rect.center.y + rect.size.y,	-rect.center.z)
+	vertices{
+		Utils::Vec2f(0.0,			0.0			),
+		Utils::Vec2f(0.0,			rect.size.y	),
+		Utils::Vec2f(rect.size.x,	0.0			),
+		Utils::Vec2f(rect.size.x,	rect.size.y	)
+	}
 {
 }
-
-inline const Utils::Vec<VectorComponent, 3>* Quad::toVertexBuffer() const{
-	return reinterpret_cast<const Utils::Vec<VectorComponent, 3>*>(this);
-}
-
 }

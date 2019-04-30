@@ -20,7 +20,7 @@ FrameGeometry::FrameGeometry(const GL::Program& shader, const std::string& vertA
 	m_texAttribLoc(m_shader.getAttributeLoc(texAtrrib))
 {
 	m_vertexArray=std::unique_ptr<VertexArray>(new VertexArray);
-	m_vertexArray->enableAttribute<VectorComponent, 3>(m_vertAttribLoc, 4);
+	m_vertexArray->enableAttribute<float, 2>(m_vertAttribLoc, 4);
 	m_vertexArray->enableAttribute<float, 2>(m_texAttribLoc, 4);
 }
 
@@ -36,7 +36,7 @@ void FrameGeometry::setGeometry(const Graphics::Rectangle& rect){
 		m_rectangle=rect;
 
 		Quad quad(m_rectangle);
-		m_vertexArray->uploadVertices<VectorComponent, 3>(m_vertAttribLoc, quad.toVertexBuffer());
+		m_vertexArray->uploadVertices(m_vertAttribLoc, quad.vertices);
 
 		calculateTexCoords();
 	}
@@ -106,13 +106,13 @@ void FrameGeometry::calculateTexCoords(){
 		float diffX = m_rectangle.size.x / (2 * width * sX);
 		float diffY = m_rectangle.size.y / (2 * height * sY);
 
-		Zuazo::Utils::Vec2f texCoords[4]={  //Invert Y coordinates
+		std::array<Utils::Vec2f, 4> texCoords{  //Invert Y coordinates
 				Zuazo::Utils::Vec2f(0.5f - diffX, 	0.5f + diffY),
 				Zuazo::Utils::Vec2f(0.5f - diffX, 	0.5f - diffY),
 				Zuazo::Utils::Vec2f(0.5f + diffX, 	0.5f + diffY),
 				Zuazo::Utils::Vec2f(0.5f + diffX, 	0.5f - diffY),
 		};
 
-		m_vertexArray->uploadVertices<float, 2>(m_texAttribLoc, texCoords);
+		m_vertexArray->uploadVertices(m_texAttribLoc, texCoords);
 	}
 }

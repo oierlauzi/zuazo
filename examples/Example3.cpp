@@ -101,8 +101,6 @@ int main(int argc, char *argv[]){
 	std::cout << "Use [-] to delete the newest layer" << std::endl;
 	std::cout << "Use [Q] to exit" << std::endl;
 
-	u_int32_t layerCount=0;
-
 	//Main loop
 	char key;
 	do{
@@ -110,16 +108,14 @@ int main(int argc, char *argv[]){
 		key=getchar();
 
 		Zuazo::Context ctx;
+		auto layers=composer.getLayers();
 
 		switch(key){
 		case '-':
-			if(layerCount){
-				composer.deleteLayer(--layerCount);
-				std::cout << "Deleting a layer:" << std::endl;
-				std::cout << "Layer count:	" << layerCount << std::endl << std::endl;
-			}else{
-				std::cout << "Can't delete a layer!" << std::endl;
-			}
+			layers.pop_back();
+
+			std::cout << "Deleting a layer:" << std::endl;
+			std::cout << "Layer count:	" << layers.size() << std::endl << std::endl;
 			break;
 		case '+':
 			//Add a layer
@@ -128,12 +124,11 @@ int main(int argc, char *argv[]){
 			const float width=RAND_IN_RANGE(wMin, wMax);
 			const float height=RAND_IN_RANGE(hMin, hMax);
 			const Zuazo::Graphics::Rectangle rect={
-				.center=Zuazo::Utils::Vec3f(width / 2, height / 2, 0),
 				.size=Zuazo::Utils::Vec2f(width, height)
 			};
 
 			//Create a layer for the rectangle
-			std::unique_ptr<Zuazo::Processors::Compositor::VideoLayer> layer(
+			std::shared_ptr<Zuazo::Processors::Compositor::VideoLayer> layer(
 					new Zuazo::Processors::Compositor::VideoLayer(rect)
 			);
 
@@ -159,17 +154,18 @@ int main(int argc, char *argv[]){
 			layer->setRotation(rotation);
 
 			//Insert the newly create layer into the composer
-			composer.addLayer(std::move(layer));
-			layerCount++;
+			layers.emplace_back(layer);
 
 			std::cout << "Adding a layer:" << std::endl;
 			std::cout << "Input index: 	" << inputIndex << std::endl;
 			std::cout << "Resolution: 	" << width << "x" << height << std::endl;
 			std::cout << "Position: 	(" << position.x << ", " << position.y << ", " << position.z << ")"<< std::endl;
 			std::cout << "Rotation: 	(" << glm::degrees(rotation.x) << "º, " << glm::degrees(rotation.y) << "º, " << glm::degrees(rotation.z) << "º)" << std::endl;
-			std::cout << "Layer count:	" << layerCount << std::endl << std::endl;
+			std::cout << "Layer count:	" << layers.size() << std::endl << std::endl;
 			break;
 		}
+
+		composer.setLayers(layers);
 	}while(key != 'q');
 
 	Zuazo::begin();

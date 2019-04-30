@@ -22,8 +22,6 @@ class FrameGeometry :
 	public DrawableBase
 {
 public:
-	typedef std::array<Utils::Vec<VectorComponent, 2>, 4> TextureCoordenates;
-
 	FrameGeometry(const GL::Program& shader, const std::string& vertAtrrib, const std::string& texAtrrib);
 	FrameGeometry(const FrameGeometry& other)=delete;
 	FrameGeometry(FrameGeometry&& other)=default;

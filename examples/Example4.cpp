@@ -55,15 +55,15 @@ public:
 		bkgdVideoIn(m_bkgdVideoSourcePad)
 	{
 		//Create the 3 needed layers
-		std::unique_ptr<Zuazo::Processors::Compositor::VideoLayer> leftLayer(
+		std::shared_ptr<Zuazo::Processors::Compositor::VideoLayer> leftLayer(
 				new Zuazo::Processors::Compositor::VideoLayer
 		);
 
-		std::unique_ptr<Zuazo::Processors::Compositor::VideoLayer> rightLayer(
+		std::shared_ptr<Zuazo::Processors::Compositor::VideoLayer> rightLayer(
 				new Zuazo::Processors::Compositor::VideoLayer
 		);
 
-		std::unique_ptr<Zuazo::Processors::Compositor::VideoLayer> bkgdLayer(
+		std::shared_ptr<Zuazo::Processors::Compositor::VideoLayer> bkgdLayer(
 				new Zuazo::Processors::Compositor::VideoLayer
 		);
 
@@ -75,9 +75,11 @@ public:
 		m_videoSourcePad << m_videoCompositor.videoOut;
 
 		//Add the layers to the compositor
-		m_videoCompositor.addLayer(std::move(leftLayer));
-		m_videoCompositor.addLayer(std::move(rightLayer));
-		m_videoCompositor.addLayer(std::move(bkgdLayer));
+		auto layers=m_videoCompositor.getLayers();
+		layers.push_back(leftLayer);
+		layers.push_back(rightLayer);
+		layers.push_back(bkgdLayer);
+		m_videoCompositor.setLayers(layers);
 	}
 
 	SideBySide(const Zuazo::Utils::VideoMode& videoMode) :
@@ -100,6 +102,7 @@ public:
 	 */
 	SUPPORTS_GETTING_VIDEOMODE
 	SUPPORTS_SETTING_VIDEOMODE
+	
 	void setVideoMode(const Zuazo::Utils::VideoMode& videoMode) override{
 		m_videoMode=videoMode;
 
@@ -108,13 +111,11 @@ public:
 
 		//Create the rectangle for the layers, which covers a quarter of the screen
 		const Zuazo::Graphics::Rectangle rect={
-				.center=Zuazo::Utils::Vec3f(rectWidth / 2, rectHeight / 2, 0),
 				.size=Zuazo::Utils::Vec2f(rectWidth, rectHeight)
 		};
 
 		//Create a rectangle for the backgrund, which covers all the screren
 		const Zuazo::Graphics::Rectangle bkgdRect={
-				.center=Zuazo::Utils::Vec3f((float)m_videoMode.res.width / 2, (float)m_videoMode.res.height / 2, 0),
 				.size=Zuazo::Utils::Vec2f(m_videoMode.res.width, m_videoMode.res.height)
 		};
 
@@ -124,15 +125,19 @@ public:
 														//surfaces (so that they are not
 														//behind the background due to the inclination)
 
+		const Zuazo::Utils::Vec3f lrLayerAnchor(rectWidth / 2, rectHeight / 2, 0);
+		const Zuazo::Utils::Vec3f bkgdLayerAnchor((float)m_videoMode.res.width / 2, (float)m_videoMode.res.height / 2, 0);
+
 		const Zuazo::Utils::Vec3f leftLayerPos(-rectWidth / 2, 0, zOffset);
 		const Zuazo::Utils::Vec3f rightLayerPos(rectWidth / 2, 0, zOffset);
 		const Zuazo::Utils::Vec3f leftLayerAngle(0, angle, 0);
 		const Zuazo::Utils::Vec3f rightLayerAngle(0, -angle, 0);
 
 		//Get layers by their index
-		Zuazo::Processors::Compositor::VideoLayer* leftLayer=m_videoCompositor.getLayer<Zuazo::Processors::Compositor::VideoLayer>(0);
-		Zuazo::Processors::Compositor::VideoLayer* rightLayer=m_videoCompositor.getLayer<Zuazo::Processors::Compositor::VideoLayer>(1);
-		Zuazo::Processors::Compositor::VideoLayer* bkgdLayer=m_videoCompositor.getLayer<Zuazo::Processors::Compositor::VideoLayer>(2);
+		auto& layers=m_videoCompositor.getLayers();
+		auto leftLayer=std::static_pointer_cast<Zuazo::Processors::Compositor::VideoLayer>(layers[0]);
+		auto rightLayer=std::static_pointer_cast<Zuazo::Processors::Compositor::VideoLayer>(layers[1]);
+		auto bkgdLayer=std::static_pointer_cast<Zuazo::Processors::Compositor::VideoLayer>(layers[2]);
 
 		//Set compositor's video mode
 		m_videoCompositor.setVideoMode(m_videoMode);
@@ -143,13 +148,16 @@ public:
 		m_videoCompositor.setDefaultFov();
 
 		leftLayer->setRect(rect);
+		leftLayer->setAnchorage(lrLayerAnchor);
 		leftLayer->setPosition(leftLayerPos);
 		leftLayer->setRotation(leftLayerAngle);
 
 		rightLayer->setRect(rect);
+		rightLayer->setAnchorage(lrLayerAnchor);
 		rightLayer->setPosition(rightLayerPos);
 		rightLayer->setRotation(rightLayerAngle);
 
+		bkgdLayer->setAnchorage(bkgdLayerAnchor);
 		bkgdLayer->setRect(bkgdRect); //Background layer does not get changed
 	}
 

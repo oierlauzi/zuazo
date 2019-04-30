@@ -26,12 +26,19 @@ class Compositor :
 {
 public:
 	class LayerBase{
-		friend Compositor;
 	public:
+		static const u_int32_t 					MODEL_MATRIX_INDEX		=0;
+		static const u_int32_t 					VIEW_MATRIX_INDEX 		=1;
+		static const u_int32_t 					PROJECTION_MATRIX_INDEX =2;
+		static const u_int32_t 					OPACITY_INDEX 			=3;
+
 		LayerBase();
 		LayerBase(const LayerBase& other)=delete;
 		LayerBase(LayerBase&& other)=default;
 		virtual ~LayerBase()=default;
+
+		const Utils::Vec3f&						getAnchorage() const;
+		void									setAnchorage(const Utils::Vec3f& pos);
 
 		const Utils::Vec3f&						getRotation() const;
 		void									setRotation(const Utils::Vec3f& rotation);
@@ -40,29 +47,33 @@ public:
 		void									setScale(const Utils::Vec3f& scale);
 
 		const Utils::Vec3f&						getPosition() const;
-		virtual Utils::Vec3f					getAvgPosition() const;
 		void									setPosition(const Utils::Vec3f& pos);
+
+		virtual Utils::Vec3f					getAvgPosition() const;
 
 		float									getOpacity() const;
 		void									setOpacity(float alpha);
 
 		void									setRSP(const Utils::Vec3f& rotation, const Utils::Vec3f& scale, const Utils::Vec3f& position);
+
+		void									use();
+		void									unuse();
+
+		virtual bool							needsRender() const;
+		virtual void							draw() const=0;
 	protected:
 		virtual void							open()=0;
 		virtual void							close()=0;
 
-		virtual void							draw() const=0;
 		void									setup() const;
 
-		virtual bool							needsRender() const;
+		Utils::Vec3f							project(const Utils::Vec3f& other) const;
 
 		mutable bool							m_forceRender;
-
-		static const u_int32_t 					MODEL_MATRIX_INDEX		=0;
-		static const u_int32_t 					VIEW_MATRIX_INDEX 		=1;
-		static const u_int32_t 					PROJECTION_MATRIX_INDEX =2;
-		static const u_int32_t 					OPACITY_INDEX 			=3;
 	private:
+		u_int32_t								m_useCount;
+
+		Utils::Vec3f							m_anchorage;
 		Utils::Vec3f							m_rotation;
 		Utils::Vec3f							m_scale;
 		Utils::Vec3f							m_position;
@@ -163,14 +174,8 @@ public:
 	void									setClipping(float near, float far);
 	void									setDefaultClipping();
 
-	template<typename T = LayerBase>
-	T*										getLayer(u_int32_t idx) const;
-	u_int32_t								getLayerCount() const;
-	template<typename T = LayerBase>
-	void									addLayer(std::unique_ptr<T> layer);
-	void									deleteLayer(u_int32_t idx);
-	void									swapLayers(u_int32_t idx1, u_int32_t idx2);
-	bool									isValidIndex(u_int32_t idx) const;
+	const std::vector<std::shared_ptr<LayerBase>>& getLayers() const;
+	void									setLayers(const std::vector<std::shared_ptr<LayerBase>>& layers);
 
 
 	virtual void							update() const override;
@@ -186,7 +191,7 @@ private:
 		LayerComp(LayerComp&& other)=default;
 		~LayerComp()=default;
 		
-		bool operator()(const LayerBase* a, const LayerBase* b) const{ //Returns if a is further than b
+		bool operator()(const std::shared_ptr<LayerBase>& a, const std::shared_ptr<LayerBase>& b) const{ //Returns if a is further than b
 			return 
 				Graphics::VectorOperations::distance(a->getAvgPosition(), m_cameraPos) 
 				>= 
@@ -199,8 +204,8 @@ private:
 	};
 
 	std::unique_ptr<Graphics::Drawtable>	m_drawtable;
-	std::vector<std::unique_ptr<LayerBase>>	m_layers;
-	std::set<const LayerBase*, LayerComp>	m_depthOrderedLayers;
+	std::vector<std::shared_ptr<LayerBase>>	m_layers;
+	mutable std::vector<std::shared_ptr<LayerBase>>	m_depthOrderedLayers;
 
 	float									m_nearClip;
 	float									m_farClip;
@@ -220,7 +225,6 @@ private:
 	void									calculateViewMatrix();
 	void									calculateProjectionMatrix();
 };
-
 
 
 inline const Utils::Vec3f&	Compositor::getCameraPosition() const{
@@ -249,14 +253,6 @@ inline Utils::Vec3f	Compositor::getDefaultCameraUpDirection() const{
 
 inline void Compositor::setCameraPosition(const Utils::Vec3f& pos){
 	m_cameraPos=pos;
-
-	//Reorder the layers based on the distance to the camera
-	m_depthOrderedLayers=std::set<const LayerBase*, LayerComp>(
-		m_depthOrderedLayers.begin(),
-		m_depthOrderedLayers.end(),
-		LayerComp(m_cameraPos)
-	);
-
 	calculateViewMatrix();
 }
 
@@ -274,14 +270,6 @@ inline void Compositor::setCamera(const Utils::Vec3f& pos, const Utils::Vec3f& t
 	m_cameraPos=pos;
 	m_cameraTarget=tgt;
 	m_cameraUpDir=up;
-
-	//Reorder the layers based on the distance to the camera
-	m_depthOrderedLayers=std::set<const LayerBase*, LayerComp>(
-		m_depthOrderedLayers.begin(),
-		m_depthOrderedLayers.end(),
-		LayerComp(m_cameraPos)
-	);
-
 	calculateViewMatrix();
 }
 
@@ -348,58 +336,20 @@ inline void Compositor::setDefaultClipping(){
 	);
 }
 
-template<typename T>
-inline T* Compositor::getLayer(u_int32_t idx) const{
-	if(isValidIndex(idx)){
-		return dynamic_cast<T*>(m_layers[idx].get());
-	}else
-		return nullptr;
-}
-
-inline u_int32_t Compositor::getLayerCount() const{
-	return m_layers.size();
-}
-
-template<typename T>
-inline void	Compositor::addLayer(std::unique_ptr<T> layer){
-	std::unique_ptr<LayerBase> newLayer(std::move(layer));
-	if(isOpen() && newLayer){
-		newLayer->open();
-	}
-
-	m_layers.push_back(std::move(newLayer));
-	m_depthOrderedLayers.insert(m_layers.back().get());
-	m_forceRender=true;
-}
-
-inline void	Compositor::deleteLayer(u_int32_t idx){
-	if(isValidIndex(idx)){
-		if(m_layers[idx] && isOpen()){
-			m_layers[idx]->close();
-		}
-
-
-		auto ite=m_layers.begin() + idx;
-		m_depthOrderedLayers.erase(ite->get());
-		m_layers.erase(ite);
-		m_forceRender=true;
-	}
-}
-
-inline void	Compositor::swapLayers(u_int32_t idx1, u_int32_t idx2){
-	if(isValidIndex(idx1) && isValidIndex(idx2)){
-		//TODO
-		m_forceRender=true;
-	}
-}
-
-inline bool	Compositor::isValidIndex(u_int32_t idx) const{
-	return idx < m_layers.size();
+inline const std::vector<std::shared_ptr<Compositor::LayerBase>>& Compositor::getLayers() const{
+	return m_layers;
 }
 
 
 
+inline const Utils::Vec3f& Compositor::LayerBase::getAnchorage() const{
+	return m_anchorage;
+}
 
+inline void	Compositor::LayerBase::setAnchorage(const Utils::Vec3f& anchor){
+	m_anchorage=anchor;
+	calculateModelMatrix();
+}
 
 inline const Utils::Vec3f& Compositor::LayerBase::getRotation() const{
 	return m_rotation;
@@ -435,6 +385,18 @@ inline float Compositor::LayerBase::getOpacity() const{
 inline void Compositor::LayerBase::setOpacity(float alpha){
 	m_opacity=alpha;
 	m_opacityUbo->setData(&m_opacity);
+}
+
+inline void	Compositor::LayerBase::use(){
+	if(!m_useCount++){
+		open();
+	}
+}
+
+inline void	Compositor::LayerBase::unuse(){
+	if(!--m_useCount){
+		close();
+	}
 }
 
 inline void  Compositor::LayerBase::setRSP(const Utils::Vec3f& rotation, const Utils::Vec3f& scale, const Utils::Vec3f& position){

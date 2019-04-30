@@ -42,7 +42,8 @@ void Compositor::VideoLayer::setScalingFilter(Utils::ScalingFilter scaling){
 }
 
 Zuazo::Utils::Vec3f Compositor::VideoLayer::getAvgPosition() const{
-	return getPosition() - m_rectangle.center;
+	Utils::Vec2f avg=m_rectangle.size / Utils::Vec2f(2.0);
+	return project(Utils::Vec3f(avg, 0.0));
 }
 
 void Compositor::VideoLayer::draw() const{
