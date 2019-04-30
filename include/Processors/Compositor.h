@@ -54,7 +54,7 @@ public:
 		float									getOpacity() const;
 		void									setOpacity(float alpha);
 
-		void									setRSP(const Utils::Vec3f& rotation, const Utils::Vec3f& scale, const Utils::Vec3f& position);
+		void									setParams(const Utils::Vec3f& anchor, const Utils::Vec3f& rotation, const Utils::Vec3f& scale, const Utils::Vec3f& position);
 
 		void									use();
 		void									unuse();
@@ -191,7 +191,7 @@ private:
 		LayerComp(LayerComp&& other)=default;
 		~LayerComp()=default;
 		
-		bool operator()(const std::shared_ptr<LayerBase>& a, const std::shared_ptr<LayerBase>& b) const{ //Returns if a is further than b
+		bool operator()(const LayerBase* a, const LayerBase* b) const{ //Returns if a is further than b
 			return 
 				Graphics::VectorOperations::distance(a->getAvgPosition(), m_cameraPos) 
 				>= 
@@ -205,7 +205,7 @@ private:
 
 	std::unique_ptr<Graphics::Drawtable>	m_drawtable;
 	std::vector<std::shared_ptr<LayerBase>>	m_layers;
-	mutable std::vector<std::shared_ptr<LayerBase>>	m_depthOrderedLayers;
+	mutable std::vector<LayerBase*>			m_depthOrderedLayers;
 
 	float									m_nearClip;
 	float									m_farClip;
@@ -399,7 +399,8 @@ inline void	Compositor::LayerBase::unuse(){
 	}
 }
 
-inline void  Compositor::LayerBase::setRSP(const Utils::Vec3f& rotation, const Utils::Vec3f& scale, const Utils::Vec3f& position){
+inline void  Compositor::LayerBase::setParams(const Utils::Vec3f& anchor, const Utils::Vec3f& rotation, const Utils::Vec3f& scale, const Utils::Vec3f& position){
+	m_anchorage=anchor;
 	m_rotation=rotation;
 	m_scale=scale;
 	m_position=position;

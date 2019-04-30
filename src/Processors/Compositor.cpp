@@ -87,7 +87,7 @@ float Compositor::getDefaultFov() const{
 
 void Compositor::update() const{
 	bool needsRender=false;
-	for(auto& layer : m_layers){
+	for(auto layer : m_depthOrderedLayers){
 		if(layer){
 			if(layer->needsRender()){
 				needsRender=true;
@@ -99,7 +99,7 @@ void Compositor::update() const{
 	if(needsRender || m_forceRender){
 		m_forceRender=false;
 
-		std::sort(m_depthOrderedLayers.begin(), m_depthOrderedLayers.end(), LayerComp(m_cameraPos));
+		std::stable_sort(m_depthOrderedLayers.begin(), m_depthOrderedLayers.end(), LayerComp(m_cameraPos));
 
 		m_drawtable->begin();
 
@@ -115,7 +115,7 @@ void Compositor::update() const{
 		glDepthFunc(GL_LESS);
 
 		//Draw all the layers
-		for(auto& layer : m_depthOrderedLayers){
+		for(auto layer : m_depthOrderedLayers){
 			layer->draw();
 		}
 
@@ -174,21 +174,34 @@ void Compositor::close(){
 }
 
 void Compositor::setLayers(const std::vector<std::shared_ptr<LayerBase>>& layers){
-	if(isOpen()){
-		std::vector<std::shared_ptr<LayerBase>> addedLayers;
-		std::vector<std::shared_ptr<LayerBase>> deletedLayers;
+	//Convert the shared pointers into raw pointers for eficiency
+	std::vector<LayerBase*> layerPtrs;
+	layerPtrs.reserve(layers.size());
+	for(auto& layer : layers){
+		layerPtrs.push_back(layer.get());
+	}
 
-		//Calculate added layers
+	if(isOpen()){
+		std::vector<LayerBase*> sortedLayers(std::move(layerPtrs));
+		std::vector<LayerBase*> sortedOldLayers(std::move(m_depthOrderedLayers));
+
+		//std::set_difference needs the elements ordered, sort them
+		std::sort(sortedLayers.begin(), sortedLayers.end());
+		std::sort(sortedOldLayers.begin(), sortedOldLayers.end());
+
+		//Calculate added layers (layers - m_layers)
+		std::vector<LayerBase*> addedLayers;
 		std::set_difference(
-			layers.begin(), layers.end(),
-			m_layers.begin(), m_layers.end(),
+			sortedLayers.begin(), sortedLayers.end(),
+			sortedOldLayers.begin(), sortedOldLayers.end(),
 			std::inserter(addedLayers, addedLayers.begin())
 		);
 
-		//Calculate added layers
+		//Calculate deleted layers (m_layers - layers)
+		std::vector<LayerBase*> deletedLayers;
 		std::set_difference(
-			m_layers.begin(), m_layers.end(),
-			layers.begin(), layers.end(),
+			sortedOldLayers.begin(), sortedOldLayers.end(),
+			sortedLayers.begin(), sortedLayers.end(),
 			std::inserter(deletedLayers, deletedLayers.begin())
 		);
 
@@ -199,10 +212,12 @@ void Compositor::setLayers(const std::vector<std::shared_ptr<LayerBase>>& layers
 		for(auto& layer : deletedLayers){
 			layer->unuse();
 		}
+
+		layerPtrs=std::move(sortedLayers); //Restore
 	}
 
 	m_layers=layers;
-	m_depthOrderedLayers=m_layers;
+	m_depthOrderedLayers=std::move(layerPtrs); //Conversion already done for sorted layers, copy it
 
 	m_forceRender=true;
 }
