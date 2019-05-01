@@ -13,10 +13,7 @@
 #include <string>
 #include <memory>
 
-#define UNIFORM_BLOCK_NAME "shaderFxBlock"
-#define VERTEX_ATTRIB_NAME "in_vertices"
-#define TEXTURE_COORD_ATTRIB_NAME "in_texCoords"
-#define TEXTURE_COORD_EXCHANGE_NAME "ex_texCoords"
+#define UNIFORM_BLOCK_NAME "shaderFxDataBlock"
 
 namespace Zuazo::Processors{
 
@@ -70,6 +67,9 @@ private:
 	
 	static std::map<std::string, std::weak_ptr<Graphics::VertexArray>> s_vertexArrays;
 	static std::map<std::string, std::weak_ptr<Graphics::GL::Program>> s_shaders;
+	static const std::string 							s_vertShader;
+	static const std::string 							s_fragShaderHeader1;
+	static const std::string 							s_fragShaderHeader2;
 };
 
 template<typename T>

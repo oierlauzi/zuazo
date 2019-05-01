@@ -10,6 +10,17 @@ using namespace Zuazo::Processors;
 std::map<std::string, std::weak_ptr<Zuazo::Graphics::VertexArray>> ShaderEffect::s_vertexArrays;
 std::map<std::string, std::weak_ptr<Zuazo::Graphics::GL::Program>> ShaderEffect::s_shaders;
 
+const std::string ShaderEffect::s_vertShader(
+	#include "../../data/shaders/shader_effect.vert"
+);
+
+const std::string ShaderEffect::s_fragShaderHeader1(
+	#include "../../data/shaders/shader_effect.1.frag"
+);
+
+const std::string ShaderEffect::s_fragShaderHeader2(
+	#include "../../data/shaders/shader_effect.2.frag"
+);
 
 ShaderEffect::ShaderEffect(const Utils::VideoMode& vidMode, const std::string& fragShader) :
 		m_fragShaderSrc(fragShader)
@@ -19,10 +30,8 @@ ShaderEffect::ShaderEffect(const Utils::VideoMode& vidMode, const std::string& f
 	if(ite == s_shaders.end()){
 		//Shader was not compiled previously. Compile it now
 		m_shader=std::shared_ptr<Graphics::GL::Program>(new Graphics::GL::Program(
-				std::string(
-					#include "../../data/shaders/shader_effect.vert"
-				),
-				m_fragShaderSrc
+				s_vertShader,
+				s_fragShaderHeader1 + m_fragShaderSrc + s_fragShaderHeader2
 			)
 		);
 		m_shader->setUniformBlockBinding(UNIFORM_BLOCK_NAME, UNIFORM_BLOCK_BINDING);
@@ -85,10 +94,8 @@ void ShaderEffect::open(){
 	if(shaderIte == s_shaders.end()){
 		//Shader was not compiled previously. Compile it now
 		m_shader=std::shared_ptr<Graphics::GL::Program>(new Graphics::GL::Program(
-				std::string(
-					#include "../../data/shaders/shader_effect.vert"
-				),
-				m_fragShaderSrc
+				s_vertShader,
+				s_fragShaderHeader1 + m_fragShaderSrc + s_fragShaderHeader2
 			)
 		);
 		s_shaders[m_fragShaderSrc]=m_shader; //Save it for others
@@ -121,8 +128,8 @@ void ShaderEffect::open(){
 		};
 
 		//Upload the data
-		m_vertexArray->enableAttribute(m_shader->getAttributeLoc(VERTEX_ATTRIB_NAME), passThroughVertices);
-		m_vertexArray->enableAttribute(m_shader->getAttributeLoc(TEXTURE_COORD_ATTRIB_NAME), passThroughTexCoords);
+		m_vertexArray->enableAttribute(m_shader->getAttributeLoc("in_vertices"), passThroughVertices);
+		m_vertexArray->enableAttribute(m_shader->getAttributeLoc("in_texCoords"), passThroughTexCoords);
 	}else{
 		//Exists. Acquire it
 		m_vertexArray=vaoIte->second.lock();

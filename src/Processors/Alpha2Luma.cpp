@@ -4,7 +4,7 @@ using namespace Zuazo::Processors;
 
 Alpha2Luma::Alpha2Luma() : 
 ShaderEffect(std::string(
-    #include "../../data/shaders/alpha2luma.frag"
+    #include "../../data/shaders/alpha2luma.glsl"
 )){
     setBrightness(0.5);
     setContrast(0.5);
@@ -12,7 +12,7 @@ ShaderEffect(std::string(
 
 Alpha2Luma::Alpha2Luma(const Utils::VideoMode& vidMode) : 
 ShaderEffect(vidMode, std::string(
-    #include "../../data/shaders/alpha2luma.frag"
+    #include "../../data/shaders/alpha2luma.glsl"
 )){
     setBrightness(0.5);
     setContrast(0.5);

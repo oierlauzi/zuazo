@@ -1,14 +1,6 @@
 R""(
-#version 300 es
-precision mediump float;
 
-in vec2             ex_texCoords;
-
-out vec4            out_fragColor;
-
-uniform sampler2D   tex;
-
-uniform shaderFxBlock{
+uniform shaderFxDataBlock{
   float hue;
   float saturation;
   float luminosity;
@@ -17,15 +9,15 @@ uniform shaderFxBlock{
 vec3 rgb2hsl(vec3 rgbColor);
 vec3 hsl2rgb(vec3 hslColor);
 
-void main(){
-  vec4 texColor=texture(tex, ex_texCoords);
+vec4 shaderFx(sampler2D tex, vec2 texCoord){
+  vec4 texColor=texture(tex, texCoord);
   vec3 hsl=rgb2hsl(texColor.rgb);
 
   hsl.x+=hue; //Shift the hue
   hsl.y*=saturation; //Adjust saturation
   hsl.z*=luminosity; //Adjust luminosity
 
-  out_fragColor=vec4(hsl2rgb(hsl), texColor.a);
+  return vec4(hsl2rgb(hsl), texColor.a);
 }
 
 float minOf3(vec3 values){
