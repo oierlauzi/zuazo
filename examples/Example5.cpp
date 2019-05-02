@@ -130,6 +130,7 @@ int main(int argc, char *argv[]){
 	fx2.close();
 	fx3.close();
 	fx4.close();
+	src.reset(); //Delete the source by reseting its ptr
 
 	Zuazo::end();
 

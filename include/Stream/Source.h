@@ -1,23 +1,17 @@
 #pragma once
 
-#include "Consumer.h"
-
 #include <memory>
 #include <set>
 
 namespace Zuazo::Stream{
 
 template <typename T>
-class Consumer;
-
-template <typename T>
 class Source{
-	friend Consumer<T>;
 public:
 	Source()=default;
 	Source(const Source& other)=delete;
-	Source(Source&& other);
-	virtual ~Source();
+	Source(Source&& other)=default;
+	virtual ~Source()=default;
 
 	virtual std::shared_ptr<const T>	get() const;
 
@@ -29,8 +23,6 @@ protected:
 	void								reset();
 private:
 	mutable std::shared_ptr<const T>	m_last;
-
-	mutable std::set<Consumer<T>*>		m_consumers;
 };
 
 template <typename T>
@@ -46,20 +38,6 @@ public:
 /*
  * METHOD DEFINITIONS
  */
-
-template <typename T>
-Source<T>::~Source(){
-	while(m_consumers.size())
-		(*m_consumers.begin())->setSource(nullptr);
-}
-
-template <typename T>
-Source<T>::Source(Source&& other){
-	while(other.m_consumers.size()){
-		(*m_consumers.begin())->setSource(this);
-	}
-	m_last=other.m_last;
-}
 
 template <typename T>
 inline std::shared_ptr<const T> Source<T>::get() const{
