@@ -40,6 +40,9 @@ public:
 
     void    setLuminosityDecay(float decay);
     float   getLuminosityDecay() const;
+
+    void    setRadius(float rad);
+    float   getRadius() const;
 private:
     static const std::string s_shaderSource;
 };
@@ -139,4 +142,15 @@ inline float ChromaKey::getLuminosityDecay() const{
     const float* ptr=ShaderEffect::getParam<float>("luminosityDecay");
     return ptr ? *ptr : 0.0;
 }   
+
+
+
+inline void ChromaKey::setRadius(float rad){
+    ShaderEffect::setParam("smoothRadius", rad);
+}
+
+inline float ChromaKey::getRadius() const{
+    const float* ptr=ShaderEffect::getParam<float>("smoothRadius");
+    return ptr ? *ptr : 0.0;
+}  
 }

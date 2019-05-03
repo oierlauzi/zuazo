@@ -18,30 +18,27 @@ ImageMagick::ImageMagick(const std::shared_ptr<const Magick::Image>& img) :
 	open();
 }
 
-ImageMagick::ImageMagick(const std::string& path) :
-		ImageMagick(std::shared_ptr<const Magick::Image>(new Magick::Image(path)))
-{
+ImageMagick::ImageMagick(const std::string& path){
+	std::shared_ptr<Magick::Image> img(new Magick::Image(path));
+	img->magick("RGBA");
+	m_image=img;
+	open();
 }
 
 void ImageMagick::open(){
 	if(m_image){
-		Magick::Geometry size=m_image->size();
-		//Get all the pixels
-		const Magick::PixelPacket* pixels=m_image->getConstPixels(0, 0, size.width(), size.height());
+		Magick::Image img(*m_image);
 
-#ifdef MAGICK_PIXEL_RGBA
+		Magick::Blob blob; 
+		img.write(&blob, "RGBA", sizeof(Magick::Quantum) * 8);
+		Magick::Geometry size=img.size();
+
 		Graphics::ImageAttributes att(
 				Graphics::Resolution(size.width(), size.height()),
 				Graphics::PixelFormat(GL_RGBA, Graphics::GL::GLType<Magick::Quantum>, SWIZZLE_MASK_RGBA)
 		);
-#else
-		Graphics::ImageAttributes att(
-				Graphics::Resolution(size.width(), size.height()),
-				Graphics::PixelFormat(GL_RGBA, Graphics::GL::GLType<Magick::Quantum>, SWIZZLE_MASK_BGRA)
-		);
-#endif
 
-		Graphics::ImageBuffer imgBuf(att, (u_int8_t*)pixels);
+		Graphics::ImageBuffer imgBuf(att, (u_int8_t*)blob.data());
 
 		//Try to create a texture with the image
 		std::unique_ptr<Graphics::GL::Texture2D> tex=Graphics::Frame::createTexture(att);

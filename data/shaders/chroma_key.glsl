@@ -17,6 +17,7 @@ uniform shaderFxDataBlock{
     float luminosityMin;
     float luminosityMax;
     float luminosityDecay;
+    float smoothRadius;
 };
 
 )""
@@ -46,9 +47,8 @@ float getAttenuation(float x, float minVal, float maxVal, float decay){
     return att;
 }
 
-vec4 shaderFx(sampler2D tex, vec2 texCoord){
-    vec4 texColor=texture(tex, texCoord);
-    vec3 hsl=rgb2hsl(texColor.rgb);
+float chromaKey(vec3 inColor){
+    vec3 hsl=rgb2hsl(inColor);
 
     float hueMin=hueCenter - hueTolerance;
     float hueMax=hueCenter + hueTolerance;
@@ -58,9 +58,38 @@ vec4 shaderFx(sampler2D tex, vec2 texCoord){
 
     float luminosityAtt=getAttenuation(hsl.b, luminosityMin, luminosityMax, luminosityDecay);
 
-    float alpha=max(hueAtt, saturationAtt, luminosityAtt);
+    return max(hueAtt, saturationAtt, luminosityAtt);
+}
 
-    return vec4(hsl2rgb(hsl), alpha);
+vec4 shaderFx(sampler2D tex, vec2 texCoord){
+    vec3 outColor;
+    float alpha;
+
+    ivec2 texRes=textureSize(tex, 0); //Get the size of the texture
+    vec2 texelSize=vec2(1.0) / vec2(texRes);
+
+    if(smoothRadius > 0.0){
+        alpha=1.0;
+        int maxX=int(smoothRadius);
+        for(int i=-maxX; i <= maxX; ++i){
+            int maxY=int(sqrt(smoothRadius*smoothRadius - float(i)*float(i) ));
+            for(int j=-maxY; j <= maxY; ++j){
+                vec2 pos=vec2(i, j);
+                vec3 texelColor=texture(tex, texCoord + pos*texelSize).rgb;
+
+                if(pos == vec2(0.0)){
+                    outColor=texelColor;
+                }
+
+                alpha*=pow(chromaKey(texelColor), 1.0 - length(pos) / smoothRadius);
+            }
+        }
+    }else{
+        outColor=texture(tex, texCoord).rgb;
+        alpha=chromaKey(outColor);
+    }
+
+    return vec4(outColor, alpha);
 }
 
 )""

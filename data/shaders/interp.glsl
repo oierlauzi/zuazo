@@ -9,58 +9,96 @@ uniform scalingFilterBlock{
 };
 
 vec4 nearest(sampler2D near_tex, vec2 texCoord){
-    ivec2 texRes=textureSize(near_tex, 0); //Get the size of the texture
-    texCoord=(floor(vec2(texRes) * texCoord) + vec2(0.5)) / vec2(texRes); //Set the texture coordenate exactly on top of a sample
     return texture(near_tex, texCoord);
-}
-
-vec4 bilinear(sampler2D bil_tex, vec2 texCoord){
-    return texture(bil_tex, texCoord); //By default is set up to give us a bilinearly interpolated sample
 }
 
 /*
  * This code is based on:
- * http://vec3.ca/bicubic-filtering-in-fewer-taps/
- * http://pastebin.com/raw/YLLSBRFq
+ * https://www.codeproject.com/Articles/236394/Bi-Cubic-and-Bi-Linear-Interpolation-with-GLSL#GLSLLinear
  */
+
+vec4 bilinear(sampler2D bil_tex, vec2 texCoord){
+    ivec2 texRes=textureSize(bil_tex, 0); //Get the size of the texture
+    vec2 texelSize=vec2(1.0) / vec2(texRes); //The size of each texel
+    texCoord-=texelSize / vec2(2.0); //Shift down half texel to floor the sample index
+    vec2 texCoordFract=fract(texCoord * vec2(texRes)); //Fractional part of the absolute texture coordenates
+
+    mat4 samples=mat4(
+        texture2D(bil_tex, texCoord + texelSize * vec2(0.0, 0.0)), //Columns!
+        texture2D(bil_tex, texCoord + texelSize * vec2(1.0, 0.0)),
+        texture2D(bil_tex, texCoord + texelSize * vec2(0.0, 1.0)),
+        texture2D(bil_tex, texCoord + texelSize * vec2(1.0, 1.0))
+    );
+
+    vec4 weights=vec4(
+        (1.0 - texCoordFract.x) * (1.0 - texCoordFract.y),
+        (0.0 + texCoordFract.x) * (1.0 - texCoordFract.y),
+        (1.0 - texCoordFract.x) * (0.0 + texCoordFract.y),
+        (0.0 + texCoordFract.x) * (0.0 + texCoordFract.y)
+    );
+
+    vec4 interpolatedColor=samples * weights;
+
+    return interpolatedColor;
+}
+
+float triang(float x){
+    return 1.0 - abs(x);
+}
+
+float triang(vec2 vector){
+    return triang(vector.x) * triang(vector.y);
+}
+
+float bspline(float x){
+    x=abs(x);
+    
+    if( x >= 0.0 && x <= 0.5 ){
+		return (2.0 / 3.0) +  4.0  * (x * x * x) - 4.0 * (x * x);
+	}else if( x > 0.5 && x <= 1.0 ){
+        float a=1.0 - x;
+		return (4.0 / 3.0) * (a * a * a);
+    }else{
+        return 1.0;
+    }
+}
+
+float bspline(vec2 vector){
+    return bspline(vector.x) * bspline(vector.y);
+}
+
+/*
+ * This code is based on:
+ * https://www.codeproject.com/Articles/236394/Bi-Cubic-and-Bi-Linear-Interpolation-with-GLSL#GLSLLinear
+ */
+
 vec4 bicubic(sampler2D bicub_tex, vec2 texCoord){
     ivec2 texRes=textureSize(bicub_tex, 0); //Get the size of the texture
     vec2 texelSize=vec2(1.0) / vec2(texRes); //The size of each texel
-    vec2 absTexCoord=texCoord * vec2(texRes); //Absolute (non-normalized) texture coordenates
+    texCoord-=texelSize / vec2(2.0); //Shift down half texel to floor the sample index
+    vec2 texCoordFract=fract(texCoord * vec2(texRes)); //Fractional part of the absolute texture coordenates
 
-    //Texel components
-    vec2 texelCenter=floor(absTexCoord);
-    vec2 texelFrac1=absTexCoord - texelCenter;
+    vec4 numSum = vec4(0.0);
+    vec4 denSum = vec4(0.0);
 
-    //Fractional component's 2nd and 3rd powers
-    vec2 texelFrac2 = texelFrac1 * texelFrac1;
-    vec2 texelFrac3 = texelFrac2 * texelFrac1;
+    //Sum all the terms
+    for(int i=-1; i < 3; ++i){
+        for(int j=-1; j < 3; ++j){
+            //Sample the texture
+            vec2 textureSampleCoord=vec2(i, j);
+			vec4 textureSample = texture2D(bicub_tex, texCoord + texelSize * textureSampleCoord);
 
-    //Compute the weights according to B-Spline
-    vec2 w0 = texelFrac2 - 0.5 * (texelFrac3 + texelFrac1);
-    vec2 w1 = 1.5 * texelFrac3 - 2.5 * texelFrac2 + 1.0;
-    vec2 w3 = 0.5 * (texelFrac3 - texelFrac2);
-    vec2 w2 = 1.0 - w0 - w1 - w3;
+            //Sample a bspline window
+            vec2 windowCoord=textureSampleCoord - texCoordFract;
+            float windowSample=bspline(windowCoord / 2.0);
 
-    //Compute the scaling factors
-    vec2 s0 = w0 + w1;
-    vec2 s1 = w2 + w3;
- 
-    //Compute the coordenates
-    vec2 t0 = texelCenter - 1.0 + w1 / s0;
-    vec2 t1 = texelCenter + 1.0 + w3 / s1;
+            //Add the values to the sum
+            numSum+=textureSample * windowSample;
+            denSum+=windowSample;
+        }
+    }
 
-    //Normalize the coordenates
-    t0*=texelSize;
-    t1*=texelSize;
- 
-    //and sample and blend
- 
-    return
-        (texture(bicub_tex, vec2(t0.x, t0.y)) * s0.x +
-        texture(bicub_tex, vec2(t1.x, t0.y)) * s1.x) * s0.y +
-        (texture(bicub_tex, vec2(t0.x, t1.y)) * s0.x +
-        texture(bicub_tex, vec2(t1.x, t1.y)) * s1.x) * s1.y;
+    return numSum / denSum; 
 }
 
 vec4 interp(sampler2D interp_tex, vec2 texCoord){
