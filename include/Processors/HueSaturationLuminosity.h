@@ -19,7 +19,9 @@ public:
     float   getSaturation() const;   
 
     void    setLuminosity(float lum);
-    float   getLuminosity() const;  
+    float   getLuminosity() const; 
+private:
+    static const std::string s_shaderSource;
 };
 
 inline void HueSaturationLuminosisty::setHue(float hue){

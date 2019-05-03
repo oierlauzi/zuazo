@@ -2,14 +2,14 @@
 
 using namespace Zuazo::Processors;
 
-Invert::Invert() : 
-ShaderEffect(std::string(
+const std::string Invert::s_shaderSource(
     #include "../../data/shaders/invert.glsl"
-)){
+);
+
+Invert::Invert() : ShaderEffect(s_shaderSource)
+{
 }
 
-Invert::Invert(const Utils::VideoMode& vidMode) : 
-ShaderEffect(vidMode, std::string(
-    #include "../../data/shaders/invert.glsl"
-)){
+Invert::Invert(const Utils::VideoMode& vidMode) : ShaderEffect(vidMode, s_shaderSource)
+{
 }

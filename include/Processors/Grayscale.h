@@ -17,6 +17,8 @@ public:
 
     void    setContrast(float contrast);
     float   getContrast() const;   
+private:
+    static const std::string s_shaderSource;
 };
 
 inline void Grayscale::setBrightness(float brightness){

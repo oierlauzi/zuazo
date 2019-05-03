@@ -11,5 +11,7 @@ public:
     Invert(const Invert& other)=delete;
     Invert(Invert&& other)=default;
     virtual ~Invert()=default;
+private:
+    static const std::string s_shaderSource;
 };
 }

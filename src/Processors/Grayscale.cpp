@@ -2,18 +2,18 @@
 
 using namespace Zuazo::Processors;
 
-Grayscale::Grayscale() : 
-ShaderEffect(std::string(
+const std::string Grayscale::s_shaderSource(
     #include "../../data/shaders/grayscale.glsl"
-)){
+);
+
+Grayscale::Grayscale() : ShaderEffect(s_shaderSource)
+{
     setBrightness(0.5);
     setContrast(0.5);
 }
 
-Grayscale::Grayscale(const Utils::VideoMode& vidMode) : 
-ShaderEffect(vidMode, std::string(
-    #include "../../data/shaders/grayscale.glsl"
-)){
+Grayscale::Grayscale(const Utils::VideoMode& vidMode) : ShaderEffect(vidMode, s_shaderSource)
+{
     setBrightness(0.5);
     setContrast(0.5);
 }

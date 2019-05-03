@@ -16,7 +16,9 @@ public:
     float   getBrightness() const;   
 
     void    setContrast(float contrast);
-    float   getContrast() const;   
+    float   getContrast() const;
+private:
+    static const std::string s_shaderSource;
 };
 
 inline void Alpha2Luma::setBrightness(float brightness){
