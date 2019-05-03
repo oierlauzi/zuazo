@@ -129,6 +129,8 @@ void Window::open(){
 
 		//Enable the OpenGL features that will be needed
 		glEnable(GL_TEXTURE_2D);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ZERO);
 
 		//Initialize the OpenGL resources
 		m_resources=std::unique_ptr<WindowResources>(new WindowResources);

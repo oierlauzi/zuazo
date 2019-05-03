@@ -66,6 +66,11 @@ int main(int argc, char *argv[]){
 
 	Zuazo::Consumers::Window window4(
 			windowVideoMode,
+			"Example 5: Chroma key"
+	);
+
+		Zuazo::Consumers::Window window5(
+			windowVideoMode,
 			"Example 5: Alpha Visualization"
 	);
 
@@ -77,7 +82,8 @@ int main(int argc, char *argv[]){
 	Zuazo::Processors::Grayscale fx1(fxVideoMode);
 	Zuazo::Processors::BrightnessContrast fx2(fxVideoMode);
 	Zuazo::Processors::HueSaturationLuminosisty fx3(fxVideoMode);
-	Zuazo::Processors::Alpha2Luma fx4(fxVideoMode);
+	Zuazo::Processors::ChromaKey fx4(fxVideoMode);
+	Zuazo::Processors::Alpha2Luma fx5(fxVideoMode);
 
 	fx2.setBrightness(0.75); //A bit brighter
 
@@ -93,7 +99,9 @@ int main(int argc, char *argv[]){
 	//	    |
 	//	    +-> fx3 -> window3 (Hue shifted)
 	//		|
-	//		+-> fx4 -> window4 (Alpha visualization)
+	//		+-> fx4 -+-> window4 (Chorma key)
+	//				 |
+	//		         +-> fx5 -> window5 (Alpha visualization)
 
 	if(src) window0.videoIn << src->videoOut;
 
@@ -109,6 +117,8 @@ int main(int argc, char *argv[]){
 
 	if(src) fx4.videoIn << src->videoOut;
 	window4.videoIn << fx4.videoOut;
+	fx5.videoIn << fx4.videoOut;
+	window5.videoIn << fx5.videoOut;
 
 	Zuazo::end();
 
