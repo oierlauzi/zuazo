@@ -29,4 +29,10 @@ inline Source<T>& operator>>(Source<T>& src, Consumer<T>& cons){
     return src;
 }
 
+template <typename T>
+inline nullptr_t operator>>(nullptr_t src, Consumer<T>& cons){
+	cons.setSource(nullptr);
+    return nullptr;
+}
+
 }

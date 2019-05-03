@@ -12,8 +12,9 @@ template <typename T>
 class Consumer{
 public:
 	Consumer();
-	Consumer(const Consumer& other);
-	virtual ~Consumer();
+	Consumer(const Consumer& other)=default;
+	Consumer(Consumer&& other)=default;
+	virtual ~Consumer()=default;
 
 	void								setSource(const Source<T>* src);
 protected:
@@ -42,18 +43,9 @@ public:
 
 
 template <typename T>
-inline Consumer<T>::Consumer(){
-	m_source=nullptr;
-}
-
-template <typename T>
-inline Consumer<T>::Consumer(const Consumer& other) : Consumer(){
-	setSource(other.m_source);
-}
-
-template <typename T>
-inline Consumer<T>::~Consumer(){
-	setSource(nullptr);
+inline Consumer<T>::Consumer() :
+	m_source(nullptr)
+{
 }
 
 template <typename T>

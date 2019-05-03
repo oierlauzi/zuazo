@@ -9,7 +9,7 @@ template <typename T>
 class Source{
 public:
 	Source()=default;
-	Source(const Source& other)=delete;
+	Source(const Source& other)=default;
 	Source(Source&& other)=default;
 	virtual ~Source()=default;
 

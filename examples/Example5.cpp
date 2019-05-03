@@ -51,25 +51,30 @@ int main(int argc, char *argv[]){
 
 	Zuazo::Consumers::Window window1(
 			windowVideoMode,
-			"Example 5: Inverted"
+			"Example 5: Delayed 1s"
 	);
 
 	Zuazo::Consumers::Window window2(
 			windowVideoMode,
-			"Example 5: Grayscale"
+			"Example 5: Inverted"
 	);
 
 	Zuazo::Consumers::Window window3(
 			windowVideoMode,
-			"Example 5: Hue shifted"
+			"Example 5: Grayscale"
 	);
 
 	Zuazo::Consumers::Window window4(
 			windowVideoMode,
+			"Example 5: Hue shifted"
+	);
+
+	Zuazo::Consumers::Window window5(
+			windowVideoMode,
 			"Example 5: Chroma key"
 	);
 
-		Zuazo::Consumers::Window window5(
+		Zuazo::Consumers::Window window6(
 			windowVideoMode,
 			"Example 5: Alpha Visualization"
 	);
@@ -78,6 +83,7 @@ int main(int argc, char *argv[]){
 	Zuazo::Utils::VideoMode fxVideoMode;
 	fxVideoMode.pixFmt=Zuazo::Utils::PixelFormats::PIX_FMT_RGB32;
 
+	Zuazo::Video::VideoDelay delay(std::chrono::seconds(1));
 	Zuazo::Processors::Invert fx0(fxVideoMode);
 	Zuazo::Processors::Grayscale fx1(fxVideoMode);
 	Zuazo::Processors::BrightnessContrast fx2(fxVideoMode);
@@ -93,32 +99,37 @@ int main(int argc, char *argv[]){
 	//Route the signal: 
 	//      +-> window0 (Original)
 	//      |
-	//		+-> fx0 -> window1 (Inverted)
+	//		+-> delay -> window1 (Delayed 1s)
 	//		|
-	// src -+-> fx1 -> fx2 -> window2 (Grayscale)
+	//		+-> fx0 -> window2 (Inverted)
+	//		|
+	// src -+-> fx1 -> fx2 -> window3 (Grayscale)
 	//	    |
-	//	    +-> fx3 -> window3 (Hue shifted)
+	//	    +-> fx3 -> window4 (Hue shifted)
 	//		|
-	//		+-> fx4 -+-> window4 (Chorma key)
+	//		+-> fx4 -+-> window5 (Chorma key)
 	//				 |
-	//		         +-> fx5 -> window5 (Alpha visualization)
+	//		         +-> fx5 -> window6 (Alpha visualization)
 
 	if(src) window0.videoIn << src->videoOut;
 
+	if(src) delay.in << src->videoOut;
+	window1.videoIn << delay.out;
+
 	if(src) fx0.videoIn << src->videoOut;
-	window1.videoIn << fx0.videoOut;
+	window2.videoIn << fx0.videoOut;
 
 	if(src) fx1.videoIn << src->videoOut;
 	fx2.videoIn << fx1.videoOut;
-	window2.videoIn << fx2.videoOut;
+	window3.videoIn << fx2.videoOut;
 
 	if(src) fx3.videoIn << src->videoOut;
-	window3.videoIn << fx3.videoOut;
+	window4.videoIn << fx3.videoOut;
 
 	if(src) fx4.videoIn << src->videoOut;
-	window4.videoIn << fx4.videoOut;
+	window5.videoIn << fx4.videoOut;
 	fx5.videoIn << fx4.videoOut;
-	window5.videoIn << fx5.videoOut;
+	window6.videoIn << fx5.videoOut;
 
 	Zuazo::end();
 
@@ -135,6 +146,7 @@ int main(int argc, char *argv[]){
 	window2.close();
 	window3.close();
 	window4.close();
+	delay.close();
 	fx0.close();
 	fx1.close();
 	fx2.close();

@@ -19,7 +19,8 @@ class AsyncSource :
 public:
 	AsyncSource();
 	AsyncSource(const Utils::Rational& rat);
-	AsyncSource(const AsyncSource& other)=delete;
+	AsyncSource(const AsyncSource& other)=default;
+	AsyncSource(AsyncSource&& other)=default;
 	virtual ~AsyncSource()=default;
 
 	void								setMaxDropped(u_int32_t max);

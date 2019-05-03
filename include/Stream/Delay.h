@@ -14,12 +14,13 @@ namespace Zuazo::Stream{
 
 template <typename T>
 class Delay :
-		public Stream::Source<T>,
-		public Stream::Consumer<T>,
-		public Timing::RegularUpdate,
+		private Timing::RegularUpdate,
 		public ZuazoBase
 {
 public:
+	Consumer<T>&								in;
+	Source<T>&									out;
+
 	Delay();
 	Delay(const Timing::Duration& delay);
 	Delay(const Delay& delay)=default;
@@ -45,6 +46,9 @@ private:
 		}
 	};
 
+	ConsumerPad<T>								m_inPad;
+	SourcePad<T>								m_outPad;
+
 	Timing::Duration							m_delay;
 
 	mutable std::queue<QueueElement>			m_queue;
@@ -52,7 +56,9 @@ private:
 
 template <typename T>
 inline Delay<T>::Delay() :
-	Timing::RegularUpdate(UpdatePriorities::DELAY)
+	Timing::RegularUpdate(UpdatePriorities::DELAY),
+	in(m_inPad),
+	out(m_outPad)
 {
 	open();
 }
@@ -60,6 +66,8 @@ inline Delay<T>::Delay() :
 template <typename T>
 inline Delay<T>::Delay(const Timing::Duration& delay) :
 	Timing::RegularUpdate(UpdatePriorities::DELAY),
+	in(m_inPad),
+	out(m_outPad),
 	m_delay(delay)
 {
 	open();
@@ -91,7 +99,7 @@ inline void Delay<T>::update() const{
 	if(m_delay.count()){
 		//The delay is active
 		//Insert an element into the queue
-		m_queue.emplace(Consumer<T>::get());
+		m_queue.emplace(m_inPad.get());
 
 		//Advance the queue until an element with the desired time-stamp is found
 		while(m_queue.size()){
@@ -103,10 +111,10 @@ inline void Delay<T>::update() const{
 		}
 	}else{
 		//There is no delay
-		lastElement=Consumer<T>::get();
+		lastElement=m_inPad.get();
 	}
 	//Push the new element
-	Source<T>::push(lastElement);
+	m_outPad.push(lastElement);
 }
 
 template <typename T>
@@ -118,8 +126,8 @@ inline void Delay<T>::open(){
 template <typename T>
 inline void Delay<T>::close(){
 	Timing::RegularUpdate::disable();
-	Source<T>::reset();
-	Consumer<T>::reset();
+	m_inPad.reset();
+	m_outPad.reset();
 
 	//Reset all
 	while(m_queue.size())
