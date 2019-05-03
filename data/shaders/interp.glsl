@@ -20,23 +20,21 @@ vec4 nearest(sampler2D near_tex, vec2 texCoord){
 vec4 bilinear(sampler2D bil_tex, vec2 texCoord){
     ivec2 texRes=textureSize(bil_tex, 0); //Get the size of the texture
     vec2 texelSize=vec2(1.0) / vec2(texRes); //The size of each texel
-
-    //Calulate the fractional part of the texture coordenates
-    float fracX = fract( texCoord.x * float(texRes.x) );
-    float fracY = fract( texCoord.y * float(texRes.y) );
+    texCoord-=texelSize / vec2(2.0); //Shift down half texel to floor the sample index
+    vec2 texCoordFract=fract(texCoord * vec2(texRes)); //Fractional part of the absolute texture coordenates
 
     mat4 samples=mat4(
-        texture2D(bil_tex, texCoord + vec2(0.0,         0.0         )), //Columns!
-        texture2D(bil_tex, texCoord + vec2(texelSize.x, 0.0         )),
-        texture2D(bil_tex, texCoord + vec2(0.0,         texelSize.y )),
-        texture2D(bil_tex, texCoord + texelSize                      )
+        texture2D(bil_tex, texCoord + texelSize * vec2(0.0, 0.0)), //Columns!
+        texture2D(bil_tex, texCoord + texelSize * vec2(1.0, 0.0)),
+        texture2D(bil_tex, texCoord + texelSize * vec2(0.0, 1.0)),
+        texture2D(bil_tex, texCoord + texelSize * vec2(1.0, 1.0))
     );
 
     vec4 weights=vec4(
-        (1.0 - fracX) * (1.0 - fracY),
-        fracX         * (1.0 - fracY),
-        (1.0 - fracX) * fracY,
-        fracX         * fracY
+        (1.0 - texCoordFract.x) * (1.0 - texCoordFract.y),
+        (0.0 + texCoordFract.x) * (1.0 - texCoordFract.y),
+        (1.0 - texCoordFract.x) * (0.0 + texCoordFract.y),
+        (0.0 + texCoordFract.x) * (0.0 + texCoordFract.y)
     );
 
     vec4 interpolatedColor=samples * weights;
@@ -45,7 +43,7 @@ vec4 bilinear(sampler2D bil_tex, vec2 texCoord){
 }
 
 float triang(float x){
-    return 1.0 - abs(x) / 2.0;
+    return 1.0 - abs(x);
 }
 
 float triang(vec2 vector){
@@ -55,11 +53,11 @@ float triang(vec2 vector){
 float bspline(float x){
     x=abs(x);
     
-    if( x >= 0.0 && x <= 1.0 ){
-		return ( 2.0 / 3.0 ) +  0.5  * ( x * x * x ) - (x * x);
-	}else if( x > 1.0 && x <= 2.0 ){
-        float a=2.0 - x;
-		return 1.0 / 6.0 * a * a * a;
+    if( x >= 0.0 && x <= 0.5 ){
+		return (2.0 / 3.0) +  4.0  * (x * x * x) - 4.0 * (x * x);
+	}else if( x > 0.5 && x <= 1.0 ){
+        float a=1.0 - x;
+		return (4.0 / 3.0) * (a * a * a);
     }else{
         return 1.0;
     }
@@ -77,14 +75,11 @@ float bspline(vec2 vector){
 vec4 bicubic(sampler2D bicub_tex, vec2 texCoord){
     ivec2 texRes=textureSize(bicub_tex, 0); //Get the size of the texture
     vec2 texelSize=vec2(1.0) / vec2(texRes); //The size of each texel
+    texCoord-=texelSize / vec2(2.0); //Shift down half texel to floor the sample index
+    vec2 texCoordFract=fract(texCoord * vec2(texRes)); //Fractional part of the absolute texture coordenates
 
     vec4 numSum = vec4(0.0);
     vec4 denSum = vec4(0.0);
-
-    //Calulate the fractional part of the texture coordenates
-    float fracX = fract( texCoord.x * float(texRes.x) );
-    float fracY = fract( texCoord.y * float(texRes.y) );
-    vec2 texCoordFrac=vec2(fracX, fracY);
 
     //Sum all the terms
     for(int i=-1; i < 3; ++i){
@@ -93,9 +88,9 @@ vec4 bicubic(sampler2D bicub_tex, vec2 texCoord){
             vec2 textureSampleCoord=vec2(i, j);
 			vec4 textureSample = texture2D(bicub_tex, texCoord + texelSize * textureSampleCoord);
 
-            //Sample a triangular window
-            vec2 windowCoord=textureSampleCoord - texCoordFrac;
-            float windowSample=bspline(windowCoord);
+            //Sample a bspline window
+            vec2 windowCoord=textureSampleCoord - texCoordFract;
+            float windowSample=bspline(windowCoord / 2.0);
 
             //Add the values to the sum
             numSum+=textureSample * windowSample;

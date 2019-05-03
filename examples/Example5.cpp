@@ -1,6 +1,6 @@
 /**
  * DESCRIPTION:
- * 
+ * This example shows the usage of several effects
  */
 
 /**
@@ -38,7 +38,7 @@ int main(int argc, char *argv[]){
 
 	std::unique_ptr<Zuazo::Video::VideoSourceBase> src(Zuazo::videoSourceFromFile(std::string(argv[1])));
 
-	//Create 2 windows
+	//Create 5 windows
 	//In the first the source will be shown in black and white
 	//In the second it will be shown with an increase in saturation and hue shift
 	Zuazo::Utils::VideoMode windowVideoMode;
