@@ -101,7 +101,9 @@ std::unique_ptr<const Frame> Drawtable::finish(){
 		m_frameBuffer->unbind();
 	}else{
 		//There was an active drawtable before, bind its framebuffer again
-		s_activeDrawtables.top()->m_frameBuffer->bind();
+		const Drawtable& prevDrawtable(*s_activeDrawtables.top());
+		prevDrawtable.m_frameBuffer->bind();
+		glViewport(0, 0, prevDrawtable.m_attributes.res.width, prevDrawtable.m_attributes.res.height);
 	}
 
 	return std::unique_ptr<const Frame>(new Frame(std::move(m_renderTarget), m_attributes));

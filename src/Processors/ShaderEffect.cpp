@@ -3,7 +3,7 @@
 #include <Graphics/Frame.h>
 #include <Graphics/GL/UniqueBinding.h>
 
-#define UNIFORM_BLOCK_BINDING 0
+#define UNIFORM_BLOCK_BINDING 16
 
 using namespace Zuazo::Processors;
 

@@ -15,7 +15,7 @@ class ImageMagick :
 	public ZuazoBase
 {
 public:
-	ImageMagick()=default;
+	ImageMagick();
 	ImageMagick(const std::shared_ptr<const Magick::Image>& img);
 	ImageMagick(const std::string& path);
 	ImageMagick(const ImageMagick& other)=default;

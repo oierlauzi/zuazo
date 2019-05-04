@@ -29,6 +29,8 @@ public:
 
 	void 								begin();
 	std::unique_ptr<const Frame> 		finish();
+
+	std::set<PixelFormat>				getSupportedPixelFormats() const;
 private:
 	ImageAttributes						m_attributes;
 
@@ -39,4 +41,36 @@ private:
 
 	static thread_local	std::stack<const Drawtable*> s_activeDrawtables;
 };
+
+inline std::set<PixelFormat> Drawtable::getSupportedPixelFormats() const{
+	return std::set<PixelFormat>{
+		PixelFormats::RED8,
+		PixelFormats::GREEN8,
+		PixelFormats::BLUE8,
+		PixelFormats::ALPHA8,
+		PixelFormats::RGB24,
+		PixelFormats::RGBA32,
+
+		PixelFormats::RED16,
+		PixelFormats::GREEN16,
+		PixelFormats::BLUE16,
+		PixelFormats::ALPHA16,
+		PixelFormats::RGB48,
+		PixelFormats::RGBA64,
+
+		PixelFormats::RED32,
+		PixelFormats::GREEN32,
+		PixelFormats::BLUE32,
+		PixelFormats::ALPHA32,
+		PixelFormats::RGB96,
+		PixelFormats::RGBA128,
+
+		PixelFormats::RED32f,
+		PixelFormats::GREEN32f,
+		PixelFormats::BLUE32f,
+		PixelFormats::ALPHA32f,
+		PixelFormats::RGB96f,
+		PixelFormats::RGBA128f,
+	}
+}
 }

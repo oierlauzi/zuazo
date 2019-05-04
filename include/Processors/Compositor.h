@@ -101,13 +101,6 @@ public:
 		void									setRect(const Graphics::Rectangle& rect);
 
 		virtual Utils::Vec3f					getAvgPosition() const override;
-	private:
-		Graphics::Rectangle						m_rectangle;
-		std::unique_ptr<Graphics::FrameGeometry>m_frameGeom;
-		std::shared_ptr<Graphics::GL::Program> 	m_shader;
-		std::unique_ptr<Graphics::ShaderUniform>m_scalingFilterUniform;
-
-		static std::weak_ptr<Graphics::GL::Program>	s_shader;
 
 		SUPPORTS_GETTING_SCALINGMODE
 		SUPPORTS_SETTING_SCALINGMODE
@@ -116,6 +109,13 @@ public:
 		SUPPORTS_GETTING_SCALINGFILTER
 		SUPPORTS_SETTING_SCALINGFILTER
 		virtual void							setScalingFilter(Utils::ScalingFilter scaling) override;
+	private:
+		Graphics::Rectangle						m_rectangle;
+		std::unique_ptr<Graphics::FrameGeometry>m_frameGeom;
+		std::shared_ptr<Graphics::GL::Program> 	m_shader;
+		std::unique_ptr<Graphics::ShaderUniform>m_scalingFilterUniform;
+
+		static std::weak_ptr<Graphics::GL::Program>	s_shader;
 
 		virtual void							open();
 		virtual void							close();

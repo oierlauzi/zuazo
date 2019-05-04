@@ -10,6 +10,10 @@
 
 using namespace Zuazo::Sources;
 
+ImageMagick::ImageMagick(){
+	open();
+}
+
 ImageMagick::ImageMagick(const std::shared_ptr<const Magick::Image>& img) :
 		m_image(img)
 {
@@ -56,10 +60,13 @@ void ImageMagick::open(){
 		m_videoSourcePad.push(std::move(frame));
 
 		m_videoMode.res=att.res;
-		m_videoMode.pixFmt=att.pixFmt.toPixelFormat();
-
-		ZuazoBase::open();
+		m_videoMode.pixFmt=att.pixFmt.toPixelFormat();		
+	}else{
+		m_videoSourcePad.push();
+		m_videoMode.res=Utils::Resolution();
+		m_videoMode.pixFmt=Utils::PixelFormat();
 	}
+	ZuazoBase::open();
 }
 
 void ImageMagick::close(){
