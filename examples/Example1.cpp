@@ -7,7 +7,7 @@
 
 /**
  * HOW TO COMPILE:
- * g++ Example1.cpp -o Example1 -std=c++17 -lzuazo -lavutil -lavformat -lavcodec -lswscale -lglfw -lMagick++-6.Q16 -lMagickWand-6.Q16 -lMagickCore-6.Q16
+ * g++ Example1.cpp -o Example1 -std=c++17 -lzuazo -lavutil -lavformat -lavcodec -lswscale -lglfw `/usr/lib/x86_64-linux-gnu/ImageMagick-6.9.10/bin-q16/Magick++-config --cppflags --cxxflags --ldflags --libs`
  * HOW TO RUN:
  * ./Example1 <file1> <file2> ... <file10>
  *

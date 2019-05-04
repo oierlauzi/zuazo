@@ -6,10 +6,7 @@
 
 #include <memory>
 #include <string>
-
-namespace Magick {
-class Image;
-} /* namespace Magick */
+#include <Magick++.h>
 
 namespace Zuazo::Sources{
 
