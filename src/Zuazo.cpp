@@ -4,7 +4,6 @@
 #include <Graphics/Context.h>
 #include <Timing.h>
 #include <Sources/ImageMagick.h>
-#include <Sources/SVG.h>
 #include <Sources/V4L2.h>
 #include <Sources/FFmpeg.h>
 #include <Video/VideoSourceBase.h>
@@ -87,20 +86,13 @@ std::unique_ptr<Video::VideoSourceBase> videoSourceFromFile(const std::string& f
 	if(file.find("/dev/video") == 0)
 		return std::unique_ptr<Video::VideoSourceBase>(new Sources::V4L2(file));
 
-	//Check SVG compatibility
-	const std::set<std::string> svgSupportedExtensions{
-			"svg",
-	};
-
-	if(svgSupportedExtensions.find(fileExtension) != svgSupportedExtensions.end())
-		return std::unique_ptr<Video::VideoSourceBase>(new Sources::SVG(file, 96));
-
 	//Check ImageMagick compatibility
 	const std::set<std::string> magickppSupportedExtensions{
 			"jpeg",
 			"jpg",
 			"bmp",
 			"png",
+			"svg"
 	}; //TODO complete list
 
 	if(magickppSupportedExtensions.find(fileExtension) != magickppSupportedExtensions.end())
