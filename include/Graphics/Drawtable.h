@@ -71,6 +71,6 @@ inline std::set<PixelFormat> Drawtable::getSupportedPixelFormats() const{
 		PixelFormats::ALPHA32f,
 		PixelFormats::RGB96f,
 		PixelFormats::RGBA128f,
-	}
+	};
 }
 }

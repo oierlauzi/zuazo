@@ -8,6 +8,7 @@ using namespace Zuazo::Processors;
 
 Compositor::LayerBase::LayerBase() :
 	m_useCount(0),
+	m_anchorage(Utils::Vec3f(0, 0, 0)),
 	m_rotation(Utils::Vec3f(0, 0, 0)),
 	m_scale(Utils::Vec3f(1, 1, 1)),
 	m_position(Utils::Vec3f(0, 0, 0)),

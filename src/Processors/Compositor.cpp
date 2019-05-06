@@ -34,8 +34,8 @@ Compositor::Compositor(const Utils::VideoMode& videoMode) :
 	m_videoMode=videoMode;
 	m_nearClip=getDefaultNearClip();
 	m_farClip=getDefaultFarClip();
-	m_cameraPos=getDefaultCameraPosition();
 	m_fov=getDefaultFov();
+	m_cameraPos=getDefaultCameraPosition();
 
 	calculateViewMatrix();
 	calculateProjectionMatrix();
@@ -79,12 +79,6 @@ Zuazo::Utils::Vec3f Compositor::getCameraTargetForAngle(const Utils::Vec3f& angl
 	return Utils::Vec3f(m_cameraPos + direction);
 }
 
-float Compositor::getDefaultFov() const{
-	double height=m_videoMode.res.height;
-	double distance=glm::distance(m_cameraTarget, m_cameraPos);
-	return 2 * atan(height / 2 / distance);
-}
-
 void Compositor::update() const{
 	bool needsRender=false;
 	for(auto layer : m_depthOrderedLayers){
@@ -112,6 +106,7 @@ void Compositor::update() const{
 
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glDepthFunc(GL_LESS);
 
 		//Draw all the layers

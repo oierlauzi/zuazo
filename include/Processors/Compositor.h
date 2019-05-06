@@ -240,7 +240,9 @@ inline const Utils::Vec3f&	Compositor::getCameraUpDirection() const{
 }
 
 inline Utils::Vec3f	Compositor::getDefaultCameraPosition() const{
-	return Utils::Vec3f(0, 0, m_farClip - m_nearClip);
+	//return Utils::Vec3f(0, 0, m_farClip - m_nearClip);
+	double z=static_cast<double>(m_videoMode.res.height) / (2 * tan(m_fov / 2));
+	return Utils::Vec3f(0.0, 0.0, z);
 }
 
 inline Utils::Vec3f	Compositor::getDefaultCameraTarget() const{
@@ -286,6 +288,13 @@ inline float Compositor::getFov() const{
 	return m_fov;
 }
 
+inline float Compositor::getDefaultFov() const{
+	/*double height=m_videoMode.res.height;
+	double distance=glm::distance(m_cameraTarget, m_cameraPos);
+	return 2 * atan(height / 2 / distance);*/
+	return glm::radians(60.0f);
+}
+
 inline void Compositor::setFov(float fov){
 	m_fov=fov;
 	calculateProjectionMatrix();
@@ -306,7 +315,7 @@ inline float Compositor::getFarClip() const{
 }
 
 inline float Compositor::getDefaultNearClip() const{
-	return std::max(m_videoMode.res.width, m_videoMode.res.height);
+	return 1.0;
 }
 
 inline float Compositor::getDefaultFarClip() const{

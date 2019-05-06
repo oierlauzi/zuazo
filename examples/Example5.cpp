@@ -87,7 +87,7 @@ int main(int argc, char *argv[]){
 	Zuazo::Processors::Invert fx0(fxVideoMode);
 	Zuazo::Processors::Grayscale fx1(fxVideoMode);
 	Zuazo::Processors::BrightnessContrast fx2(fxVideoMode);
-	Zuazo::Processors::HueSaturationLuminosisty fx3(fxVideoMode);
+	Zuazo::Processors::HueSaturationLuminosity fx3(fxVideoMode);
 	Zuazo::Processors::ChromaKey fx4(fxVideoMode);
 	Zuazo::Processors::Alpha2Luma fx5(fxVideoMode);
 

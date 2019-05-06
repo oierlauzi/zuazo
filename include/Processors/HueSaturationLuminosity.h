@@ -4,13 +4,13 @@
 
 namespace Zuazo::Processors{
 
-class HueSaturationLuminosisty : public ShaderEffect{
+class HueSaturationLuminosity : public ShaderEffect{
 public:
-    HueSaturationLuminosisty();
-    HueSaturationLuminosisty(const Utils::VideoMode& vidMode);
-    HueSaturationLuminosisty(const HueSaturationLuminosisty& other)=delete;
-    HueSaturationLuminosisty(HueSaturationLuminosisty&& other)=default;
-    virtual ~HueSaturationLuminosisty()=default;
+    HueSaturationLuminosity();
+    HueSaturationLuminosity(const Utils::VideoMode& vidMode);
+    HueSaturationLuminosity(const HueSaturationLuminosity& other)=delete;
+    HueSaturationLuminosity(HueSaturationLuminosity&& other)=default;
+    virtual ~HueSaturationLuminosity()=default;
 
     void    setHue(float hue);
     float   getHue() const;   
@@ -24,29 +24,29 @@ private:
     static const std::string s_shaderSource;
 };
 
-inline void HueSaturationLuminosisty::setHue(float hue){
+inline void HueSaturationLuminosity::setHue(float hue){
     ShaderEffect::setParam("hue", hue);
 }
 
-inline float HueSaturationLuminosisty::getHue() const{
+inline float HueSaturationLuminosity::getHue() const{
     const float* hue=ShaderEffect::getParam<float>("hue");
     return hue ? *hue : 0.0;
 }   
 
-inline void HueSaturationLuminosisty::setSaturation(float sat){
+inline void HueSaturationLuminosity::setSaturation(float sat){
     ShaderEffect::setParam("saturation", sat);
 }
 
-inline float HueSaturationLuminosisty::getSaturation() const{
+inline float HueSaturationLuminosity::getSaturation() const{
     const float* sat=ShaderEffect::getParam<float>("saturation");
     return sat ? *sat : 0.0;
 }   
 
-inline void HueSaturationLuminosisty::setLuminosity(float lum){
+inline void HueSaturationLuminosity::setLuminosity(float lum){
     ShaderEffect::setParam("luminosity", lum);
 }
 
-inline float HueSaturationLuminosisty::getLuminosity() const{
+inline float HueSaturationLuminosity::getLuminosity() const{
     const float* lum=ShaderEffect::getParam<float>("luminosity");
     return lum ? *lum : 0.0;
 }   

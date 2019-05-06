@@ -119,17 +119,19 @@ public:
 				.size=Zuazo::Utils::Vec2f(m_videoMode.res.width, m_videoMode.res.height)
 		};
 
-		const float angle=glm::radians(20.0); //The inclination of the left and right surfaces
+		const float angle=glm::radians(5.0); //The inclination of the left and right surfaces
 
 		const float zOffset=rectWidth * sin(angle) / 2;	//The offset in the Z axis of the two
 														//surfaces (so that they are not
 														//behind the background due to the inclination)
 
-		const Zuazo::Utils::Vec3f lrLayerAnchor(rectWidth / 2, rectHeight / 2, 0);
 		const Zuazo::Utils::Vec3f bkgdLayerAnchor((float)m_videoMode.res.width / 2, (float)m_videoMode.res.height / 2, 0);
+		const Zuazo::Utils::Vec3f leftLayerAnchor(rectWidth, rectHeight / 2, 0);
+		const Zuazo::Utils::Vec3f rightLayerAnchor(0.0, rectHeight / 2, 0);
 
-		const Zuazo::Utils::Vec3f leftLayerPos(-rectWidth / 2, 0, zOffset);
-		const Zuazo::Utils::Vec3f rightLayerPos(rectWidth / 2, 0, zOffset);
+		const float lateralShift=bkgdRect.size.x / 200.0;
+		const Zuazo::Utils::Vec3f leftLayerPos(-lateralShift, 0, 0);
+		const Zuazo::Utils::Vec3f rightLayerPos(lateralShift, 0, 0);
 		const Zuazo::Utils::Vec3f leftLayerAngle(0, angle, 0);
 		const Zuazo::Utils::Vec3f rightLayerAngle(0, -angle, 0);
 
@@ -143,17 +145,17 @@ public:
 		m_videoCompositor.setVideoMode(m_videoMode);
 
 		//Set default viewing parameters (vary from one resolution to another)
+		m_videoCompositor.setDefaultFov();
 		m_videoCompositor.setDefaultClipping();
 		m_videoCompositor.setDefaultCamera();
-		m_videoCompositor.setDefaultFov();
 
 		leftLayer->setRect(rect);
-		leftLayer->setAnchorage(lrLayerAnchor);
+		leftLayer->setAnchorage(leftLayerAnchor);
 		leftLayer->setPosition(leftLayerPos);
 		leftLayer->setRotation(leftLayerAngle);
 
 		rightLayer->setRect(rect);
-		rightLayer->setAnchorage(lrLayerAnchor);
+		rightLayer->setAnchorage(rightLayerAnchor);
 		rightLayer->setPosition(rightLayerPos);
 		rightLayer->setRotation(rightLayerAngle);
 
