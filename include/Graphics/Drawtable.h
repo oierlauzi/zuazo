@@ -27,12 +27,16 @@ public:
 
 	void								resize(const ImageAttributes& att);
 
+	bool								getDepthTest() const;
+	void								setDepthTest(bool depth);
+
 	void 								begin();
 	std::unique_ptr<const Frame> 		finish();
 
-	std::set<PixelFormat>				getSupportedPixelFormats() const;
+	static std::set<PixelFormat>		getSupportedPixelFormats();
 private:
 	ImageAttributes						m_attributes;
+	bool								m_isDepthTesting;
 
 	std::unique_ptr<GL::FrameBuffer> 	m_frameBuffer;
 	std::unique_ptr<GL::RenderBuffer>	m_depthBuffer;
@@ -42,7 +46,11 @@ private:
 	static thread_local	std::stack<const Drawtable*> s_activeDrawtables;
 };
 
-inline std::set<PixelFormat> Drawtable::getSupportedPixelFormats() const{
+inline bool	Drawtable::getDepthTest() const{
+	return m_isDepthTesting;
+}
+
+inline std::set<PixelFormat> Drawtable::getSupportedPixelFormats(){
 	return std::set<PixelFormat>{
 		PixelFormats::RED8,
 		PixelFormats::GREEN8,

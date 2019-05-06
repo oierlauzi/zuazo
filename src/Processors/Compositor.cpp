@@ -129,6 +129,7 @@ void Compositor::open(){
 		);
 
 		m_drawtable=std::unique_ptr<Graphics::Drawtable>(new Graphics::Drawtable(att));
+		m_drawtable->setDepthTest(true);
 
 		m_viewMatrixUbo=std::unique_ptr<Graphics::ShaderUniform>(
 				new Graphics::ShaderUniform(LayerBase::VIEW_MATRIX_INDEX, sizeof(Utils::Mat4x4f))

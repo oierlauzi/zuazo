@@ -13,46 +13,60 @@ using namespace Zuazo::Graphics;
 thread_local std::stack<const Zuazo::Graphics::Drawtable*> Drawtable::s_activeDrawtables;
 
 
-Drawtable::Drawtable()
+Drawtable::Drawtable() :
+	m_isDepthTesting(false)
 {
 	m_frameBuffer=std::unique_ptr<GL::FrameBuffer>(new GL::FrameBuffer); //Create a frame buffer for it
-	m_depthBuffer=std::unique_ptr<GL::RenderBuffer>(new GL::RenderBuffer); //Create a rbo for depth buffering
-
-	//Attach the depthbuffer to the framebuffer
-	GL::UniqueBinding<GL::FrameBuffer> fboBinding(*m_frameBuffer);
-	glFramebufferRenderbuffer(
-			GL_FRAMEBUFFER,
-			GL_DEPTH_ATTACHMENT,
-			GL_RENDERBUFFER,
-			m_depthBuffer->get()
-	);
 }
 
 Drawtable::Drawtable(const ImageAttributes& att) :
-	m_attributes(att)
+	m_attributes(att),
+	m_isDepthTesting(false)
 {
-	m_frameBuffer=std::unique_ptr<GL::FrameBuffer>(new GL::FrameBuffer); //Create a frame buffer for it
-	m_depthBuffer=std::unique_ptr<GL::RenderBuffer>(new GL::RenderBuffer); //Create a rbo for depth buffering
-
-	//Allocate space for the depthbuffer
-	GL::UniqueBinding<GL::RenderBuffer> rboBinding(*m_depthBuffer);
-	GL::RenderBuffer::allocate(att.res.width, att.res.height, DEPTHBUFFER_PRECISION);
-
-	//Attach the depthbuffer to the framebuffer
-	GL::UniqueBinding<GL::FrameBuffer> fboBinding(*m_frameBuffer);
-	glFramebufferRenderbuffer(
-			GL_FRAMEBUFFER,
-			GL_DEPTH_ATTACHMENT,
-			GL_RENDERBUFFER,
-			m_depthBuffer->get()
-	);
-
+	m_frameBuffer=std::unique_ptr<GL::FrameBuffer>(new GL::FrameBuffer); //Create a frame buffer
 }
 
 void Drawtable::resize(const ImageAttributes& att){
 	m_attributes=att;
-	GL::UniqueBinding<GL::RenderBuffer> rboBinding(*m_depthBuffer);
-	GL::RenderBuffer::allocate(att.res.width, att.res.height, DEPTHBUFFER_PRECISION);
+	if(m_isDepthTesting){
+		//Depth test is enabled, resize the depth buffer
+		GL::UniqueBinding<GL::RenderBuffer> rboBinding(*m_depthBuffer);
+		GL::RenderBuffer::allocate(att.res.width, att.res.height, DEPTHBUFFER_PRECISION);
+	}
+}
+
+void Drawtable::setDepthTest(bool depth){
+	m_isDepthTesting=depth;
+
+	if(m_isDepthTesting){
+		m_depthBuffer=std::make_unique<GL::RenderBuffer>();
+
+		//Allocate space for the depthbuffer
+		GL::UniqueBinding<GL::RenderBuffer> rboBinding(*m_depthBuffer);
+		GL::RenderBuffer::allocate(m_attributes.res.width, m_attributes.res.height, DEPTHBUFFER_PRECISION);
+
+		//Attach the depthbuffer to the framebuffer
+		GL::UniqueBinding<GL::FrameBuffer> fboBinding(*m_frameBuffer);
+		glFramebufferRenderbuffer(
+			GL_FRAMEBUFFER,
+			GL_DEPTH_ATTACHMENT,
+			GL_RENDERBUFFER,
+			m_depthBuffer->get()
+		);
+	}else{
+		GL::UniqueBinding<GL::FrameBuffer> fboBinding(*m_frameBuffer);
+
+		//Detach the RBO
+		glFramebufferRenderbuffer(
+			GL_FRAMEBUFFER,
+			GL_DEPTH_ATTACHMENT,
+			GL_RENDERBUFFER,
+			0
+		);
+
+		//Delete the RBO
+		m_depthBuffer.reset();
+	}
 }
 
 

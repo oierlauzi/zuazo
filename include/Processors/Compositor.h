@@ -194,7 +194,7 @@ private:
 		bool operator()(const LayerBase* a, const LayerBase* b) const{ //Returns if a is further than b
 			return 
 				Graphics::VectorOperations::distance(a->getAvgPosition(), m_cameraPos) 
-				>= 
+				< 
 				Graphics::VectorOperations::distance(b->getAvgPosition(), m_cameraPos);
 		}
 
