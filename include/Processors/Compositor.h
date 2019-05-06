@@ -186,26 +186,27 @@ private:
 	class LayerComp{
 	public:
 		LayerComp()=default;
-		LayerComp(const Utils::Vec3f& camPos)  : m_cameraPos(camPos){}
+		LayerComp(const Utils::Mat4x4f& proj)  : m_proj(proj){}
 		LayerComp(const LayerComp& other)=default;
 		LayerComp(LayerComp&& other)=default;
 		~LayerComp()=default;
 		
 		bool operator()(const LayerBase* a, const LayerBase* b) const{ //Returns if a is further than b
-			return 
-				Graphics::VectorOperations::distance(a->getAvgPosition(), m_cameraPos) 
-				< 
-				Graphics::VectorOperations::distance(b->getAvgPosition(), m_cameraPos);
+			Utils::Vec4f aProj(m_proj * Utils::Vec4f(a->getAvgPosition(), 1.0)); 
+			Utils::Vec4f bProj(m_proj * Utils::Vec4f(b->getAvgPosition(), 1.0)); 
+
+			return aProj.z > bProj.z;
 		}
 
 		LayerComp& operator=(const LayerComp& other)=default;
 	private:
-		Utils::Vec3f 							m_cameraPos;
+		Utils::Mat4x4f 							m_proj;
 	};
 
 	std::unique_ptr<Graphics::Drawtable>	m_drawtable;
 	std::vector<std::shared_ptr<LayerBase>>	m_layers;
 	mutable std::vector<LayerBase*>			m_depthOrderedLayers;
+	LayerComp								m_comp;
 
 	float									m_nearClip;
 	float									m_farClip;
@@ -240,7 +241,6 @@ inline const Utils::Vec3f&	Compositor::getCameraUpDirection() const{
 }
 
 inline Utils::Vec3f	Compositor::getDefaultCameraPosition() const{
-	//return Utils::Vec3f(0, 0, m_farClip - m_nearClip);
 	double z=static_cast<double>(m_videoMode.res.height) / (2 * tan(m_fov / 2));
 	return Utils::Vec3f(0.0, 0.0, z);
 }
@@ -289,9 +289,6 @@ inline float Compositor::getFov() const{
 }
 
 inline float Compositor::getDefaultFov() const{
-	/*double height=m_videoMode.res.height;
-	double distance=glm::distance(m_cameraTarget, m_cameraPos);
-	return 2 * atan(height / 2 / distance);*/
 	return glm::radians(60.0f);
 }
 
@@ -393,7 +390,9 @@ inline float Compositor::LayerBase::getOpacity() const{
 
 inline void Compositor::LayerBase::setOpacity(float alpha){
 	m_opacity=alpha;
-	m_opacityUbo->setData(&m_opacity);
+	if(m_opacityUbo){
+		m_opacityUbo->setData(&m_opacity);
+	}
 }
 
 inline void	Compositor::LayerBase::use(){

@@ -93,7 +93,7 @@ void Compositor::update() const{
 	if(needsRender || m_forceRender){
 		m_forceRender=false;
 
-		std::stable_sort(m_depthOrderedLayers.begin(), m_depthOrderedLayers.end(), LayerComp(m_cameraPos));
+		std::stable_sort(m_depthOrderedLayers.begin(), m_depthOrderedLayers.end(), m_comp);
 
 		m_drawtable->begin();
 
@@ -107,11 +107,11 @@ void Compositor::update() const{
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glDepthFunc(GL_LESS);
+		glDepthFunc(GL_LEQUAL);
 
 		//Draw all the layers
-		for(auto layer : m_depthOrderedLayers){
-			layer->draw();
+		for(auto ite=m_depthOrderedLayers.begin(); ite != m_depthOrderedLayers.end(); ++ite){
+			(*ite)->draw();
 		}
 
 		glDisable(GL_BLEND);
@@ -238,6 +238,7 @@ void Compositor::calculateViewMatrix(){
 		m_viewMatrixUbo->setData(&m_viewMatrix);
 	}
 
+	m_comp=LayerComp(m_projectionMatrix * m_viewMatrix);
 	m_forceRender=true;
 }
 
@@ -254,5 +255,6 @@ void Compositor::calculateProjectionMatrix(){
 		m_projectionMatrixUbo->setData(&m_projectionMatrix);
 	}
 
+	m_comp=LayerComp(m_projectionMatrix * m_viewMatrix);
 	m_forceRender=true;
 }
