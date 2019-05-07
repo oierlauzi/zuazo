@@ -196,7 +196,6 @@ void Window::setScalingFilter(Utils::ScalingFilter fltr){
 }
 
 void Window::setFullScreen(const std::shared_ptr<Screen>& screen){
-	std::lock_guard<std::mutex> lock(Screen::s_cbkMutex);
 	if(screen->m_glfwMonitor){
 		//Get windowed prameters
 		std::unique_ptr<WindowedParams> windowedParams=std::unique_ptr<WindowedParams>(new WindowedParams);
