@@ -21,9 +21,7 @@ public:
 	~Rational()=default;
 
 	constexpr Integer getNumerator() const;
-	//using getNum=getNumerator;
 	constexpr Integer getDenominator() const;
-	//using getDen=getDenominator;
 
 	constexpr operator bool() const;
 	constexpr operator Integer() const;

@@ -6,7 +6,7 @@ namespace Zuazo::Utils{
 
 constexpr Rational::Rational() :
     m_num(0),
-    m_den(0)
+    m_den(1)
 {
 }
 
@@ -29,49 +29,54 @@ constexpr Rational::Rational(Real number) : Rational() {
 	 * https://rosettacode.org/wiki/Convert_decimal_number_to_rational
 	 */
 
-	const size_t precision=64;
-	const int32_t MAX_DENOMINATOR=4096;
+    if(number == -std::numeric_limits<Real>::infinity()){ m_num = -1; m_den = 0; } //Minus infinity
+    else if(number == +std::numeric_limits<Real>::infinity()){ m_num = +1; m_den = 0; } //Plus infinity
+    else if(isnan(number)){ m_num = 0; m_den = 0; } //NAN
+    else{
+        const size_t precision=64;
+        const int32_t MAX_DENOMINATOR=4096;
 
-	Integer h[3] = { 0, 1, 0 }, k[3] = { 1, 0, 0 };
-	Integer n=1, d=0;
+        Integer h[3] = { 0, 1, 0 }, k[3] = { 1, 0, 0 };
+        Integer n=1, d=0;
 
-	bool neg = false;
-	if (number < 0) {
-		neg = true;
-		number = -number;
-	}
+        bool neg = false;
+        if (number < 0) {
+            neg = true;
+            number = -number;
+        }
 
-	while (number != floor(number)) {
-		n <<= 1;
-		number *= 2;
-	}
+        while (number != floor(number)) {
+            n <<= 1;
+            number *= 2;
+        }
 
-	d = number;
+        d = number;
 
-	for (u_int32_t i = 0; i < precision; i++) {
-		Integer a = n ? d / n : 0;
-		if (i && !a)
-			break;
+        for (u_int32_t i = 0; i < precision; i++) {
+            Integer a = n ? d / n : 0;
+            if (i && !a)
+                break;
 
-		Integer x = d;
-		d = n;
-		n = x % n;
-		x = a;
+            Integer x = d;
+            d = n;
+            n = x % n;
+            x = a;
 
-		if (k[1] * a + k[0] >= MAX_DENOMINATOR) {
-			x = (MAX_DENOMINATOR - k[0]) / k[1];
-			if (x * 2 >= a || k[1] >= MAX_DENOMINATOR)
-				i = precision+1;
-			else
-				break;
-		}
+            if (k[1] * a + k[0] >= MAX_DENOMINATOR) {
+                x = (MAX_DENOMINATOR - k[0]) / k[1];
+                if (x * 2 >= a || k[1] >= MAX_DENOMINATOR)
+                    i = precision+1;
+                else
+                    break;
+            }
 
-		h[2] = x * h[1] + h[0]; h[0] = h[1]; h[1] = h[2];
-		k[2] = x * k[1] + k[0]; k[0] = k[1]; k[1] = k[2];
-	}
+            h[2] = x * h[1] + h[0]; h[0] = h[1]; h[1] = h[2];
+            k[2] = x * k[1] + k[0]; k[0] = k[1]; k[1] = k[2];
+        }
 
-	m_den = k[1];
-	m_num = neg ? -h[1] : h[1];
+        m_den = k[1];
+        m_num = neg ? -h[1] : h[1];
+    }
 }
 
 constexpr Rational::Integer Rational::getNumerator() const{
@@ -144,7 +149,7 @@ constexpr Rational Rational::operator-(){
 
 constexpr Rational& Rational::operator+=(const Rational& right){
     m_num *= right.m_den;
-    m_num += right.m_num * left.m_den;
+    m_num += right.m_num * m_den;
     m_den *= right.m_den;
 
     simplify();
@@ -153,7 +158,7 @@ constexpr Rational& Rational::operator+=(const Rational& right){
 
 constexpr Rational& Rational::operator-=(const Rational& right){
     m_num *= right.m_den;
-    m_num -= right.m_num * left.m_den;
+    m_num -= right.m_num * m_den;
     m_den *= right.m_den;
 
     simplify();
@@ -206,7 +211,7 @@ constexpr int operator>=(const Rational& left, const Rational& right){
 
 constexpr void Rational::simplify(){
     //Take out the common factor
-	Integer gcd=std::gcd(num, den);
+	Integer gcd=std::gcd(m_num, m_den);
 	if(gcd){
 		m_num/=gcd;
 		m_den/=gcd;
