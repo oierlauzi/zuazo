@@ -35,15 +35,17 @@ constexpr Color::Color(const Color& color, float alpha):
 {
 }
 
-constexpr Color::Color(u_int32_t rgba) : Color(
-    static_cast<u_int8_t>(RGBA_COLOR_COMP(rgba, 0)),
-    static_cast<u_int8_t>(RGBA_COLOR_COMP(rgba, 1)),
-    static_cast<u_int8_t>(RGBA_COLOR_COMP(rgba, 2)),
-    static_cast<u_int8_t>(RGBA_COLOR_COMP(rgba, 3))
+constexpr Color::Color(u_int32_t rgba) : 
+    Color(
+        static_cast<u_int8_t>(RGBA_COLOR_COMP(rgba, 0)),
+        static_cast<u_int8_t>(RGBA_COLOR_COMP(rgba, 1)),
+        static_cast<u_int8_t>(RGBA_COLOR_COMP(rgba, 2)),
+        static_cast<u_int8_t>(RGBA_COLOR_COMP(rgba, 3))
+    )
 {
 }
 
-inline Color(const std::string& str) : 
+inline Color::Color(const std::string& str) : 
     Color(parseColor(str))
 {
 }

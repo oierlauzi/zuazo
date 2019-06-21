@@ -29,19 +29,19 @@ private:
 };
 
 namespace Colors{
-	//										        R G B A
-	constexpr const Color Color::RED=		Color(0xff0000ff);
-	constexpr const Color Color::GREEN=		Color(0x00ff00ff);
-	constexpr const Color Color::BLUE=		Color(0x0000ffff);
-	constexpr const Color Color::CYAN=		Color(0x00ffffff);
-	constexpr const Color Color::PURPLE=	Color(0xff00ffff);
-	constexpr const Color Color::YELLOW=	Color(0xffff00ff);
-	constexpr const Color Color::ORANGE=	Color(0xff4500ff);
-	constexpr const Color Color::WHITE=		Color(0xffffffff);
-	constexpr const Color Color::GRAY=		Color(0x7f7f7fff);
-	constexpr const Color Color::BLACK=		Color(0x000000ff);
+	//										R G B A
+	constexpr const Color RED=		Color(0xff0000ff);
+	constexpr const Color GREEN=	Color(0x00ff00ff);
+	constexpr const Color BLUE=		Color(0x0000ffff);
+	constexpr const Color CYAN=		Color(0x00ffffff);
+	constexpr const Color PURPLE=	Color(0xff00ffff);
+	constexpr const Color YELLOW=	Color(0xffff00ff);
+	constexpr const Color ORANGE=	Color(0xff4500ff);
+	constexpr const Color WHITE=	Color(0xffffffff);
+	constexpr const Color GRAY=		Color(0x7f7f7fff);
+	constexpr const Color BLACK=	Color(0x000000ff);
 }
 
 }
 
-#include "Colors.inl"
+#include "Color.inl"
