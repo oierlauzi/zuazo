@@ -6,13 +6,15 @@ namespace Zuazo::Math {
  * Constructors
  */
 
-constexpr Rational::Rational() :
+template<typename T>
+constexpr Rational<T>::Rational() :
     m_num(0),
     m_den(1)
 {
 }
 
-constexpr Rational::Rational(Integer num, Integer den) :
+template<typename T>
+constexpr Rational<T>::Rational(Integer num, Integer den) :
     m_num(num),
     m_den(den)
 {
@@ -30,13 +32,15 @@ constexpr Rational::Rational(Integer num, Integer den) :
     }
 }
 
-constexpr Rational::Rational(Integer number) :
+template<typename T>
+constexpr Rational<T>::Rational(Integer number) :
     m_num(number),
     m_den(1)
 {
 }
 
-constexpr Rational::Rational(Real number) : Rational() {
+template<typename T>
+constexpr Rational<T>::Rational(Real number) : Rational() {
 	/*
 	 * This code is based on:
 	 * https://rosettacode.org/wiki/Convert_decimal_number_to_rational
@@ -92,11 +96,13 @@ constexpr Rational::Rational(Real number) : Rational() {
     }
 }
 
-constexpr Rational::Integer Rational::getNumerator() const{
+template<typename T>
+constexpr typename Rational<T>::Integer Rational<T>::getNumerator() const{
     return m_num;
 }
 
-constexpr Rational::Integer Rational::getDenominator() const{
+template<typename T>
+constexpr typename Rational<T>::Integer Rational<T>::getDenominator() const{
     return m_den;
 }
 
@@ -104,11 +110,13 @@ constexpr Rational::Integer Rational::getDenominator() const{
  * Casting operators
  */
 
-constexpr Rational::operator bool() const{
+template<typename T>
+constexpr Rational<T>::operator bool() const{
     return m_num;
 }
 
-constexpr Rational::operator Integer() const{
+template<typename T>
+constexpr Rational<T>::operator Integer() const{
     Integer result(0);
 
     if(m_den)           result = m_num / m_den;
@@ -119,63 +127,81 @@ constexpr Rational::operator Integer() const{
     return result;
 }
 
-constexpr Rational::operator Real() const{
+template<typename T>
+constexpr Rational<T>::operator Real() const{
     return static_cast<Real>(m_num) / m_den; 
 }
 
+template<typename T>
+template<typename Q>
+constexpr Rational<T>::operator Rational<Q>() const{
+    return Rational<Q>(
+        static_cast<Q>(m_num),
+        static_cast<Q>(m_den)
+    );
+}
 
 /*
  * Arithmetic operators
  */
 
-constexpr Rational operator+(const Rational& left, const Rational& right){
-    return Rational(
+template<typename T>
+constexpr Rational<T> operator+(const Rational<T>& left, const Rational<T>& right){
+    return Rational<T>(
         left.m_num * right.m_den + right.m_num * left.m_den,
         left.m_den * right.m_den
     );
 }
 
-constexpr Rational operator-(const Rational& left, const Rational& right){
-    return Rational(
+template<typename T>
+constexpr Rational<T> operator-(const Rational<T>& left, const Rational<T>& right){
+    return Rational<T>(
         left.m_num * right.m_den - right.m_num * left.m_den,
         left.m_den * right.m_den
     );
 }
 
-constexpr Rational operator*(const Rational& left, const Rational& right){
-    return Rational(
+template<typename T>
+constexpr Rational<T> operator*(const Rational<T>& left, const Rational<T>& right){
+    return Rational<T>(
         left.m_num * right.m_num,
         left.m_den * right.m_den
     );
 }
 
-constexpr Rational operator/(const Rational& left, const Rational& right){
-    return Rational(
+template<typename T>
+constexpr Rational<T> operator/(const Rational<T>& left, const Rational<T>& right){
+    return Rational<T>(
         left.m_num * right.m_den,
         right.m_num * left.m_den
     );
 }
 
-constexpr Rational Rational::operator-(){
-    return Rational(-m_num, m_den);
+template<typename T>
+constexpr Rational<T> Rational<T>::operator-(){
+    return Rational<T>(-m_num, m_den);
 }
 
-constexpr Rational& Rational::operator+=(const Rational& right){
+template<typename T>
+constexpr Rational<T>& Rational<T>::operator+=(const Rational<T>& right){
     (*this) = (*this) + right;
     return (*this);
 }
 
-constexpr Rational& Rational::operator-=(const Rational& right){
+template<typename T>
+constexpr Rational<T>& Rational<T>::operator-=(const Rational<T>& right){
     (*this) = (*this) - right;
     return (*this);
 }
 
-constexpr Rational& Rational::operator*=(const Rational& right){
+template<typename T>
+constexpr Rational<T>& Rational<T>::operator*=(const Rational<T>& right){
     (*this) = (*this) * right;
     return (*this);
 }
 
-constexpr Rational& Rational::operator/=(const Rational& right){
+template<typename T>
+constexpr Rational<T>& Rational<T>::operator/=(const Rational<T>& right){
     (*this) = (*this) / right;
     return (*this);
 }
@@ -184,27 +210,33 @@ constexpr Rational& Rational::operator/=(const Rational& right){
  * Comparison operators
  */
 
-constexpr int operator==(const Rational& left, const Rational& right){
+template<typename T>
+constexpr int operator==(const Rational<T>& left, const Rational<T>& right){
     return left.m_num == right.m_num && left.m_den == right.m_den;
 }
 
-constexpr int operator!=(const Rational& left, const Rational& right){
+template<typename T>
+constexpr int operator!=(const Rational<T>& left, const Rational<T>& right){
     return left.m_num != right.m_num || left.m_den != right.m_den;
 }
 
-constexpr int operator<(const Rational& left, const Rational& right){
+template<typename T>
+constexpr int operator<(const Rational<T>& left, const Rational<T>& right){
     return left.m_num * right.m_den < right.m_num * left.m_den;
 }
 
-constexpr int operator<=(const Rational& left, const Rational& right){
+template<typename T>
+constexpr int operator<=(const Rational<T>& left, const Rational<T>& right){
     return left.m_num * right.m_den <= right.m_num * left.m_den;
 }
 
-constexpr int operator>(const Rational& left, const Rational& right){
+template<typename T>
+constexpr int operator>(const Rational<T>& left, const Rational<T>& right){
     return left.m_num * right.m_den > right.m_num * left.m_den;
 }
 
-constexpr int operator>=(const Rational& left, const Rational& right){
+template<typename T>
+constexpr int operator>=(const Rational<T>& left, const Rational<T>& right){
     return left.m_num * right.m_den >= right.m_num * left.m_den;
 }
 

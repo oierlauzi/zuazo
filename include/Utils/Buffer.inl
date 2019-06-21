@@ -1,4 +1,4 @@
-namespace Zuazo {
+namespace Zuazo::Utils {
 
 inline Buffer::Buffer() :
 		m_data(nullptr),

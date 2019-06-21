@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <cstring>
 
-namespace Zuazo {
+namespace Zuazo::Utils {
 
 class Buffer{
 public:
