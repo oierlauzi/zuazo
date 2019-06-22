@@ -106,6 +106,11 @@ constexpr typename Rational<T>::Integer Rational<T>::getDenominator() const{
     return m_den;
 }
 
+template<typename T>
+constexpr typename bool Rational<T>::isInteger() const{
+    return m_den == 1;
+}
+
 /*
  * Casting operators
  */

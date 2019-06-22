@@ -24,6 +24,8 @@ public:
 	constexpr Integer getNumerator() const;
 	constexpr Integer getDenominator() const;
 
+	constexpr bool isInteger() const;
+
 	constexpr operator bool() const;
 	constexpr operator Integer() const;
 	constexpr operator Real() const;
