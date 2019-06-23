@@ -107,7 +107,7 @@ constexpr typename Rational<T>::Integer Rational<T>::getDenominator() const{
 }
 
 template<typename T>
-constexpr typename bool Rational<T>::isInteger() const{
+constexpr bool Rational<T>::isInteger() const{
     return m_den == 1;
 }
 

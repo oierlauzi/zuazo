@@ -1,10 +1,16 @@
 namespace Zuazo {
 
+constexpr PixelComponent::Subsampling::Subsampling() :
+    x(1, 1),
+    y(1, 1)
+{
+}
+
 constexpr PixelComponent::PixelComponent() :
     type(NONE),
     depth(0),
     plane(0),
-    subsampling(NO_SUBSAMPLING),
+    subsampling(),
     flags(0)
 {
 }
@@ -13,7 +19,7 @@ constexpr PixelComponent::PixelComponent(uint depth) :
     type(NONE),
     depth(depth),
     plane(0),
-    subsampling(NO_SUBSAMPLING),
+    subsampling(),
     flags(0)
 {
 }
@@ -44,40 +50,40 @@ constexpr PixelComponent::operator bool() const{
     return depth;
 }
 
-constexpr PixelFormat::PixelFormat(std::initializer_list<PixelComponent> components) :
-    m_components(components)
-{
+
+
+
+
+
+
+constexpr PixelFormat::operator bool() const{
+    bool result = false;
+
+    for(auto ite = cbegin(); ite != cend(); ++ite){
+        if(*ite){
+            result = true;
+            break;
+        }
+    }
+    
+    return result;
 }
 
-constexpr const ComponentArray& PixelFormat::getComponents() const{
-    return m_components;
-}
-
-constexpr uint PixelFormat::getComponentCount(){
+constexpr uint PixelFormat::getComponentCount() const{
     uint count = 0;
 
-    for(auto ite = m_components.cbegin(); ite != m_components.cend(); ++ite) const{
+    for(auto ite = cbegin(); ite != cend(); ++ite){
         ++count;
     }
 
     return count;
 }
 
-constexpr Math::Rational_t PixelFormat::getSize() const;
-    Math::Rational_t size = 0;
-
-    for(auto ite = m_components.cbegin(); ite != m_components.cend(); ++ite){
-        size += ite->depth / (ite->subsampling.x * ite->subsampling.y);
-    }
-    
-    return size;
-}
-
-constexpr bool PixelFormat::hasColor() const;
+constexpr bool PixelFormat::hasColor() const{
     bool has_color = false;
 
-    for(auto ite = m_components.cbegin(); ite != m_components.cend(); ++ite){
-        if(ite->type != PixelComponent::ALPHA && ite->type != PixelComponent::LUMINANCE){
+    for(auto ite = cbegin(); ite != cend(); ++ite){
+        if(ite->type && ite->type != PixelComponent::ALPHA && ite->type != PixelComponent::LUMINANCE){
             has_color = true;
             break;
         }
@@ -86,10 +92,10 @@ constexpr bool PixelFormat::hasColor() const;
     return has_color;
 }
 
-constexpr bool PixelFormat::hasAlpha() const;
+constexpr bool PixelFormat::hasAlpha() const{
     bool has_alpha = false;
 
-    for(auto ite = m_components.cbegin(); ite != m_components.cend(); ++ite){
+    for(auto ite = cbegin(); ite != cend(); ++ite){
         if(ite->type == PixelComponent::ALPHA){
             has_alpha = true;
             break;
@@ -97,4 +103,6 @@ constexpr bool PixelFormat::hasAlpha() const;
     }
     
     return has_alpha;
+}
+
 }

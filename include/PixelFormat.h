@@ -1,10 +1,12 @@
 #pragma once
 
-#include "Math.h/Rational.h"
-#include "Math.h/Vector.h"
+#include "Math/Rational.h"
+#include "Math/Vector.h"
 
 #include <array>
 #include <bitset>
+
+namespace Zuazo {
 
 struct PixelComponent{
     enum PixelComponentType{
@@ -12,7 +14,7 @@ struct PixelComponent{
         RED         ,
         R           =RED,
         GREEN       ,
-        G           =GREEN
+        G           =GREEN,
         BLUE        ,
         B           =BLUE,
         ALPHA       ,
@@ -36,9 +38,14 @@ struct PixelComponent{
     };
     typedef std::bitset<FLAG_COUNT> Flags;
     static constexpr unsigned long long flag_bit(Flag x); 
-    
-    typedef Math::Vec2<Math::Rational32_t> Subsampling;
-    static constexpr Subsampling NO_SUBSAMPLING(1, 1);
+
+    struct Subsampling {
+        Math::Rational32_t x, y;
+
+        constexpr Subsampling();
+        Subsampling(const Subsampling& other) = default;
+        ~Subsampling() = default;
+    };
 
     PixelComponentType          type;
     uint                        depth;
@@ -48,35 +55,33 @@ struct PixelComponent{
 
     constexpr PixelComponent();
     constexpr PixelComponent(uint depth);
-    constexpr PixelComponent(PixelComponentType type, uint depth, uint plane = 0, const Subsampling& subs = NO_SUBSAMPLING, Flags flags = 0);
-    constexpr PixelComponent(const PixelComponent& other, uint plane, const Subsampling& subs = NO_SUBSAMPLING);
+    constexpr PixelComponent(PixelComponentType type, uint depth, uint plane = 0, const Subsampling& subs =  Subsampling(), Flags flags = 0);
+    constexpr PixelComponent(const PixelComponent& other, uint plane, const Subsampling& subs = Subsampling());
     PixelComponent(const PixelComponent& other) = default;
     ~PixelComponent() = default;
 
     constexpr operator bool() const;
 };
 
-class PixelFormat{
+class PixelFormat : public std::array<PixelComponent, 8> {
 public:
-    static constexpr size_t MAX_PIXEL_COMPONENTS = 8;
-    typedef std::array<PixelComponent, MAX_PIXEL_COMPONENTS> ComponentArray;
+    constexpr operator bool() const;
 
-    constexpr PixelFormat() = default;
-    constexpr PixelFormat(std::initializer_list<PixelComponent> components);
-    PixelFormat(const PixelFormat& other) = default;
-    ~PixelFormat() = default;
-
-    constexpr const ComponentArray&     getComponents() const;
     constexpr uint                      getComponentCount() const;
-    constexpr Math::Rational_t          getSize() const;
+
     constexpr bool                      hasColor() const;
     constexpr bool                      hasAlpha() const;
-private:
-    ComponentArray                      m_components;
 };
+
+} // namespace Zuazo
+
+#include "PixelFormat.inl"
+
+namespace Zuazo {
 
 namespace PixelComponents {
     constexpr unsigned long long IEEE_754_BIT = PixelComponent::flag_bit(PixelComponent::IEEE_754);
+    constexpr PixelComponent::Subsampling NO_SUBSAMPLING;
 
     constexpr PixelComponent NONE   = PixelComponent();
     constexpr PixelComponent NONE1  = PixelComponent(1);
@@ -231,32 +236,54 @@ namespace PixelComponents {
 }
 
 namespace PixelFormats {
-    constexpr PixelFormat NONE      = PixelFormat();
+    constexpr PixelFormat NONE;
+    constexpr PixelFormat RGB24     { PixelComponents::R8, PixelComponents::G8, PixelComponents::B8 };
+    constexpr PixelFormat BGR24     { PixelComponents::B8, PixelComponents::G8, PixelComponents::R8 };
+    constexpr PixelFormat RGB48     { PixelComponents::R16, PixelComponents::G16, PixelComponents::B16 };
+    constexpr PixelFormat BGR48     { PixelComponents::B16, PixelComponents::G16, PixelComponents::R16 };
+    constexpr PixelFormat RGB96     { PixelComponents::R32, PixelComponents::G32, PixelComponents::B32 };
+    constexpr PixelFormat BGR96     { PixelComponents::B32, PixelComponents::G32, PixelComponents::R32 };
+    constexpr PixelFormat RGB96f    { PixelComponents::R32f, PixelComponents::G32f, PixelComponents::B32f };
+    constexpr PixelFormat BGR96f    { PixelComponents::B32f, PixelComponents::G32f, PixelComponents::R32f };
 
-    constexpr PixelFormat RGB24      = PixelFormat{ PixelComponents::R8, PixelComponent::G8, PixelComponent::B8 };
-    constexpr PixelFormat BGR24      = PixelFormat{ PixelComponents::B8, PixelComponent::G8, PixelComponent::R8 };
-    constexpr PixelFormat RGB48      = PixelFormat{ PixelComponents::R16, PixelComponent::G16, PixelComponent::B16 };
-    constexpr PixelFormat BGR48      = PixelFormat{ PixelComponents::B16, PixelComponent::G16, PixelComponent::R16 };
+    constexpr PixelFormat XRGB32    { PixelComponents::NONE8, PixelComponents::R8, PixelComponents::G8, PixelComponents::B8 };
+    constexpr PixelFormat XBGR32    { PixelComponents::NONE8, PixelComponents::B8, PixelComponents::G8, PixelComponents::R8 };
+    constexpr PixelFormat RGBX32    { PixelComponents::R8, PixelComponents::G8, PixelComponents::B8, PixelComponents::NONE8 };
+    constexpr PixelFormat BGRX32    { PixelComponents::B8, PixelComponents::G8, PixelComponents::R8, PixelComponents::NONE8 };
+    constexpr PixelFormat XRGB64    { PixelComponents::NONE16, PixelComponents::R16, PixelComponents::G16, PixelComponents::B16 };
+    constexpr PixelFormat XBGR64    { PixelComponents::NONE16, PixelComponents::B16, PixelComponents::G16, PixelComponents::R16 };
+    constexpr PixelFormat RGBX64    { PixelComponents::R16, PixelComponents::G16, PixelComponents::B16, PixelComponents::NONE16 };
+    constexpr PixelFormat BGRX64    { PixelComponents::B16, PixelComponents::G16, PixelComponents::R16, PixelComponents::NONE16 };
+    constexpr PixelFormat XRGB128   { PixelComponents::NONE32, PixelComponents::R32, PixelComponents::G32, PixelComponents::B32 };
+    constexpr PixelFormat XBGR128   { PixelComponents::NONE32, PixelComponents::B32, PixelComponents::G32, PixelComponents::B32 };
+    constexpr PixelFormat RGBX128   { PixelComponents::R32, PixelComponents::G32, PixelComponents::B32, PixelComponents::NONE32 };
+    constexpr PixelFormat BGRX128   { PixelComponents::B32, PixelComponents::G32, PixelComponents::R32, PixelComponents::NONE32 };
+    constexpr PixelFormat XRGB128f  { PixelComponents::NONE32, PixelComponents::R32f, PixelComponents::G32f, PixelComponents::B32f };
+    constexpr PixelFormat XBGR128f  { PixelComponents::NONE32, PixelComponents::B32f, PixelComponents::G32f, PixelComponents::B32f };
+    constexpr PixelFormat RGBX128f  { PixelComponents::R32f, PixelComponents::G32f, PixelComponents::B32f, PixelComponents::NONE32 };
+    constexpr PixelFormat BGRX128f  { PixelComponents::B32f, PixelComponents::G32f, PixelComponents::R32f, PixelComponents::NONE32 };
 
-    constexpr PixelFormat XRGB32      = PixelFormat{ PixelComponent::NONE8, PixelComponents::R8, PixelComponent::G8, PixelComponent::B8 };
-    constexpr PixelFormat XBGR32      = PixelFormat{ PixelComponent::NONE8, PixelComponents::B8, PixelComponent::G8, PixelComponent::R8 };
-    constexpr PixelFormat RGBX32      = PixelFormat{ PixelComponents::R8, PixelComponent::G8, PixelComponent::B8, PixelComponent::NONE8 };
-    constexpr PixelFormat BGRX32      = PixelFormat{ PixelComponents::B8, PixelComponent::G8, PixelComponent::R8, PixelComponent::NONE8 };
-    constexpr PixelFormat XRGB64      = PixelFormat{ PixelComponent::NONE16, PixelComponents::R16, PixelComponent::G16, PixelComponent::B16 };
-    constexpr PixelFormat XBGR64      = PixelFormat{ PixelComponent::NONE16, PixelComponents::B16, PixelComponent::G16, PixelComponent::R16 };
-    constexpr PixelFormat RGBX64      = PixelFormat{ PixelComponents::R16, PixelComponent::G16, PixelComponent::B16, PixelComponent::NONE16 };
-    constexpr PixelFormat BGRX64      = PixelFormat{ PixelComponents::B16, PixelComponent::G16, PixelComponent::R16, PixelComponent::NONE16 };
+    constexpr PixelFormat ARGB32    { PixelComponents::A8, PixelComponents::R8, PixelComponents::G8, PixelComponents::B8 };
+    constexpr PixelFormat ABGR32    { PixelComponents::A8, PixelComponents::B8, PixelComponents::G8, PixelComponents::R8 };
+    constexpr PixelFormat RGBA32    { PixelComponents::R8, PixelComponents::G8, PixelComponents::B8, PixelComponents::A8 };
+    constexpr PixelFormat BGRA32    { PixelComponents::B8, PixelComponents::G8, PixelComponents::R8, PixelComponents::A8 };
+    constexpr PixelFormat ARGB64    { PixelComponents::A16, PixelComponents::R16, PixelComponents::G16, PixelComponents::B16 };
+    constexpr PixelFormat ABGR64    { PixelComponents::A16, PixelComponents::B16, PixelComponents::G16, PixelComponents::R16 };
+    constexpr PixelFormat RGBA64    { PixelComponents::R16, PixelComponents::G16, PixelComponents::B16, PixelComponents::A16 };
+    constexpr PixelFormat BGRA64    { PixelComponents::B16, PixelComponents::G16, PixelComponents::R16, PixelComponents::A16 };
+    constexpr PixelFormat ARGB128   { PixelComponents::A32, PixelComponents::R32, PixelComponents::G32, PixelComponents::B32 };
+    constexpr PixelFormat ABGR128   { PixelComponents::A32, PixelComponents::B32, PixelComponents::G32, PixelComponents::R32 };
+    constexpr PixelFormat RGBA128   { PixelComponents::R32, PixelComponents::G32, PixelComponents::B32, PixelComponents::A32 };
+    constexpr PixelFormat BGRA128   { PixelComponents::B32, PixelComponents::G32, PixelComponents::R32, PixelComponents::A32 };
+    constexpr PixelFormat ARGB128f  { PixelComponents::A32f, PixelComponents::R32f, PixelComponents::G32f, PixelComponents::B32f };
+    constexpr PixelFormat ABGR128f  { PixelComponents::A32f, PixelComponents::B32f, PixelComponents::G32f, PixelComponents::R32f };
+    constexpr PixelFormat RGBA128f  { PixelComponents::R32f, PixelComponents::G32f, PixelComponents::B32f, PixelComponents::A32f };
+    constexpr PixelFormat BGRA128f  { PixelComponents::B32f, PixelComponents::G32f, PixelComponents::R32f, PixelComponents::A32f };
 
-    constexpr PixelFormat ARGB32      = PixelFormat{ PixelComponent::A8, PixelComponents::R8, PixelComponent::G8, PixelComponent::B8 };
-    constexpr PixelFormat ABGR32      = PixelFormat{ PixelComponent::A8, PixelComponents::B8, PixelComponent::G8, PixelComponent::R8 };
-    constexpr PixelFormat RGBA32      = PixelFormat{ PixelComponents::R8, PixelComponent::G8, PixelComponent::B8, PixelComponent::A8 };
-    constexpr PixelFormat BGRA32      = PixelFormat{ PixelComponents::B8, PixelComponent::G8, PixelComponent::R8, PixelComponent::A8 };
-    constexpr PixelFormat ARGB64      = PixelFormat{ PixelComponent::A16, PixelComponents::R16, PixelComponent::G16, PixelComponent::B16 };
-    constexpr PixelFormat ABGR64      = PixelFormat{ PixelComponent::A16, PixelComponents::B16, PixelComponent::G16, PixelComponent::R16 };
-    constexpr PixelFormat RGBA64      = PixelFormat{ PixelComponents::R16, PixelComponent::G16, PixelComponent::B16, PixelComponent::A16 };
-    constexpr PixelFormat BGRA64      = PixelFormat{ PixelComponents::B16, PixelComponent::G16, PixelComponent::R16, PixelComponent::A16 };
+    constexpr PixelFormat A2RGB30   { PixelComponents::A2, PixelComponents::R10, PixelComponents::G10, PixelComponents::B10 };
+    constexpr PixelFormat A2BGR30   { PixelComponents::A2, PixelComponents::B10, PixelComponents::G10, PixelComponents::R10 };
+    constexpr PixelFormat RGB30A2   { PixelComponents::R10, PixelComponents::G10, PixelComponents::B10, PixelComponents::A2 };
+    constexpr PixelFormat BGR30A2   { PixelComponents::B10, PixelComponents::G10, PixelComponents::R10, PixelComponents::A2 };
 }
 
 }
-
-#include "PixelFormat.inl"

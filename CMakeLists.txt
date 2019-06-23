@@ -28,6 +28,7 @@ add_definitions(-DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=false)
 
 #Register all source and header files
 file(GLOB_RECURSE SOURCES src/*.cpp src/*.c)
+file(GLOB_RECURSE INLINE_SOURCES include/*.inl)
 file(GLOB_RECURSE HEADERS include/*.h)
 
 #Generate a include file for all the headers

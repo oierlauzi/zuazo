@@ -5,7 +5,7 @@
 #include <limits>
 #include <cmath>
 
-using Rational = Zuazo::Math::Rational<>;
+using Rational = Zuazo::Math::Rational_t;
 
 /*
  * Constructor
