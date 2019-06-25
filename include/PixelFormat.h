@@ -1,289 +1,201 @@
 #pragma once
 
-#include "Math/Rational.h"
-#include "Math/Vector.h"
+#define MAX_PIXEL_COMOPONENTS 8
+
+#include "PixelComponent.h"
 
 #include <array>
-#include <bitset>
+#include <utility>
 
 namespace Zuazo {
 
-struct PixelComponent{
-    enum PixelComponentType{
-        NONE        =0,
-        RED         ,
-        R           =RED,
-        GREEN       ,
-        G           =GREEN,
-        BLUE        ,
-        B           =BLUE,
-        ALPHA       ,
-        A           =ALPHA,
-        LUMINANCE   ,
-        Y           =LUMINANCE,
-        U           ,
-        V           ,
-
-        //ADD HERE
-
-        COMPONENT_TYPE_COUNT
-    };
-
-    enum Flag : uint {
-        IEEE_754, //Floating point
-
-        //ADD HERE
-
-        FLAG_COUNT
-    };
-    typedef std::bitset<FLAG_COUNT> Flags;
-    static constexpr unsigned long long flag_bit(Flag x); 
-
-    struct Subsampling {
-        Math::Rational32_t x, y;
-
-        constexpr Subsampling();
-        Subsampling(const Subsampling& other) = default;
-        ~Subsampling() = default;
-    };
-
-    PixelComponentType          type;
-    uint                        depth;
-    uint                        plane;
-    Subsampling                 subsampling;
-    Flags                       flags;
-
-    constexpr PixelComponent();
-    constexpr PixelComponent(uint depth);
-    constexpr PixelComponent(PixelComponentType type, uint depth, uint plane = 0, const Subsampling& subs =  Subsampling(), Flags flags = 0);
-    constexpr PixelComponent(const PixelComponent& other, uint plane, const Subsampling& subs = Subsampling());
-    PixelComponent(const PixelComponent& other) = default;
-    ~PixelComponent() = default;
-
-    constexpr operator bool() const;
-};
-
-class PixelFormat : public std::array<PixelComponent, 8> {
+class PixelFormat : public std::array<PixelComponent, MAX_PIXEL_COMOPONENTS> {
 public:
-    constexpr operator bool() const;
+	enum PlanarType{
+		NONE			=0, 				///There is 1 plane with 1 component. For istance Y8
+		PACKED			=1<<0,				///There is only 1 plane with multiple components. For istance RGB24
+		PLANAR			=1<<1				///There are multiple planes with 1 component each. For istance YUV444_32
+		SEMI_PLANAR		=PACKED | PLANAR,	///There are multiple planes and at least one of them has multiple components. For istance NV12
+	};
 
-    constexpr uint                      getComponentCount() const;
+	constexpr operator bool() const;
 
-    constexpr bool                      hasColor() const;
-    constexpr bool                      hasAlpha() const;
+	constexpr uint              		getComponentCount() const;
+	constexpr uint              		getPlaneCount() const;
+	constexpr Math::Rational32_t		getSize() const;
+	constexpr Math::Rational32_t		getPlaneSize(uint plane) const;
+	constexpr PlanarType				getPlanarType() const;
+
+	constexpr bool                      hasColor() const;
+	constexpr bool                      hasAlpha() const;
+private:
+
 };
 
 } // namespace Zuazo
 
 #include "PixelFormat.inl"
 
-namespace Zuazo {
+namespace Zuazo::PixelFormats {
+	constexpr PixelFormat NONE;
 
-namespace PixelComponents {
-    constexpr unsigned long long IEEE_754_BIT = PixelComponent::flag_bit(PixelComponent::IEEE_754);
-    constexpr PixelComponent::Subsampling NO_SUBSAMPLING;
+	/*
+	 * PACKED FORMATS
+	 */
 
-    constexpr PixelComponent NONE   = PixelComponent();
-    constexpr PixelComponent NONE1  = PixelComponent(1);
-    constexpr PixelComponent NONE2  = PixelComponent(2);
-    constexpr PixelComponent NONE3  = PixelComponent(3);
-    constexpr PixelComponent NONE4  = PixelComponent(4);
-    constexpr PixelComponent NONE5  = PixelComponent(5);
-    constexpr PixelComponent NONE6  = PixelComponent(6);
-    constexpr PixelComponent NONE7  = PixelComponent(7);
-    constexpr PixelComponent NONE8  = PixelComponent(8);
-    constexpr PixelComponent NONE10 = PixelComponent(10);
-    constexpr PixelComponent NONE12 = PixelComponent(12);
-    constexpr PixelComponent NONE14 = PixelComponent(14);
-    constexpr PixelComponent NONE16 = PixelComponent(16);
-    constexpr PixelComponent NONE24 = PixelComponent(24);
-    constexpr PixelComponent NONE32 = PixelComponent(32);
-    constexpr PixelComponent NONE48 = PixelComponent(48);
-    constexpr PixelComponent NONE64 = PixelComponent(64);
+	constexpr PixelFormat Y8		{ PixelComponents::Y8 };
+	constexpr PixelFormat Y16		{ PixelComponents::Y16 };
+	constexpr PixelFormat Y16f		{ PixelComponents::Y16f };
+	constexpr PixelFormat Y32		{ PixelComponents::Y32 };
+	constexpr PixelFormat Y32f		{ PixelComponents::Y32f };
 
-    constexpr PixelComponent R1     = PixelComponent(PixelComponent::R, 1,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent R2     = PixelComponent(PixelComponent::R, 2,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent R3     = PixelComponent(PixelComponent::R, 3,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent R4     = PixelComponent(PixelComponent::R, 4,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent R5     = PixelComponent(PixelComponent::R, 5,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent R6     = PixelComponent(PixelComponent::R, 6,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent R7     = PixelComponent(PixelComponent::R, 7,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent R8     = PixelComponent(PixelComponent::R, 8,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent R10    = PixelComponent(PixelComponent::R, 10, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent R12    = PixelComponent(PixelComponent::R, 12, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent R14    = PixelComponent(PixelComponent::R, 14, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent R16    = PixelComponent(PixelComponent::R, 16, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent R16f   = PixelComponent(PixelComponent::R, 16, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
-    constexpr PixelComponent R24    = PixelComponent(PixelComponent::R, 24, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent R32    = PixelComponent(PixelComponent::R, 32, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent R32f   = PixelComponent(PixelComponent::R, 32, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
-    constexpr PixelComponent R64    = PixelComponent(PixelComponent::R, 64, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent R64f   = PixelComponent(PixelComponent::R, 64, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
+	constexpr PixelFormat YA16		{ PixelComponents::Y8, PixelComponents::A8 };
+	constexpr PixelFormat YA32		{ PixelComponents::Y16, PixelComponents::A16 };
+	constexpr PixelFormat YA32f		{ PixelComponents::Y16f, PixelComponents::A16f };
+	constexpr PixelFormat YA64		{ PixelComponents::Y32, PixelComponents::A32 };
+	constexpr PixelFormat YA64f		{ PixelComponents::Y32f, PixelComponents::A32f };
 
-    constexpr PixelComponent G1     = PixelComponent(PixelComponent::G, 1,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent G2     = PixelComponent(PixelComponent::G, 2,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent G3     = PixelComponent(PixelComponent::G, 3,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent G4     = PixelComponent(PixelComponent::G, 4,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent G5     = PixelComponent(PixelComponent::G, 5,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent G6     = PixelComponent(PixelComponent::G, 6,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent G7     = PixelComponent(PixelComponent::G, 7,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent G8     = PixelComponent(PixelComponent::G, 8,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent G10    = PixelComponent(PixelComponent::G, 10, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent G12    = PixelComponent(PixelComponent::G, 12, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent G14    = PixelComponent(PixelComponent::G, 14, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent G16    = PixelComponent(PixelComponent::G, 16, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent G16f   = PixelComponent(PixelComponent::G, 16, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
-    constexpr PixelComponent G24    = PixelComponent(PixelComponent::G, 24, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent G32    = PixelComponent(PixelComponent::G, 32, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent G32f   = PixelComponent(PixelComponent::G, 32, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
-    constexpr PixelComponent G64    = PixelComponent(PixelComponent::G, 64, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent G64f   = PixelComponent(PixelComponent::G, 64, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
+	constexpr PixelFormat RGB24     { PixelComponents::R8, PixelComponents::G8, PixelComponents::B8 };
+	constexpr PixelFormat BGR24     { PixelComponents::B8, PixelComponents::G8, PixelComponents::R8 };
+	constexpr PixelFormat RGB48     { PixelComponents::R16, PixelComponents::G16, PixelComponents::B16 };
+	constexpr PixelFormat BGR48     { PixelComponents::B16, PixelComponents::G16, PixelComponents::R16 };
+	constexpr PixelFormat RGB96     { PixelComponents::R32, PixelComponents::G32, PixelComponents::B32 };
+	constexpr PixelFormat BGR96     { PixelComponents::B32, PixelComponents::G32, PixelComponents::R32 };
+	constexpr PixelFormat RGB96f    { PixelComponents::R32f, PixelComponents::G32f, PixelComponents::B32f };
+	constexpr PixelFormat BGR96f    { PixelComponents::B32f, PixelComponents::G32f, PixelComponents::R32f };
 
-    constexpr PixelComponent B1     = PixelComponent(PixelComponent::B, 1,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent B2     = PixelComponent(PixelComponent::B, 2,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent B3     = PixelComponent(PixelComponent::B, 3,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent B4     = PixelComponent(PixelComponent::B, 4,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent B5     = PixelComponent(PixelComponent::B, 5,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent B6     = PixelComponent(PixelComponent::B, 6,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent B7     = PixelComponent(PixelComponent::B, 7,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent B8     = PixelComponent(PixelComponent::B, 8,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent B10    = PixelComponent(PixelComponent::B, 10, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent B12    = PixelComponent(PixelComponent::B, 12, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent B14    = PixelComponent(PixelComponent::B, 14, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent B16    = PixelComponent(PixelComponent::B, 16, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent B16f   = PixelComponent(PixelComponent::B, 16, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
-    constexpr PixelComponent B24    = PixelComponent(PixelComponent::B, 24, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent B32    = PixelComponent(PixelComponent::B, 32, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent B32f   = PixelComponent(PixelComponent::B, 32, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
-    constexpr PixelComponent B64    = PixelComponent(PixelComponent::B, 64, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent B64f   = PixelComponent(PixelComponent::B, 64, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
+	constexpr PixelFormat XRGB32    { PixelComponents::NONE8, PixelComponents::R8, PixelComponents::G8, PixelComponents::B8 };
+	constexpr PixelFormat XBGR32    { PixelComponents::NONE8, PixelComponents::B8, PixelComponents::G8, PixelComponents::R8 };
+	constexpr PixelFormat RGBX32    { PixelComponents::R8, PixelComponents::G8, PixelComponents::B8, PixelComponents::NONE8 };
+	constexpr PixelFormat BGRX32    { PixelComponents::B8, PixelComponents::G8, PixelComponents::R8, PixelComponents::NONE8 };
+	constexpr PixelFormat XRGB64    { PixelComponents::NONE16, PixelComponents::R16, PixelComponents::G16, PixelComponents::B16 };
+	constexpr PixelFormat XBGR64    { PixelComponents::NONE16, PixelComponents::B16, PixelComponents::G16, PixelComponents::R16 };
+	constexpr PixelFormat RGBX64    { PixelComponents::R16, PixelComponents::G16, PixelComponents::B16, PixelComponents::NONE16 };
+	constexpr PixelFormat BGRX64    { PixelComponents::B16, PixelComponents::G16, PixelComponents::R16, PixelComponents::NONE16 };
+	constexpr PixelFormat XRGB128   { PixelComponents::NONE32, PixelComponents::R32, PixelComponents::G32, PixelComponents::B32 };
+	constexpr PixelFormat XBGR128   { PixelComponents::NONE32, PixelComponents::B32, PixelComponents::G32, PixelComponents::B32 };
+	constexpr PixelFormat RGBX128   { PixelComponents::R32, PixelComponents::G32, PixelComponents::B32, PixelComponents::NONE32 };
+	constexpr PixelFormat BGRX128   { PixelComponents::B32, PixelComponents::G32, PixelComponents::R32, PixelComponents::NONE32 };
+	constexpr PixelFormat XRGB128f  { PixelComponents::NONE32, PixelComponents::R32f, PixelComponents::G32f, PixelComponents::B32f };
+	constexpr PixelFormat XBGR128f  { PixelComponents::NONE32, PixelComponents::B32f, PixelComponents::G32f, PixelComponents::B32f };
+	constexpr PixelFormat RGBX128f  { PixelComponents::R32f, PixelComponents::G32f, PixelComponents::B32f, PixelComponents::NONE32 };
+	constexpr PixelFormat BGRX128f  { PixelComponents::B32f, PixelComponents::G32f, PixelComponents::R32f, PixelComponents::NONE32 };
 
-    constexpr PixelComponent A1     = PixelComponent(PixelComponent::A, 1,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent A2     = PixelComponent(PixelComponent::A, 2,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent A3     = PixelComponent(PixelComponent::A, 3,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent A4     = PixelComponent(PixelComponent::A, 4,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent A5     = PixelComponent(PixelComponent::A, 5,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent A6     = PixelComponent(PixelComponent::A, 6,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent A7     = PixelComponent(PixelComponent::A, 7,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent A8     = PixelComponent(PixelComponent::A, 8,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent A10    = PixelComponent(PixelComponent::A, 10, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent A12    = PixelComponent(PixelComponent::A, 12, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent A14    = PixelComponent(PixelComponent::A, 14, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent A16    = PixelComponent(PixelComponent::A, 16, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent A16f   = PixelComponent(PixelComponent::A, 16, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
-    constexpr PixelComponent A24    = PixelComponent(PixelComponent::A, 24, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent A32    = PixelComponent(PixelComponent::A, 32, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent A32f   = PixelComponent(PixelComponent::A, 32, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
-    constexpr PixelComponent A64    = PixelComponent(PixelComponent::A, 64, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent A64f   = PixelComponent(PixelComponent::A, 64, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
+	constexpr PixelFormat ARGB32    { PixelComponents::A8, PixelComponents::R8, PixelComponents::G8, PixelComponents::B8 };
+	constexpr PixelFormat ABGR32    { PixelComponents::A8, PixelComponents::B8, PixelComponents::G8, PixelComponents::R8 };
+	constexpr PixelFormat RGBA32    { PixelComponents::R8, PixelComponents::G8, PixelComponents::B8, PixelComponents::A8 };
+	constexpr PixelFormat BGRA32    { PixelComponents::B8, PixelComponents::G8, PixelComponents::R8, PixelComponents::A8 };
+	constexpr PixelFormat ARGB64    { PixelComponents::A16, PixelComponents::R16, PixelComponents::G16, PixelComponents::B16 };
+	constexpr PixelFormat ABGR64    { PixelComponents::A16, PixelComponents::B16, PixelComponents::G16, PixelComponents::R16 };
+	constexpr PixelFormat RGBA64    { PixelComponents::R16, PixelComponents::G16, PixelComponents::B16, PixelComponents::A16 };
+	constexpr PixelFormat BGRA64    { PixelComponents::B16, PixelComponents::G16, PixelComponents::R16, PixelComponents::A16 };
+	constexpr PixelFormat ARGB128   { PixelComponents::A32, PixelComponents::R32, PixelComponents::G32, PixelComponents::B32 };
+	constexpr PixelFormat ABGR128   { PixelComponents::A32, PixelComponents::B32, PixelComponents::G32, PixelComponents::R32 };
+	constexpr PixelFormat RGBA128   { PixelComponents::R32, PixelComponents::G32, PixelComponents::B32, PixelComponents::A32 };
+	constexpr PixelFormat BGRA128   { PixelComponents::B32, PixelComponents::G32, PixelComponents::R32, PixelComponents::A32 };
+	constexpr PixelFormat ARGB128f  { PixelComponents::A32f, PixelComponents::R32f, PixelComponents::G32f, PixelComponents::B32f };
+	constexpr PixelFormat ABGR128f  { PixelComponents::A32f, PixelComponents::B32f, PixelComponents::G32f, PixelComponents::R32f };
+	constexpr PixelFormat RGBA128f  { PixelComponents::R32f, PixelComponents::G32f, PixelComponents::B32f, PixelComponents::A32f };
+	constexpr PixelFormat BGRA128f  { PixelComponents::B32f, PixelComponents::G32f, PixelComponents::R32f, PixelComponents::A32f };
 
-    constexpr PixelComponent Y1     = PixelComponent(PixelComponent::Y, 1,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent Y2     = PixelComponent(PixelComponent::Y, 2,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent Y3     = PixelComponent(PixelComponent::Y, 3,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent Y4     = PixelComponent(PixelComponent::Y, 4,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent Y5     = PixelComponent(PixelComponent::Y, 5,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent Y6     = PixelComponent(PixelComponent::Y, 6,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent Y7     = PixelComponent(PixelComponent::Y, 7,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent Y8     = PixelComponent(PixelComponent::Y, 8,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent Y10    = PixelComponent(PixelComponent::Y, 10, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent Y12    = PixelComponent(PixelComponent::Y, 12, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent Y14    = PixelComponent(PixelComponent::Y, 14, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent Y16    = PixelComponent(PixelComponent::Y, 16, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent Y16f   = PixelComponent(PixelComponent::Y, 16, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
-    constexpr PixelComponent Y24    = PixelComponent(PixelComponent::Y, 24, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent Y32    = PixelComponent(PixelComponent::Y, 32, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent Y32f   = PixelComponent(PixelComponent::Y, 32, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
-    constexpr PixelComponent Y64    = PixelComponent(PixelComponent::Y, 64, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent Y64f   = PixelComponent(PixelComponent::Y, 64, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
+	constexpr PixelFormat A2RGB30   { PixelComponents::A2, PixelComponents::R10, PixelComponents::G10, PixelComponents::B10 };
+	constexpr PixelFormat A2BGR30   { PixelComponents::A2, PixelComponents::B10, PixelComponents::G10, PixelComponents::R10 };
+	constexpr PixelFormat RGB30A2   { PixelComponents::R10, PixelComponents::G10, PixelComponents::B10, PixelComponents::A2 };
+	constexpr PixelFormat BGR30A2   { PixelComponents::B10, PixelComponents::G10, PixelComponents::R10, PixelComponents::A2 };
 
-    constexpr PixelComponent U1     = PixelComponent(PixelComponent::U, 1,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent U2     = PixelComponent(PixelComponent::U, 2,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent U3     = PixelComponent(PixelComponent::U, 3,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent U4     = PixelComponent(PixelComponent::U, 4,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent U5     = PixelComponent(PixelComponent::U, 5,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent U6     = PixelComponent(PixelComponent::U, 6,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent U7     = PixelComponent(PixelComponent::U, 7,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent U8     = PixelComponent(PixelComponent::U, 8,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent U10    = PixelComponent(PixelComponent::U, 10, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent U12    = PixelComponent(PixelComponent::U, 12, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent U14    = PixelComponent(PixelComponent::U, 14, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent U16    = PixelComponent(PixelComponent::U, 16, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent U16f   = PixelComponent(PixelComponent::U, 16, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
-    constexpr PixelComponent U24    = PixelComponent(PixelComponent::U, 24, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent U32    = PixelComponent(PixelComponent::U, 32, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent U32f   = PixelComponent(PixelComponent::U, 32, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
-    constexpr PixelComponent U64    = PixelComponent(PixelComponent::U, 64, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent U64f   = PixelComponent(PixelComponent::U, 64, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
+	constexpr PixelFormat AYUV32	{ PixelComponents::A8, PixelComponents::Y8, PixelComponents::U8, PixelComponents::V8 };
+	constexpr PixelFormat YUVA32	{ PixelComponents::Y8, PixelComponents::U8, PixelComponents::V8, PixelComponents::A8 };
+	constexpr PixelFormat AYVU32	{ PixelComponents::A8, PixelComponents::Y8, PixelComponents::V8, PixelComponents::U8 };
+	constexpr PixelFormat YVUA32	{ PixelComponents::Y8, PixelComponents::V8, PixelComponents::U8, PixelComponents::A8 };
 
-    constexpr PixelComponent V1     = PixelComponent(PixelComponent::V, 1,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent V2     = PixelComponent(PixelComponent::V, 2,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent V3     = PixelComponent(PixelComponent::V, 3,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent V4     = PixelComponent(PixelComponent::V, 4,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent V5     = PixelComponent(PixelComponent::V, 5,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent V6     = PixelComponent(PixelComponent::V, 6,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent V7     = PixelComponent(PixelComponent::V, 7,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent V8     = PixelComponent(PixelComponent::V, 8,  0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent V10    = PixelComponent(PixelComponent::V, 10, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent V12    = PixelComponent(PixelComponent::V, 12, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent V14    = PixelComponent(PixelComponent::V, 14, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent V16    = PixelComponent(PixelComponent::V, 16, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent V16f   = PixelComponent(PixelComponent::V, 16, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
-    constexpr PixelComponent V24    = PixelComponent(PixelComponent::V, 24, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent V32    = PixelComponent(PixelComponent::V, 32, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent V32f   = PixelComponent(PixelComponent::V, 32, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
-    constexpr PixelComponent V64    = PixelComponent(PixelComponent::V, 64, 0,  NO_SUBSAMPLING,  0   );
-    constexpr PixelComponent V64f   = PixelComponent(PixelComponent::V, 64, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
-}
+	/*
+	 * PLANAR FORMATS
+	 */
 
-namespace PixelFormats {
-    constexpr PixelFormat NONE;
-    constexpr PixelFormat RGB24     { PixelComponents::R8, PixelComponents::G8, PixelComponents::B8 };
-    constexpr PixelFormat BGR24     { PixelComponents::B8, PixelComponents::G8, PixelComponents::R8 };
-    constexpr PixelFormat RGB48     { PixelComponents::R16, PixelComponents::G16, PixelComponents::B16 };
-    constexpr PixelFormat BGR48     { PixelComponents::B16, PixelComponents::G16, PixelComponents::R16 };
-    constexpr PixelFormat RGB96     { PixelComponents::R32, PixelComponents::G32, PixelComponents::B32 };
-    constexpr PixelFormat BGR96     { PixelComponents::B32, PixelComponents::G32, PixelComponents::R32 };
-    constexpr PixelFormat RGB96f    { PixelComponents::R32f, PixelComponents::G32f, PixelComponents::B32f };
-    constexpr PixelFormat BGR96f    { PixelComponents::B32f, PixelComponents::G32f, PixelComponents::R32f };
+	//												|	Component	|	Plane	|		Subsampling			|
+	constexpr PixelFormat YUV444_24	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::V8, 2, PixelComponent::Subsampling(1, 1)) };
+	constexpr PixelFormat YUV444_30	{ PixelComponent(PixelComponents::Y10, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U10, 1, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::V10, 2, PixelComponent::Subsampling(1, 1)) };
+	constexpr PixelFormat YUV444_36	{ PixelComponent(PixelComponents::Y12, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U12, 1, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::V12, 2, PixelComponent::Subsampling(1, 1)) };
+	constexpr PixelFormat YUV444_48	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling(1, 1)) };
 
-    constexpr PixelFormat XRGB32    { PixelComponents::NONE8, PixelComponents::R8, PixelComponents::G8, PixelComponents::B8 };
-    constexpr PixelFormat XBGR32    { PixelComponents::NONE8, PixelComponents::B8, PixelComponents::G8, PixelComponents::R8 };
-    constexpr PixelFormat RGBX32    { PixelComponents::R8, PixelComponents::G8, PixelComponents::B8, PixelComponents::NONE8 };
-    constexpr PixelFormat BGRX32    { PixelComponents::B8, PixelComponents::G8, PixelComponents::R8, PixelComponents::NONE8 };
-    constexpr PixelFormat XRGB64    { PixelComponents::NONE16, PixelComponents::R16, PixelComponents::G16, PixelComponents::B16 };
-    constexpr PixelFormat XBGR64    { PixelComponents::NONE16, PixelComponents::B16, PixelComponents::G16, PixelComponents::R16 };
-    constexpr PixelFormat RGBX64    { PixelComponents::R16, PixelComponents::G16, PixelComponents::B16, PixelComponents::NONE16 };
-    constexpr PixelFormat BGRX64    { PixelComponents::B16, PixelComponents::G16, PixelComponents::R16, PixelComponents::NONE16 };
-    constexpr PixelFormat XRGB128   { PixelComponents::NONE32, PixelComponents::R32, PixelComponents::G32, PixelComponents::B32 };
-    constexpr PixelFormat XBGR128   { PixelComponents::NONE32, PixelComponents::B32, PixelComponents::G32, PixelComponents::B32 };
-    constexpr PixelFormat RGBX128   { PixelComponents::R32, PixelComponents::G32, PixelComponents::B32, PixelComponents::NONE32 };
-    constexpr PixelFormat BGRX128   { PixelComponents::B32, PixelComponents::G32, PixelComponents::R32, PixelComponents::NONE32 };
-    constexpr PixelFormat XRGB128f  { PixelComponents::NONE32, PixelComponents::R32f, PixelComponents::G32f, PixelComponents::B32f };
-    constexpr PixelFormat XBGR128f  { PixelComponents::NONE32, PixelComponents::B32f, PixelComponents::G32f, PixelComponents::B32f };
-    constexpr PixelFormat RGBX128f  { PixelComponents::R32f, PixelComponents::G32f, PixelComponents::B32f, PixelComponents::NONE32 };
-    constexpr PixelFormat BGRX128f  { PixelComponents::B32f, PixelComponents::G32f, PixelComponents::R32f, PixelComponents::NONE32 };
+	constexpr PixelFormat YUV440_16	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(1, 2)),
+									  PixelComponent(PixelComponents::V8, 2, PixelComponent::Subsampling(1, 2)) };
+	constexpr PixelFormat YUV440_20	{ PixelComponent(PixelComponents::Y10, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U10, 1, PixelComponent::Subsampling(1, 2)),
+									  PixelComponent(PixelComponents::V10, 2, PixelComponent::Subsampling(1, 2)) };
+	constexpr PixelFormat YUV440_24	{ PixelComponent(PixelComponents::Y12, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U12, 1, PixelComponent::Subsampling(1, 2)),
+									  PixelComponent(PixelComponents::V12, 2, PixelComponent::Subsampling(1, 2)) };
+	constexpr PixelFormat YUV440_32	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling(1, 2)),
+									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling(1, 2)) };
 
-    constexpr PixelFormat ARGB32    { PixelComponents::A8, PixelComponents::R8, PixelComponents::G8, PixelComponents::B8 };
-    constexpr PixelFormat ABGR32    { PixelComponents::A8, PixelComponents::B8, PixelComponents::G8, PixelComponents::R8 };
-    constexpr PixelFormat RGBA32    { PixelComponents::R8, PixelComponents::G8, PixelComponents::B8, PixelComponents::A8 };
-    constexpr PixelFormat BGRA32    { PixelComponents::B8, PixelComponents::G8, PixelComponents::R8, PixelComponents::A8 };
-    constexpr PixelFormat ARGB64    { PixelComponents::A16, PixelComponents::R16, PixelComponents::G16, PixelComponents::B16 };
-    constexpr PixelFormat ABGR64    { PixelComponents::A16, PixelComponents::B16, PixelComponents::G16, PixelComponents::R16 };
-    constexpr PixelFormat RGBA64    { PixelComponents::R16, PixelComponents::G16, PixelComponents::B16, PixelComponents::A16 };
-    constexpr PixelFormat BGRA64    { PixelComponents::B16, PixelComponents::G16, PixelComponents::R16, PixelComponents::A16 };
-    constexpr PixelFormat ARGB128   { PixelComponents::A32, PixelComponents::R32, PixelComponents::G32, PixelComponents::B32 };
-    constexpr PixelFormat ABGR128   { PixelComponents::A32, PixelComponents::B32, PixelComponents::G32, PixelComponents::R32 };
-    constexpr PixelFormat RGBA128   { PixelComponents::R32, PixelComponents::G32, PixelComponents::B32, PixelComponents::A32 };
-    constexpr PixelFormat BGRA128   { PixelComponents::B32, PixelComponents::G32, PixelComponents::R32, PixelComponents::A32 };
-    constexpr PixelFormat ARGB128f  { PixelComponents::A32f, PixelComponents::R32f, PixelComponents::G32f, PixelComponents::B32f };
-    constexpr PixelFormat ABGR128f  { PixelComponents::A32f, PixelComponents::B32f, PixelComponents::G32f, PixelComponents::R32f };
-    constexpr PixelFormat RGBA128f  { PixelComponents::R32f, PixelComponents::G32f, PixelComponents::B32f, PixelComponents::A32f };
-    constexpr PixelFormat BGRA128f  { PixelComponents::B32f, PixelComponents::G32f, PixelComponents::R32f, PixelComponents::A32f };
+	constexpr PixelFormat YUV422_16	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(2, 1)),
+									  PixelComponent(PixelComponents::V8, 2, PixelComponent::Subsampling(2, 1)) };
+	constexpr PixelFormat YUV422_20	{ PixelComponent(PixelComponents::Y10, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U10, 1, PixelComponent::Subsampling(2, 1)),
+									  PixelComponent(PixelComponents::V10, 2, PixelComponent::Subsampling(2, 1)) };
+	constexpr PixelFormat YUV422_24	{ PixelComponent(PixelComponents::Y12, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U12, 1, PixelComponent::Subsampling(2, 1)),
+									  PixelComponent(PixelComponents::V12, 2, PixelComponent::Subsampling(2, 1)) };
+	constexpr PixelFormat YUV422_32	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling(2, 1)),
+									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling(2, 1)) };
 
-    constexpr PixelFormat A2RGB30   { PixelComponents::A2, PixelComponents::R10, PixelComponents::G10, PixelComponents::B10 };
-    constexpr PixelFormat A2BGR30   { PixelComponents::A2, PixelComponents::B10, PixelComponents::G10, PixelComponents::R10 };
-    constexpr PixelFormat RGB30A2   { PixelComponents::R10, PixelComponents::G10, PixelComponents::B10, PixelComponents::A2 };
-    constexpr PixelFormat BGR30A2   { PixelComponents::B10, PixelComponents::G10, PixelComponents::R10, PixelComponents::A2 };
-}
+	constexpr PixelFormat YUV420_12	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(2, 2)),
+									  PixelComponent(PixelComponents::V8, 2, PixelComponent::Subsampling(2, 2)) };
+	constexpr PixelFormat YUV420_15	{ PixelComponent(PixelComponents::Y10, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U10, 1, PixelComponent::Subsampling(2, 2)),
+									  PixelComponent(PixelComponents::V10, 2, PixelComponent::Subsampling(2, 2)) };
+	constexpr PixelFormat YUV420_18	{ PixelComponent(PixelComponents::Y12, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U12, 1, PixelComponent::Subsampling(2, 2)),
+									  PixelComponent(PixelComponents::V12, 2, PixelComponent::Subsampling(2, 2)) };
+	constexpr PixelFormat YUV420_24	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling(2, 2)),
+									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling(2, 2)) };
 
+	constexpr PixelFormat YUV411_12	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(4, 1)),
+									  PixelComponent(PixelComponents::V8, 2, PixelComponent::Subsampling(4, 1)) };
+	constexpr PixelFormat YUV411_15	{ PixelComponent(PixelComponents::Y10, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U10, 1, PixelComponent::Subsampling(4, 1)),
+									  PixelComponent(PixelComponents::V10, 2, PixelComponent::Subsampling(4, 1)) };
+	constexpr PixelFormat YUV411_18	{ PixelComponent(PixelComponents::Y12, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U12, 1, PixelComponent::Subsampling(4, 1)),
+									  PixelComponent(PixelComponents::V12, 2, PixelComponent::Subsampling(4, 1)) };
+	constexpr PixelFormat YUV411_24	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling(4, 1)),
+									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling(4, 1)) };
+
+	constexpr PixelFormat YUV410_10	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(4, 2)),
+									  PixelComponent(PixelComponents::V8, 2, PixelComponent::Subsampling(4, 2)) };
+	constexpr PixelFormat YUV410_10_5{PixelComponent(PixelComponents::Y10, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U10, 1, PixelComponent::Subsampling(4, 2)),
+									  PixelComponent(PixelComponents::V10, 2, PixelComponent::Subsampling(4, 2)) };
+	constexpr PixelFormat YUV410_15	{ PixelComponent(PixelComponents::Y12, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U12, 1, PixelComponent::Subsampling(4, 2)),
+									  PixelComponent(PixelComponents::V12, 2, PixelComponent::Subsampling(4, 2)) };
+	constexpr PixelFormat YUV410_20	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling(4, 2)),
+									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling(4, 2)) };
+
+	constexpr PixelFormat NV12		{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(2, 2)),
+									  PixelComponent(PixelComponents::V8, 1, PixelComponent::Subsampling(2, 2)) };
+
+	constexpr PixelFormat NV21		{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
+									  PixelComponent(PixelComponents::V8, 1, PixelComponent::Subsampling(2, 2)),
+									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(2, 2)) };
 }

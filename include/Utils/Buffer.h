@@ -8,13 +8,16 @@ namespace Zuazo::Utils {
 
 class Buffer{
 public:
-	Buffer();
+	constexpr Buffer();
 	Buffer(size_t size);
 	Buffer(size_t size, const void* data);
 	Buffer(const Buffer& other);
 	Buffer(Buffer&& other);
 	~Buffer();
 
+	Buffer& operator=(Buffer&& other);
+
+	void			reset();
 	void			reallocate(size_t size);
 
 	void*			get();

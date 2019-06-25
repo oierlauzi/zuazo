@@ -1,13 +1,13 @@
 namespace Zuazo::Utils {
 
-inline Buffer::Buffer() :
+constexpr Buffer::Buffer() :
 		m_data(nullptr),
 		m_size(0)
 {
 }
 
 inline Buffer::Buffer(size_t size) :
-		m_data(malloc(size)),
+		m_data(size ? malloc(size) : nullptr),
 		m_size(size)
 {
 }
@@ -23,22 +23,34 @@ inline Buffer::Buffer(const Buffer& other) :
 {
 }
 
-inline Buffer::Buffer(Buffer&& other) :
+constexpr Buffer::Buffer(Buffer&& other) :
 		m_data(other.m_data),
 		m_size(other.m_size)
 {
-    other.m_data=nullptr;
-    other.m_size=0;
+    other.m_data = nullptr;
+    other.m_size = 0;
 }
 
 inline Buffer::~Buffer(){
-	if(m_data)
-		free(m_data);
+	if(m_data) free(m_data);
+}
+
+inline Buffer& Buffer::operator=(Buffer&& other){
+    if(m_data) free(m_data);
+
+    m_data = other.m_data;
+	m_size = other.m_size;
+    other.m_data = nullptr;
+	other.m_size = 0;
+}
+
+inline void Buffer::reset(){
+	(*this) = Buffer();
 }
 
 inline void Buffer::reallocate(size_t size){
+	m_data = realloc(m_data, size);
 	m_size=size;
-	m_data = realloc(m_data, m_size);
 }
 
 inline void* Buffer::get(){

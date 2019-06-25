@@ -4,49 +4,49 @@
 namespace Zuazo {
 
 constexpr Color::Color() :
-    r(1.0),
-    g(1.0),
-    b(1.0),
-    a(1.0)
+	r(1.0),
+	g(1.0),
+	b(1.0),
+	a(1.0)
 {
 }
 
 constexpr Color::Color(float red, float green, float blue, float alpha) :
-    r(red),
-    g(green),
-    b(blue),
-    a(alpha)
+	r(red),
+	g(green),
+	b(blue),
+	a(alpha)
 {
 }
 
 constexpr Color::Color(u_int8_t red, u_int8_t green, u_int8_t blue, u_int8_t alpha) :
-    r(NORMALIZE_BYTE(red)),
-    g(NORMALIZE_BYTE(green)),
-    b(NORMALIZE_BYTE(blue)),
-    a(NORMALIZE_BYTE(alpha))
+	r(NORMALIZE_BYTE(red)),
+	g(NORMALIZE_BYTE(green)),
+	b(NORMALIZE_BYTE(blue)),
+	a(NORMALIZE_BYTE(alpha))
 {
 }
 
 constexpr Color::Color(const Color& color, float alpha):
-    r(color.r),
-    g(color.g),
-    b(color.b),
-    a(alpha)
+	r(color.r),
+	g(color.g),
+	b(color.b),
+	a(alpha)
 {
 }
 
 constexpr Color::Color(u_int32_t rgba) : 
-    Color(
-        static_cast<u_int8_t>(RGBA_COLOR_COMP(rgba, 0)),
-        static_cast<u_int8_t>(RGBA_COLOR_COMP(rgba, 1)),
-        static_cast<u_int8_t>(RGBA_COLOR_COMP(rgba, 2)),
-        static_cast<u_int8_t>(RGBA_COLOR_COMP(rgba, 3))
-    )
+	Color(
+		static_cast<u_int8_t>(RGBA_COLOR_COMP(rgba, 0)),
+		static_cast<u_int8_t>(RGBA_COLOR_COMP(rgba, 1)),
+		static_cast<u_int8_t>(RGBA_COLOR_COMP(rgba, 2)),
+		static_cast<u_int8_t>(RGBA_COLOR_COMP(rgba, 3))
+	)
 {
 }
 
 inline Color::Color(const std::string& str) : 
-    Color(parseColor(str))
+	Color(parseColor(str))
 {
 }
 
