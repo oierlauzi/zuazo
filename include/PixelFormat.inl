@@ -17,7 +17,21 @@ constexpr uint PixelFormat::getComponentCount() const{
 	uint count = 0;
 
 	for(auto ite = cbegin(); ite != cend(); ++ite){
-		++count;
+		if(*ite){
+			++count;
+		}
+	}
+
+	return count;
+}
+
+constexpr uint PixelFormat::getLength() const{
+	uint count = 0;
+
+	for(auto ite = cbegin(); ite != cend(); ++ite){
+		if(ite->depth){
+			++count;
+		}
 	}
 
 	return count;
@@ -93,6 +107,30 @@ constexpr PixelFormat::PlanarType PixelFormat::getPlanarType() const{
 	return result;
 }
 
+constexpr uint PixelFormat::getOffset(const_iterator el) const{
+	uint result = 0;
+
+	if(el->subsampling < 1){ //This element is being subsampled.
+		for(auto ite = cbegin(); ite != el; ++ite){
+			if(ite->plane == el->plane){
+				if(ite->subsampling == el->subsampling){
+					result += getLength();
+				}else{
+					++result;
+				}
+			}
+		}
+	}else{
+		for(auto ite = cbegin(); ite != el; ++ite){
+			if(ite->plane == el->plane){
+				++result;
+			}
+		}
+	}
+
+	return result;
+}
+
 constexpr bool PixelFormat::hasColor() const{
 	bool has_color = false;
 
@@ -117,6 +155,51 @@ constexpr bool PixelFormat::hasAlpha() const{
 	}
 	
 	return has_alpha;
+}
+
+namespace PixelFormats{
+	#define ZUAZO_FCC_PAIR(x, y) { ZUAZO_FCC2INT(x), y }
+
+	constexpr std::pair<uint32_t, PixelFormat> _fccConversionTable[] = {
+		// ADD HERE
+
+		{0, 		NONE}
+	}
+
+	constexpr uint32_t _fcc2uint(char c0, char c1, char c2, char c3){
+		uint32_t fcc = c0 << 3;
+		fcc |= c1 << 2;
+		fcc |= c2 << 1;
+		fcc |= c3 << 0;
+		return fcc;
+	}
+
+	constexpr PixelFormat fourcc(uint32_t fcc){
+		PixelFormat	result = NONE;
+
+		for(uint i = 0; _fccConversionTable[i]->first; ++i){
+			if(_fccConversionTable[i]->first == fcc){
+				result = _fccConversionTable[i]->second;
+				break;
+			}
+		}
+
+		return result;
+	}
+
+	constexpr PixelFormat fourcc(char c0, char c1, char c2, char c3){
+		return fourcc(_fcc2uint(c0, c1, c2, c3));
+	}
+
+	PixelFormat fourcc(const std::string& str){
+		PixelFormat result = NONE;
+
+		if(str.size() == 4){
+			result = fourcc(str[0], str[1], str[2], str[3]);
+		}
+
+		return result;
+	}
 }
 
 }

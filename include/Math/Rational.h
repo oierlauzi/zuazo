@@ -70,7 +70,7 @@ typedef Rational<int64_t>	Rational128_t;
 typedef Rational<int32_t>	Rational64_t;
 typedef Rational<int16_t>	Rational32_t;
 typedef Rational<int8_t>	Rational16_t;
-typedef Rational128_t		Rational_t;
+typedef Rational<int>		Rational_t;
 
 }
 

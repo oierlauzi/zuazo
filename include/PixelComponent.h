@@ -71,6 +71,7 @@ struct PixelComponent{
 namespace Zuazo::PixelComponents {
 
 	constexpr auto IEEE_754_BIT = PixelComponent::flag_bit(PixelComponent::IEEE_754);
+	constexpr auto BAYER_BIT = PixelComponent::flag_bit(PixelComponent::BAYER);
 	constexpr auto NO_SUBSAMPLING = PixelComponent::Subsampling(1, 1);
 
 	constexpr PixelComponent NONE   = PixelComponent();
@@ -128,6 +129,24 @@ namespace Zuazo::PixelComponents {
 	constexpr PixelComponent G32f   = PixelComponent(PixelComponent::G, 32, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
 	constexpr PixelComponent G64    = PixelComponent(PixelComponent::G, 64, 0,  NO_SUBSAMPLING,  0   );
 	constexpr PixelComponent G64f   = PixelComponent(PixelComponent::G, 64, 0,  NO_SUBSAMPLING,  IEEE_754_BIT );
+	constexpr PixelComponent G1B    = PixelComponent(PixelComponent::G, 1,  0,  NO_SUBSAMPLING,  BAYER_BIT );
+	constexpr PixelComponent G2B    = PixelComponent(PixelComponent::G, 2,  0,  NO_SUBSAMPLING,  BAYER_BIT );
+	constexpr PixelComponent G3B    = PixelComponent(PixelComponent::G, 3,  0,  NO_SUBSAMPLING,  BAYER_BIT );
+	constexpr PixelComponent G4B    = PixelComponent(PixelComponent::G, 4,  0,  NO_SUBSAMPLING,  BAYER_BIT );
+	constexpr PixelComponent G5B    = PixelComponent(PixelComponent::G, 5,  0,  NO_SUBSAMPLING,  BAYER_BIT );
+	constexpr PixelComponent G6B    = PixelComponent(PixelComponent::G, 6,  0,  NO_SUBSAMPLING,  BAYER_BIT );
+	constexpr PixelComponent G7B    = PixelComponent(PixelComponent::G, 7,  0,  NO_SUBSAMPLING,  BAYER_BIT );
+	constexpr PixelComponent G8B    = PixelComponent(PixelComponent::G, 8,  0,  NO_SUBSAMPLING,  BAYER_BIT );
+	constexpr PixelComponent G10B   = PixelComponent(PixelComponent::G, 10, 0,  NO_SUBSAMPLING,  BAYER_BIT );
+	constexpr PixelComponent G12B   = PixelComponent(PixelComponent::G, 12, 0,  NO_SUBSAMPLING,  BAYER_BIT );
+	constexpr PixelComponent G14B   = PixelComponent(PixelComponent::G, 14, 0,  NO_SUBSAMPLING,  BAYER_BIT );
+	constexpr PixelComponent G16B   = PixelComponent(PixelComponent::G, 16, 0,  NO_SUBSAMPLING,  BAYER_BIT );
+	constexpr PixelComponent G16fB  = PixelComponent(PixelComponent::G, 16, 0,  NO_SUBSAMPLING,  BAYER_BIT | IEEE_754_BIT );
+	constexpr PixelComponent G24B   = PixelComponent(PixelComponent::G, 24, 0,  NO_SUBSAMPLING,  BAYER_BIT );
+	constexpr PixelComponent G32B   = PixelComponent(PixelComponent::G, 32, 0,  NO_SUBSAMPLING,  BAYER_BIT );
+	constexpr PixelComponent G32fB  = PixelComponent(PixelComponent::G, 32, 0,  NO_SUBSAMPLING,  BAYER_BIT | IEEE_754_BIT );
+	constexpr PixelComponent G64B   = PixelComponent(PixelComponent::G, 64, 0,  NO_SUBSAMPLING,  BAYER_BIT );
+	constexpr PixelComponent G64fB  = PixelComponent(PixelComponent::G, 64, 0,  NO_SUBSAMPLING,  BAYER_BIT | IEEE_754_BIT );
 
 	constexpr PixelComponent B1     = PixelComponent(PixelComponent::B, 1,  0,  NO_SUBSAMPLING,  0   );
 	constexpr PixelComponent B2     = PixelComponent(PixelComponent::B, 2,  0,  NO_SUBSAMPLING,  0   );

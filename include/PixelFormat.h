@@ -3,9 +3,11 @@
 #define MAX_PIXEL_COMOPONENTS 8
 
 #include "PixelComponent.h"
+#include "Utils/Macros.h"
 
 #include <array>
 #include <utility>
+#include <string>
 
 namespace Zuazo {
 
@@ -21,10 +23,12 @@ public:
 	constexpr operator bool() const;
 
 	constexpr uint              		getComponentCount() const;
+	constexpr uint 						getLength() const;
 	constexpr uint              		getPlaneCount() const;
 	constexpr Math::Rational32_t		getSize() const;
 	constexpr Math::Rational32_t		getPlaneSize(uint plane) const;
 	constexpr PlanarType				getPlanarType() const;
+	constexpr uint						getOffset(const_iterator el) const;
 
 	constexpr bool                      hasColor() const;
 	constexpr bool                      hasAlpha() const;
@@ -37,6 +41,13 @@ private:
 #include "PixelFormat.inl"
 
 namespace Zuazo::PixelFormats {
+	constexpr PixelFormat fourcc(uint32_t fcc);
+	
+	#define ZUAZO_FCC2INT(x) \
+		(ZUAZO_TO_STRING(x)[0] << 3 | ZUAZO_TO_STRING(x)[1] << 2 | ZUAZO_TO_STRING(x)[2] << 1 | ZUAZO_TO_STRING(x)[3])
+	#define ZUAZO_FOURCC(x) fourcc(ZUAZO_FCC2INT(x))
+	
+
 	constexpr PixelFormat NONE;
 
 	/*
