@@ -1,9 +1,18 @@
 namespace Zuazo {
 
+constexpr PixelFormat::PixelFormat(const std::initializer_list<PixelComponent>& comp){
+	auto inIte = comp.begin();
+	auto outIte = m_components.begin();
+
+	while(inIte != comp.end() && outIte != m_components.end()){
+		*(outIte++) = *(inIte++); 
+	}
+}
+
 constexpr PixelFormat::operator bool() const{
 	bool result = false;
 
-	for(auto ite = cbegin(); ite != cend(); ++ite){
+	for(auto ite = m_components.cbegin(); ite != m_components.cend(); ++ite){
 		if(*ite){
 			result = true;
 			break;
@@ -13,10 +22,14 @@ constexpr PixelFormat::operator bool() const{
 	return result;
 }
 
+constexpr const PixelFormat::ComponentArray& PixelFormat::getComponents() const{
+	return m_components;
+}
+
 constexpr uint PixelFormat::getComponentCount() const{
 	uint count = 0;
 
-	for(auto ite = cbegin(); ite != cend(); ++ite){
+	for(auto ite = m_components.cbegin(); ite != m_components.cend(); ++ite){
 		if(*ite){
 			++count;
 		}
@@ -28,7 +41,7 @@ constexpr uint PixelFormat::getComponentCount() const{
 constexpr uint PixelFormat::getLength() const{
 	uint count = 0;
 
-	for(auto ite = cbegin(); ite != cend(); ++ite){
+	for(auto ite = m_components.cbegin(); ite != m_components.cend(); ++ite){
 		if(ite->depth){
 			++count;
 		}
@@ -40,7 +53,7 @@ constexpr uint PixelFormat::getLength() const{
 constexpr uint PixelFormat::getPlaneCount() const{
 	uint count = 0;
 
-	for(auto ite = cbegin(); ite != cend(); ++ite){
+	for(auto ite = m_components.cbegin(); ite != m_components.cend(); ++ite){
 		if(ite->plane > count){
 			count = ite->plane; //Get the highest plane reference 
 		}
@@ -52,7 +65,7 @@ constexpr uint PixelFormat::getPlaneCount() const{
 constexpr Math::Rational32_t PixelFormat::getSize() const{
 	Math::Rational32_t size = 0;
 
-	for(auto ite = cbegin(); ite != cend(); ++ite){
+	for(auto ite = m_components.cbegin(); ite != m_components.cend(); ++ite){
 		size += ite->depth * ite->subsampling.x * ite->subsampling.y;
 	}
 
@@ -62,7 +75,7 @@ constexpr Math::Rational32_t PixelFormat::getSize() const{
 constexpr Math::Rational32_t PixelFormat::getPlaneSize(uint plane) const{
 	Math::Rational32_t size = 0;
 
-	for(auto ite = cbegin(); ite != cend(); ++ite){
+	for(auto ite = m_components.cbegin(); ite != m_components.cend(); ++ite){
 		if(ite->plane == plane){
 			size += ite->depth * ite->subsampling.x * ite->subsampling.y;
 		}
@@ -72,16 +85,11 @@ constexpr Math::Rational32_t PixelFormat::getPlaneSize(uint plane) const{
 }
 
 constexpr PixelFormat::PlanarType PixelFormat::getPlanarType() const{
-	uint useCount[size()];
-
-	//Set the use count array to 0s
-	for(uint i = 0; i < size(); ++i){
-		useCount[i] = 0;
-	}
+	std::array<uint, MAX_PIXEL_COMOPONENTS> useCount = {0};
 
 	//Start counting
-	for(auto ite = cbegin(); ite != cend(); ++ite){
-		if(ite->plane < size()){ //This condition should be always true
+	for(auto ite = m_components.cbegin(); ite != m_components.cend(); ++ite){
+		if(ite->plane < m_components.size()){ //This condition should be always true
 			++useCount[ite->plane];
 		}
 	}
@@ -89,15 +97,15 @@ constexpr PixelFormat::PlanarType PixelFormat::getPlanarType() const{
 	PlanarType result = NONE;
 
 	//It is packed as long as a plane has more than 1 components
-	for(uint i = 0; i < size(); ++i){
-		if(useCount[i] > 1){
+	for(auto ite = useCount.begin(); ite != useCount.end(); ++ite){
+		if(*ite > 1){
 			result |= PACKED;
 			break;
 		}
 	}
 
 	//It is packed as long as there are more than 1 planes
-	for(auto ite = cbegin(); ite != cend(); ++ite){
+	for(auto ite = m_components.cbegin(); ite != m_components.cend(); ++ite){
 		if(ite->plane > 0){
 			result |= PLANAR;
 			break;
@@ -107,26 +115,10 @@ constexpr PixelFormat::PlanarType PixelFormat::getPlanarType() const{
 	return result;
 }
 
-constexpr uint PixelFormat::getOffset(const_iterator el) const{
+constexpr uint PixelFormat::getOffset(ComponentArray::const_iterator el) const{
 	uint result = 0;
 
-	if(el->subsampling < 1){ //This element is being subsampled.
-		for(auto ite = cbegin(); ite != el; ++ite){
-			if(ite->plane == el->plane){
-				if(ite->subsampling == el->subsampling){
-					result += getLength();
-				}else{
-					++result;
-				}
-			}
-		}
-	}else{
-		for(auto ite = cbegin(); ite != el; ++ite){
-			if(ite->plane == el->plane){
-				++result;
-			}
-		}
-	}
+	//TODO
 
 	return result;
 }
@@ -134,7 +126,7 @@ constexpr uint PixelFormat::getOffset(const_iterator el) const{
 constexpr bool PixelFormat::hasColor() const{
 	bool has_color = false;
 
-	for(auto ite = cbegin(); ite != cend(); ++ite){
+	for(auto ite = m_components.cbegin(); ite != m_components.cend(); ++ite){
 		if(ite->type && ite->type != PixelComponent::ALPHA && ite->type != PixelComponent::LUMINANCE){
 			has_color = true;
 			break;
@@ -147,7 +139,7 @@ constexpr bool PixelFormat::hasColor() const{
 constexpr bool PixelFormat::hasAlpha() const{
 	bool has_alpha = false;
 
-	for(auto ite = cbegin(); ite != cend(); ++ite){
+	for(auto ite = m_components.cbegin(); ite != m_components.cend(); ++ite){
 		if(ite->type == PixelComponent::ALPHA){
 			has_alpha = true;
 			break;
@@ -164,7 +156,7 @@ namespace PixelFormats{
 		// ADD HERE
 
 		{0, 		NONE}
-	}
+	};
 
 	constexpr uint32_t _fcc2uint(char c0, char c1, char c2, char c3){
 		uint32_t fcc = c0 << 3;

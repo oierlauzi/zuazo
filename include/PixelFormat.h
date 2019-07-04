@@ -1,7 +1,5 @@
 #pragma once
 
-#define MAX_PIXEL_COMOPONENTS 8
-
 #include "PixelComponent.h"
 #include "Utils/Macros.h"
 
@@ -11,16 +9,26 @@
 
 namespace Zuazo {
 
-class PixelFormat : public std::array<PixelComponent, MAX_PIXEL_COMOPONENTS> {
+class PixelFormat {
 public:
-	enum PlanarType{
+	static constexpr size_t MAX_PIXEL_COMOPONENTS = 8;
+	typedef std::array<PixelComponent, MAX_PIXEL_COMOPONENTS> ComponentArray;
+
+	enum PlanarType {
 		NONE			=0, 				///There is 1 plane with 1 component. For istance Y8
-		PACKED			=1<<0,				///There is only 1 plane with multiple components. For istance RGB24
-		PLANAR			=1<<1				///There are multiple planes with 1 component each. For istance YUV444_32
+		PACKED			=ZUAZO_BIT(0),		///There is only 1 plane with multiple components. For istance RGB24
+		PLANAR			=ZUAZO_BIT(1),		///There are multiple planes with 1 component each. For istance YUV444_32
 		SEMI_PLANAR		=PACKED | PLANAR,	///There are multiple planes and at least one of them has multiple components. For istance NV12
 	};
 
+	constexpr PixelFormat() = default;
+	constexpr PixelFormat(const std::initializer_list<PixelComponent>& comp);
+	constexpr PixelFormat(const PixelFormat& other) = default;
+	~PixelFormat() = default;
+
 	constexpr operator bool() const;
+
+	constexpr const ComponentArray&		getComponents() const;
 
 	constexpr uint              		getComponentCount() const;
 	constexpr uint 						getLength() const;
@@ -28,12 +36,12 @@ public:
 	constexpr Math::Rational32_t		getSize() const;
 	constexpr Math::Rational32_t		getPlaneSize(uint plane) const;
 	constexpr PlanarType				getPlanarType() const;
-	constexpr uint						getOffset(const_iterator el) const;
+	constexpr uint						getOffset(ComponentArray::const_iterator el) const;
 
 	constexpr bool                      hasColor() const;
 	constexpr bool                      hasAlpha() const;
 private:
-
+	ComponentArray						m_components;
 };
 
 } // namespace Zuazo
@@ -43,9 +51,8 @@ private:
 namespace Zuazo::PixelFormats {
 	constexpr PixelFormat fourcc(uint32_t fcc);
 	
-	#define ZUAZO_FCC2INT(x) \
+	#define ZUAZO_FOURCC(x) \
 		(ZUAZO_TO_STRING(x)[0] << 3 | ZUAZO_TO_STRING(x)[1] << 2 | ZUAZO_TO_STRING(x)[2] << 1 | ZUAZO_TO_STRING(x)[3])
-	#define ZUAZO_FOURCC(x) fourcc(ZUAZO_FCC2INT(x))
 	
 
 	constexpr PixelFormat NONE;
@@ -136,6 +143,7 @@ namespace Zuazo::PixelFormats {
 	constexpr PixelFormat YUV444_48	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling(1, 1)),
 									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling(1, 1)),
 									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling(1, 1)) };
+	constexpr PixelFormat YUV444 = YUV444_24;
 
 	constexpr PixelFormat YUV440_16	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
 									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(1, 2)),
@@ -149,6 +157,7 @@ namespace Zuazo::PixelFormats {
 	constexpr PixelFormat YUV440_32	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling(1, 1)),
 									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling(1, 2)),
 									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling(1, 2)) };
+	constexpr PixelFormat YUV440 = YUV440_16;
 
 	constexpr PixelFormat YUV422_16	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
 									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(2, 1)),
@@ -162,6 +171,7 @@ namespace Zuazo::PixelFormats {
 	constexpr PixelFormat YUV422_32	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling(1, 1)),
 									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling(2, 1)),
 									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling(2, 1)) };
+	constexpr PixelFormat YUV422 = YUV422_16;
 
 	constexpr PixelFormat YUV420_12	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
 									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(2, 2)),
@@ -175,6 +185,7 @@ namespace Zuazo::PixelFormats {
 	constexpr PixelFormat YUV420_24	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling(1, 1)),
 									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling(2, 2)),
 									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling(2, 2)) };
+	constexpr PixelFormat YUV420 = YUV422_12;
 
 	constexpr PixelFormat YUV411_12	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
 									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(4, 1)),
@@ -188,6 +199,7 @@ namespace Zuazo::PixelFormats {
 	constexpr PixelFormat YUV411_24	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling(1, 1)),
 									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling(4, 1)),
 									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling(4, 1)) };
+	constexpr PixelFormat YUV411 = YUV411_12;
 
 	constexpr PixelFormat YUV410_10	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
 									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(4, 2)),
@@ -201,6 +213,7 @@ namespace Zuazo::PixelFormats {
 	constexpr PixelFormat YUV410_20	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling(1, 1)),
 									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling(4, 2)),
 									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling(4, 2)) };
+	constexpr PixelFormat YUV410 = YUV410_10;
 
 	constexpr PixelFormat NV12		{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
 									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(2, 2)),

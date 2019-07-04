@@ -9,11 +9,11 @@ namespace Zuazo {
 
 struct Resolution{
     union {
-    	uint width, x;
+    	uint32_t width, x;
     };
 
 	union {
-    	uint height, y;
+    	uint32_t height, y;
     };
 
     constexpr Resolution();
@@ -25,8 +25,6 @@ struct Resolution{
 
     template<typename T>
     constexpr operator Math::Vec2<T>() const;
-	template<typename T>
-    constexpr operator Math::Rational<T>() const;
     constexpr operator bool() const;
 
 	constexpr Math::Rational_t getAspectRatio() const;

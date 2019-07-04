@@ -8,20 +8,20 @@ namespace Zuazo {
 
 struct PixelComponent{
 	enum PixelComponentType{
-		NONE        =0,
-		N			=NONE,
-		RED         ,
-		R           =RED,
-		GREEN       ,
-		G           =GREEN,
-		BLUE        ,
-		B           =BLUE,
-		ALPHA       ,
-		A           =ALPHA,
-		LUMINANCE   ,
-		Y           =LUMINANCE,
-		U           ,
-		V           ,
+		NONE        =0,				///Does not represent any pixel component
+		N			=NONE,			///Short form of NONE
+		RED         ,				///Represents a red subpixel
+		R           =RED,			///Short form of RED
+		GREEN       ,				///Represents a green subpixel
+		G           =GREEN,			///Short form of GREEN
+		BLUE        ,				///Represents a blue subpixel
+		B           =BLUE,			///Short form of BLUE
+		ALPHA       ,				///Represents the alpha (transparency) component of a pixel
+		A           =ALPHA,			///Short form of ALPHA
+		LUMINANCE   ,				///Represents the luminance component of a pixel
+		Y           =LUMINANCE,		///Short form of LUMINANCE
+		U           ,				///Cb component
+		V           ,				///Cr component 
 
 		//ADD HERE
 
@@ -37,28 +37,28 @@ struct PixelComponent{
 		FLAG_COUNT
 	};
 	typedef std::bitset<FLAG_COUNT> Flags;
-	static constexpr unsigned long long flag_bit(Flag x); 
 
 	struct Subsampling {
-		Math::Rational32_t x, y;
+		typedef Math::Rational32_t Rational;
+		Rational x, y;
 
 		constexpr Subsampling();
-		constexpr Subsampling(uint x, uint y);
-		Subsampling(const Subsampling& other) = default;
+		constexpr Subsampling(uint16_t x, uint16_t y);
+		constexpr Subsampling(const Subsampling& other) = default;
 		~Subsampling() = default;
 	};
 
-	PixelComponentType          type;
-	uint                        depth;
-	uint                        plane;
-	Subsampling                 subsampling;
-	Flags                       flags;
+	PixelComponentType			type;
+	uint8_t						depth;
+	uint8_t						plane;
+	Subsampling					subsampling;
+	Flags						flags;
 
 	constexpr PixelComponent();
 	constexpr PixelComponent(uint depth);
 	constexpr PixelComponent(PixelComponentType type, uint depth, uint plane = 0, const Subsampling& subs =  Subsampling(), Flags flags = 0);
 	constexpr PixelComponent(const PixelComponent& other, uint plane, const Subsampling& subs = Subsampling());
-	PixelComponent(const PixelComponent& other) = default;
+	constexpr PixelComponent(const PixelComponent& other) = default;
 	~PixelComponent() = default;
 
 	constexpr operator bool() const;
@@ -70,8 +70,8 @@ struct PixelComponent{
 
 namespace Zuazo::PixelComponents {
 
-	constexpr auto IEEE_754_BIT = PixelComponent::flag_bit(PixelComponent::IEEE_754);
-	constexpr auto BAYER_BIT = PixelComponent::flag_bit(PixelComponent::BAYER);
+	constexpr auto IEEE_754_BIT = ZUAZO_BIT(PixelComponent::IEEE_754);
+	constexpr auto BAYER_BIT = ZUAZO_BIT(PixelComponent::BAYER);
 	constexpr auto NO_SUBSAMPLING = PixelComponent::Subsampling(1, 1);
 
 	constexpr PixelComponent NONE   = PixelComponent();

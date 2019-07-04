@@ -6,9 +6,9 @@ constexpr PixelComponent::Subsampling::Subsampling() :
 {
 }
 
-constexpr PixelComponent::Subsampling::Subsampling(uint x, uint y) :
-	x(1, x),
-	y(1, y)
+constexpr PixelComponent::Subsampling::Subsampling(uint16_t x, uint16_t y) :
+	x(1, static_cast<Rational::Integer>(x)),
+	y(1, static_cast<Rational::Integer>(y))
 {
 }
 
@@ -46,10 +46,6 @@ constexpr PixelComponent::PixelComponent(const PixelComponent& other, uint plane
 	subsampling(subs),
 	flags(other.flags)
 {
-}
-
-constexpr unsigned long long PixelComponent::flag_bit(Flag x){
-	return 1 << static_cast<uint>(x);
 }
 
 constexpr PixelComponent::operator bool() const{

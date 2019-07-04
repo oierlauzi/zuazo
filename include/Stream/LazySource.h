@@ -26,9 +26,9 @@ public:
 
 	virtual std::shared_ptr<const T>	get() const override;
 private:
-	bool 								m_isEnabled=true;
-	u_int32_t							m_maxUpdateRecursion=1;
-	mutable u_int32_t					m_updateRecursion=0;
+	bool 								m_isEnabled = true;
+	u_int32_t							m_maxUpdateRecursion = 1;
+	mutable u_int32_t					m_updateRecursion = 0;
 };
 
 
