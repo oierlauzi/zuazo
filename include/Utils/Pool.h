@@ -1,46 +1,50 @@
 #pragma once
 
-#include <tuple>
 #include <forward_list>
+#include <unordered_map>
 #include <memory>
-
-/*
- * This code is based on:
- * https://hackernoon.com/the-object-pool-pattern-e424507b996a
- */
+#include <mutex>
+#include <tuple>
 
 namespace Zuazo::Utils {
 
 template<typename T, typename... Args>
 class Pool{
+public:
+	typedef std::tuple<Args...> Arguments;
+
+	class Deleter{
 	public:
-		class Deleter{
-		public:
-			Deleter() = delete;
-			constexpr Deleter(const Pool& owner);
-			constexpr Deleter(const Deleter& other) = default;
-			~Deleter() = default;
+		constexpr Deleter();
+		constexpr Deleter(const Arguments& args, const Pool& owner);
+		constexpr Deleter(const Deleter& other) = default;
+		~Deleter() = default;
 
-			void operator()(T* ptr) const;
-		private:
-			const Pool&		m_owner;
-		};
-
-		friend Deleter;
-
-		typedef std::unique_ptr<T, Deleter> unique_ptr;
-
-		Pool(Args&&... args);
-		Pool(const Pool& other) = delete;
-		Pool(Pool&& other) = default;
-		~Pool() = default;
-
-		unique_ptr										get() const;
+		void operator()(T* ptr) const;
 	private:
-		std::tuple<Args...>								m_arguments;
-		mutable std::forward_list<std::unique_ptr<T>>	m_elements;
+		Arguments		m_args;
+		const Pool*		m_owner;
+	};
 
-		T* constructElement(std::index_sequence<Is...> = std::index_sequence_for<Args...>()) const;
+	struct Hasher {
+		constexpr size_t operator()(const Arguments& args) const;
+	private:
+		template<size_t idx>
+		constexpr static size_t hasher(const Arguments& args);
+	};
+
+	friend Deleter;
+	typedef std::unique_ptr<T, Deleter> unique_ptr;
+
+	Pool() = default;
+	Pool(const Pool& other) = delete;
+	Pool(Pool&& other) = default;
+	~Pool() = default;
+
+	unique_ptr get(Args&&... args) const;
+private:
+	mutable std::mutex 	m_mutex;
+	mutable std::unordered_map<Arguments, std::forward_list<std::unique_ptr<T>>, Hasher> m_elements;
 };
 
 }

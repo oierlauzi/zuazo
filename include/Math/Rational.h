@@ -5,12 +5,14 @@
 #include <sys/types.h>
 #include <limits>
 #include <numeric>
+#include <type_traits>
 
 namespace Zuazo::Math {
 
 template<typename T>
 class Rational{
 public:
+	static_assert(std::is_integral<T>::value, "Template parameter must be an integer");
 	using Integer = T;
 	using Real = double;
 
@@ -61,6 +63,8 @@ public:
 	template<typename Q>
 	friend constexpr int operator>=(const Rational<Q>& left, const Rational<Q>& right);
 
+	template<typename Q>
+	friend std::hash<Rational<Q>>;
 private:
 	Integer m_num;
 	Integer m_den;
@@ -71,6 +75,18 @@ typedef Rational<int32_t>	Rational64_t;
 typedef Rational<int16_t>	Rational32_t;
 typedef Rational<int8_t>	Rational16_t;
 typedef Rational<int>		Rational_t;
+
+}
+
+namespace std {
+
+template<typename T>
+struct hash;
+
+template<typename T>
+struct hash<Zuazo::Math::Rational<T>>{
+	constexpr size_t operator()(const Rational<T>& rat) const;
+};
 
 }
 

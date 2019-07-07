@@ -1,4 +1,4 @@
-#define BOOST_TEST_MODULE Utils::Rational
+#define BOOST_TEST_MODULE Math::Rational
 #include <boost/test/included/unit_test.hpp>
 #include <Math/Rational.h>
 
