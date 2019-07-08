@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Hash.h"
+
 #include <forward_list>
 #include <unordered_map>
 #include <memory>
@@ -26,13 +28,6 @@ public:
 		const Pool*		m_owner;
 	};
 
-	struct Hasher {
-		constexpr size_t operator()(const Arguments& args) const;
-	private:
-		template<size_t idx>
-		constexpr static size_t hasher(const Arguments& args);
-	};
-
 	friend Deleter;
 	typedef std::unique_ptr<T, Deleter> unique_ptr;
 
@@ -44,7 +39,7 @@ public:
 	unique_ptr get(Args&&... args) const;
 private:
 	mutable std::mutex 	m_mutex;
-	mutable std::unordered_map<Arguments, std::forward_list<std::unique_ptr<T>>, Hasher> m_elements;
+	mutable std::unordered_map<Arguments, std::forward_list<std::unique_ptr<T>>, Hasher<Arguments>> m_elements;
 };
 
 }

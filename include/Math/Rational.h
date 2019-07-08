@@ -78,16 +78,4 @@ typedef Rational<int>		Rational_t;
 
 }
 
-namespace std {
-
-template<typename T>
-struct hash;
-
-template<typename T>
-struct hash<Zuazo::Math::Rational<T>>{
-	constexpr size_t operator()(const Rational<T>& rat) const;
-};
-
-}
-
 #include "Rational.inl"

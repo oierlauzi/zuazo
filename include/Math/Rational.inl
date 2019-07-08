@@ -246,19 +246,3 @@ constexpr int operator>=(const Rational<T>& left, const Rational<T>& right){
 }
 
 }
-
-namespace std {
-
-template<typename T>
-constexpr size_t hash<Zuazo::Math::Rational<T>>::operator()(const Zuazo::Math::Rational<T>& rat) const {
-	if constexpr (sizeof(size_t) > ( sizeof(T) / 2 )){
-		//It does not have trivial hash
-		return std::hash<T>(rat.m_num) ^ std::hash<T>(rat.m_den);
-	} else {
-		//It has a trivial hash
-		constexpr int shift = sizeof(size_t) * 8 / 2; //Bits to shift (half the bits of size_t)
-		return (static_cast<size_t>(rat.m_num) << shift) | static_cast<size_t>(rat.m_den);
-	}
-}
-
-}

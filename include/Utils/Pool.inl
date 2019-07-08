@@ -60,33 +60,4 @@ inline typename Pool<T, Args...>::unique_ptr Pool<T, Args...>::get(Args&&... arg
 	}
 }
 
-/*
- * HASHER
- */
-
-template<typename T, typename... Args>
-constexpr size_t Pool<T,  Args...>::Hasher::operator()(const Arguments& a) const{
-	constexpr size_t tupleSize = std::tuple_size<Arguments>::value;
-
-	if constexpr (tupleSize){
-		return hasher<tupleSize - 1>(a);
-	} else {
-		return 0;
-	}
-}
-
-template<typename T, typename... Args>
-template<size_t idx>
-constexpr size_t Pool<T,  Args...>::Hasher::hasher(const Arguments& a) {
-	using Element = typename std::tuple_element<idx, Arguments>::type;
-	const size_t hash = std::hash<Element>()(std::get<idx>(a)); //Current element's hash
-
-	if constexpr (idx){
-		const size_t prevHash = hasher<idx - 1>(a); //Previous element's hash
-		return prevHash ^ (hash + 0x9e3779b9 + (prevHash << 6) + (prevHash >> 2));
-	} else {
-		return hash;
-	}
-}
-
 }

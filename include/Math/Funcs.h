@@ -11,6 +11,9 @@ constexpr T gcd(T a, T b);
 template<typename T>
 constexpr T lcm(T a, T b);
 
+template<typename T>
+constexpr bool isDivisible(T a, T b);
+
 }
 
 #include "Funcs.inl"

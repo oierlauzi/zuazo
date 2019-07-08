@@ -9,6 +9,7 @@ constexpr T abs(T n){
 
 template<typename T>
 constexpr T gcd(T a, T b){
+	static_assert(std::is_integral<T>::value, "Template parameter must be an integer");
 	T result = 0;
 
 	#if __cplusplus > 201402L
@@ -36,6 +37,7 @@ constexpr T gcd(T a, T b){
 
 template<typename T>
 constexpr T lcm(T a, T b){
+	static_assert(std::is_integral<T>::value, "Template parameter must be an integer");
 	T result = 0;
 
 	#if __cplusplus > 201402L
@@ -54,5 +56,12 @@ constexpr T lcm(T a, T b){
 
 	return result;
 }
+
+template<typename T>
+constexpr bool isDivisible(T a, T b){
+	static_assert(std::is_integral<T>::value, "Template parameter must be an integer");
+	return (a / b) * b == a;
+}
+
 
 }
