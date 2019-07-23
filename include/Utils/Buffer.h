@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Hasher.h"
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <cstring>
@@ -27,6 +29,8 @@ private:
 	void*			m_data;
 	size_t			m_size;
 };
+
+
 
 }
 

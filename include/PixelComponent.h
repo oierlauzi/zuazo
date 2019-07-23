@@ -72,7 +72,8 @@ namespace Zuazo::PixelComponents {
 
 	constexpr auto IEEE_754_BIT = ZUAZO_BIT(PixelComponent::IEEE_754);
 	constexpr auto BAYER_BIT = ZUAZO_BIT(PixelComponent::BAYER);
-	constexpr auto NO_SUBSAMPLING = PixelComponent::Subsampling(1, 1);
+
+	constexpr auto NO_SUBSAMPLING = PixelComponent::Subsampling();
 
 	constexpr PixelComponent NONE   = PixelComponent();
 	constexpr PixelComponent NONE1  = PixelComponent(1);

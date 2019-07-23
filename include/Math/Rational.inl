@@ -97,6 +97,14 @@ constexpr Rational<T>::Rational(Real number) : Rational() {
 }
 
 template<typename T>
+template<typename Q>
+constexpr Rational<T>::Rational(const Rational<Q>& rat) :
+	m_num(static_cast<Integer>(rat.m_num)),
+	m_den(static_cast<Integer>(rat.m_den))
+{
+}
+
+template<typename T>
 constexpr typename Rational<T>::Integer Rational<T>::getNumerator() const{
 	return m_num;
 }
@@ -135,15 +143,6 @@ constexpr Rational<T>::operator Integer() const{
 template<typename T>
 constexpr Rational<T>::operator Real() const{
 	return static_cast<Real>(m_num) / m_den; 
-}
-
-template<typename T>
-template<typename Q>
-constexpr Rational<T>::operator Rational<Q>() const{
-	return Rational<Q>(
-		static_cast<Q>(m_num),
-		static_cast<Q>(m_den)
-	);
 }
 
 /*

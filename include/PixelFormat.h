@@ -11,7 +11,7 @@ namespace Zuazo {
 
 class PixelFormat {
 public:
-	static constexpr size_t MAX_PIXEL_COMOPONENTS = 8;
+	static constexpr size_t MAX_PIXEL_COMOPONENTS = 4;
 	typedef std::array<PixelComponent, MAX_PIXEL_COMOPONENTS> ComponentArray;
 
 	enum PlanarType {

@@ -38,4 +38,8 @@ constexpr Math::Rational_t Resolution::getAspectRatio() const {
     );
 }
 
+constexpr size_t ZUAZO_HASH_FUNC(const Resolution& res){
+    return res.x << 32 | res.y;
+}
+
 }

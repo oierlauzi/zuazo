@@ -3,6 +3,7 @@
 #include "PixelFormat.h"
 #include "Resolution.h"
 #include "Math/Rational.h"
+#include "Utils/Hasher.h"
 
 #include <set>
 #include <memory>
@@ -14,5 +15,7 @@ struct Videomode{
 	Resolution			resolution;
     Math::Rational_t	frameRate;
 };
+
+ZUAZO_DEFAULT_HASH(Videomode);
 
 }
