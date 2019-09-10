@@ -31,39 +31,5 @@
 *.out
 *.app
 
-#Eclipse project
-.settings/
-.cproject
-.project
-.directory
-
-#VSCode
-.vscode
-
-#Binaries
-libzuazo.so.*
-
-#doxygen doc
-doc/doxygen/html
-
-#CMake generated files
-CMakeCache.txt
-CMakeDoxyfile.in
-CMakeDoxygenDefaults.cmake
-CMakeFiles/
-cmake_install.cmake
-cmake_manifest.txt
-install_manifest.txt
-doc/doxygen/Doxyfile
-include/Includes.h
-include/Utils/PixelFormat.h
-include/Utils/Codec.h
-Makefile
-
-#Example buils
-examples/Example1
-examples/Example2
-examples/Example3
-examples/Example4
-examples/Example5
-examples/Example6
+#Build dir
+build/*

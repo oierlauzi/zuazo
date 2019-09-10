@@ -22,7 +22,7 @@ namespace Zuazo::Math {
  * It must be a signed integer
  */
 
-template<typename T>
+template<typename T = int_fast32_t>
 class Rational{
 public:
 	static_assert(std::is_integral<T>::value, "Template parameter must be an integer type");
@@ -154,7 +154,7 @@ public:
 	explicit constexpr operator Real() const;
 
 	//////////////////////////////////////////////
-	//			ARTHMETIC OPERATORS				//
+	//			ARITHMETIC OPERATORS				//
 	//////////////////////////////////////////////
 
 	template<typename Q>
@@ -197,7 +197,6 @@ typedef Rational<int64_t>	Rational128_t;
 typedef Rational<int32_t>	Rational64_t;
 typedef Rational<int16_t>	Rational32_t;
 typedef Rational<int8_t>	Rational16_t;
-typedef Rational<int_fast32_t> Rational_t;
 
 }
 
