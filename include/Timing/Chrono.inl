@@ -1,13 +1,11 @@
-#include "Chrono.h"
-
 namespace Zuazo::Timing {
 
-constexpr Duration getPeriod(const Rate& rate) {
-    Duration::rep ticks = static_cast<Duration::rep>( Rate(Duration::period::den, Duration::period::num) / rate );
-    return Duration(ticks);
+constexpr Period getPeriod(const Rate& rate) {
+    Period::rep ticks = static_cast<Period::rep>( Rate(Period::period::den, Period::period::num) / rate );
+    return Period(ticks);
 }
 
-constexpr Rate getRate(const Duration& period) {
+constexpr Rate getRate(const Period& period) {
     return Rate(Duration::period::num, Duration::period::den) / Rate(period.count(), 1);
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Color.h"
+#include "Includes.h"
 #include "KHR/khrplatform.h"
 #include "Math/Matrix.h"
 #include "Math/Rational.h"
@@ -15,14 +16,16 @@
 #include "Stream/LazySource.h"
 #include "Stream/Operators.h"
 #include "Stream/Source.h"
+#include "Timing/Chrono.h"
 #include "Timing/EventBase.h"
+#include "Timing/PeriodicEvent.h"
+#include "Timing/Scheduler.h"
 #include "Utils/Buffer.h"
 #include "Utils/Hasher.h"
 #include "Utils/MMBuffer.h"
 #include "Utils/Macros.h"
 #include "Utils/PhantomClass.h"
 #include "Utils/Pool.h"
-#include "Videomode.h"
 #include "glad/glad.h"
 
 

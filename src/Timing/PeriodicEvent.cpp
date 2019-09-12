@@ -1,19 +1,54 @@
 #include <Timing/PeriodicEvent.h>
 
+#include <Timing/Scheduler.h>
+
 namespace Zuazo::Timing {
 
-EventBase::EventBase(Priority prior) :
-    m_priority(prior)
+PeriodicEvent::PeriodicEvent(Priority prior) : EventBase(prior),
+    m_period(0)
 {
 }
 
-
-void EventBase::setPriority(Priority prior) {
-    m_priority = prior;
+PeriodicEvent::PeriodicEvent(const PeriodicEvent& other) : EventBase(other),
+    m_period(other.m_period)
+{
 }
 
-EventBase::Priority EventBase::getPriority() const{
-    return m_priority;
+PeriodicEvent::PeriodicEvent(Priority prior, const Duration& period) : EventBase(prior),
+    m_period(period)
+{
+}
+
+PeriodicEvent::PeriodicEvent(Priority prior, const Rate& rate) : EventBase(prior),
+    m_period(Timing::getPeriod(rate))
+{
+}
+
+void PeriodicEvent::setPeriod(const Period& period){
+    UniqueDisable dis(*this); //Disable temporaly
+    m_period = period;
+}
+
+const Period& PeriodicEvent::getPeriod() const{
+    return m_period;
+}
+
+void PeriodicEvent::setRate(const Rate& rate){
+    setPeriod(Timing::getPeriod(rate));
+}
+
+Rate PeriodicEvent::getRate() const{
+    return Timing::getRate(m_period);
+}
+
+void PeriodicEvent::enable(){
+    scheduler->addEvent(*this);
+    EventBase::enable();
+}
+
+void PeriodicEvent::disable(){
+    scheduler->removeEvent(*this);
+    EventBase::disable();
 }
 
 }

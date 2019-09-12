@@ -8,10 +8,13 @@ namespace Zuazo::Timing {
 
 using Clock = std::chrono::steady_clock;
 using Duration = Clock::duration;
-using Rate = Math::Rational<Duration::rep>;
+using TimePoint = Clock::time_point;
 
-constexpr Duration getPeriod(const Rate& rate);
-constexpr Rate getRate(const Duration& period);
+using Period = Duration;
+using Rate = Math::Rational<Period::rep>;
+
+constexpr Period getPeriod(const Rate& rate);
+constexpr Rate getRate(const Period& period);
 
 }
 
