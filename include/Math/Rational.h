@@ -1,8 +1,7 @@
 #pragma once
 
-#include <math.h>
-#include <stddef.h>
-#include <sys/types.h>
+#include <cstdint>
+#include <cmath>
 #include <limits>
 #include <numeric>
 #include <type_traits>
@@ -99,7 +98,7 @@ public:
 	 * \param[in] rat
 	 * The rational to be copied
 	 */
-	Rational(const Rational<T>& rat)=default;
+	constexpr Rational(const Rational& rat)=default;
 
 	/**
 	 * \brief
@@ -109,7 +108,7 @@ public:
 	 * The rational to be copied
 	 */
 	template<typename Q>
-	Rational(const Rational<Q>& rat);
+	constexpr Rational(const Rational<Q>& rat);
 
 	/**
 	 * \brief
@@ -185,9 +184,6 @@ public:
 	friend constexpr int operator>(const Rational<Q>& left, const Rational<Q>& right);
 	template<typename Q>
 	friend constexpr int operator>=(const Rational<Q>& left, const Rational<Q>& right);
-
-	template<typename Q>
-	friend std::hash<Rational<Q>>;
 private:
 	Integer m_num;
 	Integer m_den;

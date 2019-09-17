@@ -17,10 +17,10 @@ constexpr Rational<T>::Rational(Integer num, Integer den) :
 	m_den(den)
 {
 	//Take out the common factor
-	Integer hcd = gcd(m_num, m_den);
-	if(hcd > 1){
-		m_num /= hcd;
-		m_den /= hcd;
+	Integer gcd = std::gcd(m_num, m_den);
+	if(gcd > 1){
+		m_num /= gcd;
+		m_den /= gcd;
 	}
 
 	//Only numerator should be negative
@@ -46,7 +46,7 @@ constexpr Rational<T>::Rational(Real number) : Rational() {
 
 	if(number == -std::numeric_limits<Real>::infinity()){ m_num = -1; m_den = 0; } //Minus infinity
 	else if(number == +std::numeric_limits<Real>::infinity()){ m_num = +1; m_den = 0; } //Plus infinity
-	else if(isnan(number)){ m_num = 0; m_den = 0; } //NAN
+	else if(std::isnan(number)){ m_num = 0; m_den = 0; } //NAN
 	else{
 		const size_t precision=64;
 		const int32_t MAX_DENOMINATOR=4096;

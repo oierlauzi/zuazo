@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 namespace Zuazo::Timing {
 
 class Scheduler;
@@ -14,7 +12,7 @@ public:
 
     EventBase(Priority prior);
     EventBase(const EventBase& other);
-    ~EventBase();
+    virtual ~EventBase();
 
     void                setPriority(Priority prior);
     Priority            getPriority() const;
@@ -40,6 +38,6 @@ public:
     }
 private:
     EventBase* m_evnt;
-}
+};
 
 }

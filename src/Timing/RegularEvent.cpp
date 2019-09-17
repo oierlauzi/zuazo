@@ -1,21 +1,22 @@
 #include <Timing/RegularEvent.h>
 
+#include <Timing/Scheduler.h>
+
 namespace Zuazo::Timing {
 
 RegularEvent::RegularEvent(Priority prior) : EventBase(prior)
 {
 }
 
-RegularEvent::RegularEvent(const RegularEvent& other) : EventBase(other)
-{
-}
-
 void RegularEvent::enable(){
-    //TODO
+    scheduler->addEvent(*this);
+    EventBase::enable();
 }
 
 void RegularEvent::disable(){
-    //TODO
+    scheduler->removeEvent(*this);
+    EventBase::disable();
 }
+
 
 }

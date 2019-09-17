@@ -1,5 +1,7 @@
 #include <Timing/EventBase.h>
 
+#include <Timing/Scheduler.h>
+
 namespace Zuazo::Timing {
 
 EventBase::EventBase(Priority prior) :

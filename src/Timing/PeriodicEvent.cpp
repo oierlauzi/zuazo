@@ -9,11 +9,6 @@ PeriodicEvent::PeriodicEvent(Priority prior) : EventBase(prior),
 {
 }
 
-PeriodicEvent::PeriodicEvent(const PeriodicEvent& other) : EventBase(other),
-    m_period(other.m_period)
-{
-}
-
 PeriodicEvent::PeriodicEvent(Priority prior, const Duration& period) : EventBase(prior),
     m_period(period)
 {
@@ -22,6 +17,16 @@ PeriodicEvent::PeriodicEvent(Priority prior, const Duration& period) : EventBase
 PeriodicEvent::PeriodicEvent(Priority prior, const Rate& rate) : EventBase(prior),
     m_period(Timing::getPeriod(rate))
 {
+}
+
+void PeriodicEvent::enable(){
+    scheduler->addEvent(*this);
+    EventBase::enable();
+}
+
+void PeriodicEvent::disable(){
+    scheduler->removeEvent(*this);
+    EventBase::disable();
 }
 
 void PeriodicEvent::setPeriod(const Period& period){
@@ -39,16 +44,6 @@ void PeriodicEvent::setRate(const Rate& rate){
 
 Rate PeriodicEvent::getRate() const{
     return Timing::getRate(m_period);
-}
-
-void PeriodicEvent::enable(){
-    scheduler->addEvent(*this);
-    EventBase::enable();
-}
-
-void PeriodicEvent::disable(){
-    scheduler->removeEvent(*this);
-    EventBase::disable();
 }
 
 }

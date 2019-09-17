@@ -1,12 +1,14 @@
 #include <Timing/Scheduler.h>
 
+#include <typeinfo>
+
 namespace Zuazo::Timing {
 
 std::unique_ptr<Scheduler> scheduler;
 
 Scheduler::Scheduler() :
     m_exit(false),
-    m_thread(this, &Scheduler::loopFunc)
+    m_thread(&Scheduler::loopFunc, this)
 {
 }
 
@@ -113,6 +115,16 @@ void Scheduler::removeEvent(const PeriodicEvent& evnt){
             //No remaingin events on this period, erase it
             m_periodicEvnts.erase(ite);
         }
+    }
+}
+
+bool Scheduler::PriorityCmp::operator()(const EventBase* a, const EventBase* b) const {
+    if(a->getPriority() < b->getPriority()){
+        return true;
+    } else if(a->getPriority() > b->getPriority()){
+        return false;
+    }else {
+        return a < b;
     }
 }
 

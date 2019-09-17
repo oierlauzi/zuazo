@@ -5,7 +5,7 @@
 #include <limits>
 #include <cmath>
 
-using Rational = Zuazo::Math::Rational_t;
+using Rational = Zuazo::Math::Rational<>;
 
 /*
  * Constructor
@@ -117,7 +117,7 @@ BOOST_AUTO_TEST_CASE(cast_nan){
 
     BOOST_CHECK(static_cast<bool>(rat) == false);
     BOOST_CHECK(static_cast<Rational::Integer>(rat) == 0);
-    BOOST_CHECK(isnan(static_cast<Rational::Real>(rat)));
+    BOOST_CHECK(std::isnan(static_cast<Rational::Real>(rat)));
 }
 
 /*

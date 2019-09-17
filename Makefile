@@ -68,6 +68,18 @@ install/strip/fast: preinstall/fast
 	/usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
 .PHONY : install/strip/fast
 
+# Special rule for the target install/local
+install/local: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
+	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+.PHONY : install/local
+
+# Special rule for the target install/local
+install/local/fast: preinstall/fast
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
+	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+.PHONY : install/local/fast
+
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
@@ -99,18 +111,6 @@ list_install_components:
 list_install_components/fast: list_install_components
 
 .PHONY : list_install_components/fast
-
-# Special rule for the target install/local
-install/local: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
-	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
-.PHONY : install/local
-
-# Special rule for the target install/local
-install/local/fast: preinstall/fast
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
-	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
-.PHONY : install/local/fast
 
 # Special rule for the target install
 install: preinstall
@@ -169,70 +169,113 @@ zuazo/fast:
 	$(MAKE) -f CMakeFiles/zuazo.dir/build.make CMakeFiles/zuazo.dir/build
 .PHONY : zuazo/fast
 
-#=============================================================================
-# Target rules for targets named doxygen
+src/Timing/EventBase.o: src/Timing/EventBase.cpp.o
 
-# Build rule for target.
-doxygen: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 doxygen
-.PHONY : doxygen
+.PHONY : src/Timing/EventBase.o
 
-# fast build rule for target.
-doxygen/fast:
-	$(MAKE) -f doc/doxygen/CMakeFiles/doxygen.dir/build.make doc/doxygen/CMakeFiles/doxygen.dir/build
-.PHONY : doxygen/fast
+# target to build an object file
+src/Timing/EventBase.cpp.o:
+	$(MAKE) -f CMakeFiles/zuazo.dir/build.make CMakeFiles/zuazo.dir/src/Timing/EventBase.cpp.o
+.PHONY : src/Timing/EventBase.cpp.o
 
-#=============================================================================
-# Target rules for targets named Example1
+src/Timing/EventBase.i: src/Timing/EventBase.cpp.i
 
-# Build rule for target.
-Example1: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 Example1
-.PHONY : Example1
+.PHONY : src/Timing/EventBase.i
 
-# fast build rule for target.
-Example1/fast:
-	$(MAKE) -f examples/CMakeFiles/Example1.dir/build.make examples/CMakeFiles/Example1.dir/build
-.PHONY : Example1/fast
+# target to preprocess a source file
+src/Timing/EventBase.cpp.i:
+	$(MAKE) -f CMakeFiles/zuazo.dir/build.make CMakeFiles/zuazo.dir/src/Timing/EventBase.cpp.i
+.PHONY : src/Timing/EventBase.cpp.i
 
-#=============================================================================
-# Target rules for targets named examples
+src/Timing/EventBase.s: src/Timing/EventBase.cpp.s
 
-# Build rule for target.
-examples: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 examples
-.PHONY : examples
+.PHONY : src/Timing/EventBase.s
 
-# fast build rule for target.
-examples/fast:
-	$(MAKE) -f examples/CMakeFiles/examples.dir/build.make examples/CMakeFiles/examples.dir/build
-.PHONY : examples/fast
+# target to generate assembly for a file
+src/Timing/EventBase.cpp.s:
+	$(MAKE) -f CMakeFiles/zuazo.dir/build.make CMakeFiles/zuazo.dir/src/Timing/EventBase.cpp.s
+.PHONY : src/Timing/EventBase.cpp.s
 
-#=============================================================================
-# Target rules for targets named Rational
+src/Timing/PeriodicEvent.o: src/Timing/PeriodicEvent.cpp.o
 
-# Build rule for target.
-Rational: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 Rational
-.PHONY : Rational
+.PHONY : src/Timing/PeriodicEvent.o
 
-# fast build rule for target.
-Rational/fast:
-	$(MAKE) -f test/CMakeFiles/Rational.dir/build.make test/CMakeFiles/Rational.dir/build
-.PHONY : Rational/fast
+# target to build an object file
+src/Timing/PeriodicEvent.cpp.o:
+	$(MAKE) -f CMakeFiles/zuazo.dir/build.make CMakeFiles/zuazo.dir/src/Timing/PeriodicEvent.cpp.o
+.PHONY : src/Timing/PeriodicEvent.cpp.o
 
-#=============================================================================
-# Target rules for targets named test
+src/Timing/PeriodicEvent.i: src/Timing/PeriodicEvent.cpp.i
 
-# Build rule for target.
-test: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 test
-.PHONY : test
+.PHONY : src/Timing/PeriodicEvent.i
 
-# fast build rule for target.
-test/fast:
-	$(MAKE) -f test/CMakeFiles/test.dir/build.make test/CMakeFiles/test.dir/build
-.PHONY : test/fast
+# target to preprocess a source file
+src/Timing/PeriodicEvent.cpp.i:
+	$(MAKE) -f CMakeFiles/zuazo.dir/build.make CMakeFiles/zuazo.dir/src/Timing/PeriodicEvent.cpp.i
+.PHONY : src/Timing/PeriodicEvent.cpp.i
+
+src/Timing/PeriodicEvent.s: src/Timing/PeriodicEvent.cpp.s
+
+.PHONY : src/Timing/PeriodicEvent.s
+
+# target to generate assembly for a file
+src/Timing/PeriodicEvent.cpp.s:
+	$(MAKE) -f CMakeFiles/zuazo.dir/build.make CMakeFiles/zuazo.dir/src/Timing/PeriodicEvent.cpp.s
+.PHONY : src/Timing/PeriodicEvent.cpp.s
+
+src/Timing/RegularEvent.o: src/Timing/RegularEvent.cpp.o
+
+.PHONY : src/Timing/RegularEvent.o
+
+# target to build an object file
+src/Timing/RegularEvent.cpp.o:
+	$(MAKE) -f CMakeFiles/zuazo.dir/build.make CMakeFiles/zuazo.dir/src/Timing/RegularEvent.cpp.o
+.PHONY : src/Timing/RegularEvent.cpp.o
+
+src/Timing/RegularEvent.i: src/Timing/RegularEvent.cpp.i
+
+.PHONY : src/Timing/RegularEvent.i
+
+# target to preprocess a source file
+src/Timing/RegularEvent.cpp.i:
+	$(MAKE) -f CMakeFiles/zuazo.dir/build.make CMakeFiles/zuazo.dir/src/Timing/RegularEvent.cpp.i
+.PHONY : src/Timing/RegularEvent.cpp.i
+
+src/Timing/RegularEvent.s: src/Timing/RegularEvent.cpp.s
+
+.PHONY : src/Timing/RegularEvent.s
+
+# target to generate assembly for a file
+src/Timing/RegularEvent.cpp.s:
+	$(MAKE) -f CMakeFiles/zuazo.dir/build.make CMakeFiles/zuazo.dir/src/Timing/RegularEvent.cpp.s
+.PHONY : src/Timing/RegularEvent.cpp.s
+
+src/Timing/Scheduler.o: src/Timing/Scheduler.cpp.o
+
+.PHONY : src/Timing/Scheduler.o
+
+# target to build an object file
+src/Timing/Scheduler.cpp.o:
+	$(MAKE) -f CMakeFiles/zuazo.dir/build.make CMakeFiles/zuazo.dir/src/Timing/Scheduler.cpp.o
+.PHONY : src/Timing/Scheduler.cpp.o
+
+src/Timing/Scheduler.i: src/Timing/Scheduler.cpp.i
+
+.PHONY : src/Timing/Scheduler.i
+
+# target to preprocess a source file
+src/Timing/Scheduler.cpp.i:
+	$(MAKE) -f CMakeFiles/zuazo.dir/build.make CMakeFiles/zuazo.dir/src/Timing/Scheduler.cpp.i
+.PHONY : src/Timing/Scheduler.cpp.i
+
+src/Timing/Scheduler.s: src/Timing/Scheduler.cpp.s
+
+.PHONY : src/Timing/Scheduler.s
+
+# target to generate assembly for a file
+src/Timing/Scheduler.cpp.s:
+	$(MAKE) -f CMakeFiles/zuazo.dir/build.make CMakeFiles/zuazo.dir/src/Timing/Scheduler.cpp.s
+.PHONY : src/Timing/Scheduler.cpp.s
 
 src/glad.o: src/glad.c.o
 
@@ -268,17 +311,24 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... install/strip"
+	@echo "... install/local"
 	@echo "... edit_cache"
 	@echo "... zuazo"
 	@echo "... rebuild_cache"
 	@echo "... list_install_components"
-	@echo "... install/local"
 	@echo "... install"
-	@echo "... doxygen"
-	@echo "... Example1"
-	@echo "... examples"
-	@echo "... Rational"
-	@echo "... test"
+	@echo "... src/Timing/EventBase.o"
+	@echo "... src/Timing/EventBase.i"
+	@echo "... src/Timing/EventBase.s"
+	@echo "... src/Timing/PeriodicEvent.o"
+	@echo "... src/Timing/PeriodicEvent.i"
+	@echo "... src/Timing/PeriodicEvent.s"
+	@echo "... src/Timing/RegularEvent.o"
+	@echo "... src/Timing/RegularEvent.i"
+	@echo "... src/Timing/RegularEvent.s"
+	@echo "... src/Timing/Scheduler.o"
+	@echo "... src/Timing/Scheduler.i"
+	@echo "... src/Timing/Scheduler.s"
 	@echo "... src/glad.o"
 	@echo "... src/glad.i"
 	@echo "... src/glad.s"

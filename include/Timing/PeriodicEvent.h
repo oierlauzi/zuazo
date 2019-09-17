@@ -10,16 +10,16 @@ public:
     PeriodicEvent(Priority prior);
     PeriodicEvent(Priority prior, const Rate& rate);
     PeriodicEvent(Priority prior, const Period& period);
-    PeriodicEvent(const PeriodicEvent& other);
+    PeriodicEvent(const PeriodicEvent& other) = delete;
     ~PeriodicEvent() = default;
+
+    virtual void        enable() override;
+    virtual void        disable() override;
 
     void                setPeriod(const Period& period);
     const Period&       getPeriod() const;
     void                setRate(const Rate& rate);
     Rate                getRate() const;
-
-    virtual void        enable() override;
-    virtual void        disable() override;
 protected:
 
 private:

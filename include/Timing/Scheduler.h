@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EventBase.h"
 #include "RegularEvent.h"
 #include "PeriodicEvent.h"
 #include "Chrono.h"
@@ -18,9 +19,9 @@ class Scheduler {
     friend RegularEvent;
     friend PeriodicEvent;
 public:
-    Scheduler() = default;
+    Scheduler();
     Scheduler(const Scheduler& other) = delete;
-    ~Scheduler() = default;
+    ~Scheduler();
 private:
     struct PriorityCmp {
         bool operator()(const EventBase* a, const EventBase* b) const;
@@ -45,22 +46,12 @@ private:
 
     void                            loopFunc();
 
-    void        addEvent(const RegularEvent& evnt);
-    void        removeEvent(const RegularEvent& evnt);
-    void        addEvent(const PeriodicEvent& evnt);
-    void        removeEvent(const PeriodicEvent& evnt);
+    void                            addEvent(const RegularEvent& evnt);
+    void                            removeEvent(const RegularEvent& evnt);
+    void                            addEvent(const PeriodicEvent& evnt);
+    void                            removeEvent(const PeriodicEvent& evnt);
 };
 
 extern std::unique_ptr<Scheduler> scheduler;
-
-inline bool Scheduler::PriorityCmp::operator()(const EventBase* a, const EventBase* b) const {
-    if(a->getPriority() < b->getPriority()){
-        return true;
-    } else if(a->getPriority() > b->getPriority()){
-        return false;
-    }else {
-        return a < b;
-    }
-}
 
 }

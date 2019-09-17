@@ -1,42 +1,64 @@
+#include "Consumer.h"
+
 namespace Zuazo::Stream {
 
 template <typename T>
-inline Consumer<T>::Consumer() :
-	m_source(nullptr),
-    m_lastId(0)
-{
-}
-
-template <typename T>
-inline void Consumer<T>::setSource(const Source<T>* src){
-	m_source=src;
-}
-
-template <typename T>
-inline std::shared_ptr<const T> Consumer<T>::get() const{
-    m_lastId = getId();
-    return m_source ? m_source->get() : std::shared_ptr<const T>();
-}
-
-template <typename T>
-inline typename Source<T>::id_t Consumer<T>::getId() const{
-    return m_source ? m_source->getId() : 0;
-}
-
-template <typename T>
-inline bool Consumer<T>::hasChanged() const{
-	return m_lastId == getId(); 
+Consumer<T>::Consumer(){
 
 }
 
 template <typename T>
-inline void Consumer<T>::reset(){
-	m_lastElement=std::shared_ptr<const T>();
+Consumer<T>::Consumer(const Consumer& other){
+
 }
 
 template <typename T>
-inline std::shared_ptr<const T> Consumer<T>::reqElement() const{
-	
+Consumer<T>::Consumer(Consumer&& other){
+
 }
 
+template <typename T>
+Consumer<T>::~Consumer(){
+
+}
+
+template <typename T>
+void Consumer<T>::setSource(Source<T>& src){
+    setSource(&src);
+}
+
+template <typename T>
+void Consumer<T>::setSource(Source<T>* src){
+    if(m_source){
+        //There was a source previously set
+        m_source->m_consumers.erase(this);
+    }
+
+    m_source = src; //Assing the new source
+
+    if(m_source){
+        //It is a valid source. Set it active
+        m_source->m_consumers.insert(this);
+    }
+}
+
+template <typename T>
+const std::shared_ptr<const T>& Consumer<T>::get() const{
+    if(m_source) {
+        m_lastElement = m_source->get();
+    } else {
+        m_lastElement = nullptr;
+    }
+
+    return m_lastElement;
+}
+
+template <typename T>
+bool Consumer<T>::hasChanged() const{
+    if(m_source){
+        return m_lastElement == m_source->get();
+    }else {
+        return m_lastElement == nullptr;
+    }
+}
 }

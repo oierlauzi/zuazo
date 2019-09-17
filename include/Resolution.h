@@ -18,7 +18,7 @@ struct Resolution{
     };
 
     constexpr Resolution();
-    constexpr Resolution(uint width, uint height);
+    constexpr Resolution(uint32_t width, uint32_t height);
     template<typename T>
     constexpr Resolution(const Math::Vec2<T>& res);
     Resolution(const Resolution& other) = default;

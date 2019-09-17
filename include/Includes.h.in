@@ -1,6 +1,6 @@
 #pragma once
 
-@INCLUDE_LIST@
+@HEADER_LIST@
 
 //Defines a shorcut for Zuazo
 //If you don't want to define it, use #define DONT_DEFINE_ZZ 

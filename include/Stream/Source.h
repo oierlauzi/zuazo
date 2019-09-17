@@ -1,43 +1,43 @@
 #pragma once
 
 #include <memory>
-#include <atomic>
+#include <set>
 
-namespace Zuazo::Stream{
+namespace Zuazo::Stream {
 
 template <typename T>
-class Source{
+class Consumer;
+
+template <typename T>
+class Source {
+    friend Consumer<T>;
 public:
-	typedef size_t id_t;
+    Source() = default;
+    Source(const Source& other);
+    Source(Source&& other);
+    virtual ~Source();
 
-	Source() = default;
-	Source(const Source& other) = default;
-	Source(Source&& other) = default;
-	virtual ~Source() = default;
+    void                                    addConsumer(Consumer<T>& consumer);
+    void                                    addConsumer(Consumer<T>* consumer);
+    void                                    removeConsumer(Consumer<T>& consumer);
+    void                                    removeConsumer(Consumer<T>* consumer);
+    const std::set<Consumer<T>*>&           getConsumers() const;
 
-	virtual std::shared_ptr<const T>	get() const;
-	id_t								getId() const;
+    virtual const std::shared_ptr<const T>& get() const;
 protected:
-	void								push() const;
-	void								push(const std::shared_ptr<const T>& element) const;
-	void								push(std::shared_ptr<const T>&& element) const;
-
-	void								reset();
+    void                                    reset();
+    void                                    push(std::shared_ptr<const T>&& element);
 private:
-	mutable std::shared_ptr<const T>	m_last;
-	mutable std::shared_ptr<const T>	m_lastId;
+    std::set<Consumer<T>*>                  m_consumers;
 
-	static std::atomic<id_t>			s_id;
+    std::shared_ptr<const T>                m_lastElement;
 };
 
 template <typename T>
-class SourcePad :
-		public Source<T>
-{
-public:
-	using Source<T>::Source;
-	using Source<T>::push;
-	using Source<T>::reset;
+struct SourcePad : Source<T> {
+    using Source<T>::Source;
+    using Source<T>::reset;
+    using Source<T>::push;
 };
 
 }
