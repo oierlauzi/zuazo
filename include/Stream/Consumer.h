@@ -1,35 +1,39 @@
 #pragma once
 
-#include "Source.h"
+#include "ConsumerPad.h"
 
 #include <memory>
 
 namespace Zuazo::Stream {
 
-template <typename T>
-class Consumer {
-public:
-    Consumer(); 
-    Consumer(const Consumer& other);
-    Consumer(Consumer&& other);
-    virtual ~Consumer();
 
-    void                                setSource(Source<T>& src);
-    void                                setSource(Source<T>* src);
-protected:
+template <typename T>
+class ConsumerPad;
+
+template <typename T>
+class Consumer : public ConsumerPad<T> {
+public:
+    struct BackupSignal;
+
+    Consumer() = default; 
+    Consumer(const Consumer& other) = default; 
+    Consumer(Consumer&& other) = default; 
+    virtual ~Consumer() = default; 
+
+    void                                reset();
     const std::shared_ptr<const T>&     get() const;
     bool                                hasChanged() const;
-private:
-    Source<T>*                          m_source;
-    
+
+    static BackupSignal                 onNoSignal;
+private:   
     mutable std::shared_ptr<const T>    m_lastElement;
+
+    const std::shared_ptr<const T>&     reqElement() const;
 };
 
 template <typename T>
-struct ConsumerPad : Consumer<T>{
-    using Consumer<T>::Consumer;
-    using Consumer<T>::get;
-    using Consumer<T>::hasChanged;
+class Consumer<T>::BackupSignal : public ConsumerPad<T> {
+    friend Consumer<T>;
 };
 
 }

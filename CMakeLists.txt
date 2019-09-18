@@ -6,19 +6,19 @@ project(zuazo
     DESCRIPTION "A hardware accelerated video manipulation library"
 )
 
-#Subdirectories TODO
-#add_subdirectory(${PROJECT_SOURCE_DIR}/doc/doxygen/)
-#add_subdirectory(${PROJECT_SOURCE_DIR}/examples/)
-#add_subdirectory(${PROJECT_SOURCE_DIR}/test/)
-
 #zuazo's include path
-include_directories(include)
+include_directories(${PROJECT_SOURCE_DIR}/include)
 
 include(GNUInstallDirs)
 
 #Set compiler's options
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+
+#Subdirectories TODO
+add_subdirectory(${PROJECT_SOURCE_DIR}/doc/doxygen/)
+add_subdirectory(${PROJECT_SOURCE_DIR}/examples/)
+add_subdirectory(${PROJECT_SOURCE_DIR}/test/)
 
 #Register all source and header files
 file(GLOB_RECURSE SOURCES src/*.cpp src/*.c)

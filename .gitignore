@@ -39,6 +39,7 @@ build/*
 
 #CMake
 Makefile
+DartConfiguration.tcl
 cmake_install.cmake
 CMakeCache.txt
 CMakeDoxyfile.in
@@ -46,9 +47,6 @@ CMakeDoxygenDefaults.cmake
 CMakeFiles/*
 install_manifest.txt
 include/Includes.h
-
-#Makefile
-Makefile
 
 #Binaries
 libzuazo.so*

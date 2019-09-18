@@ -3,62 +3,32 @@
 namespace Zuazo::Stream {
 
 template <typename T>
-Consumer<T>::Consumer(){
-
-}
+typename Consumer<T>::BackupSignal Consumer<T>::onNoSignal;
 
 template <typename T>
-Consumer<T>::Consumer(const Consumer& other){
-
-}
-
-template <typename T>
-Consumer<T>::Consumer(Consumer&& other){
-
-}
-
-template <typename T>
-Consumer<T>::~Consumer(){
-
-}
-
-template <typename T>
-void Consumer<T>::setSource(Source<T>& src){
-    setSource(&src);
-}
-
-template <typename T>
-void Consumer<T>::setSource(Source<T>* src){
-    if(m_source){
-        //There was a source previously set
-        m_source->m_consumers.erase(this);
-    }
-
-    m_source = src; //Assing the new source
-
-    if(m_source){
-        //It is a valid source. Set it active
-        m_source->m_consumers.insert(this);
-    }
+void Consumer<T>::reset() {
+    m_lastElement.reset();
 }
 
 template <typename T>
 const std::shared_ptr<const T>& Consumer<T>::get() const{
-    if(m_source) {
-        m_lastElement = m_source->get();
-    } else {
-        m_lastElement = nullptr;
-    }
-
+    m_lastElement = reqElement();
     return m_lastElement;
 }
 
 template <typename T>
 bool Consumer<T>::hasChanged() const{
-    if(m_source){
-        return m_lastElement == m_source->get();
-    }else {
-        return m_lastElement == nullptr;
+    return m_lastElement == reqElement();
+}
+
+template <typename T>
+const std::shared_ptr<const T>& Consumer<T>::reqElement() const{
+    const std::shared_ptr<const T>& newElement = ConsumerPad<T>::get();
+
+    if(newElement) {
+        return newElement;
+    } else {
+        return onNoSignal.get();
     }
 }
 }
