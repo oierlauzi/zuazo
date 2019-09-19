@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace Zuazo::Stream {
+namespace Zuazo::Signal {
 
 template <typename T>
 inline void Source<T>::reset(){

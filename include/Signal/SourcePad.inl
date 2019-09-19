@@ -4,7 +4,13 @@
 
 #include <utility>
 
-namespace Zuazo::Stream {
+namespace Zuazo::Signal {
+
+template <typename T>
+inline SourcePad<T>::SourcePad(std::string&& name) : 
+    PadBase(std::forward<std::string>(name))
+{
+}
 
 template <typename T>
 inline SourcePad<T>::SourcePad(const SourcePad& other) : SourcePad()

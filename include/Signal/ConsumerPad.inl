@@ -2,10 +2,16 @@
 
 #include "SourcePad.h"
 
-namespace Zuazo::Stream {
+namespace Zuazo::Signal {
 
 template <typename T>
 const std::shared_ptr<const T> ConsumerPad<T>::NO_SIGNAL;
+
+template <typename T>
+inline ConsumerPad<T>::ConsumerPad(std::string&& name) : 
+    PadBase(std::forward<std::string>(name))
+{
+}
 
 template <typename T>
 inline ConsumerPad<T>::ConsumerPad(const ConsumerPad& other){

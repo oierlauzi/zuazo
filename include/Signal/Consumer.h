@@ -4,7 +4,7 @@
 
 #include <memory>
 
-namespace Zuazo::Stream {
+namespace Zuazo::Signal {
 
 
 template <typename T>
@@ -14,17 +14,13 @@ template <typename T>
 class Consumer : public ConsumerPad<T> {
 public:
     struct BackupSignal;
-
-    Consumer() = default; 
-    Consumer(const Consumer& other) = default; 
-    Consumer(Consumer&& other) = default; 
-    virtual ~Consumer() = default; 
+    using ConsumerPad<T>::ConsumerPad;
 
     void                                reset();
     const std::shared_ptr<const T>&     get() const;
     bool                                hasChanged() const;
 
-    static BackupSignal                 onNoSignal;
+    static BackupSignal                 backupSignal;
 private:   
     mutable std::shared_ptr<const T>    m_lastElement;
 

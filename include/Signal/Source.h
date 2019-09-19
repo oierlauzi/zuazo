@@ -4,15 +4,12 @@
 
 #include <memory>
 
-namespace Zuazo::Stream {
+namespace Zuazo::Signal {
 
 template <typename T>
 class Source : public SourcePad<T> {
 public:
-    Source() = default;
-    Source(const Source& other) = default;
-    Source(Source&& other) = default;
-    virtual ~Source() = default;
+    using SourcePad<T>::SourcePad;
 
     void                                    reset();
     void                                    push(std::shared_ptr<const T>&& element);

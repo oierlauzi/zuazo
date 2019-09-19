@@ -3,7 +3,7 @@
 #include "SourcePad.h"
 #include "ConsumerPad.h"
 
-namespace Zuazo::Stream {
+namespace Zuazo::Signal {
 
 struct NoSignal {};
 constexpr NoSignal noSignal;

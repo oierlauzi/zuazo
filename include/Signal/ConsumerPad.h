@@ -1,16 +1,19 @@
 #pragma once
 
+#include "PadBase.h"
+
 #include <memory>
 
-namespace Zuazo::Stream {
+namespace Zuazo::Signal {
 
 template <typename T>
 class SourcePad;
 
 template <typename T>
-class ConsumerPad {
+class ConsumerPad : public PadBase {
 public:
     ConsumerPad() = default;
+    ConsumerPad(std::string&& name);
     ConsumerPad(const ConsumerPad& other);
     ConsumerPad(ConsumerPad&& other);
     virtual ~ConsumerPad();

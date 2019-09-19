@@ -1,6 +1,6 @@
 #include "Signal.h"
 
-namespace Zuazo::Stream {
+namespace Zuazo::Signal {
 
 template <typename T>
 inline void operator<<(ConsumerPad<T>& dst, SourcePad<T>& src){

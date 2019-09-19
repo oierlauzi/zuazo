@@ -1,9 +1,9 @@
 #include "Consumer.h"
 
-namespace Zuazo::Stream {
+namespace Zuazo::Signal {
 
 template <typename T>
-typename Consumer<T>::BackupSignal Consumer<T>::onNoSignal;
+typename Consumer<T>::BackupSignal Consumer<T>::backupSignal;
 
 template <typename T>
 void Consumer<T>::reset() {
@@ -28,7 +28,7 @@ const std::shared_ptr<const T>& Consumer<T>::reqElement() const{
     if(newElement) {
         return newElement;
     } else {
-        return onNoSignal.get();
+        return backupSignal.get();
     }
 }
 }
