@@ -5,7 +5,7 @@
 namespace Zuazo::Signal {
 
 template <typename T>
-const std::shared_ptr<const T> ConsumerPad<T>::NO_SIGNAL;
+inline const std::shared_ptr<const T> ConsumerPad<T>::NO_SIGNAL;
 
 template <typename T>
 inline ConsumerPad<T>::ConsumerPad(std::string&& name) : 

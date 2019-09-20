@@ -16,6 +16,9 @@ public:
     struct BackupSignal;
     using ConsumerPad<T>::ConsumerPad;
 
+    void                                setHold(bool hold);
+    bool                                getHold() const;
+
     void                                reset();
     const std::shared_ptr<const T>&     get() const;
     bool                                hasChanged() const;
@@ -23,8 +26,7 @@ public:
     static BackupSignal                 backupSignal;
 private:   
     mutable std::shared_ptr<const T>    m_lastElement;
-
-    const std::shared_ptr<const T>&     reqElement() const;
+    bool                                m_hold = false;
 };
 
 template <typename T>

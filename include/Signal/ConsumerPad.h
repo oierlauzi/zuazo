@@ -10,7 +10,7 @@ template <typename T>
 class SourcePad;
 
 template <typename T>
-class ConsumerPad : public PadBase {
+class ConsumerPad : virtual public PadBase {
 public:
     ConsumerPad() = default;
     ConsumerPad(std::string&& name);

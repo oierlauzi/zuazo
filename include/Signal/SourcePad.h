@@ -11,7 +11,7 @@ template <typename T>
 class ConsumerPad;
 
 template <typename T>
-class SourcePad : public PadBase {
+class SourcePad : virtual public PadBase {
     friend ConsumerPad<T>;
 public:
     SourcePad() = default;
