@@ -1,6 +1,6 @@
 #include "PixelComponent.h"
 
-namespace Zuazo {
+namespace Zuazo::Graphics {
 
 constexpr PixelComponent::PixelComponent() :
 	type(NONE),

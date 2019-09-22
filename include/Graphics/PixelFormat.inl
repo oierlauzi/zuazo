@@ -1,6 +1,6 @@
 #include "PixelFormat.h"
 
-namespace Zuazo {
+namespace Zuazo::Graphics {
 
 constexpr PixelFormat::PixelFormat(const std::initializer_list<PixelComponent>& comp){
 	auto inIte = comp.begin();
@@ -9,6 +9,12 @@ constexpr PixelFormat::PixelFormat(const std::initializer_list<PixelComponent>& 
 	while(inIte != comp.end() && outIte != m_components.end()){
 		*(outIte++) = *(inIte++); 
 	}
+}
+
+constexpr PixelFormat::PixelFormat(const PixelFormat& other, const Par& par) :
+	m_components(other.m_components),
+	m_par(par)
+{
 }
 
 constexpr PixelFormat::operator bool() const{

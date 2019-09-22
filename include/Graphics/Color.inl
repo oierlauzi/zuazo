@@ -3,7 +3,7 @@
 #define RGBA_COLOR_COMP(color, x) ((color >> 8*x) & 0xff)
 #define NORMALIZE_BYTE(x) (static_cast<float>(x) / 0xffU)
 
-namespace Zuazo {
+namespace Zuazo::Graphics {
 
 constexpr Color::Color() :
 	r(1.0),

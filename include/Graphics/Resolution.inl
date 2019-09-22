@@ -1,4 +1,6 @@
-namespace Zuazo {
+#include "Resolution.h"
+
+namespace Zuazo::Graphics {
 
 constexpr Resolution::Resolution() :
     width(0),
@@ -28,11 +30,11 @@ constexpr Resolution::operator Math::Vec2<T>() const {
 }
 
 constexpr Resolution::operator bool() const{
-    return width && height;
+    return (width > 0) && (height > 0);
 }
 
-constexpr Math::Rational<> Resolution::getAspectRatio() const {
-    return Math::Rational<>(
+constexpr Math::Rational<Resolution::Size> Resolution::getAspectRatio() const {
+    return Math::Rational<Size>(
         width,
         height
     );

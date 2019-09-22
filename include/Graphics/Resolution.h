@@ -1,19 +1,21 @@
 #pragma once
 
-#include "Math/Vector.h"
-#include "Math/Rational.h"
+#include "../Math/Vector.h"
+#include "../Math/Rational.h"
 
 #include <sys/types.h>
 
-namespace Zuazo {
+namespace Zuazo::Graphics {
 
 struct Resolution{
+    using Size = int32_t;
+
     union {
-    	uint32_t width, x;
+    	Size width, x;
     };
 
 	union {
-    	uint32_t height, y;
+    	Size height, y;
     };
 
     constexpr Resolution();
@@ -27,7 +29,7 @@ struct Resolution{
     constexpr operator Math::Vec2<T>() const;
     constexpr operator bool() const;
 
-	constexpr Math::Rational<> getAspectRatio() const;
+	constexpr Math::Rational<Size> getAspectRatio() const;
 };
 
 }

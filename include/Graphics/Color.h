@@ -6,7 +6,7 @@
 #include <sstream>
 #include <string>
 
-namespace Zuazo {
+namespace Zuazo::Graphics {
 
 struct Color{
 	float	r;
@@ -32,7 +32,7 @@ private:
 
 #include "Color.inl"
 
-namespace Zuazo::Colors{
+namespace Zuazo::Graphics::Colors{
 	//										R G B A
 	constexpr const Color RED=		Color(0xff0000ff);
 	constexpr const Color GREEN=	Color(0x00ff00ff);

@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Math/Rational.h"
-#include "Utils/Macros.h"
+#include "../Math/Rational.h"
+#include "../Utils/Macros.h"
 
 #include <bitset>
 
-namespace Zuazo {
+namespace Zuazo::Graphics {
 
 struct PixelComponent{
 	enum PixelComponentType{
@@ -58,11 +58,13 @@ struct PixelComponent{
 	constexpr operator bool() const;
 };
 
+ZUAZO_ENUM_FLAG_OPERATORS(PixelComponent::Flags)
+
 } //namespace Zuazo
 
 #include "PixelComponent.inl"
 
-namespace Zuazo::PixelComponents {
+namespace Zuazo::Graphics::PixelComponents {
 	constexpr PixelComponent NONE   = PixelComponent();
 	constexpr PixelComponent NONE1  = PixelComponent(1);
 	constexpr PixelComponent NONE2  = PixelComponent(2);

@@ -1,18 +1,19 @@
 #pragma once
 
 #include "PixelComponent.h"
-#include "Utils/Macros.h"
+#include "../Utils/Macros.h"
 
 #include <array>
 #include <utility>
 #include <string>
 
-namespace Zuazo {
+namespace Zuazo::Graphics {
 
 class PixelFormat {
 public:
 	static constexpr size_t MAX_PIXEL_COMOPONENTS = 4;
-	typedef std::array<PixelComponent, MAX_PIXEL_COMOPONENTS> ComponentArray;
+	using ComponentArray = std::array<PixelComponent, MAX_PIXEL_COMOPONENTS>;
+	using Par = Math::Rational64_t;
 
 	enum PlanarType {
 		NONE			=0, 				///There is 1 plane with 1 component. For istance Y8
@@ -23,7 +24,9 @@ public:
 
 	constexpr PixelFormat() = default;
 	constexpr PixelFormat(const std::initializer_list<PixelComponent>& comp);
+	constexpr PixelFormat(const PixelFormat& other, const Par& par);
 	constexpr PixelFormat(const PixelFormat& other) = default;
+	constexpr PixelFormat(PixelFormat&& other) = default;
 	~PixelFormat() = default;
 
 	constexpr operator bool() const;
@@ -42,7 +45,7 @@ public:
 	constexpr bool                      hasAlpha() const;
 private:
 	ComponentArray						m_components;
-	Math::Rational64_t					m_par;
+	Par									m_par = Par(1, 1);
 };
 
 ZUAZO_ENUM_FLAG_OPERATORS(PixelFormat::PlanarType)
@@ -51,7 +54,7 @@ ZUAZO_ENUM_FLAG_OPERATORS(PixelFormat::PlanarType)
 
 #include "PixelFormat.inl"
 
-namespace Zuazo::PixelFormats {
+namespace Zuazo::Graphics::PixelFormats {
 	
 	constexpr PixelFormat NONE;
 
