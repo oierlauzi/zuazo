@@ -89,7 +89,7 @@ public:
 	 * \param[in] number
 	 * The real number which will get assigned to the rational number
 	 */
-	constexpr Rational(Real number);
+	explicit constexpr Rational(Real number);
 
 	/**
 	 * \brief

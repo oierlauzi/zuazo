@@ -2,7 +2,6 @@
 
 #include "Color.h"
 #include "Includes.h"
-#include "KHR/khrplatform.h"
 #include "Math/Matrix.h"
 #include "Math/Rational.h"
 #include "Math/Vector.h"
@@ -23,12 +22,10 @@
 #include "Timing/PeriodicEvent.h"
 #include "Timing/RegularEvent.h"
 #include "Timing/Scheduler.h"
-#include "Utils/Buffer.h"
-#include "Utils/Hasher.h"
-#include "Utils/MMBuffer.h"
 #include "Utils/Macros.h"
 #include "Utils/Pool.h"
-#include "glad/glad.h"
+#include "Zuazo.h"
+#include "ZuazoBase.h"
 
 
 //Defines a shorcut for Zuazo

@@ -2,7 +2,6 @@
 
 #include "Math/Vector.h"
 #include "Math/Rational.h"
-#include "Utils/Hasher.h"
 
 #include <sys/types.h>
 
@@ -28,9 +27,7 @@ struct Resolution{
     constexpr operator Math::Vec2<T>() const;
     constexpr operator bool() const;
 
-	constexpr Math::Rational_t getAspectRatio() const;
-
-    friend size_t ZUAZO_HASH_FUNC(const Resolution& res);
+	constexpr Math::Rational<> getAspectRatio() const;
 };
 
 }

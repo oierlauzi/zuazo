@@ -1,3 +1,5 @@
+#include "PixelFormat.h"
+
 namespace Zuazo {
 
 constexpr PixelFormat::PixelFormat(const std::initializer_list<PixelComponent>& comp){
@@ -63,21 +65,21 @@ constexpr uint PixelFormat::getPlaneCount() const{
 }
 
 constexpr Math::Rational32_t PixelFormat::getSize() const{
-	Math::Rational32_t size = 0;
+	Math::Rational32_t size;
 
 	for(auto ite = m_components.cbegin(); ite != m_components.cend(); ++ite){
-		size += ite->depth * ite->subsampling.x * ite->subsampling.y;
+		size += Math::Rational32_t(ite->depth, 1) / ite->subsampling.x / ite->subsampling.y;
 	}
 
 	return size;
 }
 
 constexpr Math::Rational32_t PixelFormat::getPlaneSize(uint plane) const{
-	Math::Rational32_t size = 0;
+	Math::Rational32_t size;
 
 	for(auto ite = m_components.cbegin(); ite != m_components.cend(); ++ite){
 		if(ite->plane == plane){
-			size += ite->depth * ite->subsampling.x * ite->subsampling.y;
+			size += Math::Rational32_t(ite->depth, 1) / ite->subsampling.x / ite->subsampling.y;
 		}
 	}
 
@@ -147,51 +149,6 @@ constexpr bool PixelFormat::hasAlpha() const{
 	}
 	
 	return has_alpha;
-}
-
-namespace PixelFormats{
-	#define ZUAZO_FCC_PAIR(x, y) { ZUAZO_FCC2INT(x), y }
-
-	constexpr std::pair<uint32_t, PixelFormat> _fccConversionTable[] = {
-		// ADD HERE
-
-		{0, 		NONE}
-	};
-
-	constexpr uint32_t _fcc2uint(char c0, char c1, char c2, char c3){
-		uint32_t fcc = c0 << 3;
-		fcc |= c1 << 2;
-		fcc |= c2 << 1;
-		fcc |= c3 << 0;
-		return fcc;
-	}
-
-	constexpr PixelFormat fourcc(uint32_t fcc){
-		PixelFormat	result = NONE;
-
-		for(uint i = 0; _fccConversionTable[i]->first; ++i){
-			if(_fccConversionTable[i]->first == fcc){
-				result = _fccConversionTable[i]->second;
-				break;
-			}
-		}
-
-		return result;
-	}
-
-	constexpr PixelFormat fourcc(char c0, char c1, char c2, char c3){
-		return fourcc(_fcc2uint(c0, c1, c2, c3));
-	}
-
-	PixelFormat fourcc(const std::string& str){
-		PixelFormat result = NONE;
-
-		if(str.size() == 4){
-			result = fourcc(str[0], str[1], str[2], str[3]);
-		}
-
-		return result;
-	}
 }
 
 }

@@ -1,12 +1,27 @@
 #include "Layout.h"
 
+#include <utility>
+
 namespace Zuazo::Signal {
 
-const std::set<PadBase*>& Layout::getOutputs(){
+inline Layout::Layout(std::string&& name) :
+    m_name(std::forward<std::string>(name))
+{
+}
+
+inline void Layout::setName(std::string&& name){
+    m_name = std::forward<std::string>(name);
+}
+
+inline const std::string& Layout::getName() const{
+    return m_name;
+}
+
+inline const std::set<PadBase*>& Layout::getOutputs(){
     return m_outputs;
 }
 
-const std::set<PadBase*>& Layout::getInputs();{
+inline const std::set<PadBase*>& Layout::getInputs(){
     return m_inputs;
 }
 

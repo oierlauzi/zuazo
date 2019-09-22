@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Hasher.h"
-
 #include <forward_list>
 #include <unordered_map>
 #include <memory>
@@ -39,7 +37,7 @@ public:
 	unique_ptr get(Args&&... args) const;
 private:
 	mutable std::mutex 	m_mutex;
-	mutable std::unordered_map<Arguments, std::forward_list<std::unique_ptr<T>, Hasher<Arguments>>> m_elements;
+	mutable std::unordered_map<Arguments, std::forward_list<std::unique_ptr<T>>> m_elements;
 };
 
 }

@@ -1,23 +1,13 @@
+#include "PixelComponent.h"
+
 namespace Zuazo {
-
-constexpr PixelComponent::Subsampling::Subsampling() :
-	x(1, 1),
-	y(1, 1)
-{
-}
-
-constexpr PixelComponent::Subsampling::Subsampling(uint16_t x, uint16_t y) :
-	x(1, static_cast<Rational::Integer>(x)),
-	y(1, static_cast<Rational::Integer>(y))
-{
-}
 
 constexpr PixelComponent::PixelComponent() :
 	type(NONE),
 	depth(0),
 	plane(0),
 	subsampling(),
-	flags(0)
+	flags(EMPTY)
 {
 }
 
@@ -26,7 +16,7 @@ constexpr PixelComponent::PixelComponent(uint depth) :
 	depth(depth),
 	plane(0),
 	subsampling(),
-	flags(0)
+	flags(EMPTY)
 {
 }
 

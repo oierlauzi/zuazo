@@ -31,15 +31,11 @@ constexpr Resolution::operator bool() const{
     return width && height;
 }
 
-constexpr Math::Rational_t Resolution::getAspectRatio() const {
-    return Math::Rational_t(
-        static_cast<Math::Rational_t::Integer>(width),
-        static_cast<Math::Rational_t::Integer>(height)
+constexpr Math::Rational<> Resolution::getAspectRatio() const {
+    return Math::Rational<>(
+        width,
+        height
     );
-}
-
-constexpr size_t ZUAZO_HASH_FUNC(const Resolution& res){
-    return res.x << 32 | res.y;
 }
 
 }

@@ -42,19 +42,17 @@ public:
 	constexpr bool                      hasAlpha() const;
 private:
 	ComponentArray						m_components;
+	Math::Rational64_t					m_par;
 };
+
+ZUAZO_ENUM_FLAG_OPERATORS(PixelFormat::PlanarType)
 
 } // namespace Zuazo
 
 #include "PixelFormat.inl"
 
 namespace Zuazo::PixelFormats {
-	constexpr PixelFormat fourcc(uint32_t fcc);
 	
-	#define ZUAZO_FOURCC(x) \
-		(ZUAZO_TO_STRING(x)[0] << 3 | ZUAZO_TO_STRING(x)[1] << 2 | ZUAZO_TO_STRING(x)[2] << 1 | ZUAZO_TO_STRING(x)[3])
-	
-
 	constexpr PixelFormat NONE;
 
 	/*
@@ -131,95 +129,95 @@ namespace Zuazo::PixelFormats {
 	 */
 
 	//												|	Component	|	Plane	|		Subsampling			|
-	constexpr PixelFormat YUV444_24	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::V8, 2, PixelComponent::Subsampling(1, 1)) };
-	constexpr PixelFormat YUV444_30	{ PixelComponent(PixelComponents::Y10, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U10, 1, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::V10, 2, PixelComponent::Subsampling(1, 1)) };
-	constexpr PixelFormat YUV444_36	{ PixelComponent(PixelComponents::Y12, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U12, 1, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::V12, 2, PixelComponent::Subsampling(1, 1)) };
-	constexpr PixelFormat YUV444_48	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling(1, 1)) };
+	constexpr PixelFormat YUV444_24	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::V8, 2, PixelComponent::Subsampling{1, 1}) };
+	constexpr PixelFormat YUV444_30	{ PixelComponent(PixelComponents::Y10, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U10, 1, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::V10, 2, PixelComponent::Subsampling{1, 1}) };
+	constexpr PixelFormat YUV444_36	{ PixelComponent(PixelComponents::Y12, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U12, 1, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::V12, 2, PixelComponent::Subsampling{1, 1}) };
+	constexpr PixelFormat YUV444_48	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling{1, 1}) };
 	constexpr PixelFormat YUV444 = YUV444_24;
 
-	constexpr PixelFormat YUV440_16	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(1, 2)),
-									  PixelComponent(PixelComponents::V8, 2, PixelComponent::Subsampling(1, 2)) };
-	constexpr PixelFormat YUV440_20	{ PixelComponent(PixelComponents::Y10, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U10, 1, PixelComponent::Subsampling(1, 2)),
-									  PixelComponent(PixelComponents::V10, 2, PixelComponent::Subsampling(1, 2)) };
-	constexpr PixelFormat YUV440_24	{ PixelComponent(PixelComponents::Y12, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U12, 1, PixelComponent::Subsampling(1, 2)),
-									  PixelComponent(PixelComponents::V12, 2, PixelComponent::Subsampling(1, 2)) };
-	constexpr PixelFormat YUV440_32	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling(1, 2)),
-									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling(1, 2)) };
+	constexpr PixelFormat YUV440_16	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling{1, 2}),
+									  PixelComponent(PixelComponents::V8, 2, PixelComponent::Subsampling{1, 2}) };
+	constexpr PixelFormat YUV440_20	{ PixelComponent(PixelComponents::Y10, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U10, 1, PixelComponent::Subsampling{1, 2}),
+									  PixelComponent(PixelComponents::V10, 2, PixelComponent::Subsampling{1, 2}) };
+	constexpr PixelFormat YUV440_24	{ PixelComponent(PixelComponents::Y12, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U12, 1, PixelComponent::Subsampling{1, 2}),
+									  PixelComponent(PixelComponents::V12, 2, PixelComponent::Subsampling{1, 2}) };
+	constexpr PixelFormat YUV440_32	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling{1, 2}),
+									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling{1, 2}) };
 	constexpr PixelFormat YUV440 = YUV440_16;
 
-	constexpr PixelFormat YUV422_16	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(2, 1)),
-									  PixelComponent(PixelComponents::V8, 2, PixelComponent::Subsampling(2, 1)) };
-	constexpr PixelFormat YUV422_20	{ PixelComponent(PixelComponents::Y10, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U10, 1, PixelComponent::Subsampling(2, 1)),
-									  PixelComponent(PixelComponents::V10, 2, PixelComponent::Subsampling(2, 1)) };
-	constexpr PixelFormat YUV422_24	{ PixelComponent(PixelComponents::Y12, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U12, 1, PixelComponent::Subsampling(2, 1)),
-									  PixelComponent(PixelComponents::V12, 2, PixelComponent::Subsampling(2, 1)) };
-	constexpr PixelFormat YUV422_32	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling(2, 1)),
-									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling(2, 1)) };
+	constexpr PixelFormat YUV422_16	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling{2, 1}),
+									  PixelComponent(PixelComponents::V8, 2, PixelComponent::Subsampling{2, 1}) };
+	constexpr PixelFormat YUV422_20	{ PixelComponent(PixelComponents::Y10, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U10, 1, PixelComponent::Subsampling{2, 1}),
+									  PixelComponent(PixelComponents::V10, 2, PixelComponent::Subsampling{2, 1}) };
+	constexpr PixelFormat YUV422_24	{ PixelComponent(PixelComponents::Y12, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U12, 1, PixelComponent::Subsampling{2, 1}),
+									  PixelComponent(PixelComponents::V12, 2, PixelComponent::Subsampling{2, 1}) };
+	constexpr PixelFormat YUV422_32	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling{2, 1}),
+									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling{2, 1}) };
 	constexpr PixelFormat YUV422 = YUV422_16;
 
-	constexpr PixelFormat YUV420_12	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(2, 2)),
-									  PixelComponent(PixelComponents::V8, 2, PixelComponent::Subsampling(2, 2)) };
-	constexpr PixelFormat YUV420_15	{ PixelComponent(PixelComponents::Y10, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U10, 1, PixelComponent::Subsampling(2, 2)),
-									  PixelComponent(PixelComponents::V10, 2, PixelComponent::Subsampling(2, 2)) };
-	constexpr PixelFormat YUV420_18	{ PixelComponent(PixelComponents::Y12, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U12, 1, PixelComponent::Subsampling(2, 2)),
-									  PixelComponent(PixelComponents::V12, 2, PixelComponent::Subsampling(2, 2)) };
-	constexpr PixelFormat YUV420_24	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling(2, 2)),
-									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling(2, 2)) };
-	constexpr PixelFormat YUV420 = YUV422_12;
-
-	constexpr PixelFormat YUV411_12	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(4, 1)),
-									  PixelComponent(PixelComponents::V8, 2, PixelComponent::Subsampling(4, 1)) };
-	constexpr PixelFormat YUV411_15	{ PixelComponent(PixelComponents::Y10, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U10, 1, PixelComponent::Subsampling(4, 1)),
-									  PixelComponent(PixelComponents::V10, 2, PixelComponent::Subsampling(4, 1)) };
-	constexpr PixelFormat YUV411_18	{ PixelComponent(PixelComponents::Y12, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U12, 1, PixelComponent::Subsampling(4, 1)),
-									  PixelComponent(PixelComponents::V12, 2, PixelComponent::Subsampling(4, 1)) };
-	constexpr PixelFormat YUV411_24	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling(4, 1)),
-									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling(4, 1)) };
+	constexpr PixelFormat YUV420_12	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling{2, 2}),
+									  PixelComponent(PixelComponents::V8, 2, PixelComponent::Subsampling{2, 2}) };
+	constexpr PixelFormat YUV420_15	{ PixelComponent(PixelComponents::Y10, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U10, 1, PixelComponent::Subsampling{2, 2}),
+									  PixelComponent(PixelComponents::V10, 2, PixelComponent::Subsampling{2, 2}) };
+	constexpr PixelFormat YUV420_18	{ PixelComponent(PixelComponents::Y12, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U12, 1, PixelComponent::Subsampling{2, 2}),
+									  PixelComponent(PixelComponents::V12, 2, PixelComponent::Subsampling{2, 2}) };
+	constexpr PixelFormat YUV420_24	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling{2, 2}),
+									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling{2, 2}) };
+	constexpr PixelFormat YUV420 = YUV420_12;
+	
+	constexpr PixelFormat YUV411_12	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling{4, 1}),
+									  PixelComponent(PixelComponents::V8, 2, PixelComponent::Subsampling{4, 1}) };
+	constexpr PixelFormat YUV411_15	{ PixelComponent(PixelComponents::Y10, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U10, 1, PixelComponent::Subsampling{4, 1}),
+									  PixelComponent(PixelComponents::V10, 2, PixelComponent::Subsampling{4, 1}) };
+	constexpr PixelFormat YUV411_18	{ PixelComponent(PixelComponents::Y12, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U12, 1, PixelComponent::Subsampling{4, 1}),
+									  PixelComponent(PixelComponents::V12, 2, PixelComponent::Subsampling{4, 1}) };
+	constexpr PixelFormat YUV411_24	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling{4, 1}),
+									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling{4, 1}) };
 	constexpr PixelFormat YUV411 = YUV411_12;
 
-	constexpr PixelFormat YUV410_10	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(4, 2)),
-									  PixelComponent(PixelComponents::V8, 2, PixelComponent::Subsampling(4, 2)) };
-	constexpr PixelFormat YUV410_10_5{PixelComponent(PixelComponents::Y10, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U10, 1, PixelComponent::Subsampling(4, 2)),
-									  PixelComponent(PixelComponents::V10, 2, PixelComponent::Subsampling(4, 2)) };
-	constexpr PixelFormat YUV410_15	{ PixelComponent(PixelComponents::Y12, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U12, 1, PixelComponent::Subsampling(4, 2)),
-									  PixelComponent(PixelComponents::V12, 2, PixelComponent::Subsampling(4, 2)) };
-	constexpr PixelFormat YUV410_20	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling(4, 2)),
-									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling(4, 2)) };
+	constexpr PixelFormat YUV410_10	{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling{4, 2}),
+									  PixelComponent(PixelComponents::V8, 2, PixelComponent::Subsampling{4, 2}) };
+	constexpr PixelFormat YUV410_10_5{PixelComponent(PixelComponents::Y10, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U10, 1, PixelComponent::Subsampling{4, 2}),
+									  PixelComponent(PixelComponents::V10, 2, PixelComponent::Subsampling{4, 2}) };
+	constexpr PixelFormat YUV410_15	{ PixelComponent(PixelComponents::Y12, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U12, 1, PixelComponent::Subsampling{4, 2}),
+									  PixelComponent(PixelComponents::V12, 2, PixelComponent::Subsampling{4, 2}) };
+	constexpr PixelFormat YUV410_20	{ PixelComponent(PixelComponents::Y16, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U16, 1, PixelComponent::Subsampling{4, 2}),
+									  PixelComponent(PixelComponents::V16, 2, PixelComponent::Subsampling{4, 2}) };
 	constexpr PixelFormat YUV410 = YUV410_10;
 
-	constexpr PixelFormat NV12		{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(2, 2)),
-									  PixelComponent(PixelComponents::V8, 1, PixelComponent::Subsampling(2, 2)) };
+	constexpr PixelFormat NV12		{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling{2, 2}),
+									  PixelComponent(PixelComponents::V8, 1, PixelComponent::Subsampling{2, 2}) };
 
-	constexpr PixelFormat NV21		{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling(1, 1)),
-									  PixelComponent(PixelComponents::V8, 1, PixelComponent::Subsampling(2, 2)),
-									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling(2, 2)) };
+	constexpr PixelFormat NV21		{ PixelComponent(PixelComponents::Y8, 0, PixelComponent::Subsampling{1, 1}),
+									  PixelComponent(PixelComponents::V8, 1, PixelComponent::Subsampling{2, 2}),
+									  PixelComponent(PixelComponents::U8, 1, PixelComponent::Subsampling{2, 2}) };
 }

@@ -5,15 +5,20 @@
 #include "ConsumerPad.h"
 
 #include <set>
+#include <string>
 
 namespace Zuazo::Signal {
 
 class Layout {
 public:
     Layout() = default;
+    Layout(std::string&& name);
     Layout(const Layout& other) = delete;
     Layout(Layout&& other) = delete;
     virtual ~Layout() = default;
+
+    void                    setName(std::string&& name);
+    const std::string&      getName() const;
 
     const std::set<PadBase*>& getOutputs();  
     const std::set<PadBase*>& getInputs(); 
@@ -46,6 +51,8 @@ protected:
     template<typename T>
     void                    removeInput(ConsumerPad<T>& cons);
 private:
+    std::string             m_name;
+
     std::set<PadBase*>      m_outputs;
     std::set<PadBase*>      m_inputs;
 };

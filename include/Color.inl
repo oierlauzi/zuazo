@@ -1,3 +1,5 @@
+#include "Color.h"
+
 #define RGBA_COLOR_COMP(color, x) ((color >> 8*x) & 0xff)
 #define NORMALIZE_BYTE(x) (static_cast<float>(x) / 0xffU)
 

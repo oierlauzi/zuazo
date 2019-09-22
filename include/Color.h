@@ -28,7 +28,11 @@ private:
 	static u_int32_t parseColor(std::string str);
 };
 
-namespace Colors{
+}
+
+#include "Color.inl"
+
+namespace Zuazo::Colors{
 	//										R G B A
 	constexpr const Color RED=		Color(0xff0000ff);
 	constexpr const Color GREEN=	Color(0x00ff00ff);
@@ -42,6 +46,3 @@ namespace Colors{
 	constexpr const Color BLACK=	Color(0x000000ff);
 }
 
-}
-
-#include "Color.inl"
