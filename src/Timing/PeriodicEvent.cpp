@@ -1,6 +1,6 @@
 #include <Timing/PeriodicEvent.h>
 
-#include <Timing/Scheduler.h>
+#include <Timing/Loop.h>
 
 namespace Zuazo::Timing {
 
@@ -20,12 +20,12 @@ PeriodicEvent::PeriodicEvent(Priority prior, const Rate& rate) : EventBase(prior
 }
 
 void PeriodicEvent::enable(){
-    scheduler->addEvent(*this);
+    mainLoop->addEvent(*this);
     EventBase::enable();
 }
 
 void PeriodicEvent::disable(){
-    scheduler->removeEvent(*this);
+    mainLoop->removeEvent(*this);
     EventBase::disable();
 }
 

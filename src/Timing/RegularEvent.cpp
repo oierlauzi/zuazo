@@ -1,6 +1,6 @@
 #include <Timing/RegularEvent.h>
 
-#include <Timing/Scheduler.h>
+#include <Timing/Loop.h>
 
 namespace Zuazo::Timing {
 
@@ -9,12 +9,12 @@ RegularEvent::RegularEvent(Priority prior) : EventBase(prior)
 }
 
 void RegularEvent::enable(){
-    scheduler->addEvent(*this);
+    mainLoop->addEvent(*this);
     EventBase::enable();
 }
 
 void RegularEvent::disable(){
-    scheduler->removeEvent(*this);
+    mainLoop->removeEvent(*this);
     EventBase::disable();
 }
 

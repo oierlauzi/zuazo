@@ -4,73 +4,11 @@
 
 namespace Zuazo::Timing {
 
-std::unique_ptr<Scheduler> scheduler;
-
-Scheduler::Scheduler() :
-    m_exit(false),
-    m_thread(&Scheduler::loopFunc, this)
-{
-}
-
-Scheduler::~Scheduler(){
-    m_exit = true;
-    m_cond.notify_one();
-    m_thread.join();
-}
-
-void Scheduler::loopFunc(){
-    while(!m_exit){
-        //Lock the mutex
-        std::unique_lock<std::mutex> lock(m_mutex);
-
-        //Calculete the time for the closest update
-        auto timeForNextUpdate = Duration::max();
-        for(const auto& period : m_periodicEvnts) {
-            if(period.second.timeForNextUpdate < timeForNextUpdate){
-                timeForNextUpdate = period.second.timeForNextUpdate;
-            }
-        }
-
-        //Evaluate whether there is a pending event
-        if(timeForNextUpdate == Duration::max()){
-            //There is no pending event. Wait for one
-            m_cond.wait(lock);
-
-            //Upate the time accordingly
-            m_now = Clock::now();
-        } else {
-            //There is a event nearby
-            //Sleep until the update is needed
-            m_now += timeForNextUpdate;
-            lock.unlock();
-            std::this_thread::sleep_until(m_now);
-            lock.lock();
-
-            //Get all the pending events
-            EventSet events;
-
-            //Insert all the corresponding periodic updates
-            for(auto& period : m_periodicEvnts){
-                period.second.timeForNextUpdate -= timeForNextUpdate;
-
-                if(period.second.timeForNextUpdate <= Duration::zero()){
-                    //This period needs to be updated
-                    events.insert(period.second.evnts.cbegin(), period.second.evnts.cend());
-                    period.second.timeForNextUpdate += period.first;
-                }
-
-            }
-
-            //Insert all the regular updates
-            events.insert(m_regularEvnts.cbegin(), m_regularEvnts.cend());
-
-            //Finaly update them all
-            for(const EventBase* event : events) {
-                event->update();
-            }
-        }
-    }
-}
+bool Scheduler::PriorityCmp::operator()(const EventBase* a, const EventBase* b) const {
+    if(a->getPriority() < b->getPriority()) return true;
+    else if(a->getPriority() > b->getPriority()) return false;
+    else return a < b;
+};
 
 void Scheduler::addEvent(const RegularEvent& evnt){
     m_regularEvnts.emplace(&evnt);
@@ -99,7 +37,6 @@ void Scheduler::addEvent(const PeriodicEvent& evnt){
 
         //Finally add the event
         ite->second.evnts.emplace(&evnt);
-        m_cond.notify_one();
     }
 }
 
@@ -118,14 +55,39 @@ void Scheduler::removeEvent(const PeriodicEvent& evnt){
     }
 }
 
-bool Scheduler::PriorityCmp::operator()(const EventBase* a, const EventBase* b) const {
-    if(a->getPriority() < b->getPriority()){
-        return true;
-    } else if(a->getPriority() > b->getPriority()){
-        return false;
-    }else {
-        return a < b;
+Duration Scheduler::getTimeForNextEvent() const{
+    //Find the closest update
+    Duration result(Duration::max());
+
+    for(const auto& period : m_periodicEvnts) {
+        if(period.second.timeForNextUpdate < result){
+            result = period.second.timeForNextUpdate;
+        }
     }
+
+    return result;
 }
 
+void Scheduler::addTime(Duration dura){
+    EventSet pendingEvents;
+
+    //Insert all the pending periodic updates
+    for(auto& period : m_periodicEvnts){
+        period.second.timeForNextUpdate -= dura;
+
+        if(period.second.timeForNextUpdate <= Duration::zero()){
+            //This period needs to be updated
+            pendingEvents.insert(period.second.evnts.cbegin(), period.second.evnts.cend());
+            period.second.timeForNextUpdate += period.first;
+        }
+    }
+
+    //Insert all the regular updates
+    pendingEvents.insert(m_regularEvnts.cbegin(), m_regularEvnts.cend());
+
+    //Finaly update them all
+    for(const EventBase* event : pendingEvents) {
+        event->update();
+    }
+}
 }
