@@ -17,6 +17,8 @@ public:
     DummyPad(const DummyPad& other) = default;
     DummyPad(DummyPad&& other) = default;
     virtual ~DummyPad() = default;
+
+    using PadBase::setName;
 private:
     virtual const std::shared_ptr<const T>& get() const override;
 };

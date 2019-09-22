@@ -15,6 +15,7 @@ class Consumer : public ConsumerPad<T> {
 public:
     struct BackupSignal;
     using ConsumerPad<T>::ConsumerPad;
+    using PadBase::setName;
 
     void                                setHold(bool hold);
     bool                                getHold() const;

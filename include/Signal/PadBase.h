@@ -12,8 +12,9 @@ public:
     PadBase(PadBase&& other) = default; 
     virtual ~PadBase() = default;
 
-    void                setName(std::string&& name);
     const std::string&  getName() const;
+protected:
+    void                setName(std::string&& name);
 private:   
     std::string         m_name;
 };

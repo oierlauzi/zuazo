@@ -10,6 +10,7 @@ template <typename T>
 class Source : public SourcePad<T> {
 public:
     using SourcePad<T>::SourcePad;
+    using PadBase::setName;
 
     void                                    reset();
     void                                    push(std::shared_ptr<const T>&& element);
