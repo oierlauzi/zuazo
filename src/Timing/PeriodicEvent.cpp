@@ -9,16 +9,6 @@ PeriodicEvent::PeriodicEvent(Priority prior) : EventBase(prior),
 {
 }
 
-PeriodicEvent::PeriodicEvent(Priority prior, const Duration& period) : EventBase(prior),
-    m_period(period)
-{
-}
-
-PeriodicEvent::PeriodicEvent(Priority prior, const Rate& rate) : EventBase(prior),
-    m_period(Timing::getPeriod(rate))
-{
-}
-
 void PeriodicEvent::enable(){
     mainLoop->addEvent(*this);
     EventBase::enable();

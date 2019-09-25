@@ -1,0 +1,52 @@
+#pragma once
+
+#pragma once
+
+#include "Output.h"
+#include "../Timing/PeriodicEvent.h"
+
+#include <memory>
+#include <mutex>
+#include <queue>
+
+namespace Zuazo::Signal {
+
+template <typename T>
+class AsyncOutput :
+		public Output<T>,
+		public Timing::PeriodicEvent
+{
+public:
+	using Output<T>::Output;
+
+	void								setMaxDropped(int32_t max);
+	int32_t								getMaxDropped() const;
+	uint32_t							getDropped() const;
+	void								resetDropped();
+
+	void								setMaxBufferSize(int32_t size);
+	int32_t								getMaxBufferSize() const;
+	uint32_t							getBufferSize() const;
+	void								flushBuffer();
+
+	void								reset();
+    void								push(std::shared_ptr<const T>&& element);
+
+	virtual void 						update() const override;
+private:
+	static constexpr int32_t			DEFAULT_MAX_DROPPED=3;
+	static constexpr int32_t			DEFAULT_MAX_BUFFER_SIZE=3;
+
+	int32_t								m_maxDropped = DEFAULT_MAX_DROPPED;
+    int32_t								m_maxBufferSize = DEFAULT_MAX_BUFFER_SIZE;
+
+	mutable uint32_t					m_dropped = 0;
+
+	mutable std::queue<std::shared_ptr<const T>> m_buffer;
+
+    mutable std::mutex					m_mutex;
+};
+
+}
+
+#include "AsyncOutput.inl"

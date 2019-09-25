@@ -1,7 +1,7 @@
 #pragma once
 
-#include "SourcePad.h"
-#include "ConsumerPad.h"
+#include "OutputPad.h"
+#include "InputPad.h"
 
 namespace Zuazo::Signal {
 
@@ -9,10 +9,10 @@ struct NoSignal {};
 constexpr NoSignal noSignal;
 
 template <typename T>
-void operator<<(ConsumerPad<T>& dst, SourcePad<T>& src);
+void operator<<(InputPad<T>& dst, OutputPad<T>& src);
 
 template <typename T>
-void operator<<(ConsumerPad<T>& dst, NoSignal);
+void operator<<(InputPad<T>& dst, NoSignal);
 
 }
 

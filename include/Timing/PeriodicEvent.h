@@ -8,8 +8,6 @@ namespace Zuazo::Timing {
 class PeriodicEvent : public EventBase {
 public:
     PeriodicEvent(Priority prior);
-    PeriodicEvent(Priority prior, const Rate& rate);
-    PeriodicEvent(Priority prior, const Period& period);
     PeriodicEvent(const PeriodicEvent& other) = delete;
     ~PeriodicEvent() = default;
 

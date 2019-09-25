@@ -1,19 +1,25 @@
 #pragma once
 
-#include "SourcePad.h"
+#include "OutputPad.h"
+#include "../Timing/EventBase.h"
 
 #include <memory>
 
 namespace Zuazo::Signal {
 
 template <typename T>
-class Source : public SourcePad<T> {
+class Output : public OutputPad<T> {
 public:
-    using SourcePad<T>::SourcePad;
+    using OutputPad<T>::OutputPad;
     using PadBase::setName;
+    using PadBase::setDirection;
 
     void                                    reset();
     void                                    push(std::shared_ptr<const T>&& element);
+
+protected:
+    static constexpr Timing::EventBase::Priority PRIORITY = 1;
+
 private:
     std::shared_ptr<const T>                m_lastElement;
 
@@ -22,4 +28,4 @@ private:
 
 }
 
-#include "Source.inl"
+#include "Output.inl"

@@ -4,6 +4,12 @@
 
 namespace Zuazo::Timing {
 
+EventBase::EventBase() :
+    m_priority(IGNORE),
+    m_isEnabled(false)
+{
+}
+
 EventBase::EventBase(Priority prior) :
     m_priority(prior),
     m_isEnabled(false)
@@ -17,8 +23,7 @@ EventBase::EventBase(const EventBase& other) :
 }
 
 EventBase::~EventBase(){
-    if(m_isEnabled)
-        disable();
+    ZUAZO_EVENT_AUTO_DISABLE //Just in case
 }
 
 void EventBase::setPriority(Priority prior) {

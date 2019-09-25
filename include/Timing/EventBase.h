@@ -10,6 +10,7 @@ public:
     using Priority = int;
     struct UniqueDisable;
 
+    EventBase();
     EventBase(Priority prior);
     EventBase(const EventBase& other);
     virtual ~EventBase();
@@ -22,10 +23,14 @@ public:
     bool                isEnabled() const;
 protected:
     virtual void        update() const = 0;
+
+    static constexpr Priority IGNORE = 0;
 private:
     Priority            m_priority;
     bool                m_isEnabled;
 };
+
+#define ZUAZO_EVENT_AUTO_DISABLE if(isEnabled()) disable();
 
 struct EventBase::UniqueDisable{
 public:

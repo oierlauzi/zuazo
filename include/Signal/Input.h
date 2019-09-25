@@ -1,21 +1,24 @@
 #pragma once
 
-#include "ConsumerPad.h"
+#include "InputPad.h"
 
 #include <memory>
+#include <limits>
 
 namespace Zuazo::Signal {
 
 
 template <typename T>
-class ConsumerPad;
+class InputPad;
 
 template <typename T>
-class Consumer : public ConsumerPad<T> {
+class Input : public InputPad<T> {
 public:
-    struct BackupSignal;
-    using ConsumerPad<T>::ConsumerPad;
+    using InputPad<T>::InputPad;
     using PadBase::setName;
+    using PadBase::setDirection;
+
+    struct BackupSignal;
 
     void                                setHold(bool hold);
     bool                                getHold() const;
@@ -25,16 +28,21 @@ public:
     bool                                hasChanged() const;
 
     static BackupSignal                 backupSignal;
+
+protected:
+    static constexpr Timing::EventBase::Priority PRIORITY = 
+                    std::numeric_limits<Timing::EventBase::Priority>::max();
+
 private:   
     mutable std::shared_ptr<const T>    m_lastElement;
     bool                                m_hold = false;
 };
 
 template <typename T>
-class Consumer<T>::BackupSignal : public ConsumerPad<T> {
-    friend Consumer<T>;
+class Input<T>::BackupSignal : public InputPad<T> {
+    friend Input<T>;
 };
 
 }
 
-#include "Consumer.inl"
+#include "Input.inl"

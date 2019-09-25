@@ -1,8 +1,8 @@
 #pragma once
 
 #include "PadBase.h"
-#include "SourcePad.h"
-#include "ConsumerPad.h"
+#include "OutputPad.h"
+#include "InputPad.h"
 
 #include <set>
 #include <string>
@@ -10,51 +10,40 @@
 namespace Zuazo::Signal {
 
 class Layout {
+    friend PadBase;
 public:
     Layout() = default;
     Layout(std::string&& name);
     Layout(const Layout& other) = delete;
     Layout(Layout&& other) = delete;
-    virtual ~Layout() = default;
+    virtual ~Layout();
 
     void                    setName(std::string&& name);
     const std::string&      getName() const;
 
-    const std::set<PadBase*>& getOutputs();  
-    const std::set<PadBase*>& getInputs(); 
+    const std::set<PadBase*>& getPads();  
+    std::set<const PadBase*>  getPads() const;  
 
     template<typename T>
-    SourcePad<T>*           getOutput();
+    OutputPad<T>*           getOutput(const std::string& str);
     template<typename T>
-    SourcePad<T>*           getOutput(const std::string& str);
-    template<typename T>
-    const SourcePad<T>*     getOutput() const;
-    template<typename T>
-    const SourcePad<T>*     getOutput(const std::string& str) const;
+    const OutputPad<T>*     getOutput(const std::string& str) const;
 
     template<typename T>
-    ConsumerPad<T>*         getInput();
+    InputPad<T>*            getInput(const std::string& str);
     template<typename T>
-    ConsumerPad<T>*         getInput(const std::string& str);
-    template<typename T>
-    const ConsumerPad<T>*   getInput() const; 
-    template<typename T>
-    const ConsumerPad<T>*   getInput(const std::string& str) const;           
+    const InputPad<T>*      getInput(const std::string& str) const;
 protected:
-    template<typename T>
-    void                    addOutput(SourcePad<T>& src);
-    template<typename T>
-    void                    removeOutput(SourcePad<T>& src);
-
-    template<typename T>
-    void                    addInput(ConsumerPad<T>& cons);
-    template<typename T>
-    void                    removeInput(ConsumerPad<T>& cons);
+    void                    addPad(PadBase& pad);
+    void                    removePad(PadBase& pad);
 private:
     std::string             m_name;
+    std::set<PadBase*>      m_pads;
 
-    std::set<PadBase*>      m_outputs;
-    std::set<PadBase*>      m_inputs;
+    template<typename T>
+    OutputPad<T>*           findOutput(const std::string& name) const;
+    template<typename T>
+    InputPad<T>*            findInput(const std::string& name) const;
 };
 
 }
