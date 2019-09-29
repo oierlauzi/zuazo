@@ -12,10 +12,8 @@ namespace Zuazo::Signal {
 class Layout {
     friend PadBase;
 public:
-    Layout() = default;
     Layout(std::string&& name);
     Layout(const Layout& other) = delete;
-    Layout(Layout&& other) = delete;
     virtual ~Layout();
 
     void                    setName(std::string&& name);
@@ -33,9 +31,11 @@ public:
     InputPad<T>*            getInput(const std::string& str);
     template<typename T>
     const InputPad<T>*      getInput(const std::string& str) const;
+
 protected:
     void                    addPad(PadBase& pad);
     void                    removePad(PadBase& pad);
+
 private:
     std::string             m_name;
     std::set<PadBase*>      m_pads;

@@ -4,21 +4,35 @@
 
 namespace Zuazo::Timing {
 
-bool Scheduler::PriorityCmp::operator()(const EventBase* a, const EventBase* b) const {
-    if(a->getPriority() < b->getPriority()) return true;
-    else if(a->getPriority() > b->getPriority()) return false;
-    else return a < b;
-};
+Scheduler::~Scheduler(){
+    std::set<EventBase*> allEvents;
 
-void Scheduler::addEvent(const RegularEvent& evnt){
+    //Add all regular events
+    allEvents.insert(m_regularEvnts.begin(), m_regularEvnts.end());
+
+    //Add all periodic events
+    for(auto perData : m_periodicEvnts){
+        allEvents.insert(
+            perData.second.evnts.begin(), 
+            perData.second.evnts.end()
+        );
+    }
+
+    //Disable em'
+    for(auto evnt : allEvents){
+        evnt->disable();
+    }
+}
+
+void Scheduler::addEvent(RegularEvent& evnt){
     m_regularEvnts.emplace(&evnt);
 }
 
-void Scheduler::removeEvent(const RegularEvent& evnt){
+void Scheduler::removeEvent(RegularEvent& evnt){
     m_regularEvnts.erase(&evnt);
 }
 
-void Scheduler::addEvent(const PeriodicEvent& evnt){
+void Scheduler::addEvent(PeriodicEvent& evnt){
     const Duration& period = evnt.getPeriod();
 
     if(period > Period::zero()){
@@ -26,13 +40,7 @@ void Scheduler::addEvent(const PeriodicEvent& evnt){
 
         if(ite == m_periodicEvnts.end()){
             //This period does not exist, create it
-            const PeriodData newPeriod{
-                .timeForNextUpdate = Duration::zero(), //Update it ASAP
-                .evnts = EventSet()
-            };
-
-            //Insert the new period
-            std::tie(ite, std::ignore) = m_periodicEvnts.emplace(period, newPeriod);
+            std::tie(ite, std::ignore) = m_periodicEvnts.emplace(period, PeriodData());
         }
 
         //Finally add the event
@@ -40,7 +48,7 @@ void Scheduler::addEvent(const PeriodicEvent& evnt){
     }
 }
 
-void Scheduler::removeEvent(const PeriodicEvent& evnt){
+void Scheduler::removeEvent(PeriodicEvent& evnt){
     const Duration& period = evnt.getPeriod();
     auto ite = m_periodicEvnts.find(period);
 
@@ -56,20 +64,27 @@ void Scheduler::removeEvent(const PeriodicEvent& evnt){
 }
 
 Duration Scheduler::getTimeForNextEvent() const{
-    //Find the closest update
-    Duration result(Duration::max());
+    if(!m_periodicEvnts.empty() || !m_regularEvnts.empty()){
+        //Find the closest update
+        Period result(RegularEvent::getMaximumPeriod()); //Calculate minimum, begin with the maximum value
 
-    for(const auto& period : m_periodicEvnts) {
-        if(period.second.timeForNextUpdate < result){
-            result = period.second.timeForNextUpdate;
+        for(const auto& period : m_periodicEvnts) {
+            if(period.second.timeForNextUpdate < result){
+                result = period.second.timeForNextUpdate;
+            }
         }
-    }
 
-    return result;
+        if(result < Duration::zero()) 
+            return Duration::zero();
+        else
+            return result;
+    } else {
+        return Duration::max(); 
+    }
 }
 
 void Scheduler::addTime(Duration dura){
-    EventSet pendingEvents;
+    EventSet<EventBase*> pendingEvents;
 
     //Insert all the pending periodic updates
     for(auto& period : m_periodicEvnts){
@@ -86,7 +101,7 @@ void Scheduler::addTime(Duration dura){
     pendingEvents.insert(m_regularEvnts.cbegin(), m_regularEvnts.cend());
 
     //Finaly update them all
-    for(const EventBase* event : pendingEvents) {
+    for(EventBase* event : pendingEvents) {
         event->update();
     }
 }

@@ -1,26 +1,17 @@
 #include <Timing/PeriodicEvent.h>
 
-#include <Timing/Loop.h>
+#include <Timing/MainThread.h>
 
 namespace Zuazo::Timing {
 
-PeriodicEvent::PeriodicEvent(Priority prior) : EventBase(prior),
-    m_period(0)
-{
-}
+Period RegularEvent::s_maximumPeriod = getPeriod(Rate(24, 1));
 
-void PeriodicEvent::enable(){
-    mainLoop->addEvent(*this);
-    EventBase::enable();
-}
-
-void PeriodicEvent::disable(){
-    mainLoop->removeEvent(*this);
-    EventBase::disable();
+PeriodicEvent::~PeriodicEvent() {
+    ZUAZO_EVENT_AUTO_DISABLE
 }
 
 void PeriodicEvent::setPeriod(const Period& period){
-    UniqueDisable dis(*this); //Disable temporaly
+    UniqueDisable dis(*this);
     m_period = period;
 }
 
@@ -34,6 +25,16 @@ void PeriodicEvent::setRate(const Rate& rate){
 
 Rate PeriodicEvent::getRate() const{
     return Timing::getRate(m_period);
+}
+
+void PeriodicEvent::enable(){
+    mainThread->getScheduler().addEvent(*this);
+    EventBase::enable();
+}
+
+void PeriodicEvent::disable(){
+    mainThread->getScheduler().removeEvent(*this);
+    EventBase::disable();
 }
 
 }

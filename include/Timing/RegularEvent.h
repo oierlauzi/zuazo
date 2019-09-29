@@ -7,16 +7,18 @@ namespace Zuazo::Timing {
 
 class RegularEvent : public EventBase {
 public:
-    RegularEvent(Priority prior);
-    RegularEvent(const RegularEvent& other) = delete;
-    ~RegularEvent() = default;
+    using EventBase::EventBase;
+    virtual ~RegularEvent();
 
-    virtual void        enable() override;
-    virtual void        disable() override;
-protected:
+    virtual void    enable() override;
+    virtual void    disable() override;
 
+    static void     setMaximumPeriod(Period period);
+    static Period   getMaximumPeriod();
+    static void     setMinimumRate(const Rate& rate);
+    static Rate     getMinimumRate();
 private:
-
+    static Period   s_maximumPeriod;
 };
 
 }

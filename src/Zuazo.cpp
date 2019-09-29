@@ -1,15 +1,23 @@
 #include <Zuazo.h>
 
-#include <Timing/Loop.h>
+#include <Timing/MainThread.h>
 
 namespace Zuazo {
 
 void init(){
-    Timing::mainLoop = std::make_unique<Timing::Loop>();
+    Timing::mainThread = std::make_unique<Timing::MainThread>(); //Create the main thread
 }
 
 void end(){
-    Timing::mainLoop.reset();
+    Timing::mainThread.reset();
+}
+
+void _setup(){
+
+}
+
+void _cleanup(){
+    
 }
 
 }

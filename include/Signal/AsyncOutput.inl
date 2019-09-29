@@ -59,7 +59,7 @@ inline void AsyncOutput<T>::reset(){
 }
 
 template <typename T>
-inline void AsyncOutput<T>::update() const{
+inline void AsyncOutput<T>::update() {
 	std::lock_guard<std::mutex> lock(m_mutex);
 
 	if(m_buffer.size()){

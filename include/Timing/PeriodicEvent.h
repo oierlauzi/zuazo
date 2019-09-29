@@ -7,21 +7,20 @@ namespace Zuazo::Timing {
 
 class PeriodicEvent : public EventBase {
 public:
-    PeriodicEvent(Priority prior);
-    PeriodicEvent(const PeriodicEvent& other) = delete;
-    ~PeriodicEvent() = default;
-
-    virtual void        enable() override;
-    virtual void        disable() override;
+    using EventBase::EventBase;
+    virtual ~PeriodicEvent();
 
     void                setPeriod(const Period& period);
     const Period&       getPeriod() const;
     void                setRate(const Rate& rate);
     Rate                getRate() const;
+
+    virtual void        enable() override;
+    virtual void        disable() override;
 protected:
 
 private:
-    Period              m_period;
+    Period              m_period = Period::zero();
 };
 
 }
