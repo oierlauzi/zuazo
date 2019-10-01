@@ -6,6 +6,10 @@ inline void MainThread::lock(){
     m_mutex.lock();
 }
 
+inline bool MainThread::try_lock(){
+    return m_mutex.try_lock();
+}
+
 inline void MainThread::unlock(){
     m_mutex.unlock();
 }
@@ -31,25 +35,22 @@ inline void MainThread::handleEvents(){
 }
 
 template<typename T, typename... Args>
-inline std::shared_future<T> MainThread::execute(const std::function<T(Args...)>& func, Args&&... args) {
+inline T MainThread::execute(const std::function<T(Args...)>& func, Args&&... args) {
+    std::unique_lock<std::mutex> lock(m_mutex);
     //Create a future object
-    std::shared_future<T> futur(
-        std::async(std::launch::deferred, func, std::forward<Args>(args)...)
-    );
+    std::future<T> futur = std::async(std::launch::deferred, func, std::forward<Args>(args)...);
 
     //Put it on the queue
-    m_executions.emplace( [=] {
+    m_execution = [&futur] {
         futur.wait();
-    });
+    };
 
+    //Wait until it gets completed
     handleEvents();
-
-    return futur;
-}
-
-inline void MainThread::waitForExecution() const {
-    std::unique_lock<std::mutex> lock(m_mutex);
     m_eventsHandled.wait(lock);
+
+    //Return result
+    return futur.get();
 }
 
 inline TimePoint getCurrentTime(){

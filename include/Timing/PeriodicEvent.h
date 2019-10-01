@@ -15,8 +15,8 @@ public:
     void                setRate(const Rate& rate);
     Rate                getRate() const;
 
-    virtual void        enable() override;
-    virtual void        disable() override;
+    virtual void        enable() final;
+    virtual void        disable() final;
 protected:
 
 private:

@@ -8,7 +8,6 @@
 #include <future>
 #include <memory>
 #include <mutex>
-#include <queue>
 #include <thread>
 
 namespace Zuazo::Timing {
@@ -20,6 +19,7 @@ public:
     virtual ~MainThread();
 
     void                                lock();
+    bool                                try_lock();
     void                                unlock();
 
     const Scheduler&                    getScheduler() const;
@@ -31,11 +31,10 @@ public:
     void                                handleEvents();
 
     template<typename T, typename... Args>
-    std::shared_future<T>               execute(const std::function<T(Args...)>& func, Args&&... args);
-    void                                waitForExecution() const;
+    T                                   execute(const std::function<T(Args...)>& func, Args&&... args);
 private:
     Scheduler                           m_scheduler;
-    std::queue<std::function<void()>>   m_executions;
+    std::function<void()>               m_execution;
 
     TimePoint                           m_now;
     Duration                            m_elapsed;
@@ -52,8 +51,8 @@ private:
 
 extern std::unique_ptr<MainThread> mainThread;
 
-TimePoint getCurrentTime();
-Duration  getElapsed();
+extern TimePoint getCurrentTime();
+extern Duration  getElapsed();
 
 }
 

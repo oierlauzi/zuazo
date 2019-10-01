@@ -4,7 +4,7 @@
 
 namespace Zuazo::Timing {
 
-Period RegularEvent::s_maximumPeriod = getPeriod(Rate(24, 1));
+Period RegularEvent::s_maximumPeriod = Period::max();
 
 PeriodicEvent::~PeriodicEvent() {
     ZUAZO_EVENT_AUTO_DISABLE
@@ -28,11 +28,13 @@ Rate PeriodicEvent::getRate() const{
 }
 
 void PeriodicEvent::enable(){
+    std::lock_guard<MainThread> lock(*mainThread);
     mainThread->getScheduler().addEvent(*this);
     EventBase::enable();
 }
 
 void PeriodicEvent::disable(){
+    std::lock_guard<MainThread> lock(*mainThread);
     mainThread->getScheduler().removeEvent(*this);
     EventBase::disable();
 }

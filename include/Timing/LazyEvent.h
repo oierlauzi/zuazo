@@ -12,8 +12,8 @@ public:
     void                setMaximumRecursion(uint rec);
     uint                getMaximumRecursion() const;
 
-    virtual void        enable() override;
-    virtual void        disable() override;
+    virtual void        enable() final;
+    virtual void        disable() final;
 
     void                evaluate();
 private:

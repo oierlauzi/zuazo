@@ -9,11 +9,13 @@ RegularEvent::~RegularEvent() {
 }
 
 void RegularEvent::enable(){
+    std::lock_guard<MainThread> lock(*mainThread);
     mainThread->getScheduler().addEvent(*this);
     EventBase::enable();
 }
 
 void RegularEvent::disable(){
+    std::lock_guard<MainThread> lock(*mainThread);
     mainThread->getScheduler().removeEvent(*this);
     EventBase::disable();
 }

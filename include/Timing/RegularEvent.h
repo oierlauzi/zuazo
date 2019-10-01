@@ -10,8 +10,8 @@ public:
     using EventBase::EventBase;
     virtual ~RegularEvent();
 
-    virtual void    enable() override;
-    virtual void    disable() override;
+    virtual void    enable() final;
+    virtual void    disable() final;
 
     static void     setMaximumPeriod(Period period);
     static Period   getMaximumPeriod();
