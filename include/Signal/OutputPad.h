@@ -15,6 +15,7 @@ class OutputPad : virtual public PadBase {
     friend InputPad<T>;
 public:
     OutputPad(std::string&& name = "");
+    OutputPad(const OutputPad& other) = delete;
     virtual ~OutputPad();
 
     const std::set<InputPad<T>*>&        getConsumers() const;

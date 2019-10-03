@@ -7,6 +7,9 @@ inline EventBase::~EventBase(){
     ZUAZO_EVENT_AUTO_DISABLE //Just in case
 }
 
+
+
+
 inline void EventBase::enable(){
     m_isEnabled = true;
 }
@@ -18,6 +21,8 @@ inline void EventBase::disable(){
 inline bool EventBase::isEnabled() const{
     return m_isEnabled;
 }
+
+
 
 
 inline EventBase::UniqueDisable::UniqueDisable(EventBase& evnt) :

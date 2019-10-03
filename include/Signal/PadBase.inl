@@ -51,6 +51,18 @@ PadBase::PadBase(const PadBase& other) :
     if(other.m_owner) other.m_owner->addPad(*this);
 }
 
+PadBase::PadBase(PadBase&& other) :
+    m_type(std::move(other.m_type)),
+    m_direction(std::move(other.m_direction)),
+    m_name(std::move(other.m_name))
+{
+    //Steal its owner
+    if(other.m_owner){ 
+        other.m_owner->addPad(*this);
+        other.m_owner->removePad(other);
+    }
+}
+
 PadBase& PadBase::operator=(const PadBase& other){
     m_type = other.m_type;
     m_direction = other.m_direction;
@@ -59,6 +71,25 @@ PadBase& PadBase::operator=(const PadBase& other){
     //Set the new owner
     if(m_owner) m_owner->removePad(*this);
     if(other.m_owner) other.m_owner->addPad(*this);
+
+    return *this;
+}
+
+PadBase& PadBase::operator=(PadBase&& other){
+    m_type = std::move(other.m_type);
+    m_direction = std::move(other.m_direction);
+    m_name = std::move(other.m_name);
+
+    //Reset my owner
+    if(m_owner) m_owner->removePad(*this);
+
+    //Steal its owner
+    if(other.m_owner){ 
+        other.m_owner->addPad(*this);
+        other.m_owner->removePad(other);
+    }
+
+    return *this;
 }
 
 

@@ -20,6 +20,7 @@ public:
     using PadBase::setDirection;
 
     Input&                              operator=(const Input& other) = default;
+    Input&                              operator=(Input&& other) = default;
 
     struct BackupSignal;
 

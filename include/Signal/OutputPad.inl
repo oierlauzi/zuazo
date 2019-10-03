@@ -27,7 +27,7 @@ inline const std::set<InputPad<T>*>& OutputPad<T>::getConsumers() const{
 
 template <typename T>
 OutputPad<T>::OutputPad(OutputPad&& other) :
-    PadBase(other)
+    PadBase(std::move(other))
 {
     //Steal it's consumers
     const auto myConsumers = other.m_consumers;  //Copy the set, as it will be modified
@@ -38,7 +38,7 @@ OutputPad<T>::OutputPad(OutputPad&& other) :
 
 template <typename T>
 OutputPad<T>& OutputPad<T>::operator=(OutputPad&& other){
-    static_cast<PadBase&>(*this) = other;
+    static_cast<PadBase&>(*this) = std::move(other);
 
     //Unset all my consumers
     auto myConsumers = m_consumers; //Copy the set, as it will be modified
@@ -52,6 +52,7 @@ OutputPad<T>& OutputPad<T>::operator=(OutputPad&& other){
         cons->setSource(this);
     }
 
+    return *this;
 }
 
 }

@@ -9,10 +9,37 @@ inline Layout::Layout(std::string&& name) :
 {
 }
 
+inline Layout::Layout(Layout&& other) :
+    m_name(std::move(other.m_name))
+{
+    auto const myPads = other.m_pads;
+    for(auto pad : myPads){
+        other.removePad(*pad);
+        addPad(*pad);
+    }
+}
+
 inline Layout::~Layout() {
     const auto myPads = m_pads;
     for(auto pad : m_pads){
         removePad(*pad);
+    }
+}
+
+inline Layout& Layout::operator=(Layout&& other){
+    m_name = std::move(other.m_name);
+
+    //Remove all my pads
+    auto myPads = m_pads;
+    for(auto pad : myPads){
+        other.removePad(*pad);
+    }
+
+    //Steal all its pads
+    myPads = other.m_pads;
+    for(auto pad : myPads){
+        other.removePad(*pad);
+        addPad(*pad);
     }
 }
 

@@ -30,7 +30,10 @@ public:
 
 protected:
     PadBase(const PadBase& other); 
+    PadBase(PadBase&& other); 
+
     PadBase&            operator=(const PadBase& other);
+    PadBase&            operator=(PadBase&& other);
 
     void                setType(const std::type_info& type);
     void                setDirection(Direction dir);

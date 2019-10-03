@@ -12,9 +12,12 @@ namespace Zuazo::Signal {
 class Layout {
     friend PadBase;
 public:
-    Layout(std::string&& name);
+    Layout(std::string&& name = "");
     Layout(const Layout& other) = delete;
+    Layout(Layout&& other);
     virtual ~Layout();
+
+    Layout&                 operator=(Layout&& other);
 
     void                    setName(std::string&& name);
     const std::string&      getName() const;

@@ -10,13 +10,6 @@ uint LazyEvent::getMaximumRecursion() const {
     return m_maxRecursion;
 }
 
-void LazyEvent::enable() {
-    EventBase::enable();
-}
-
-void LazyEvent::disable() {
-    EventBase::disable();
-}
 
 void LazyEvent::evaluate() {
     if(isEnabled()){

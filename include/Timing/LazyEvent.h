@@ -9,16 +9,13 @@ class LazyEvent : public EventBase {
 public:
     using EventBase::EventBase;
 
-    void                setMaximumRecursion(uint rec);
-    uint                getMaximumRecursion() const;
+    void    setMaximumRecursion(uint rec);
+    uint    getMaximumRecursion() const;
 
-    virtual void        enable() final;
-    virtual void        disable() final;
-
-    void                evaluate();
+    void    evaluate();
 private:
-    uint                m_maxRecursion = 1;
-    uint                m_recursion = 0;
+    uint    m_maxRecursion = 1;
+    uint    m_recursion = 0;
 };
 
 }

@@ -19,7 +19,9 @@ public:
     OutputPad<T>*                           getSource() const;
 protected:
     InputPad(const InputPad& other);
+    InputPad(InputPad&& other);
     InputPad&                               operator=(const InputPad& other);
+    InputPad&                               operator=(InputPad&& other);
 
     static const std::shared_ptr<const T>   NO_SIGNAL;
 

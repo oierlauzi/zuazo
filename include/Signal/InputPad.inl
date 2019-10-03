@@ -42,12 +42,29 @@ InputPad<T>::InputPad(const InputPad& other) :
 }
 
 template <typename T>
+InputPad<T>::InputPad(InputPad&& other) :
+    PadBase(other)
+{
+    setSource(other.m_source);
+    other.setSource(nullptr);
+}
+
+template <typename T>
 InputPad<T>& InputPad<T>::operator=(const InputPad& other){
     static_cast<PadBase&>(this) = other;
     setSource(other.m_source);
+
+    return *this;
 }
 
+template <typename T>
+InputPad<T>& InputPad<T>::operator=(InputPad&& other){
+    static_cast<PadBase&>(this) = std::move(other);
+    setSource(other.m_source);
+    other.setSource(nullptr);
 
+    return *this;
+}
 
 template <typename T>
 inline const std::shared_ptr<const T>& InputPad<T>::get() const{

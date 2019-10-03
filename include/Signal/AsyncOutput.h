@@ -18,6 +18,7 @@ class AsyncOutput :
 {
 public:
 	AsyncOutput(std::string&& name = "");
+	AsyncOutput(const AsyncOutput& other) = delete;
 	AsyncOutput(AsyncOutput&& other) = default;
 	virtual ~AsyncOutput() = default;
 
