@@ -4,7 +4,7 @@
 
 namespace Zuazo::Timing {
 
-std::unique_ptr<MainThread> mainThread;
+std::unique_ptr<MainThread> MainThread::s_singleton;
 
 MainThread::MainThread() :
     m_now(Timing::Clock::now()),
@@ -31,7 +31,7 @@ void MainThread::threadFunc(){
     Duration timeForNextEvent;
 
     //Set up everything
-    Zuazo::_setup();
+    setup();
     m_eventsHandled.notify_all(); //Inform the constructor that it can continue
 
     while(!m_exit){
@@ -64,7 +64,15 @@ void MainThread::threadFunc(){
     }
 
     //Clean everything
-    Zuazo::_cleanup();
+    cleanup();
+}
+
+void MainThread::setup(){
+
+}
+
+void MainThread::cleanup(){
+    
 }
 
 }

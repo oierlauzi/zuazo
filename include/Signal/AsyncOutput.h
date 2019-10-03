@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Output.h"
-#include "../Timing/PeriodicEvent.h"
+#include "../Timing/ScheduledEvent.h"
 
 #include <memory>
 #include <mutex>
@@ -14,10 +14,14 @@ namespace Zuazo::Signal {
 template <typename T>
 class AsyncOutput :
 		public Output<T>,
-		public Timing::PeriodicEvent
+		public Timing::ScheduledEvent
 {
 public:
-	using Output<T>::Output;
+	AsyncOutput(std::string&& name = "");
+	AsyncOutput(AsyncOutput&& other) = default;
+	virtual ~AsyncOutput() = default;
+
+	AsyncOutput&                        operator=(AsyncOutput&& other) = default;
 
 	void								setMaxDropped(int32_t max);
 	int32_t								getMaxDropped() const;

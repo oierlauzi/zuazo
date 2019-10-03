@@ -69,7 +69,7 @@ inline void Layout::removePad(PadBase& pad){
 template<typename T>
 OutputPad<T>* Layout::findOutput(const std::string& name) const{
     for(auto pad : m_pads) {
-        if( (pad->getDirection() & PadBase::OUTPUT) && 
+        if( (pad->getDirection() & PadBase::Direction::OUTPUT) && 
             pad->getName() == name )
         {
             auto result = dynamic_cast<OutputPad<T>*>(pad);
@@ -83,7 +83,7 @@ OutputPad<T>* Layout::findOutput(const std::string& name) const{
 template<typename T>
 InputPad<T>* Layout::findInput(const std::string& name) const{
     for(auto pad : m_pads) {
-        if( (pad->getDirection() & PadBase::INPUT) && 
+        if( (pad->getDirection() & PadBase::Direction::INPUT) && 
             pad->getName() == name )
         {
             auto result = dynamic_cast<InputPad<T>*>(pad);

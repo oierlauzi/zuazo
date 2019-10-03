@@ -5,16 +5,13 @@
 namespace Zuazo::Timing {
 
 Scheduler::~Scheduler(){
-    std::set<EventBase*> allEvents;
+    EventSet allEvents;
 
-    //Add all regular events
-    allEvents.insert(m_regularEvnts.begin(), m_regularEvnts.end());
-
-    //Add all periodic events
-    for(auto perData : m_periodicEvnts){
+    //Add all the events
+    for(auto data : m_events){
         allEvents.insert(
-            perData.second.evnts.begin(), 
-            perData.second.evnts.end()
+            data.second.events.begin(), 
+            data.second.events.end()
         );
     }
 
@@ -24,53 +21,36 @@ Scheduler::~Scheduler(){
     }
 }
 
-void Scheduler::addEvent(RegularEvent& evnt){
-    m_regularEvnts.emplace(&evnt);
-}
-
-void Scheduler::removeEvent(RegularEvent& evnt){
-    m_regularEvnts.erase(&evnt);
-}
-
-void Scheduler::addEvent(PeriodicEvent& evnt){
+void Scheduler::addEvent(ScheduledEvent& evnt){
     const Duration& period = evnt.getPeriod();
-
-    if(period > Period::zero()){
-        auto ite = m_periodicEvnts.find(period);
-
-        if(ite == m_periodicEvnts.end()){
-            //This period does not exist, create it
-            std::tie(ite, std::ignore) = m_periodicEvnts.emplace(period, PeriodData());
-        }
-
-        //Finally add the event
-        ite->second.evnts.emplace(&evnt);
-    }
+    m_events[period].events.emplace(&evnt); //Creates the new period if non existant
 }
 
-void Scheduler::removeEvent(PeriodicEvent& evnt){
+void Scheduler::removeEvent(ScheduledEvent& evnt){
     const Duration& period = evnt.getPeriod();
-    auto ite = m_periodicEvnts.find(period);
+    auto ite = m_events.find(period);
 
-    if(ite != m_periodicEvnts.end()){
+    if(ite != m_events.end()){
         //Period exists, erase the element from it
-        ite->second.evnts.erase(&evnt);
+        ite->second.events.erase(&evnt);
 
-        if(ite->second.evnts.empty()){
-            //No remaingin events on this period, erase it
-            m_periodicEvnts.erase(ite);
+        if(ite->second.events.empty()){
+            //No remaining events on this period, erase it
+            m_events.erase(ite);
         }
     }
 }
 
 Duration Scheduler::getTimeForNextEvent() const{
-    if(!m_periodicEvnts.empty() || !m_regularEvnts.empty()){
+    if(!m_events.empty()){
         //Find the closest update
-        Period result(RegularEvent::getMaximumPeriod()); //Calculate minimum, begin with the maximum value
+        Period result(ScheduledEvent::getDefaultPeriod()); //Calculate minimum, begin with the default value
 
-        for(const auto& period : m_periodicEvnts) {
-            if(period.second.timeForNextUpdate < result){
-                result = period.second.timeForNextUpdate;
+        for(const auto& period : m_events) {
+            if(period.first.count() > 0){ //Evaluate it only for periodic events
+                if(period.second.timeForNextUpdate < result){
+                    result = period.second.timeForNextUpdate;
+                }
             }
         }
 
@@ -79,29 +59,32 @@ Duration Scheduler::getTimeForNextEvent() const{
         else
             return result;
     } else {
-        return Duration::max(); 
+        return Duration::max(); //Scheduler is empty
     }
 }
 
 void Scheduler::addTime(Duration dura){
-    EventSet<EventBase*> pendingEvents;
+    EventSet pendingEvents;
 
-    //Insert all the pending periodic updates
-    for(auto& period : m_periodicEvnts){
-        period.second.timeForNextUpdate -= dura;
+    //Insert all the pending updates
+    for(auto& period : m_events){
+        if(period.first.count() > 0){
+            //Insert all the periodic updates
+            period.second.timeForNextUpdate -= dura;
 
-        if(period.second.timeForNextUpdate <= Duration::zero()){
-            //This period needs to be updated
-            pendingEvents.insert(period.second.evnts.cbegin(), period.second.evnts.cend());
-            period.second.timeForNextUpdate += period.first;
+            if(period.second.timeForNextUpdate <= Duration::zero()){
+                //This period needs to be updated
+                pendingEvents.insert(period.second.events.cbegin(), period.second.events.cend());
+                period.second.timeForNextUpdate += period.first;
+            }
+        } else {
+            //Insert all the regular updates
+            pendingEvents.insert(period.second.events.cbegin(), period.second.events.cend());
         }
     }
 
-    //Insert all the regular updates
-    pendingEvents.insert(m_regularEvnts.cbegin(), m_regularEvnts.cend());
-
     //Finaly update them all
-    for(EventBase* event : pendingEvents) {
+    for(ScheduledEvent* event : pendingEvents) {
         event->update();
     }
 }

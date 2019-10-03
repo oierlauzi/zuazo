@@ -9,7 +9,7 @@ inline const std::shared_ptr<const T> InputPad<T>::NO_SIGNAL;
 
 template <typename T>
 inline InputPad<T>::InputPad(std::string&& name) : 
-    PadBase(std::forward<std::string>(name), PadBase::INPUT, typeid(T))
+    PadBase(typeid(T), PadBase::Direction::INPUT, std::forward<std::string>(name))
 {
 }
 
@@ -17,6 +17,8 @@ template <typename T>
 inline InputPad<T>::~InputPad(){
     setSource(nullptr);
 }
+
+
 
 template <typename T>
 inline void InputPad<T>::setSource(OutputPad<T>* src){
@@ -29,6 +31,23 @@ template <typename T>
 inline OutputPad<T>* InputPad<T>::getSource() const{
     return m_source;
 }
+
+
+
+template <typename T>
+InputPad<T>::InputPad(const InputPad& other) :
+    PadBase(other)
+{
+    setSource(other.m_source);
+}
+
+template <typename T>
+InputPad<T>& InputPad<T>::operator=(const InputPad& other){
+    static_cast<PadBase&>(this) = other;
+    setSource(other.m_source);
+}
+
+
 
 template <typename T>
 inline const std::shared_ptr<const T>& InputPad<T>::get() const{

@@ -12,13 +12,15 @@ class OutputPad;
 template <typename T>
 class InputPad : virtual public PadBase {
 public:
-    InputPad(std::string&& name);
-    InputPad(const InputPad& other) = delete;
+    InputPad(std::string&& name = "");
     virtual ~InputPad();
 
     void                                    setSource(OutputPad<T>* src);
     OutputPad<T>*                           getSource() const;
 protected:
+    InputPad(const InputPad& other);
+    InputPad&                               operator=(const InputPad& other);
+
     static const std::shared_ptr<const T>   NO_SIGNAL;
 
     const std::shared_ptr<const T>&         get() const;

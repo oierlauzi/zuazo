@@ -1,7 +1,7 @@
 #pragma once
 
 #include "OutputPad.h"
-#include "../Timing/EventBase.h"
+#include "../Timing/ScheduledEvent.h"
 
 #include <memory>
 
@@ -14,11 +14,13 @@ public:
     using PadBase::setName;
     using PadBase::setDirection;
 
+    Output&                                 operator=(Output&& other) = default;
+
     void                                    reset();
     void                                    push(std::shared_ptr<const T>&& element);
 
 protected:
-    static constexpr Timing::EventBase::Priority PRIORITY = 1;
+    static constexpr Timing::ScheduledEvent::Priority PRIORITY = 0;
 
 private:
     std::shared_ptr<const T>                m_lastElement;

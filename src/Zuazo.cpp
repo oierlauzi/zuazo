@@ -5,19 +5,11 @@
 namespace Zuazo {
 
 void init(){
-    Timing::mainThread = std::make_unique<Timing::MainThread>(); //Create the main thread
+    Timing::MainThread::init();
 }
 
 void end(){
-    Timing::mainThread.reset();
-}
-
-void _setup(){
-
-}
-
-void _cleanup(){
-    
+    Timing::MainThread::end();
 }
 
 }

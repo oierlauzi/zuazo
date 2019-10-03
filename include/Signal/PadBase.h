@@ -2,7 +2,6 @@
 
 #include <string>
 #include <typeindex>
-#include <typeinfo>
 
 #include "../Utils/Macros.h"
 
@@ -14,32 +13,36 @@ class PadBase {
     friend Layout;
 public:
     enum Direction {
+        NONE    = 0,
         INPUT   = ZUAZO_BIT(0),
         OUTPUT  = ZUAZO_BIT(1)
     };
 
-    PadBase(std::string&& name, Direction dir, const std::type_info& type); 
-    PadBase(const PadBase& other) = delete; 
+    PadBase(const std::type_index& type, Direction dir = Direction::NONE, std::string&& name = ""); 
     virtual ~PadBase();
 
     const Layout*       getOwner() const;
     Layout*             getOwner();
 
-    const std::string&  getName() const;
-    Direction           getDirection() const;
     const std::type_index& getType() const;
+    Direction           getDirection() const;
+    const std::string&  getName() const;
 
 protected:
-    void                setName(std::string&& name);
-    void                setDirection(Direction dir);
+    PadBase(const PadBase& other); 
+    PadBase&            operator=(const PadBase& other);
+
     void                setType(const std::type_info& type);
+    void                setDirection(Direction dir);
+    void                setName(std::string&& name);
 
 private:
     Layout*             m_owner = nullptr;
 
-    std::string         m_name;
-    Direction           m_direction;
     std::type_index     m_type;
+    Direction           m_direction;
+    std::string         m_name;
+    
 };
 
 ZUAZO_ENUM_FLAG_OPERATORS(PadBase::Direction)

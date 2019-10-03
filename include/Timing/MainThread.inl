@@ -2,25 +2,18 @@
 
 namespace Zuazo::Timing {
 
-inline void MainThread::lock(){
-    m_mutex.lock();
+inline void MainThread::init(){
+    s_singleton = std::make_unique<MainThread>();
 }
 
-inline bool MainThread::try_lock(){
-    return m_mutex.try_lock();
+inline void MainThread::end(){
+    s_singleton.reset();
 }
 
-inline void MainThread::unlock(){
-    m_mutex.unlock();
+inline MainThread& MainThread::getMainThread(){
+    return *s_singleton;
 }
 
-inline const Scheduler& MainThread::getScheduler() const{
-    return m_scheduler;
-}
-
-inline Scheduler& MainThread::getScheduler(){
-    return m_scheduler;
-}
 
 inline TimePoint MainThread::getCurrentTime() const{
     return m_now;
@@ -35,10 +28,10 @@ inline void MainThread::handleEvents(){
 }
 
 template<typename T, typename... Args>
-inline T MainThread::execute(const std::function<T(Args...)>& func, Args&&... args) {
+inline T MainThread::execute(const std::function<T(Args...)>& func, Args... args) {
     std::unique_lock<std::mutex> lock(m_mutex);
     //Create a future object
-    std::future<T> futur = std::async(std::launch::deferred, func, std::forward<Args>(args)...);
+    std::future<T> futur = std::async(std::launch::deferred, func, args...);
 
     //Put it on the queue
     m_execution = [&futur] {
@@ -53,12 +46,18 @@ inline T MainThread::execute(const std::function<T(Args...)>& func, Args&&... ar
     return futur.get();
 }
 
-inline TimePoint getCurrentTime(){
-    return mainThread->getCurrentTime();
+
+
+inline MainThread& getMainThread(){
+    return MainThread::getMainThread();
 }
 
-inline Duration  getElapsed(){
-    return mainThread->getElapsed();
+inline TimePoint getCurrentTime(){
+    return getMainThread().getCurrentTime();
+}
+
+inline Duration getElapsed(){
+    return getMainThread().getElapsed();
 }
 
 }

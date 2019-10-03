@@ -1,6 +1,7 @@
 #pragma once
 
 #include "InputPad.h"
+#include "../Timing/ScheduledEvent.h"
 
 #include <memory>
 #include <limits>
@@ -18,6 +19,8 @@ public:
     using PadBase::setName;
     using PadBase::setDirection;
 
+    Input&                              operator=(const Input& other) = default;
+
     struct BackupSignal;
 
     void                                setHold(bool hold);
@@ -30,8 +33,7 @@ public:
     static BackupSignal                 backupSignal;
 
 protected:
-    static constexpr Timing::EventBase::Priority PRIORITY = 
-                    std::numeric_limits<Timing::EventBase::Priority>::max();
+    static constexpr Timing::ScheduledEvent::Priority PRIORITY = 3;
 
 private:   
     mutable std::shared_ptr<const T>    m_lastElement;
