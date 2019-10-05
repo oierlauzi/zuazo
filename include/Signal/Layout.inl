@@ -10,19 +10,17 @@ inline Layout::Layout(std::string&& name) :
 }
 
 inline Layout::Layout(Layout&& other) :
-    m_name(std::move(other.m_name))
+    m_name(std::move(other.m_name)),
+    m_pads(std::move(other.m_pads))
 {
-    auto const myPads = other.m_pads;
-    for(auto pad : myPads){
-        other.removePad(*pad);
-        addPad(*pad);
+    for(auto pad : m_pads){
+        pad->m_owner = this;
     }
 }
 
 inline Layout::~Layout() {
-    const auto myPads = m_pads;
     for(auto pad : m_pads){
-        removePad(*pad);
+        pad->m_owner = nullptr;
     }
 }
 
@@ -30,16 +28,14 @@ inline Layout& Layout::operator=(Layout&& other){
     m_name = std::move(other.m_name);
 
     //Remove all my pads
-    auto myPads = m_pads;
-    for(auto pad : myPads){
-        other.removePad(*pad);
+    for(auto pad : m_pads){
+        pad->m_owner = nullptr;
     }
 
     //Steal all its pads
-    myPads = other.m_pads;
-    for(auto pad : myPads){
-        other.removePad(*pad);
-        addPad(*pad);
+    m_pads = std::move(other.m_pads);
+    for(auto pad : m_pads){
+        pad->m_owner = this;
     }
 }
 
@@ -96,11 +92,11 @@ inline void Layout::removePad(PadBase& pad){
 template<typename T>
 OutputPad<T>* Layout::findOutput(const std::string& name) const{
     for(auto pad : m_pads) {
-        if( (pad->getDirection() & PadBase::Direction::OUTPUT) && 
-            pad->getName() == name )
-        {
-            auto result = dynamic_cast<OutputPad<T>*>(pad);
-            if(result) return result;
+        if( (pad->getDirection() == PadBase::Direction::OUTPUT) && 
+            pad->getName() == name &&
+            pad->getType() == typeid(T)
+        ){
+            return dynamic_cast<OutputPad<T>*>(pad);
         }
     }
 
@@ -110,11 +106,11 @@ OutputPad<T>* Layout::findOutput(const std::string& name) const{
 template<typename T>
 InputPad<T>* Layout::findInput(const std::string& name) const{
     for(auto pad : m_pads) {
-        if( (pad->getDirection() & PadBase::Direction::INPUT) && 
-            pad->getName() == name )
-        {
-            auto result = dynamic_cast<InputPad<T>*>(pad);
-            if(result) return result;
+        if( (pad->getDirection() == PadBase::Direction::INPUT) && 
+            pad->getName() == name &&
+            pad->getType() == typeid(T)
+        ){
+            return dynamic_cast<InputPad<T>*>(pad);
         }
     }
 

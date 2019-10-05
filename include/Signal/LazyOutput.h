@@ -14,7 +14,7 @@ public:
 
     LazyOutput& operator=(LazyOutput&& other) = default;
 
-    virtual std::shared_ptr<const T>& get() const override;
+    virtual std::shared_ptr<const T>& get() const final;
 private:
     Timing::LazyEvent& m_owner;
 };

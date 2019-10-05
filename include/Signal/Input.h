@@ -17,7 +17,6 @@ class Input : public InputPad<T> {
 public:
     using InputPad<T>::InputPad;
     using PadBase::setName;
-    using PadBase::setDirection;
 
     Input&                              operator=(const Input& other) = default;
     Input&                              operator=(Input&& other) = default;

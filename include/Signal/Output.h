@@ -12,7 +12,6 @@ class Output : public OutputPad<T> {
 public:
     using OutputPad<T>::OutputPad;
     using PadBase::setName;
-    using PadBase::setDirection;
 
     Output&                                 operator=(Output&& other) = default;
 

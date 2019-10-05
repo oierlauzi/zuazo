@@ -10,7 +10,8 @@ template <typename T>
 class OutputPad;
 
 template <typename T>
-class InputPad : virtual public PadBase {
+class InputPad : public PadBase {
+    friend OutputPad<T>;
 public:
     InputPad(std::string&& name = "");
     virtual ~InputPad();

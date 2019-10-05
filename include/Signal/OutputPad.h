@@ -11,7 +11,7 @@ template <typename T>
 class InputPad;
 
 template <typename T>
-class OutputPad : virtual public PadBase {
+class OutputPad : public PadBase {
     friend InputPad<T>;
 public:
     OutputPad(std::string&& name = "");

@@ -14,9 +14,8 @@ inline OutputPad<T>::OutputPad(std::string&& name) :
 
 template <typename T>
 inline OutputPad<T>::~OutputPad(){
-    const auto myConsumers = m_consumers;  //Copy the set, as it will be modified
-    for(auto cons : myConsumers){
-        cons->setSource(nullptr);
+    for(auto cons : m_consumers){
+        cons->m_source = nullptr;
     }
 }
 
@@ -27,12 +26,12 @@ inline const std::set<InputPad<T>*>& OutputPad<T>::getConsumers() const{
 
 template <typename T>
 OutputPad<T>::OutputPad(OutputPad&& other) :
-    PadBase(std::move(other))
+    PadBase(std::move(other)),
+    m_consumers(std::move(other.m_consumers))
 {
     //Steal it's consumers
-    const auto myConsumers = other.m_consumers;  //Copy the set, as it will be modified
-    for(auto cons : myConsumers){
-        cons->setSource(this);
+    for(auto cons : m_consumers){
+        cons->m_source = this;
     }
 }
 
@@ -40,16 +39,14 @@ template <typename T>
 OutputPad<T>& OutputPad<T>::operator=(OutputPad&& other){
     static_cast<PadBase&>(*this) = std::move(other);
 
-    //Unset all my consumers
-    auto myConsumers = m_consumers; //Copy the set, as it will be modified
-    for(auto cons : myConsumers){
-        cons->setSource(nullptr);
+    for(auto cons : m_consumers){
+        cons->m_source = nullptr;
     }
 
     //Steal it's consumers
-    myConsumers = other.m_consumers;  //Copy the set, as it will be modified
-    for(auto cons : myConsumers){
-        cons->setSource(this);
+    m_consumers = std::move(other.m_consumers); 
+    for(auto cons : m_consumers){
+        cons->m_source = this;
     }
 
     return *this;

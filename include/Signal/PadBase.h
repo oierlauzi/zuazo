@@ -13,12 +13,11 @@ class PadBase {
     friend Layout;
 public:
     enum Direction {
-        NONE    = 0,
-        INPUT   = ZUAZO_BIT(0),
-        OUTPUT  = ZUAZO_BIT(1)
+        INPUT,
+        OUTPUT
     };
 
-    PadBase(const std::type_index& type, Direction dir = Direction::NONE, std::string&& name = ""); 
+    PadBase(const std::type_index& type, Direction dir, std::string&& name = ""); 
     virtual ~PadBase();
 
     const Layout*       getOwner() const;
@@ -47,8 +46,6 @@ private:
     std::string         m_name;
     
 };
-
-ZUAZO_ENUM_FLAG_OPERATORS(PadBase::Direction)
 
 }
 
