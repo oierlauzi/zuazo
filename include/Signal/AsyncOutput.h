@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Output.h"
-#include "../Timing/ScheduledEvent.h"
+#include "../Timing/Scheduler.h"
 
 #include <memory>
 #include <mutex>
@@ -14,7 +14,7 @@ namespace Zuazo::Signal {
 template <typename T>
 class AsyncOutput :
 		public Output<T>,
-		public Timing::ScheduledEvent
+		public Timing::Scheduler::Event
 {
 public:
 	AsyncOutput(std::string&& name = "");

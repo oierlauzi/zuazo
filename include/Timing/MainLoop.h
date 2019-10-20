@@ -2,6 +2,7 @@
 
 #include "Scheduler.h"
 #include "Chrono.h"
+#include "../Zuazo.h"
 
 #include <condition_variable>
 #include <functional>
@@ -12,29 +13,28 @@
 
 namespace Zuazo::Timing {
 
-class MainThread {
-    friend std::unique_ptr<MainThread> std::make_unique<MainThread>();
-    friend ScheduledEvent;
+class MainLoop {
+    friend std::unique_ptr<MainLoop> std::make_unique<MainLoop>();
+    friend void Zuazo::init();
+    friend void Zuazo::end();
 public:
-    MainThread(const MainThread& other) = delete;
-    virtual ~MainThread();
+    MainLoop(const MainLoop& other) = delete;
+    virtual ~MainLoop();
 
-    static void                         init();
-    static void                         end();
-    static MainThread&                  getMainThread();
+    static MainLoop&                    getMainLoop();
 
     TimePoint                           getCurrentTime() const;
     Duration                            getElapsed() const;
-    
-    void                                handleEvents();
+    Scheduler&                          getScheduler();
+    const Scheduler&                    getScheduler() const;
 
-    template<typename T, typename... Args>
-    T                                   execute(const std::function<T(Args...)>& func, Args... args);
+    void                                lock();
+    void                                unlock();
+    void                                handleEvents();
 private:
-    MainThread();
+    MainLoop();
 
     Scheduler                           m_scheduler;
-    std::function<void()>               m_execution;
 
     TimePoint                           m_now;
     Duration                            m_elapsed;
@@ -42,21 +42,19 @@ private:
     volatile bool                       m_exit;
     std::thread                         m_thread;
     mutable std::mutex                  m_mutex;
-
     mutable std::condition_variable     m_handleEvents;
-    mutable std::condition_variable     m_eventsHandled;
 
     void                                threadFunc();
-    void                                setup();
-    void                                cleanup();
 
-    static std::unique_ptr<MainThread>  s_singleton;
+    static std::unique_ptr<MainLoop>    s_mainLoop;
+    static void                         init();
+    static void                         end();
 };
 
-extern MainThread& getMainThread();
+extern MainLoop& getMainLoop();
 extern TimePoint getCurrentTime();
 extern Duration  getElapsed();
 
 }
 
-#include "MainThread.inl"
+#include "MainLoop.inl"

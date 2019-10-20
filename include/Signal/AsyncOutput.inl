@@ -1,11 +1,12 @@
 #include "AsyncOutput.h"
+#include "../Timing/MainLoop.h"
 
 namespace Zuazo::Signal {
 
 template <typename T>
 AsyncOutput<T>::AsyncOutput(std::string&& name) :
 	Output<T>(std::forward<std::string>(name)),
-	ScheduledEvent(Output<T>::PRIORITY)
+	Timing::Scheduler::Event(&Timing::getMainLoop().getScheduler(), Output<T>::PRIORITY)
 {
 }
 

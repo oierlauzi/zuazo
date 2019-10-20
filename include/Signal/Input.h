@@ -1,7 +1,7 @@
 #pragma once
 
 #include "InputPad.h"
-#include "../Timing/ScheduledEvent.h"
+#include "../Timing/Scheduler.h"
 
 #include <memory>
 #include <limits>
@@ -33,7 +33,7 @@ public:
     static BackupSignal                 backupSignal;
 
 protected:
-    static constexpr Timing::ScheduledEvent::Priority PRIORITY = 3;
+    static constexpr Timing::Scheduler::Priority PRIORITY = 100;
 
 private:   
     mutable std::shared_ptr<const T>    m_lastElement;

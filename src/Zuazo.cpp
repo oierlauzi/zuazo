@@ -1,15 +1,18 @@
 #include <Zuazo.h>
 
-#include <Timing/MainThread.h>
+#include <Graphics/Window.h>
+#include <Timing/MainLoop.h>
 
 namespace Zuazo {
 
 void init(){
-    Timing::MainThread::init();
+    //Graphics::Window::init();
+    Timing::MainLoop::init();
 }
 
 void end(){
-    Timing::MainThread::end();
+    Timing::MainLoop::end();
+    //Graphics::Window::end();
 }
 
 }

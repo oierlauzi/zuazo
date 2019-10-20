@@ -1,7 +1,7 @@
 #pragma once
 
 #include "OutputPad.h"
-#include "../Timing/ScheduledEvent.h"
+#include "../Timing/Scheduler.h"
 
 #include <memory>
 
@@ -19,7 +19,7 @@ public:
     void                                    push(std::shared_ptr<const T>&& element);
 
 protected:
-    static constexpr Timing::ScheduledEvent::Priority PRIORITY = 0;
+    static constexpr Timing::Scheduler::Priority PRIORITY = 0;
 
 private:
     std::shared_ptr<const T>                m_lastElement;

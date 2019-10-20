@@ -3,13 +3,6 @@
 
 namespace Zuazo::Timing {
 
-inline EventBase::~EventBase(){
-    ZUAZO_EVENT_AUTO_DISABLE //Just in case
-}
-
-
-
-
 inline void EventBase::enable(){
     m_isEnabled = true;
 }

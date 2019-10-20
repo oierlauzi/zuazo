@@ -15,7 +15,7 @@ public:
     using PadBase::setName;
 
     Source source;
-private:
+protected:
     virtual const std::shared_ptr<const T>& get() const final;
 };
 
