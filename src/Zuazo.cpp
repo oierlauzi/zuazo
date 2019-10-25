@@ -6,13 +6,13 @@
 namespace Zuazo {
 
 void init(){
-    //Graphics::Window::init();
+    Graphics::Window::init();
     Timing::MainLoop::init();
 }
 
 void end(){
     Timing::MainLoop::end();
-    //Graphics::Window::end();
+    Graphics::Window::end();
 }
 
 }

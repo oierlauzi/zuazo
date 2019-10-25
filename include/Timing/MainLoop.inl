@@ -3,7 +3,7 @@
 namespace Zuazo::Timing {
 
 inline void MainLoop::init(){
-    s_mainLoop = std::make_unique<MainLoop>();
+    s_mainLoop = std::unique_ptr<MainLoop>(new MainLoop);
 }
 
 inline void MainLoop::end(){
@@ -31,12 +31,8 @@ inline const Scheduler& MainLoop::getScheduler() const{
     return m_scheduler;
 }
 
-inline void MainLoop::lock(){
-    m_mutex.lock();
-}
-
-inline void MainLoop::unlock(){
-    m_mutex.unlock();
+inline std::mutex& MainLoop::getMutex(){
+    return m_mutex;
 }
 
 inline void MainLoop::handleEvents(){

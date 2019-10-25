@@ -4,6 +4,7 @@
 #include "Chrono.h"
 #include "../Zuazo.h"
 
+#include <atomic>
 #include <condition_variable>
 #include <functional>
 #include <future>
@@ -14,7 +15,6 @@
 namespace Zuazo::Timing {
 
 class MainLoop {
-    friend std::unique_ptr<MainLoop> std::make_unique<MainLoop>();
     friend void Zuazo::init();
     friend void Zuazo::end();
 public:
@@ -27,9 +27,8 @@ public:
     Duration                            getElapsed() const;
     Scheduler&                          getScheduler();
     const Scheduler&                    getScheduler() const;
+    std::mutex&                         getMutex();
 
-    void                                lock();
-    void                                unlock();
     void                                handleEvents();
 private:
     MainLoop();
@@ -39,7 +38,7 @@ private:
     TimePoint                           m_now;
     Duration                            m_elapsed;
 
-    volatile bool                       m_exit;
+    std::atomic<bool>                   m_exit;
     std::thread                         m_thread;
     mutable std::mutex                  m_mutex;
     mutable std::condition_variable     m_handleEvents;
