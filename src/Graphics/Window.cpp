@@ -1,5 +1,7 @@
 #include <Graphics/Window.h>
 
+#include <iostream>
+
 namespace Zuazo::Graphics {
 
 #define MT_EXEC_NO_ARGS(x)              \
@@ -141,8 +143,6 @@ std::vector<Window::Monitor> Window::s_monitors;
 std::atomic<bool> Window::s_exit;
 std::thread Window::s_mainThread;
 Utils::CrossThreadInvocation Window::s_mainThreadExecutions;
-std::thread Window::s_cbkThread;
-Utils::CrossThreadInvocation Window::s_cbks;
 
 
 
@@ -157,8 +157,7 @@ Window::Window(const Math::Vec2i& size, std::string&& name, const Monitor& mon) 
         static_cast<GLFWwindow*>(nullptr)
     ))
 {
-    //Set the user pointer for callbacks
-    glfwSetWindowUserPointer(m_window, this);
+    setupWindow();
 }
 
 Window::Window(Window&& other) :
@@ -167,8 +166,9 @@ Window::Window(Window&& other) :
     m_windowedState(std::move(other.m_windowedState))
 {
 
-    //Set the user pointer for callbacks
-    glfwSetWindowUserPointer(m_window, this);
+    if(m_window){
+        setupWindow();
+    }
 
     other.m_window = nullptr;
 }
@@ -189,8 +189,7 @@ Window& Window::operator=(Window&& other) {
     m_windowedState = std::move(other.m_windowedState);
 
     if(m_window){
-        //Set the user pointer for callbacks
-        glfwSetWindowUserPointer(m_window, this);
+        setupWindow();
     }
 
     other.m_window = nullptr;
@@ -397,6 +396,47 @@ void Window::swapBuffers() const{
 
 
 
+void Window::setupWindow(){
+    glfwSetWindowUserPointer(m_window, this);
+    MT_EXEC(setupCbks, m_window);
+}
+
+
+
+
+void Window::positionCbk(const Math::Vec2i& pos){
+
+}
+
+void Window::sizeCbk(const Math::Vec2i& size){
+
+}
+
+void Window::closeCbk(){
+
+}
+
+void Window::refreshCbk(){
+
+}
+
+void Window::focusCbk(bool focus){
+
+}
+
+void Window::stateCbk(State state){
+
+}
+
+void Window::resolutionCbk(const Resolution& res){
+
+}
+
+void Window::scaleCbk(const Math::Vec2f& scale){
+
+}
+
+
 
 const std::vector<Window::Monitor>& Window::getMonitors(){
     return s_monitors;
@@ -435,13 +475,16 @@ inline T Window::mainThreadExecute(const std::function<T(Args...)>& func, Args..
     return futur->getValue();
 }
 
-
-
-
-void Window::cbkThreadFunc() {
-    while(!s_exit){
-        s_cbks.waitAndHandleAll();
-    }
+void Window::setupCbks(GLFWwindow* win){
+    glfwSetWindowPosCallback(win, positionCbk);
+    glfwSetWindowSizeCallback(win, sizeCbk);
+    glfwSetWindowCloseCallback(win, closeCbk);
+    glfwSetWindowRefreshCallback(win, refreshCbk);
+    glfwSetWindowFocusCallback(win, focusCbk);
+    glfwSetWindowIconifyCallback(win, iconifyCbk);
+    glfwSetWindowMaximizeCallback(win, maximizeCbk);
+    glfwSetFramebufferSizeCallback(win, framebufferCbk);
+    glfwSetWindowContentScaleCallback(win, scaleCbk);
 }
 
 void Window::monitorCbk(GLFWmonitor* mon, int evnt){
@@ -454,7 +497,58 @@ void Window::monitorCbk(GLFWmonitor* mon, int evnt){
     }
 }
 
+void Window::positionCbk(GLFWwindow* win, int x, int y){
+    Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
+    window->positionCbk(Math::Vec2i(x, y));
+}
 
+void Window::sizeCbk(GLFWwindow* win, int x, int y){
+    Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
+    window->sizeCbk(Math::Vec2i(x, y));
+}
+
+void Window::closeCbk(GLFWwindow* win){
+    Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
+    window->closeCbk();
+}
+
+void Window::refreshCbk(GLFWwindow* win){
+    Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
+    window->refreshCbk();
+}
+
+void Window::focusCbk(GLFWwindow* win, int x){
+    Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
+    window->focusCbk(x);
+}
+
+void Window::iconifyCbk(GLFWwindow* win, int x){
+    Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
+    if(x == GLFW_TRUE){
+        window->stateCbk(State::ICONIFIED);
+    } else {
+        window->stateCbk(State::NORMAL);
+    }
+}
+
+void Window::maximizeCbk(GLFWwindow* win, int x){
+    Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
+    if(x == GLFW_TRUE){
+        window->stateCbk(State::MAXIMIZED);
+    } else {
+        window->stateCbk(State::NORMAL);
+    }
+}
+
+void Window::framebufferCbk(GLFWwindow* win, int x, int y){
+    Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
+    window->resolutionCbk(Resolution(x, y));
+}
+
+void Window::scaleCbk(GLFWwindow* win, float x, float y){
+    Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
+    window->scaleCbk(Math::Vec2f(x, y));
+}
 
 
 void Window::addMonitor(GLFWmonitor* mon){
@@ -485,17 +579,10 @@ const Window::Monitor& Window::getMonitor(GLFWmonitor* mon){
 void Window::init(){
     s_mainThread = std::thread(mainThreadFunc);
     MT_EXEC_NO_ARGS(theFastestFunctionInTheWorld);
-    
-    s_cbkThread = std::thread(cbkThreadFunc);
-    CBK_EXEC_NO_ARGS(theFastestFunctionInTheWorld);
-
 }
 
 void Window::end(){
     s_exit = true;
-
-    s_cbks.execute(std::function{theFastestFunctionInTheWorld});
-    s_cbkThread.join();
 
     glfwPostEmptyEvent();
     s_mainThread.join();

@@ -117,23 +117,41 @@ private:
 
     std::optional<WindowGeometry>       m_windowedState;               
 
+    void                                setupWindow();
 
+    void                                positionCbk(const Math::Vec2i& pos);
+    void                                sizeCbk(const Math::Vec2i& size);
+    void                                closeCbk();
+    void                                refreshCbk();
+    void                                focusCbk(bool focus);
+    void                                stateCbk(State state);
+    void                                resolutionCbk(const Resolution& res);
+    void                                scaleCbk(const Math::Vec2f& scale);
 
 
     static std::vector<Monitor>         s_monitors;
 
     static std::atomic<bool>            s_exit;
-
     static std::thread                  s_mainThread;
     static Utils::CrossThreadInvocation s_mainThreadExecutions;
+
     static void                         mainThreadFunc();
+
     template<typename T, typename... Args>
     static T                            mainThreadExecute(const std::function<T(Args...)>& func, Args... args);
 
-    static std::thread                  s_cbkThread;
-    static Utils::CrossThreadInvocation s_cbks;
-    static void                         cbkThreadFunc();
+    static void                         setupCbks(GLFWwindow* win);
     static void                         monitorCbk(GLFWmonitor* mon, int evnt);
+    static void                         positionCbk(GLFWwindow* win, int x, int y);
+    static void                         sizeCbk(GLFWwindow* win, int x, int y);
+    static void                         closeCbk(GLFWwindow* win);
+    static void                         refreshCbk(GLFWwindow* win);
+    static void                         focusCbk(GLFWwindow* win, int x);
+    static void                         iconifyCbk(GLFWwindow* win, int x);
+    static void                         maximizeCbk(GLFWwindow* win, int x);
+    static void                         framebufferCbk(GLFWwindow* win, int x, int y);
+    static void                         scaleCbk(GLFWwindow* win, float x, float y);
+
 
     static void                         addMonitor(GLFWmonitor* mon);
     static void                         eraseMonitor(GLFWmonitor* mon);
