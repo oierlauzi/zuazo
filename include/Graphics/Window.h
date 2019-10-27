@@ -88,6 +88,8 @@ public:
 
     void                                setState(State st);
     State                               getState() const;
+    void                                setStateCallback(std::function<void(State)> cbk);
+    const std::function<void(State)>&   getStateCallback() const;
 
     void                                setMonitor(const Monitor& mon);
     void                                setMonitor(const Monitor& mon, const Monitor::Mode& mode);
@@ -95,11 +97,17 @@ public:
 
     void                                setPosition(const Math::Vec2i& pos);
     Math::Vec2i                         getPosition() const;
+    void                                setPositionCallback(std::function<void(const Math::Vec2i&)> cbk);
+    const std::function<void(const Math::Vec2i&)>& getPositionCallback() const;
 
     void                                setSize(const Math::Vec2i& res);
     Math::Vec2i                         getSize() const;
+    void                                setSizeCallback(std::function<void(const Math::Vec2i&)> cbk);
+    const std::function<void(const Math::Vec2i&)>& getSizeCallback() const;
 
     Resolution                          getResolution() const;
+    void                                setResolutionCallback(std::function<void(const Resolution&)> cbk);
+    const std::function<void(const Resolution&)>& getResolutionCallback() const;
 
     void                                swapBuffers() const;
 
@@ -132,15 +140,22 @@ private:
     static std::vector<Monitor>         s_monitors;
 
     static std::atomic<bool>            s_exit;
+
     static std::thread                  s_mainThread;
     static Utils::CrossThreadInvocation s_mainThreadExecutions;
+
+    static std::thread                  s_cbkThread;
+    static Utils::CrossThreadInvocation s_cbkThreadExecutions;
 
     static void                         mainThreadFunc();
 
     template<typename T, typename... Args>
     static T                            mainThreadExecute(const std::function<T(Args...)>& func, Args... args);
 
+    static void                         cbkThreadFunc();
+
     static void                         setupCbks(GLFWwindow* win);
+    
     static void                         monitorCbk(GLFWmonitor* mon, int evnt);
     static void                         positionCbk(GLFWwindow* win, int x, int y);
     static void                         sizeCbk(GLFWwindow* win, int x, int y);

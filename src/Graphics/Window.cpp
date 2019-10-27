@@ -14,17 +14,26 @@ namespace Zuazo::Graphics {
         std::function{x}, __VA_ARGS__   \
     )
 
-#define CBK_EXEC_NO_ARGS(x)                                 \
-    s_cbks.execute(                                         \
+#define CT_ASYNC_EXEC_NO_ARGS(x)                            \
+    s_cbkThreadExecutions.execute(                          \
+        std::function{x}                                    \
+    )
+
+#define CT_ASYNC_EXEC(x, ...)                               \
+    s_cbkThreadExecutions.execute(                          \
+        std::function{x}, __VA_ARGS__                       \
+    )
+
+#define CT_EXEC_NO_ARGS(x)                                  \
+    s_cbkThreadExecutions.execute(                          \
         Utils::CrossThreadInvocation::waitForCompletion,    \
         std::function{x}                                    \
     )
 
-#define CBK_EXEC(x, ...)                                    \
-    s_cbks.execute(                                         \
+#define CT_EXEC(x, ...)                                     \
+    s_cbkThreadExecutions.execute(                          \
         Utils::CrossThreadInvocation::waitForCompletion,    \
         std::function{x}, __VA_ARGS__                       \
-    )
 
 static void theFastestFunctionInTheWorld(){
     return;
@@ -141,8 +150,12 @@ std::vector<Window::Monitor> Window::s_monitors;
 
 
 std::atomic<bool> Window::s_exit;
+
 std::thread Window::s_mainThread;
 Utils::CrossThreadInvocation Window::s_mainThreadExecutions;
+
+std::thread Window::s_cbkThread;
+Utils::CrossThreadInvocation Window::s_cbkThreadExecutions;
 
 
 
@@ -413,7 +426,7 @@ void Window::sizeCbk(const Math::Vec2i& size){
 }
 
 void Window::closeCbk(){
-
+    printf("Hola\n");
 }
 
 void Window::refreshCbk(){
@@ -475,6 +488,14 @@ inline T Window::mainThreadExecute(const std::function<T(Args...)>& func, Args..
     return futur->getValue();
 }
 
+
+void Window::cbkThreadFunc(){
+    while(!s_exit){
+        s_cbkThreadExecutions.waitAndHandleAll();
+    }
+}
+
+
 void Window::setupCbks(GLFWwindow* win){
     glfwSetWindowPosCallback(win, positionCbk);
     glfwSetWindowSizeCallback(win, sizeCbk);
@@ -499,55 +520,56 @@ void Window::monitorCbk(GLFWmonitor* mon, int evnt){
 
 void Window::positionCbk(GLFWwindow* win, int x, int y){
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
-    window->positionCbk(Math::Vec2i(x, y));
+    CT_ASYNC_EXEC_NO_ARGS( [=] { window->positionCbk(Math::Vec2i(x, y)); } );
+    
 }
 
 void Window::sizeCbk(GLFWwindow* win, int x, int y){
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
-    window->sizeCbk(Math::Vec2i(x, y));
+    CT_ASYNC_EXEC_NO_ARGS( [=] { window->sizeCbk(Math::Vec2i(x, y)); } );
 }
 
 void Window::closeCbk(GLFWwindow* win){
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
-    window->closeCbk();
+    CT_ASYNC_EXEC_NO_ARGS( [=] { window->closeCbk(); } );
 }
 
 void Window::refreshCbk(GLFWwindow* win){
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
-    window->refreshCbk();
+    CT_ASYNC_EXEC_NO_ARGS( [=] { window->refreshCbk(); } );
 }
 
 void Window::focusCbk(GLFWwindow* win, int x){
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
-    window->focusCbk(x);
+    CT_ASYNC_EXEC_NO_ARGS( [=] { window->focusCbk(x); } );
 }
 
 void Window::iconifyCbk(GLFWwindow* win, int x){
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
     if(x == GLFW_TRUE){
-        window->stateCbk(State::ICONIFIED);
+        CT_ASYNC_EXEC_NO_ARGS( [=] { window->stateCbk(State::ICONIFIED); } );
     } else {
-        window->stateCbk(State::NORMAL);
+        CT_ASYNC_EXEC_NO_ARGS( [=] { window->stateCbk(State::NORMAL); } );
     }
 }
 
 void Window::maximizeCbk(GLFWwindow* win, int x){
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
     if(x == GLFW_TRUE){
-        window->stateCbk(State::MAXIMIZED);
+        CT_ASYNC_EXEC_NO_ARGS( [=] { window->stateCbk(State::MAXIMIZED); } );
     } else {
-        window->stateCbk(State::NORMAL);
+        CT_ASYNC_EXEC_NO_ARGS( [=] { window->stateCbk(State::NORMAL); } );
     }
 }
 
 void Window::framebufferCbk(GLFWwindow* win, int x, int y){
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
-    window->resolutionCbk(Resolution(x, y));
+    CT_ASYNC_EXEC_NO_ARGS( [=] {  window->resolutionCbk(Resolution(x, y)); } );
 }
 
 void Window::scaleCbk(GLFWwindow* win, float x, float y){
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
-    window->scaleCbk(Math::Vec2f(x, y));
+    CT_ASYNC_EXEC_NO_ARGS( [=] {  window->scaleCbk(Math::Vec2f(x, y)); } );
 }
 
 
@@ -579,10 +601,16 @@ const Window::Monitor& Window::getMonitor(GLFWmonitor* mon){
 void Window::init(){
     s_mainThread = std::thread(mainThreadFunc);
     MT_EXEC_NO_ARGS(theFastestFunctionInTheWorld);
+
+    s_cbkThread = std::thread(cbkThreadFunc);
+    CT_EXEC_NO_ARGS(theFastestFunctionInTheWorld);
 }
 
 void Window::end(){
     s_exit = true;
+
+    CT_EXEC_NO_ARGS(theFastestFunctionInTheWorld);
+    s_cbkThread.join();
 
     glfwPostEmptyEvent();
     s_mainThread.join();
