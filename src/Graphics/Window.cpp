@@ -2,10 +2,31 @@
 
 namespace Zuazo::Graphics {
 
-#define ET_EXEC(x, ...)                 \
-    s_eventThread->execute(             \
+#define MT_EXEC_NO_ARGS(x)              \
+    mainThreadExecute(                  \
+        std::function{x}                \
+    )
+
+#define MT_EXEC(x, ...)                 \
+    mainThreadExecute(                  \
         std::function{x}, __VA_ARGS__   \
     )
+
+#define CBK_EXEC_NO_ARGS(x)                                 \
+    s_cbks.execute(                                         \
+        Utils::CrossThreadInvocation::waitForCompletion,    \
+        std::function{x}                                    \
+    )
+
+#define CBK_EXEC(x, ...)                                    \
+    s_cbks.execute(                                         \
+        Utils::CrossThreadInvocation::waitForCompletion,    \
+        std::function{x}, __VA_ARGS__                       \
+    )
+
+static void theFastestFunctionInTheWorld(){
+    return;
+}
 
 /*
  * MONITOR
@@ -14,16 +35,25 @@ namespace Zuazo::Graphics {
 Window::Monitor::Monitor(GLFWmonitor* mon) :
     m_monitor(mon)
 {
+    //Set the user pointer for callbacks
+    glfwSetMonitorUserPointer(m_monitor, this);
 }
 
 Window::Monitor::Monitor(Monitor&& mon) :
     m_monitor(mon.m_monitor)
 {
+    //Set the user pointer for callbacks
+    glfwSetMonitorUserPointer(m_monitor, this);
+
     mon.m_monitor = nullptr;
 }
 
 Window::Monitor& Window::Monitor::operator=(Monitor&& other) {
     m_monitor = other.m_monitor;
+
+    //Set the user pointer for callbacks
+    glfwSetMonitorUserPointer(m_monitor, this);
+
     other.m_monitor = nullptr;
 
     return *this;
@@ -44,25 +74,25 @@ Window::Monitor::operator bool() const{
 
 
 std::string Window::Monitor::getName() const{
-    const char* name = ET_EXEC(glfwGetMonitorName, m_monitor);
+    const char* name = MT_EXEC(glfwGetMonitorName, m_monitor);
     return std::string(name);
 }
 
 Math::Vec2i Window::Monitor::getPosition() const{
     Math::Vec2i result;
-    ET_EXEC(glfwGetMonitorPos, m_monitor, &result.x, &result.y);
+    MT_EXEC(glfwGetMonitorPos, m_monitor, &result.x, &result.y);
     return result;
 }
 
 Math::Vec2d Window::Monitor::getPhysicalSize() const{
     Math::Vec2i result;
-    ET_EXEC(glfwGetMonitorPhysicalSize, m_monitor, &result.x, &result.y);
+    MT_EXEC(glfwGetMonitorPhysicalSize, m_monitor, &result.x, &result.y);
     return Math::Vec2d(result) / 1e3;
 }
 
 
 Window::Monitor::Mode Window::Monitor::getMode() const{
-    const GLFWvidmode* mod = ET_EXEC(glfwGetVideoMode, m_monitor);
+    const GLFWvidmode* mod = MT_EXEC(glfwGetVideoMode, m_monitor);
 
     return Mode{
         .colorDepth = ColorDepth(mod->redBits, mod->greenBits, mod->blueBits),
@@ -73,7 +103,7 @@ Window::Monitor::Mode Window::Monitor::getMode() const{
 
 std::vector<Window::Monitor::Mode> Window::Monitor::getModes() const{
     int cnt;
-    const GLFWvidmode* mod = ET_EXEC(glfwGetVideoModes, m_monitor, &cnt);
+    const GLFWvidmode* mod = MT_EXEC(glfwGetVideoModes, m_monitor, &cnt);
 
     std::vector<Mode> modes; modes.reserve(cnt);
     for(int i = 0; i < cnt; i++){
@@ -103,16 +133,23 @@ Timing::Rate Window::Monitor::getRate() const{
  * WINDOW
  */
 
-std::unique_ptr<Window::EventThread> Window::s_eventThread;
-std::vector<Window::Monitor> Window::s_monitors;
 const Window::Monitor Window::NO_MONITOR;
+
+std::vector<Window::Monitor> Window::s_monitors;
+
+
+std::atomic<bool> Window::s_exit;
+std::thread Window::s_mainThread;
+Utils::CrossThreadInvocation Window::s_mainThreadExecutions;
+std::thread Window::s_cbkThread;
+Utils::CrossThreadInvocation Window::s_cbks;
 
 
 
 
 Window::Window(const Math::Vec2i& size, std::string&& name, const Monitor& mon) :
     m_name(std::forward<std::string>(name)),
-    m_window(ET_EXEC(glfwCreateWindow, 
+    m_window(MT_EXEC(glfwCreateWindow, 
         size.x,
         size.y,
         name.c_str(),
@@ -120,6 +157,8 @@ Window::Window(const Math::Vec2i& size, std::string&& name, const Monitor& mon) 
         static_cast<GLFWwindow*>(nullptr)
     ))
 {
+    //Set the user pointer for callbacks
+    glfwSetWindowUserPointer(m_window, this);
 }
 
 Window::Window(Window&& other) :
@@ -127,18 +166,32 @@ Window::Window(Window&& other) :
     m_window(std::move(other.m_window)),
     m_windowedState(std::move(other.m_windowedState))
 {
+
+    //Set the user pointer for callbacks
+    glfwSetWindowUserPointer(m_window, this);
+
     other.m_window = nullptr;
 }
 
 Window::~Window(){
-    if(m_window)
-        ET_EXEC(glfwDestroyWindow, m_window);
+    if(m_window){
+        MT_EXEC(glfwDestroyWindow, m_window);
+    }
 }
 
 Window& Window::operator=(Window&& other) {
+    if(m_window){
+        MT_EXEC(glfwDestroyWindow, m_window);
+    }
+
     m_name = std::move(other.m_name);
     m_window = std::move(other.m_window);
     m_windowedState = std::move(other.m_windowedState);
+
+    if(m_window){
+        //Set the user pointer for callbacks
+        glfwSetWindowUserPointer(m_window, this);
+    }
 
     other.m_window = nullptr;
 
@@ -169,7 +222,7 @@ void Window::unbind(){
 
 void Window::setName(std::string&& name){
     m_name = std::forward<std::string>(name);
-    ET_EXEC(glfwSetWindowTitle, m_window, m_name.c_str());
+    MT_EXEC(glfwSetWindowTitle, m_window, m_name.c_str());
 }
 
 const std::string& Window::getName() const{
@@ -183,19 +236,19 @@ void Window::setState(State st){
         //Leave it on normal state
         switch (lastState) {
         case State::HIDDEN:
-            ET_EXEC(glfwShowWindow, m_window);
-            break;
-
-        case State::ICONIFIED:
-            ET_EXEC(glfwRestoreWindow, m_window);
-            break;
-
-        case State::MAXIMIZED:
-            ET_EXEC(glfwRestoreWindow, m_window);
+            MT_EXEC(glfwShowWindow, m_window);
             break;
 
         case State::FULLSCREEN:
             setMonitor(NO_MONITOR);
+            break;
+
+        case State::ICONIFIED:
+            MT_EXEC(glfwRestoreWindow, m_window);
+            break;
+
+        case State::MAXIMIZED:
+            MT_EXEC(glfwRestoreWindow, m_window);
             break;
         
         default: //State::NORMAL
@@ -205,19 +258,19 @@ void Window::setState(State st){
         //Switch to the desired state
         switch (st) {
         case State::HIDDEN:
-            ET_EXEC(glfwHideWindow, m_window);
-            break;
-
-        case State::ICONIFIED:
-            ET_EXEC(glfwIconifyWindow, m_window);
-            break;
-
-        case State::MAXIMIZED:
-            ET_EXEC(glfwMaximizeWindow, m_window);
+            MT_EXEC(glfwHideWindow, m_window);
             break;
 
         case State::FULLSCREEN:
             setMonitor(s_monitors[0]);
+            break;
+
+        case State::ICONIFIED:
+            MT_EXEC(glfwIconifyWindow, m_window);
+            break;
+
+        case State::MAXIMIZED:
+            MT_EXEC(glfwMaximizeWindow, m_window);
             break;
         
         default: //State::NORMAL
@@ -229,14 +282,14 @@ void Window::setState(State st){
 Window::State Window::getState() const{
     State result;
 
-    if(!ET_EXEC(glfwGetWindowAttrib, m_window, GLFW_VISIBLE)){
+    if(!MT_EXEC(glfwGetWindowAttrib, m_window, GLFW_VISIBLE)){
         result = State::HIDDEN;
-    }else if(ET_EXEC(glfwGetWindowAttrib, m_window, GLFW_ICONIFIED)){
-        result = State::ICONIFIED;
-    } else if(ET_EXEC(glfwGetWindowAttrib, m_window, GLFW_MAXIMIZED)){
-        result = State::MAXIMIZED;
-    } else if(ET_EXEC(glfwGetWindowMonitor, m_window)){
+    } else if(MT_EXEC(glfwGetWindowMonitor, m_window)){
         result = State::FULLSCREEN;
+    }else if(MT_EXEC(glfwGetWindowAttrib, m_window, GLFW_ICONIFIED)){
+        result = State::ICONIFIED;
+    } else if(MT_EXEC(glfwGetWindowAttrib, m_window, GLFW_MAXIMIZED)){
+        result = State::MAXIMIZED;
     } else {
         result = State::NORMAL;
     }
@@ -270,7 +323,7 @@ void Window::setMonitor(const Monitor& mon, const Monitor::Mode& mod){
 
             Math::Vec2i pos = mon.getPosition();
 
-            ET_EXEC(glfwSetWindowMonitor, 
+            MT_EXEC(glfwSetWindowMonitor, 
                 m_window, 
                 mon.m_monitor, 
                 pos.x,
@@ -281,7 +334,7 @@ void Window::setMonitor(const Monitor& mon, const Monitor::Mode& mod){
             );
         } else {
             //It is going to be windowed
-            ET_EXEC(glfwSetWindowMonitor, 
+            MT_EXEC(glfwSetWindowMonitor, 
                 m_window, 
                 static_cast<GLFWmonitor*>(nullptr), 
                 m_windowedState->pos.x,
@@ -290,23 +343,20 @@ void Window::setMonitor(const Monitor& mon, const Monitor::Mode& mod){
                 m_windowedState->size.y,
                 0
             );
-            m_windowedState = {};
+
+            if(prevMon){
+                //It was not windowed
+                m_windowedState = {};
+            }
         }
     }
 }
 
 const Window::Monitor& Window::getMonitor() const{
-    GLFWmonitor* mon = ET_EXEC(glfwGetWindowMonitor, m_window);
+    GLFWmonitor* mon = MT_EXEC(glfwGetWindowMonitor, m_window);
 
     if(mon){
-        //Try to find it on the monitor vector
-        for(auto ite = s_monitors.cbegin(); ite != s_monitors.cend(); ++ite){
-            if(ite->m_monitor == mon){
-                return *ite;
-            }
-        }
-
-        return NO_MONITOR; //Not found. Unexpected
+        return getMonitor(mon);
     } else {
         return NO_MONITOR;
     }
@@ -314,29 +364,29 @@ const Window::Monitor& Window::getMonitor() const{
 
 
 void Window::setPosition(const Math::Vec2i& pos){
-    ET_EXEC(glfwSetWindowPos, m_window, pos.x, pos.y);
+    MT_EXEC(glfwSetWindowPos, m_window, pos.x, pos.y);
 }
 
 Math::Vec2i Window::getPosition() const{
     Math::Vec2i result;
-    ET_EXEC(glfwGetWindowPos, m_window, &result.x, &result.y);
+    MT_EXEC(glfwGetWindowPos, m_window, &result.x, &result.y);
     return result;
 }
 
 
 void Window::setSize(const Math::Vec2i& size){
-    ET_EXEC(glfwSetWindowSize, m_window, size.x, size.y);
+    MT_EXEC(glfwSetWindowSize, m_window, size.x, size.y);
 }
 
 Math::Vec2i Window::getSize() const{
     Math::Vec2i result;
-    ET_EXEC(glfwGetWindowSize, m_window, &result.x, &result.y);
+    MT_EXEC(glfwGetWindowSize, m_window, &result.x, &result.y);
     return result;
 }
 
 Resolution Window::getResolution() const{
     int x, y;
-    ET_EXEC(glfwGetFramebufferSize, m_window, &x, &y);
+    MT_EXEC(glfwGetFramebufferSize, m_window, &x, &y);
     return Resolution(x, y);
 }
 
@@ -347,9 +397,6 @@ void Window::swapBuffers() const{
 
 
 
-Window::EventThread& Window::getEventThread(){
-    return *s_eventThread;
-}
 
 const std::vector<Window::Monitor>& Window::getMonitors(){
     return s_monitors;
@@ -357,105 +404,104 @@ const std::vector<Window::Monitor>& Window::getMonitors(){
 
 
 
-void Window::init(){
-    s_eventThread = std::unique_ptr<EventThread>(new EventThread);
-    
-    std::lock_guard<std::mutex> lock(s_eventThread->getMutex());
 
-    //Fill the monitor array
-    int cnt;
-    GLFWmonitor** mons = glfwGetMonitors(&cnt);
-
-    s_monitors.reserve(cnt);
-
-    for(int i = 0; i < cnt; i++){
-        s_monitors.push_back(mons[i]);
-    }
-
-    
-}
-
-void Window::end(){
-    s_eventThread.reset();
-}
-
-
-
-/*
- * EVENT THREAD
- */
-
-Window::EventThread::EventThread() :
-    m_exit(false),
-    m_thread(&EventThread::threadFunc, this)
-{
-    std::unique_lock<std::mutex> lock(m_mutex);
-    m_eventsHandled.wait(lock);
-}
-
-Window::EventThread::~EventThread() {
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_exit = true;
-        handleEvents();
-    }
-    m_thread.join();
-}
-
-std::mutex& Window::EventThread::getMutex(){
-    return m_mutex;
-}
-
-
-
-
-template<typename T, typename... Args>
-T Window::EventThread::execute(const std::function<T(Args...)>& func, Args... args) {
-    std::unique_lock<std::mutex> lock(m_mutex);
-    //Create a future object
-    std::future<T> futur = std::async(std::launch::deferred, func, args...);
-
-    //Set the execution
-    m_execution = [&futur] {
-        futur.wait();
-    };
-
-    //Wait until it gets completed
-    handleEvents();
-    m_eventsHandled.wait(lock);
-
-    //Return result
-    return futur.get();
-}
-
-void Window::EventThread::threadFunc() {
-    std::unique_lock<std::mutex> lock(m_mutex);
-
-    //Initialize GLFW
+void Window::mainThreadFunc(){
     glfwInit();
 
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-    m_eventsHandled.notify_all(); //Tell the constructor to continue
-
-    while(!m_exit) {
-        lock.unlock();
-        glfwWaitEvents();
-        lock.lock();
-
-        if(m_execution){
-            m_execution();
-            m_execution = {};
-            m_eventsHandled.notify_one();
-        }
+    //Fill the monitor vector
+    int cnt;
+    GLFWmonitor** mons = glfwGetMonitors(&cnt);
+    s_monitors.reserve(cnt);
+    for(int i = 0; i < cnt; i++){
+        addMonitor(mons[i]);
     }
 
-    //Terminate GLFW
+    //Set all callbacks
+    glfwSetMonitorCallback(monitorCbk);
+
+    //Main loop
+    while(!s_exit){
+        glfwWaitEvents();
+        s_mainThreadExecutions.handleAllExecutions();
+    }
+
     glfwTerminate();
 }
 
-void Window::EventThread::handleEvents(){
+template<typename T, typename... Args>
+inline T Window::mainThreadExecute(const std::function<T(Args...)>& func, Args... args){
+    auto futur = s_mainThreadExecutions.execute(func, args...);
     glfwPostEmptyEvent();
+    return futur->getValue();
 }
+
+
+
+
+void Window::cbkThreadFunc() {
+    while(!s_exit){
+        s_cbks.waitAndHandleAll();
+    }
+}
+
+void Window::monitorCbk(GLFWmonitor* mon, int evnt){
+    if (evnt == GLFW_CONNECTED) {
+        // The monitor was connected
+        Window::addMonitor(mon);
+    } else if (evnt == GLFW_DISCONNECTED) {
+        // The monitor was disconnected
+        Window::eraseMonitor(mon);
+    }
+}
+
+
+
+
+void Window::addMonitor(GLFWmonitor* mon){
+    s_monitors.emplace_back(Monitor(mon));
+}
+
+void Window::eraseMonitor(GLFWmonitor* mon){
+    for(auto ite = s_monitors.begin(); ite != s_monitors.end(); ++ite){
+        if(ite->m_monitor == mon){
+            ite = s_monitors.erase(ite);
+        }
+    }
+}
+
+const Window::Monitor& Window::getMonitor(GLFWmonitor* mon){
+    for(auto ite = s_monitors.begin(); ite != s_monitors.end(); ++ite){
+        if(ite->m_monitor == mon){
+            return *ite;
+        }
+    }
+
+    return NO_MONITOR; //Unexpected
+}
+
+
+
+
+void Window::init(){
+    s_mainThread = std::thread(mainThreadFunc);
+    MT_EXEC_NO_ARGS(theFastestFunctionInTheWorld);
+    
+    s_cbkThread = std::thread(cbkThreadFunc);
+    CBK_EXEC_NO_ARGS(theFastestFunctionInTheWorld);
+
+}
+
+void Window::end(){
+    s_exit = true;
+
+    s_cbks.execute(std::function{theFastestFunctionInTheWorld});
+    s_cbkThread.join();
+
+    glfwPostEmptyEvent();
+    s_mainThread.join();
+
+    s_monitors.clear();
+}
+
 
 }

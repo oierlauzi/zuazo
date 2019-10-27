@@ -2,6 +2,7 @@
 
 #include "Resolution.h"
 #include "../Math/Vector.h"
+#include "../Utils/CrossThreadInvocation.h"
 #include "../Timing/Chrono.h"
 #include "../Zuazo.h"
 
@@ -29,9 +30,9 @@ public:
     enum class State {
         NORMAL,
         HIDDEN,
+        FULLSCREEN,
         ICONIFIED,
-        MAXIMIZED,
-        FULLSCREEN
+        MAXIMIZED
     };
 
     class Monitor {
@@ -68,30 +69,6 @@ public:
         GLFWmonitor*                        m_monitor = nullptr;
     };
 
-    class EventThread {
-        friend Window;
-    public:
-        EventThread(const EventThread& other) = delete;
-        ~EventThread();
-
-        std::mutex&                 getMutex();
-    private:
-        EventThread();
-
-        std::atomic<bool>           m_exit;
-        std::mutex                  m_mutex;
-        std::thread                 m_thread;
-        std::condition_variable     m_eventsHandled;
-
-        std::function<void()>       m_execution;
-
-        void                        threadFunc();
-        void                        handleEvents();
-
-        template<typename T, typename... Args>
-        T                           execute(const std::function<T(Args...)>& func, Args... args);
-    };
-
     Window() = default;
     Window(const  Math::Vec2i& size, std::string&& name = "", const Monitor& mon = NO_MONITOR);
     Window(const Window& other) = delete;
@@ -126,7 +103,6 @@ public:
 
     void                                swapBuffers() const;
 
-    static EventThread&                 getEventThread();
     static const std::vector<Monitor>&  getMonitors();
 
     static const Monitor NO_MONITOR;
@@ -139,10 +115,30 @@ private:
 
     GLFWwindow*                         m_window = nullptr;
 
-    std::optional<WindowGeometry>       m_windowedState;
+    std::optional<WindowGeometry>       m_windowedState;               
 
-    static std::unique_ptr<EventThread> s_eventThread;
+
+
+
     static std::vector<Monitor>         s_monitors;
+
+    static std::atomic<bool>            s_exit;
+
+    static std::thread                  s_mainThread;
+    static Utils::CrossThreadInvocation s_mainThreadExecutions;
+    static void                         mainThreadFunc();
+    template<typename T, typename... Args>
+    static T                            mainThreadExecute(const std::function<T(Args...)>& func, Args... args);
+
+    static std::thread                  s_cbkThread;
+    static Utils::CrossThreadInvocation s_cbks;
+    static void                         cbkThreadFunc();
+    static void                         monitorCbk(GLFWmonitor* mon, int evnt);
+
+    static void                         addMonitor(GLFWmonitor* mon);
+    static void                         eraseMonitor(GLFWmonitor* mon);
+    static const Monitor&               getMonitor(GLFWmonitor* mon);
+
 
     static void                         init();
     static void                         end();
