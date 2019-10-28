@@ -4,17 +4,17 @@ namespace Zuazo::Signal {
 
 template<typename T>
 DummyInput<T>::DummyInput(std::string&& name) :
-    InputPad<T>(std::forward<std::string>(name)),
-    destination(*this)
+	InputPad<T>(std::forward<std::string>(name)),
+	destination(*this)
 {
 }
 
 template<typename T>
 DummyInput<T>::DummyInput(DummyInput&& other) :
-    InputPad<T>(std::move(other)),
-    destination(*this)
+	InputPad<T>(std::move(other)),
+	destination(*this)
 {
-    static_cast<OutputPad<T>&>(destination) = std::move(static_cast<OutputPad<T>&>(other.destination));
+	static_cast<OutputPad<T>&>(destination) = std::move(static_cast<OutputPad<T>&>(other.destination));
 }
 
 
@@ -22,13 +22,13 @@ DummyInput<T>::DummyInput(DummyInput&& other) :
 
 template<typename T>
 inline DummyInput<T>::Destination::Destination(const DummyInput& owner) :
-    m_owner(owner)
+	m_owner(owner)
 {
 }
 
 template<typename T>
 inline const std::shared_ptr<const T>& DummyInput<T>::Destination::get() const {
-    return m_owner.get();
+	return m_owner.get();
 }
 
 }

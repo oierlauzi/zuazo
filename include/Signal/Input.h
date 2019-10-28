@@ -15,34 +15,34 @@ class InputPad;
 template <typename T>
 class Input : public InputPad<T> {
 public:
-    using InputPad<T>::InputPad;
-    using PadBase::setName;
+	using InputPad<T>::InputPad;
+	using PadBase::setName;
 
-    Input&                              operator=(const Input& other) = default;
-    Input&                              operator=(Input&& other) = default;
+	Input&                              operator=(const Input& other) = default;
+	Input&                              operator=(Input&& other) = default;
 
-    struct BackupSignal;
+	struct BackupSignal;
 
-    void                                setHold(bool hold);
-    bool                                getHold() const;
+	void                                setHold(bool hold);
+	bool                                getHold() const;
 
-    void                                reset();
-    const std::shared_ptr<const T>&     get() const;
-    bool                                hasChanged() const;
+	void                                reset();
+	const std::shared_ptr<const T>&     get() const;
+	bool                                hasChanged() const;
 
-    static BackupSignal                 backupSignal;
+	static BackupSignal                 backupSignal;
 
 protected:
-    static constexpr Timing::Scheduler::Priority PRIORITY = 100;
+	static constexpr Timing::Scheduler::Priority PRIORITY = 100;
 
 private:   
-    mutable std::shared_ptr<const T>    m_lastElement;
-    bool                                m_hold = false;
+	mutable std::shared_ptr<const T>    m_lastElement;
+	bool                                m_hold = false;
 };
 
 template <typename T>
 class Input<T>::BackupSignal : public InputPad<T> {
-    friend Input<T>;
+	friend Input<T>;
 };
 
 }

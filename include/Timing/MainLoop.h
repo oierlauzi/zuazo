@@ -15,39 +15,39 @@
 namespace Zuazo::Timing {
 
 class MainLoop {
-    friend void Zuazo::init();
-    friend void Zuazo::end();
+	friend void Zuazo::init();
+	friend void Zuazo::end();
 public:
-    MainLoop(const MainLoop& other) = delete;
-    virtual ~MainLoop();
+	MainLoop(const MainLoop& other) = delete;
+	virtual ~MainLoop();
 
-    static MainLoop&                    getMainLoop();
+	static MainLoop&                    getMainLoop();
 
-    TimePoint                           getCurrentTime() const;
-    Duration                            getElapsed() const;
-    Scheduler&                          getScheduler();
-    const Scheduler&                    getScheduler() const;
-    std::mutex&                         getMutex();
+	TimePoint                           getCurrentTime() const;
+	Duration                            getElapsed() const;
+	Scheduler&                          getScheduler();
+	const Scheduler&                    getScheduler() const;
+	std::mutex&                         getMutex();
 
-    void                                handleEvents();
+	void                                handleEvents();
 private:
-    MainLoop();
+	MainLoop();
 
-    Scheduler                           m_scheduler;
+	Scheduler                           m_scheduler;
 
-    TimePoint                           m_now;
-    Duration                            m_elapsed;
+	TimePoint                           m_now;
+	Duration                            m_elapsed;
 
-    std::atomic<bool>                   m_exit;
-    std::thread                         m_thread;
-    mutable std::mutex                  m_mutex;
-    mutable std::condition_variable     m_handleEvents;
+	std::atomic<bool>                   m_exit;
+	std::thread                         m_thread;
+	mutable std::mutex                  m_mutex;
+	mutable std::condition_variable     m_handleEvents;
 
-    void                                threadFunc();
+	void                                threadFunc();
 
-    static std::unique_ptr<MainLoop>    s_mainLoop;
-    static void                         init();
-    static void                         end();
+	static std::unique_ptr<MainLoop>    s_mainLoop;
+	static void                         init();
+	static void                         end();
 };
 
 extern MainLoop& getMainLoop();

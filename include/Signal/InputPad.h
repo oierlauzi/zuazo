@@ -11,24 +11,24 @@ class OutputPad;
 
 template <typename T>
 class InputPad : public PadBase {
-    friend OutputPad<T>;
+	friend OutputPad<T>;
 public:
-    InputPad(std::string&& name = "");
-    virtual ~InputPad();
+	InputPad(std::string&& name = "");
+	virtual ~InputPad();
 
-    void                                    setSource(OutputPad<T>* src);
-    OutputPad<T>*                           getSource() const;
+	void                                    setSource(OutputPad<T>* src);
+	OutputPad<T>*                           getSource() const;
 protected:
-    InputPad(const InputPad& other);
-    InputPad(InputPad&& other);
-    InputPad&                               operator=(const InputPad& other);
-    InputPad&                               operator=(InputPad&& other);
+	InputPad(const InputPad& other);
+	InputPad(InputPad&& other);
+	InputPad&                               operator=(const InputPad& other);
+	InputPad&                               operator=(InputPad&& other);
 
-    static const std::shared_ptr<const T>   NO_SIGNAL;
+	static const std::shared_ptr<const T>   NO_SIGNAL;
 
-    const std::shared_ptr<const T>&         get() const;
+	const std::shared_ptr<const T>&         get() const;
 private:
-    OutputPad<T>*                           m_source = nullptr;
+	OutputPad<T>*                           m_source = nullptr;
 };
 
 }

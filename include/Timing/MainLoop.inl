@@ -3,40 +3,40 @@
 namespace Zuazo::Timing {
 
 inline void MainLoop::init(){
-    s_mainLoop = std::unique_ptr<MainLoop>(new MainLoop);
+	s_mainLoop = std::unique_ptr<MainLoop>(new MainLoop);
 }
 
 inline void MainLoop::end(){
-    s_mainLoop.reset();
+	s_mainLoop.reset();
 }
 
 inline MainLoop& MainLoop::getMainLoop(){
-    return *s_mainLoop;
+	return *s_mainLoop;
 }
 
 
 inline TimePoint MainLoop::getCurrentTime() const{
-    return m_now;
+	return m_now;
 }
 
 inline Duration MainLoop::getElapsed() const{
-    return m_elapsed;
+	return m_elapsed;
 }
 
 inline Scheduler& MainLoop::getScheduler(){
-    return m_scheduler;
+	return m_scheduler;
 }
 
 inline const Scheduler& MainLoop::getScheduler() const{
-    return m_scheduler;
+	return m_scheduler;
 }
 
 inline std::mutex& MainLoop::getMutex(){
-    return m_mutex;
+	return m_mutex;
 }
 
 inline void MainLoop::handleEvents(){
-    m_handleEvents.notify_all();
+	m_handleEvents.notify_all();
 }
 
 
@@ -44,15 +44,15 @@ inline void MainLoop::handleEvents(){
 
 
 inline MainLoop& getMainLoop(){
-    return MainLoop::getMainLoop();
+	return MainLoop::getMainLoop();
 }
 
 inline TimePoint getCurrentTime(){
-    return getMainLoop().getCurrentTime();
+	return getMainLoop().getCurrentTime();
 }
 
 inline Duration getElapsed(){
-    return getMainLoop().getElapsed();
+	return getMainLoop().getElapsed();
 }
 
 }

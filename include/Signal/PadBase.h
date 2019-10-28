@@ -10,41 +10,41 @@ namespace Zuazo::Signal {
 class Layout;
 
 class PadBase {
-    friend Layout;
+	friend Layout;
 public:
-    enum Direction {
-        INPUT,
-        OUTPUT
-    };
+	enum Direction {
+		INPUT,
+		OUTPUT
+	};
 
-    PadBase(const std::type_index& type, Direction dir, std::string&& name = ""); 
-    virtual ~PadBase();
+	PadBase(const std::type_index& type, Direction dir, std::string&& name = ""); 
+	virtual ~PadBase();
 
-    const Layout*       getOwner() const;
-    Layout*             getOwner();
+	const Layout*       getOwner() const;
+	Layout*             getOwner();
 
-    const std::type_index& getType() const;
-    Direction           getDirection() const;
-    const std::string&  getName() const;
+	const std::type_index& getType() const;
+	Direction           getDirection() const;
+	const std::string&  getName() const;
 
 protected:
-    PadBase(const PadBase& other); 
-    PadBase(PadBase&& other); 
+	PadBase(const PadBase& other); 
+	PadBase(PadBase&& other); 
 
-    PadBase&            operator=(const PadBase& other);
-    PadBase&            operator=(PadBase&& other);
+	PadBase&            operator=(const PadBase& other);
+	PadBase&            operator=(PadBase&& other);
 
-    void                setType(const std::type_info& type);
-    void                setDirection(Direction dir);
-    void                setName(std::string&& name);
+	void                setType(const std::type_info& type);
+	void                setDirection(Direction dir);
+	void                setName(std::string&& name);
 
 private:
-    Layout*             m_owner = nullptr;
+	Layout*             m_owner = nullptr;
 
-    std::type_index     m_type;
-    Direction           m_direction;
-    std::string         m_name;
-    
+	std::type_index     m_type;
+	Direction           m_direction;
+	std::string         m_name;
+	
 };
 
 }

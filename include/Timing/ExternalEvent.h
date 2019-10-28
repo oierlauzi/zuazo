@@ -7,12 +7,12 @@ namespace Zuazo::Timing {
 
 class ExternalEvent : public EventBase {
 public:
-    using EventBase::EventBase;
+	using EventBase::EventBase;
 
-    ExternalEvent& operator=(const ExternalEvent& other) = default;
-    ExternalEvent& operator=(ExternalEvent&& other) = default;
+	ExternalEvent& operator=(const ExternalEvent& other) = default;
+	ExternalEvent& operator=(ExternalEvent&& other) = default;
 
-    void invoke();
+	void invoke();
 };
 
 }

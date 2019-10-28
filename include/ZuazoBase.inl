@@ -3,7 +3,7 @@
 namespace Zuazo {
 
 inline bool ZuazoBase::isOpen() const{
-    return m_isOpen;
+	return m_isOpen;
 }
 
 }

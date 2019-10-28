@@ -9,30 +9,30 @@ namespace Zuazo::Signal {
 template <typename T>
 class DummyInput : public InputPad<T> {
 public:
-    class Destination; friend Destination;
+	class Destination; friend Destination;
 
-    DummyInput(std::string&& name = "");
-    DummyInput(DummyInput&& other);
-    virtual ~DummyInput() = default;
+	DummyInput(std::string&& name = "");
+	DummyInput(DummyInput&& other);
+	virtual ~DummyInput() = default;
 
-    using PadBase::setName;
+	using PadBase::setName;
 
-    Destination destination;
+	Destination destination;
 };
 
 template <typename T>
 class DummyInput<T>::Destination : public OutputPad<T> {
-    friend DummyInput;
+	friend DummyInput;
 private:
-    Destination(const DummyInput& owner);
-    Destination(const Destination& other) = delete;
-    virtual ~Destination() = default;
+	Destination(const DummyInput& owner);
+	Destination(const Destination& other) = delete;
+	virtual ~Destination() = default;
 
-    Destination& operator=(Destination&& other) = default;
+	Destination& operator=(Destination&& other) = default;
 
-    virtual const std::shared_ptr<const T>& get() const final;
+	virtual const std::shared_ptr<const T>& get() const final;
 
-    const DummyInput& m_owner;
+	const DummyInput& m_owner;
 };
 
 }

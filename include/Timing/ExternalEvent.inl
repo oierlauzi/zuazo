@@ -3,9 +3,9 @@
 namespace Zuazo::Timing {
 
 inline void ExternalEvent::invoke(){
-    if(isEnabled()){
-        update();
-    }
+	if(isEnabled()){
+		update();
+	}
 }
 
 }
