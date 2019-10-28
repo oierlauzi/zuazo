@@ -176,7 +176,8 @@ Window::Window(const Math::Vec2i& size, std::string&& name, const Monitor& mon) 
 Window::Window(Window&& other) :
     m_name(std::move(other.m_name)),
     m_window(std::move(other.m_window)),
-    m_windowedState(std::move(other.m_windowedState))
+    m_windowedState(std::move(other.m_windowedState)),
+    m_callbacks(std::move(other.m_callbacks))
 {
 
     if(m_window){
@@ -200,6 +201,7 @@ Window& Window::operator=(Window&& other) {
     m_name = std::move(other.m_name);
     m_window = std::move(other.m_window);
     m_windowedState = std::move(other.m_windowedState);
+    m_callbacks = std::move(other.m_callbacks);
 
     if(m_window){
         setupWindow();
@@ -309,6 +311,14 @@ Window::State Window::getState() const{
     return result;
 }
 
+void Window::setStateCallback(StateCallback&& cbk){
+    m_callbacks.stateCbk = std::forward<StateCallback>(cbk);
+}
+
+const Window::StateCallback& Window::getStateCallback() const{
+    return m_callbacks.stateCbk;
+}
+
 
 void Window::setMonitor(const Monitor& mon){
     if(mon){
@@ -385,6 +395,14 @@ Math::Vec2i Window::getPosition() const{
     return result;
 }
 
+void Window::setPositionCallback(PositionCallback&& cbk){
+    m_callbacks.positionCbk = std::forward<PositionCallback>(cbk);
+}
+
+const Window::PositionCallback& Window::getPositionCallback() const{
+    return m_callbacks.positionCbk;
+}
+
 
 void Window::setSize(const Math::Vec2i& size){
     MT_EXEC(glfwSetWindowSize, m_window, size.x, size.y);
@@ -396,11 +414,62 @@ Math::Vec2i Window::getSize() const{
     return result;
 }
 
+void Window::setSizeCallback(SizeCallback&& cbk){
+    m_callbacks.sizeCbk = std::forward<SizeCallback>(cbk);
+}
+
+const Window::SizeCallback& Window::getSizeCallback() const{
+    return m_callbacks.sizeCbk;
+}
+
+
 Resolution Window::getResolution() const{
     int x, y;
     MT_EXEC(glfwGetFramebufferSize, m_window, &x, &y);
     return Resolution(x, y);
 }
+
+void Window::setResolutionCallback(ResolutionCallback&& cbk){
+    m_callbacks.resolutionCbk = std::forward<ResolutionCallback>(cbk);
+}
+
+const Window::ResolutionCallback& Window::getResolutionCallback() const{
+    return m_callbacks.resolutionCbk;
+}
+
+
+void Window::setScaleCallback(ScaleCallback&& cbk){
+    m_callbacks.scaleCbk = std::forward<ResolutionCallback>(cbk);
+}
+
+const Window::ScaleCallback& Window::getScaleCallback() const{
+    return m_callbacks.scaleCbk;
+}
+
+void Window::setCloseCallback(CloseCallback&& cbk){
+    m_callbacks.closeCbk = std::forward<CloseCallback>(cbk);
+}
+
+const Window::CloseCallback& Window::getCloseCallback() const{
+    return m_callbacks.closeCbk;
+}
+
+void Window::setRefreshCallback(RefreshCallback&& cbk){
+    m_callbacks.refreshCbk = std::forward<RefreshCallback>(cbk);
+}
+
+const Window::RefreshCallback& Window::getRefreshCallback() const{
+    return m_callbacks.refreshCbk;
+}
+
+void Window::setFocusCallback(FocusCallback&& cbk){
+    m_callbacks.focusCbk = std::forward<FocusCallback>(cbk);
+}
+
+const Window::FocusCallback& Window::getFocusCallback() const{
+    return m_callbacks.focusCbk;
+}
+
 
 void Window::swapBuffers() const{
     glfwSwapBuffers(m_window); 
@@ -414,40 +483,6 @@ void Window::setupWindow(){
     MT_EXEC(setupCbks, m_window);
 }
 
-
-
-
-void Window::positionCbk(const Math::Vec2i& pos){
-
-}
-
-void Window::sizeCbk(const Math::Vec2i& size){
-
-}
-
-void Window::closeCbk(){
-    printf("Hola\n");
-}
-
-void Window::refreshCbk(){
-
-}
-
-void Window::focusCbk(bool focus){
-
-}
-
-void Window::stateCbk(State state){
-
-}
-
-void Window::resolutionCbk(const Resolution& res){
-
-}
-
-void Window::scaleCbk(const Math::Vec2f& scale){
-
-}
 
 
 
@@ -520,56 +555,73 @@ void Window::monitorCbk(GLFWmonitor* mon, int evnt){
 
 void Window::positionCbk(GLFWwindow* win, int x, int y){
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
-    CT_ASYNC_EXEC_NO_ARGS( [=] { window->positionCbk(Math::Vec2i(x, y)); } );
-    
+    if(window->m_callbacks.positionCbk){
+        CT_ASYNC_EXEC_NO_ARGS( [=] { window->m_callbacks.positionCbk(Math::Vec2i(x, y)); } );
+    }
 }
 
 void Window::sizeCbk(GLFWwindow* win, int x, int y){
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
-    CT_ASYNC_EXEC_NO_ARGS( [=] { window->sizeCbk(Math::Vec2i(x, y)); } );
+    if(window->m_callbacks.sizeCbk){
+        CT_ASYNC_EXEC_NO_ARGS( [=] { window->m_callbacks.sizeCbk(Math::Vec2i(x, y)); } );
+    }
 }
 
 void Window::closeCbk(GLFWwindow* win){
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
-    CT_ASYNC_EXEC_NO_ARGS( [=] { window->closeCbk(); } );
+    if(window->m_callbacks.closeCbk){
+        CT_ASYNC_EXEC_NO_ARGS( [=] { window->m_callbacks.closeCbk(); } );
+    }
 }
 
 void Window::refreshCbk(GLFWwindow* win){
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
-    CT_ASYNC_EXEC_NO_ARGS( [=] { window->refreshCbk(); } );
+    if(window->m_callbacks.refreshCbk){
+        CT_ASYNC_EXEC_NO_ARGS( [=] { window->m_callbacks.refreshCbk(); } );
+    }
 }
 
 void Window::focusCbk(GLFWwindow* win, int x){
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
-    CT_ASYNC_EXEC_NO_ARGS( [=] { window->focusCbk(x); } );
+    if(window->m_callbacks.focusCbk){
+        CT_ASYNC_EXEC_NO_ARGS( [=] { window->m_callbacks.focusCbk(x); } );
+    }
 }
 
 void Window::iconifyCbk(GLFWwindow* win, int x){
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
-    if(x == GLFW_TRUE){
-        CT_ASYNC_EXEC_NO_ARGS( [=] { window->stateCbk(State::ICONIFIED); } );
-    } else {
-        CT_ASYNC_EXEC_NO_ARGS( [=] { window->stateCbk(State::NORMAL); } );
+    if(window->m_callbacks.stateCbk){
+        if(x == GLFW_TRUE){
+            CT_ASYNC_EXEC_NO_ARGS( [=] { window->m_callbacks.stateCbk(State::ICONIFIED); } );
+        } else {
+            CT_ASYNC_EXEC_NO_ARGS( [=] { window->m_callbacks.stateCbk(State::NORMAL); } );
+        }
     }
 }
 
 void Window::maximizeCbk(GLFWwindow* win, int x){
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
-    if(x == GLFW_TRUE){
-        CT_ASYNC_EXEC_NO_ARGS( [=] { window->stateCbk(State::MAXIMIZED); } );
-    } else {
-        CT_ASYNC_EXEC_NO_ARGS( [=] { window->stateCbk(State::NORMAL); } );
+    if(window->m_callbacks.stateCbk){
+        if(x == GLFW_TRUE){
+            CT_ASYNC_EXEC_NO_ARGS( [=] { window->m_callbacks.stateCbk(State::MAXIMIZED); } );
+        } else {
+            CT_ASYNC_EXEC_NO_ARGS( [=] { window->m_callbacks.stateCbk(State::NORMAL); } );
+        }
     }
 }
 
 void Window::framebufferCbk(GLFWwindow* win, int x, int y){
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
-    CT_ASYNC_EXEC_NO_ARGS( [=] {  window->resolutionCbk(Resolution(x, y)); } );
+    if(window->m_callbacks.refreshCbk){
+        CT_ASYNC_EXEC_NO_ARGS( [=] {  window->m_callbacks.resolutionCbk(Resolution(x, y)); } );
+    }
 }
 
 void Window::scaleCbk(GLFWwindow* win, float x, float y){
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
-    CT_ASYNC_EXEC_NO_ARGS( [=] {  window->scaleCbk(Math::Vec2f(x, y)); } );
+    if(window->m_callbacks.scaleCbk){
+        CT_ASYNC_EXEC_NO_ARGS( [=] {  window->m_callbacks.scaleCbk(Math::Vec2f(x, y)); } );
+    }
 }
 
 

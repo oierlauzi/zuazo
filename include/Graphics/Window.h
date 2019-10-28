@@ -69,6 +69,26 @@ public:
         GLFWmonitor*                        m_monitor = nullptr;
     };
 
+    using StateCallback = std::function<void(State)>;
+    using PositionCallback = std::function<void(const Math::Vec2i&)>;
+    using SizeCallback = std::function<void(const Math::Vec2i&)>;
+    using ResolutionCallback = std::function<void(const Resolution&)>;
+    using ScaleCallback = std::function<void(const Math::Vec2f&)>;
+    using CloseCallback = std::function<void()>;
+    using RefreshCallback = std::function<void()>;
+    using FocusCallback = std::function<void(bool)>;
+
+    struct Callbacks {
+        StateCallback                       stateCbk;
+        PositionCallback                    positionCbk;
+        SizeCallback                        sizeCbk;
+        ResolutionCallback                  resolutionCbk;
+        ScaleCallback                       scaleCbk;
+        CloseCallback                       closeCbk;
+        RefreshCallback                     refreshCbk;
+        FocusCallback                       focusCbk;
+    };
+
     Window() = default;
     Window(const  Math::Vec2i& size, std::string&& name = "", const Monitor& mon = NO_MONITOR);
     Window(const Window& other) = delete;
@@ -88,8 +108,8 @@ public:
 
     void                                setState(State st);
     State                               getState() const;
-    void                                setStateCallback(std::function<void(State)> cbk);
-    const std::function<void(State)>&   getStateCallback() const;
+    void                                setStateCallback(StateCallback&& cbk);
+    const StateCallback&                getStateCallback() const;
 
     void                                setMonitor(const Monitor& mon);
     void                                setMonitor(const Monitor& mon, const Monitor::Mode& mode);
@@ -97,17 +117,29 @@ public:
 
     void                                setPosition(const Math::Vec2i& pos);
     Math::Vec2i                         getPosition() const;
-    void                                setPositionCallback(std::function<void(const Math::Vec2i&)> cbk);
-    const std::function<void(const Math::Vec2i&)>& getPositionCallback() const;
+    void                                setPositionCallback(PositionCallback&& cbk);
+    const PositionCallback&             getPositionCallback() const;
 
     void                                setSize(const Math::Vec2i& res);
     Math::Vec2i                         getSize() const;
-    void                                setSizeCallback(std::function<void(const Math::Vec2i&)> cbk);
-    const std::function<void(const Math::Vec2i&)>& getSizeCallback() const;
+    void                                setSizeCallback(SizeCallback&& cbk);
+    const SizeCallback&                 getSizeCallback() const;
 
     Resolution                          getResolution() const;
-    void                                setResolutionCallback(std::function<void(const Resolution&)> cbk);
-    const std::function<void(const Resolution&)>& getResolutionCallback() const;
+    void                                setResolutionCallback(ResolutionCallback&& cbk);
+    const ResolutionCallback&           getResolutionCallback() const;
+
+    void                                setScaleCallback(ScaleCallback&& cbk);
+    const ScaleCallback&                getScaleCallback() const;
+
+    void                                setCloseCallback(CloseCallback&& cbk);
+    const CloseCallback&                getCloseCallback() const;
+
+    void                                setRefreshCallback(RefreshCallback&& cbk);
+    const RefreshCallback&              getRefreshCallback() const;
+
+    void                                setFocusCallback(FocusCallback&& cbk);
+    const FocusCallback&                getFocusCallback() const;
 
     void                                swapBuffers() const;
 
@@ -123,19 +155,12 @@ private:
 
     GLFWwindow*                         m_window = nullptr;
 
-    std::optional<WindowGeometry>       m_windowedState;               
+    std::optional<WindowGeometry>       m_windowedState;
+
+    Callbacks                           m_callbacks;
+
 
     void                                setupWindow();
-
-    void                                positionCbk(const Math::Vec2i& pos);
-    void                                sizeCbk(const Math::Vec2i& size);
-    void                                closeCbk();
-    void                                refreshCbk();
-    void                                focusCbk(bool focus);
-    void                                stateCbk(State state);
-    void                                resolutionCbk(const Resolution& res);
-    void                                scaleCbk(const Math::Vec2f& scale);
-
 
     static std::vector<Monitor>         s_monitors;
 
