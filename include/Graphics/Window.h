@@ -70,10 +70,10 @@ public:
 	};
 
 	using StateCallback = std::function<void(State)>;
-	using PositionCallback = std::function<void(const Math::Vec2i&)>;
-	using SizeCallback = std::function<void(const Math::Vec2i&)>;
-	using ResolutionCallback = std::function<void(const Resolution&)>;
-	using ScaleCallback = std::function<void(const Math::Vec2f&)>;
+	using PositionCallback = std::function<void(Math::Vec2i)>;
+	using SizeCallback = std::function<void(Math::Vec2i)>;
+	using ResolutionCallback = std::function<void(Resolution)>;
+	using ScaleCallback = std::function<void(Math::Vec2f)>;
 	using CloseCallback = std::function<void()>;
 	using RefreshCallback = std::function<void()>;
 	using FocusCallback = std::function<void(bool)>;
@@ -170,6 +170,7 @@ private:
 	static Utils::CrossThreadInvocation s_mainThreadExecutions;
 
 	static std::thread                  s_cbkThread;
+	static std::mutex					s_cbkMutex;
 	static Utils::CrossThreadInvocation s_cbkThreadExecutions;
 
 	static void                         mainThreadFunc();

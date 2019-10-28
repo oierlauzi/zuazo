@@ -49,7 +49,7 @@ inline std::shared_ptr<CrossThreadInvocation::AsyncExecution<T>> CrossThreadInvo
 	
 	//Create a future object
 	std::shared_ptr<AsyncExecution<T>> invocation(new AsyncExecution<T>(
-		std::future<T>(std::async(std::launch::deferred, func, args...)),
+		std::future<T>(std::async(std::launch::deferred, func, std::forward<Args>(args)...)),
 		*this
 	));
 
@@ -66,7 +66,7 @@ inline std::shared_ptr<CrossThreadInvocation::AsyncExecution<T>> CrossThreadInvo
 
 template<typename T, typename... Args>
 inline T CrossThreadInvocation::execute(WaitForCompletion, const std::function<T(Args...)>& func, Args... args){
-	auto invocation = execute(func, args...);
+	auto invocation = execute(func, std::forward<Args>(args)...);
 
 	//Return result
 	return invocation->getValue();
