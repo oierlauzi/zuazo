@@ -125,21 +125,31 @@ public:
 	void                                setSizeCallback(SizeCallback&& cbk);
 	const SizeCallback&                 getSizeCallback() const;
 
+	void								setOpacity(float opa);
+	float								getOpacity() const;
+
 	Resolution                          getResolution() const;
 	void                                setResolutionCallback(ResolutionCallback&& cbk);
 	const ResolutionCallback&           getResolutionCallback() const;
 
+	Math::Vec2f							getScale() const;
 	void                                setScaleCallback(ScaleCallback&& cbk);
 	const ScaleCallback&                getScaleCallback() const;
 
+	void								close();
+	bool								shouldClose() const;
 	void                                setCloseCallback(CloseCallback&& cbk);
 	const CloseCallback&                getCloseCallback() const;
+
+	void								focus();
+	void                                setFocusCallback(FocusCallback&& cbk);
+	const FocusCallback&                getFocusCallback() const;
 
 	void                                setRefreshCallback(RefreshCallback&& cbk);
 	const RefreshCallback&              getRefreshCallback() const;
 
-	void                                setFocusCallback(FocusCallback&& cbk);
-	const FocusCallback&                getFocusCallback() const;
+	void								setCallbacks(Callbacks&& cbks);
+	const Callbacks&					getCallbacks() const;
 
 	void                                swapBuffers() const;
 

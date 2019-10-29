@@ -425,6 +425,13 @@ const Window::SizeCallback& Window::getSizeCallback() const{
 	return m_callbacks.sizeCbk;
 }
 
+void Window::setOpacity(float opa){
+	MT_EXEC(glfwSetWindowOpacity, m_window, opa);
+}
+
+float Window::getOpacity() const{
+	return MT_EXEC(glfwGetWindowOpacity, m_window);
+}
 
 Resolution Window::getResolution() const{
 	int x, y;
@@ -441,6 +448,11 @@ const Window::ResolutionCallback& Window::getResolutionCallback() const{
 	return m_callbacks.resolutionCbk;
 }
 
+Math::Vec2f Window::getScale() const{
+	Math::Vec2f result;
+	MT_EXEC(glfwGetWindowContentScale, m_window, &result.x, &result.y);
+	return result;
+}
 
 void Window::setScaleCallback(ScaleCallback&& cbk){
 	std::lock_guard<std::mutex> lock(s_cbkMutex);
@@ -449,6 +461,15 @@ void Window::setScaleCallback(ScaleCallback&& cbk){
 
 const Window::ScaleCallback& Window::getScaleCallback() const{
 	return m_callbacks.scaleCbk;
+}
+
+void Window::close(){
+	MT_EXEC(glfwDestroyWindow, m_window);
+	m_window = nullptr;
+}
+
+bool Window::shouldClose() const{
+	return MT_EXEC(glfwWindowShouldClose, m_window);
 }
 
 void Window::setCloseCallback(CloseCallback&& cbk){
@@ -460,13 +481,8 @@ const Window::CloseCallback& Window::getCloseCallback() const{
 	return m_callbacks.closeCbk;
 }
 
-void Window::setRefreshCallback(RefreshCallback&& cbk){
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
-	m_callbacks.refreshCbk = std::forward<RefreshCallback>(cbk);
-}
-
-const Window::RefreshCallback& Window::getRefreshCallback() const{
-	return m_callbacks.refreshCbk;
+void Window::focus(){
+	return MT_EXEC(glfwFocusWindow, m_window);
 }
 
 void Window::setFocusCallback(FocusCallback&& cbk){
@@ -478,6 +494,22 @@ const Window::FocusCallback& Window::getFocusCallback() const{
 	return m_callbacks.focusCbk;
 }
 
+void Window::setRefreshCallback(RefreshCallback&& cbk){
+	std::lock_guard<std::mutex> lock(s_cbkMutex);
+	m_callbacks.refreshCbk = std::forward<RefreshCallback>(cbk);
+}
+
+const Window::RefreshCallback& Window::getRefreshCallback() const{
+	return m_callbacks.refreshCbk;
+}
+
+void Window::setCallbacks(Callbacks&& cbks){
+	m_callbacks = std::forward<Callbacks>(cbks);
+}
+
+const Window::Callbacks& Window::getCallbacks() const{
+	return m_callbacks;
+}
 
 void Window::swapBuffers() const{
 	glfwSwapBuffers(m_window); 
