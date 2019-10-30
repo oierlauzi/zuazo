@@ -1,6 +1,7 @@
 #include <Graphics/Window.h>
 
 #include <iostream>
+#include <cstring>
 
 namespace Zuazo::Graphics {
 
@@ -530,8 +531,22 @@ const std::vector<Window::Monitor>& Window::getMonitors(){
 	return s_monitors;
 }
 
+std::vector<Vulkan::Extension> Window::getRequiredVulkanExtensions(){
+	uint32_t glfwExtensionCount;
+	const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
+	std::vector<Vulkan::Extension> extensions;
+	extensions.reserve(glfwExtensionCount);
 
+	for(size_t i = 0; i < glfwExtensionCount; i++){
+		Vulkan::Extension ext;
+		strncpy(ext.extensionName, glfwExtensions[i], VK_MAX_EXTENSION_NAME_SIZE);
+		ext.specVersion = 0;
+		extensions.push_back(ext);
+	}
+
+	return extensions;
+}
 
 void Window::mainThreadFunc(){
 	glfwInit();

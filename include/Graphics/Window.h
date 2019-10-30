@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Resolution.h"
+#include "Vulkan.h"
 #include "../Math/Vector.h"
 #include "../Utils/CrossThreadInvocation.h"
 #include "../Timing/Chrono.h"
@@ -23,7 +24,7 @@
 namespace Zuazo::Graphics {
 
 class Window {
-	friend void Zuazo::init();
+	friend void Zuazo::init(ApplicationInfo&& appInfo);
 	friend void Zuazo::end();
 public:
 
@@ -155,6 +156,8 @@ public:
 
 	static const std::vector<Monitor>&  getMonitors();
 
+	static std::vector<Vulkan::Extension> getRequiredVulkanExtensions();
+
 	static const Monitor NO_MONITOR;
 private:
 	struct WindowGeometry {
@@ -207,7 +210,6 @@ private:
 	static void                         addMonitor(GLFWmonitor* mon);
 	static void                         eraseMonitor(GLFWmonitor* mon);
 	static const Monitor&               getMonitor(GLFWmonitor* mon);
-
 
 	static void                         init();
 	static void                         end();

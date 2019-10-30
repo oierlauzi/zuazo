@@ -15,7 +15,7 @@
 namespace Zuazo::Timing {
 
 class MainLoop {
-	friend void Zuazo::init();
+	friend void Zuazo::init(ApplicationInfo&& appInfo);
 	friend void Zuazo::end();
 public:
 	MainLoop(const MainLoop& other) = delete;
