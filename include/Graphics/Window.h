@@ -24,8 +24,7 @@
 namespace Zuazo::Graphics {
 
 class Window {
-	friend void Zuazo::init(ApplicationInfo&& appInfo);
-	friend void Zuazo::end();
+	friend Zuazo::Instance;
 public:
 
 	enum class State {
@@ -91,7 +90,7 @@ public:
 	};
 
 	Window() = default;
-	Window(const  Math::Vec2i& size, std::string&& name = "", const Monitor& mon = NO_MONITOR);
+	Window(const  Math::Vec2i& size, std::string&& name = std::string(getApplicationInfo().name), const Monitor& mon = NO_MONITOR);
 	Window(const Window& other) = delete;
 	Window(Window&& other);
 	virtual ~Window();

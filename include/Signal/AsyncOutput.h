@@ -17,10 +17,7 @@ class AsyncOutput :
 		public Timing::Scheduler::Event
 {
 public:
-	AsyncOutput(std::string&& name = "");
-	AsyncOutput(const AsyncOutput& other) = delete;
-	AsyncOutput(AsyncOutput&& other) = default;
-	virtual ~AsyncOutput() = default;
+	using Output<T>::Output;
 
 	AsyncOutput&                        operator=(AsyncOutput&& other) = default;
 

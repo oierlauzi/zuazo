@@ -22,9 +22,17 @@ inline InputPad<T>::~InputPad(){
 
 template <typename T>
 inline void InputPad<T>::setSource(OutputPad<T>* src){
-	if(m_source) m_source->m_consumers.erase(this);
-	m_source = src;
-	if(m_source) m_source->m_consumers.emplace(this);
+	if(m_owner && src.m_owner) {
+		if(m_owner->getInstance() == src.m_owner->getInstance()){
+			if(m_source) m_source->m_consumers.erase(this);
+			m_source = src;
+			if(m_source) m_source->m_consumers.emplace(this);
+		} else {
+			//TODO error
+		}
+	} else {
+		//TODO Error
+	}
 }
 
 template <typename T>

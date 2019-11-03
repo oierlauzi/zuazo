@@ -2,7 +2,7 @@
 
 #include "Scheduler.h"
 #include "Chrono.h"
-#include "../Zuazo.h"
+#include "../Utils/Macros.h"
 
 #include <atomic>
 #include <condition_variable>
@@ -15,13 +15,10 @@
 namespace Zuazo::Timing {
 
 class MainLoop {
-	friend void Zuazo::init(ApplicationInfo&& appInfo);
-	friend void Zuazo::end();
 public:
+	MainLoop();
 	MainLoop(const MainLoop& other) = delete;
 	virtual ~MainLoop();
-
-	static MainLoop&                    getMainLoop();
 
 	TimePoint                           getCurrentTime() const;
 	Duration                            getElapsed() const;
@@ -31,8 +28,6 @@ public:
 
 	void                                handleEvents();
 private:
-	MainLoop();
-
 	Scheduler                           m_scheduler;
 
 	TimePoint                           m_now;
@@ -44,16 +39,6 @@ private:
 	mutable std::condition_variable     m_handleEvents;
 
 	void                                threadFunc();
-
-	static std::unique_ptr<MainLoop>    s_mainLoop;
-	static void                         init();
-	static void                         end();
 };
 
-extern MainLoop& getMainLoop();
-extern TimePoint getCurrentTime();
-extern Duration  getElapsed();
-
 }
-
-#include "MainLoop.inl"

@@ -4,13 +4,6 @@
 namespace Zuazo::Signal {
 
 template <typename T>
-AsyncOutput<T>::AsyncOutput(std::string&& name) :
-	Output<T>(std::forward<std::string>(name)),
-	Timing::Scheduler::Event(&Timing::getMainLoop().getScheduler(), Output<T>::PRIORITY)
-{
-}
-
-template <typename T>
 inline void AsyncOutput<T>::setMaxDropped(int32_t max){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	m_maxDropped = max;

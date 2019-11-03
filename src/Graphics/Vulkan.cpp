@@ -1,25 +1,41 @@
 #include <Graphics/Vulkan.h>
 
 #include <Graphics/Window.h>
+#include <Zuazo.h>
 
 #include <algorithm>
 #include <vector>
 #include <cstring>
 #include <iostream>
+	
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerCallback(
+											VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+											VkDebugUtilsMessageTypeFlagsEXT type,
+											const VkDebugUtilsMessengerCallbackDataEXT* data,
+											void* userData ) 
+{
+	std::cerr << "Vulkan validation layer: " << data->pMessage << std::endl;
+	return VK_FALSE;
+}
+
+#pragma GCC diagnostic pop
+
+
+
+
+
 
 namespace Zuazo::Graphics {
-
-std::unique_ptr<Vulkan> Vulkan::s_vulkan;
-
-Vulkan& Vulkan::getVulkan(){
-	return *s_vulkan;
-}
 
 Vulkan::Vulkan() :
 	m_instance(nullptr),
 	m_messenger(nullptr)
 {
-	const Zuazo::ApplicationInfo& zzAppInfo = Zuazo::getApplicationInfo();
+	const Zuazo::ApplicationInfo& zzAppInfo = getApplicationInfo();
 
 	//Fill the application information
 	VkApplicationInfo appInfo = {};
@@ -66,6 +82,7 @@ Vulkan::Vulkan() :
 	}
 
 	if(validationLayers.size()){
+		//We are using validation layers
 		setupValidationLayers();
 	}
 }
@@ -73,6 +90,7 @@ Vulkan::Vulkan() :
 Vulkan::~Vulkan(){
 	if(m_instance){
 		if(m_messenger) {
+			//Clean validation layers
 			cleanValidationLayers();
 		}
 
@@ -80,10 +98,7 @@ Vulkan::~Vulkan(){
 	}
 }
 
-std::queue<Vulkan::Message> Vulkan::getMessages(){
-	std::lock_guard<std::mutex> lock(m_messsageMutex);
-	return std::move(m_messsages);
-}
+
 
 void Vulkan::setupValidationLayers(){
 	//Request the functions to Vulkan
@@ -105,18 +120,7 @@ void Vulkan::setupValidationLayers(){
 		layerInfo.pUserData = this;
 
 		//Create the messenger
-		VkResult err = vkCreateDebugUtilsMessengerEXT(m_instance, &layerInfo, nullptr, &m_messenger);
-
-		switch(err){
-		case VK_SUCCESS:
-			break; //Everything OK.
-
-		default:
-			//Unexpected error
-			break;
-		}
-	} else {
-		//Extension !found
+		vkCreateDebugUtilsMessengerEXT(m_instance, &layerInfo, nullptr, &m_messenger);
 	}
 }
 
@@ -127,8 +131,6 @@ void Vulkan::cleanValidationLayers(){
 
 	if(vkDestroyDebugUtilsMessengerEXT) {
 		vkDestroyDebugUtilsMessengerEXT(m_instance, m_messenger, nullptr);
-	} else {
-		//Extension !found
 	}
 }
 
@@ -173,6 +175,7 @@ std::vector<Vulkan::ValidationLayer> Vulkan::getValidationLayers(){
 		std::vector<ValidationLayer> avalibleValidationLayers(count);
 		vkEnumerateInstanceLayerProperties(&count, avalibleValidationLayers.data());
 
+		//Compare the two sets and use the common validation layers
 		for(auto interested : interestedValidationLayers){
 			for(const auto& avalible : avalibleValidationLayers){
 				if(strncmp(interested, avalible.layerName, VK_MAX_EXTENSION_NAME_SIZE) == 0){
@@ -183,35 +186,6 @@ std::vector<Vulkan::ValidationLayer> Vulkan::getValidationLayers(){
 	}
 
 	return validationLayers;
-}
-
-VKAPI_ATTR VkBool32 VKAPI_CALL Vulkan::validationLayerCallback(
-											VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-											VkDebugUtilsMessageTypeFlagsEXT type,
-											const VkDebugUtilsMessengerCallbackDataEXT* data,
-											void* userData ) 
-{
-	Vulkan* instance = static_cast<Vulkan*>(userData);
-	Message err{
-		.what = std::string(data->pMessage)
-	};
-
-	#if !defined(NDEBUG)
-		std::cerr << "Vulkan validation layer: " << data->pMessage << std::endl;
-	#endif
-
-
-	std::lock_guard<std::mutex> lock(instance->m_messsageMutex);
-	instance->m_messsages.emplace(std::move(err));
-	return VK_FALSE;
-}
-
-void Vulkan::init(){
-	s_vulkan = std::unique_ptr<Vulkan>(new Vulkan);
-}
-
-void Vulkan::end(){
-	s_vulkan.reset();
 }
 
 }
