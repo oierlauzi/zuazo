@@ -173,6 +173,6 @@ bool Scheduler::PriorityCmp::operator()(const Event* a, const Event* b) const {
 	if(a->getPriority() < b->getPriority()) return true;
 	else if(a->getPriority() > b->getPriority()) return false;
 	else return a < b;
-};
+}
 
 }

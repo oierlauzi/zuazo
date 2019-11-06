@@ -39,7 +39,7 @@ Instance::Instance() {
 Instance::~Instance() {
 	if(--s_instaceCount == 0){
 		//I am the last one
-		Graphics::Window::end();
+		Graphics::Window::terminate();
 	}
 }
 
@@ -49,6 +49,15 @@ bool operator==(const Instance& a, const Instance& b){
 
 bool operator!=(const Instance& a, const Instance& b){
 	return &a != &b;
+}
+
+void Instance::begin(){
+	m_loop.getMutex().lock();
+}
+
+void Instance::end(){
+	m_loop.handleEvents();
+	m_loop.getMutex().unlock();
 }
 
 Timing::MainLoop& Instance::getMainLoop(){

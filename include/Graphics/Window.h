@@ -170,20 +170,18 @@ private:
 	std::optional<WindowGeometry>		m_windowedState;
 
 	Callbacks                           m_callbacks;
-
+	std::mutex							m_callbackMutex;
 
 	void                                setupWindow();
+
+
+
 
 	static std::vector<Monitor>         s_monitors;
 
 	static std::atomic<bool>            s_exit;
-
 	static std::thread                  s_mainThread;
-	static Utils::CrossThreadInvocation s_mainThreadExecutions;
-
-	static std::thread                  s_cbkThread;
-	static std::mutex					s_cbkMutex;
-	static Utils::CrossThreadInvocation s_cbkThreadExecutions;
+	static Utils::CrossThreadInvocation s_mainThreadExecutions;				
 
 	static void                         mainThreadFunc();
 
@@ -211,7 +209,7 @@ private:
 	static const Monitor&               getMonitor(GLFWmonitor* mon);
 
 	static void                         init();
-	static void                         end();
+	static void                         terminate();
 };
 
 }

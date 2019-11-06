@@ -20,7 +20,7 @@ inline T CrossThreadInvocation::AsyncExecution<T>::getValue() const{
 
 template<typename T>
 inline bool CrossThreadInvocation::AsyncExecution<T>::isReady() const{
-	return m_invoked;
+	return m_invoked.load();
 }
 
 template<typename T>
@@ -58,44 +58,7 @@ inline std::shared_ptr<CrossThreadInvocation::AsyncExecution<T>> CrossThreadInvo
 		std::static_pointer_cast<AsyncExecutionBase>(invocation)
 	);
 
-	//Signal the other thread
-	m_invocationAdded.notify_one();
-
 	return invocation;
-}
-
-template<typename T, typename... Args>
-inline T CrossThreadInvocation::execute(WaitForCompletion, const std::function<T(Args...)>& func, Args... args){
-	auto invocation = execute(func, std::forward<Args>(args)...);
-
-	//Return result
-	return invocation->getValue();
-}
-
-inline void CrossThreadInvocation::waitAndHandleOne() {
-	std::unique_lock<std::mutex> lock(m_mutex);
-
-	while( !m_invocations.size() ){
-		m_invocationAdded.wait(lock);
-	}
-
-	invoke();
-
-	m_invocationHandled.notify_all();
-}
-
-inline void CrossThreadInvocation::waitAndHandleAll() {
-	std::unique_lock<std::mutex> lock(m_mutex);
-
-	while( !m_invocations.size() ){
-		m_invocationAdded.wait(lock);
-	}
-
-	while(m_invocations.size()){
-		invoke();
-	}
-
-	m_invocationHandled.notify_all();
 }
 
 inline void CrossThreadInvocation::handleOneExecution() {
@@ -121,7 +84,7 @@ inline void CrossThreadInvocation::handleAllExecutions() {
 
 inline void CrossThreadInvocation::invoke() {
 	m_invocations.front()->invoke();
-	m_invocations.front()->m_invoked = true;
+	m_invocations.front()->m_invoked.store(true);
 	m_invocations.pop();
 }
 

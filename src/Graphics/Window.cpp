@@ -15,26 +15,6 @@ namespace Zuazo::Graphics {
 		std::function{x}, __VA_ARGS__   \
 	)
 
-#define CT_ASYNC_EXEC_NO_ARGS(x)                            \
-	s_cbkThreadExecutions.execute(                          \
-		std::function{x}                                    \
-	)
-
-#define CT_ASYNC_EXEC(x, ...)                               \
-	s_cbkThreadExecutions.execute(                          \
-		std::function{x}, __VA_ARGS__                       \
-	)
-
-#define CT_EXEC_NO_ARGS(x)                                  \
-	s_cbkThreadExecutions.execute(                          \
-		Utils::CrossThreadInvocation::waitForCompletion,    \
-		std::function{x}                                    \
-	)
-
-#define CT_EXEC(x, ...)                                     \
-	s_cbkThreadExecutions.execute(                          \
-		Utils::CrossThreadInvocation::waitForCompletion,    \
-		std::function{x}, __VA_ARGS__                       \
 
 static void theFastestFunctionInTheWorld(){
 	return;
@@ -150,15 +130,8 @@ std::vector<Window::Monitor> Window::s_monitors;
 
 
 std::atomic<bool> Window::s_exit;
-
 std::thread Window::s_mainThread;
 Utils::CrossThreadInvocation Window::s_mainThreadExecutions;
-
-std::thread Window::s_cbkThread;
-std::mutex Window::s_cbkMutex;
-Utils::CrossThreadInvocation Window::s_cbkThreadExecutions;
-
-
 
 
 Window::Window(const Math::Vec2i& size, std::string&& name, const Monitor& mon) :
@@ -166,7 +139,7 @@ Window::Window(const Math::Vec2i& size, std::string&& name, const Monitor& mon) 
 	m_window(MT_EXEC(glfwCreateWindow, 
 		size.x,
 		size.y,
-		name.c_str(),
+		m_name.c_str(),
 		mon.m_monitor, 
 		static_cast<GLFWwindow*>(nullptr)
 	))
@@ -313,7 +286,7 @@ Window::State Window::getState() const{
 }
 
 void Window::setStateCallback(StateCallback&& cbk){
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
+	std::lock_guard<std::mutex> lock(m_callbackMutex);
 	m_callbacks.stateCbk = std::forward<StateCallback>(cbk);
 }
 
@@ -398,7 +371,7 @@ Math::Vec2i Window::getPosition() const{
 }
 
 void Window::setPositionCallback(PositionCallback&& cbk){
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
+	std::lock_guard<std::mutex> lock(m_callbackMutex);
 	m_callbacks.positionCbk = std::forward<PositionCallback>(cbk);
 }
 
@@ -418,7 +391,7 @@ Math::Vec2i Window::getSize() const{
 }
 
 void Window::setSizeCallback(SizeCallback&& cbk){
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
+	std::lock_guard<std::mutex> lock(m_callbackMutex);
 	m_callbacks.sizeCbk = std::forward<SizeCallback>(cbk);
 }
 
@@ -441,7 +414,7 @@ Resolution Window::getResolution() const{
 }
 
 void Window::setResolutionCallback(ResolutionCallback&& cbk){
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
+	std::lock_guard<std::mutex> lock(m_callbackMutex);
 	m_callbacks.resolutionCbk = std::forward<ResolutionCallback>(cbk);
 }
 
@@ -456,7 +429,7 @@ Math::Vec2f Window::getScale() const{
 }
 
 void Window::setScaleCallback(ScaleCallback&& cbk){
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
+	std::lock_guard<std::mutex> lock(m_callbackMutex);
 	m_callbacks.scaleCbk = std::forward<ResolutionCallback>(cbk);
 }
 
@@ -474,7 +447,7 @@ bool Window::shouldClose() const{
 }
 
 void Window::setCloseCallback(CloseCallback&& cbk){
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
+	std::lock_guard<std::mutex> lock(m_callbackMutex);
 	m_callbacks.closeCbk = std::forward<CloseCallback>(cbk);
 }
 
@@ -487,7 +460,7 @@ void Window::focus(){
 }
 
 void Window::setFocusCallback(FocusCallback&& cbk){
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
+	std::lock_guard<std::mutex> lock(m_callbackMutex);
 	m_callbacks.focusCbk = std::forward<FocusCallback>(cbk);
 }
 
@@ -496,7 +469,7 @@ const Window::FocusCallback& Window::getFocusCallback() const{
 }
 
 void Window::setRefreshCallback(RefreshCallback&& cbk){
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
+	std::lock_guard<std::mutex> lock(m_callbackMutex);
 	m_callbacks.refreshCbk = std::forward<RefreshCallback>(cbk);
 }
 
@@ -505,6 +478,7 @@ const Window::RefreshCallback& Window::getRefreshCallback() const{
 }
 
 void Window::setCallbacks(Callbacks&& cbks){
+	std::lock_guard<std::mutex> lock(m_callbackMutex);
 	m_callbacks = std::forward<Callbacks>(cbks);
 }
 
@@ -573,15 +547,12 @@ void Window::mainThreadFunc(){
 
 template<typename T, typename... Args>
 inline T Window::mainThreadExecute(const std::function<T(Args...)>& func, Args... args){
-	auto futur = s_mainThreadExecutions.execute(func, std::forward<Args>(args)...);
-	glfwPostEmptyEvent();
-	return futur->getValue();
-}
-
-
-void Window::cbkThreadFunc(){
-	while(!s_exit){
-		s_cbkThreadExecutions.waitAndHandleAll();
+	if(std::this_thread::get_id() == s_mainThread.get_id()){
+		return func(std::forward<Args>(args)...); //We are on the main thread. Simply execute it
+	}else {
+		auto futur = s_mainThreadExecutions.execute(func, std::forward<Args>(args)...);
+		glfwPostEmptyEvent();
+		return futur->getValue();
 	}
 }
 
@@ -611,57 +582,57 @@ void Window::monitorCbk(GLFWmonitor* mon, int evnt){
 void Window::positionCbk(GLFWwindow* win, int x, int y){
 	Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
 
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
+	std::lock_guard<std::mutex> lock(window->m_callbackMutex);
 	if(window->m_callbacks.positionCbk){
-		CT_ASYNC_EXEC(window->m_callbacks.positionCbk, Math::Vec2i(x, y));
+		window->m_callbacks.positionCbk(Math::Vec2i(x, y));
 	}
 }
 
 void Window::sizeCbk(GLFWwindow* win, int x, int y){
 	Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
 
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
+	std::lock_guard<std::mutex> lock(window->m_callbackMutex);
 	if(window->m_callbacks.sizeCbk){
-		CT_ASYNC_EXEC(window->m_callbacks.sizeCbk, Math::Vec2i(x, y));
+		window->m_callbacks.sizeCbk(Math::Vec2i(x, y));
 	}
 }
 
 void Window::closeCbk(GLFWwindow* win){
 	Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
 
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
+	std::lock_guard<std::mutex> lock(window->m_callbackMutex);
 	if(window->m_callbacks.closeCbk){
-		CT_ASYNC_EXEC_NO_ARGS(window->m_callbacks.closeCbk);
+		window->m_callbacks.closeCbk();
 	}
 }
 
 void Window::refreshCbk(GLFWwindow* win){
 	Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
 
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
+	std::lock_guard<std::mutex> lock(window->m_callbackMutex);
 	if(window->m_callbacks.refreshCbk){
-		CT_ASYNC_EXEC_NO_ARGS(window->m_callbacks.refreshCbk);
+		window->m_callbacks.refreshCbk();
 	}
 }
 
 void Window::focusCbk(GLFWwindow* win, int x){
 	Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
 
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
+	std::lock_guard<std::mutex> lock(window->m_callbackMutex);
 	if(window->m_callbacks.focusCbk){
-		CT_ASYNC_EXEC(window->m_callbacks.focusCbk, static_cast<bool>(x));
+		window->m_callbacks.focusCbk(static_cast<bool>(x));
 	}
 }
 
 void Window::iconifyCbk(GLFWwindow* win, int x){
 	Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
 
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
+	std::lock_guard<std::mutex> lock(window->m_callbackMutex);
 	if(window->m_callbacks.stateCbk){
 		if(x == GLFW_TRUE){
-			CT_ASYNC_EXEC(window->m_callbacks.stateCbk, State::ICONIFIED);
+			window->m_callbacks.stateCbk(State::ICONIFIED);
 		} else {
-			CT_ASYNC_EXEC(window->m_callbacks.stateCbk, State::NORMAL);
+			window->m_callbacks.stateCbk(State::NORMAL);
 		}
 	}
 }
@@ -669,12 +640,12 @@ void Window::iconifyCbk(GLFWwindow* win, int x){
 void Window::maximizeCbk(GLFWwindow* win, int x){
 	Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
 
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
+	std::lock_guard<std::mutex> lock(window->m_callbackMutex);
 	if(window->m_callbacks.stateCbk){
 		if(x == GLFW_TRUE){
-			CT_ASYNC_EXEC(window->m_callbacks.stateCbk, State::MAXIMIZED);
+			window->m_callbacks.stateCbk(State::MAXIMIZED);
 		} else {
-			CT_ASYNC_EXEC(window->m_callbacks.stateCbk, State::NORMAL);
+			window->m_callbacks.stateCbk(State::NORMAL);
 		}
 	}
 }
@@ -682,18 +653,18 @@ void Window::maximizeCbk(GLFWwindow* win, int x){
 void Window::framebufferCbk(GLFWwindow* win, int x, int y){
 	Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
 
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
+	std::lock_guard<std::mutex> lock(window->m_callbackMutex);
 	if(window->m_callbacks.resolutionCbk){
-		CT_ASYNC_EXEC(window->m_callbacks.resolutionCbk, Resolution(x, y));
+		window->m_callbacks.resolutionCbk(Resolution(x, y));
 	}
 }
 
 void Window::scaleCbk(GLFWwindow* win, float x, float y){
 	Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
 
-	std::lock_guard<std::mutex> lock(s_cbkMutex);
+	std::lock_guard<std::mutex> lock(window->m_callbackMutex);
 	if(window->m_callbacks.scaleCbk){
-		CT_ASYNC_EXEC(window->m_callbacks.scaleCbk, Math::Vec2f(x, y));
+		window->m_callbacks.scaleCbk(Math::Vec2f(x, y));
 	}
 }
 
@@ -724,18 +695,14 @@ const Window::Monitor& Window::getMonitor(GLFWmonitor* mon){
 
 
 void Window::init(){
+	s_exit.store(false);
+
 	s_mainThread = std::thread(mainThreadFunc);
 	MT_EXEC_NO_ARGS(theFastestFunctionInTheWorld);
-
-	s_cbkThread = std::thread(cbkThreadFunc);
-	CT_EXEC_NO_ARGS(theFastestFunctionInTheWorld);
 }
 
-void Window::end(){
-	s_exit = true;
-
-	CT_EXEC_NO_ARGS(theFastestFunctionInTheWorld);
-	s_cbkThread.join();
+void Window::terminate(){
+	s_exit.store(true);
 
 	glfwPostEmptyEvent();
 	s_mainThread.join();

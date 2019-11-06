@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <condition_variable>
 #include <functional>
 #include <future>
@@ -24,7 +25,7 @@ public:
 		AsyncExecutionBase&     operator=(const AsyncExecutionBase& other) = default;
 		
 	protected:
-		bool                    m_invoked = false;
+		std::atomic<bool>       m_invoked = false;
 
 	private:
 		virtual void            invoke() = 0;
@@ -58,19 +59,12 @@ public:
 	template<typename T, typename... Args>
 	std::shared_ptr<AsyncExecution<T>> execute(const std::function<T(Args...)>& func, Args... args);
 
-	template<typename T, typename... Args>
-	T                       execute(WaitForCompletion, const std::function<T(Args...)>& func, Args... args);
-
-	void                    waitAndHandleOne();
-	void                    waitAndHandleAll();
-
 	void                    handleOneExecution();
 	void                    handleAllExecutions();
 private:
 	std::queue<std::shared_ptr<AsyncExecutionBase>> m_invocations;
 
 	std::mutex              m_mutex;
-	std::condition_variable m_invocationAdded;
 	std::condition_variable m_invocationHandled;
 
 	void                    invoke();

@@ -13,7 +13,7 @@ MainLoop::MainLoop() :
 MainLoop::~MainLoop(){
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
-		m_exit = true;
+		m_exit.store(true);
 		m_handleEvents.notify_all();
 	}
 
@@ -47,7 +47,7 @@ void MainLoop::handleEvents(){
 void MainLoop::threadFunc(){
 	std::unique_lock<std::mutex> lock(m_mutex); //Adquire the mutex
 
-	while(!m_exit){
+	while(m_exit.load() == false){
 		if( (m_elapsed = m_scheduler.getTimeForNextEvent()) != Timing::Duration::max()) {
 			//Threre are scheduled events
 

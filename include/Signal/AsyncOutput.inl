@@ -5,7 +5,6 @@ namespace Zuazo::Signal {
 
 template <typename T>
 inline void AsyncOutput<T>::setMaxDropped(int32_t max){
-	std::lock_guard<std::mutex> lock(m_mutex);
 	m_maxDropped = max;
 }
 
@@ -16,40 +15,41 @@ inline int32_t AsyncOutput<T>::getMaxDropped() const{
 
 template <typename T>
 inline uint32_t AsyncOutput<T>::getDropped() const{
-	std::lock_guard<std::mutex> lock(m_mutex);
 	return m_dropped;
 }
 
 template <typename T>
 inline void AsyncOutput<T>::resetDropped(){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	m_dropped = 0;
+	m_dropped;
 }
 
 
 template <typename T>
-inline void	AsyncOutput<T>::setMaxBufferSize(int32_t size){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	m_maxBufferSize = size;
+inline void	AsyncOutput<T>::setMaxBufferSize(size_t size){
+	std::lock_guard<std::mutex> lock(m_mutex); //Lock to prevent any new elements being added
+	m_buffer.resize(size + 1);
 }
 
 template <typename T>
-inline int32_t AsyncOutput<T>::getMaxBufferSize() const{
-	return m_maxBufferSize;
-}
-
-template <typename T>
-inline uint32_t AsyncOutput<T>::getBufferSize() const{
-	std::lock_guard<std::mutex> lock(m_mutex);
+inline size_t AsyncOutput<T>::getMaxBufferSize() const{
 	return m_buffer.size();
 }
 
 template <typename T>
-inline void AsyncOutput<T>::flushBuffer(){
-	std::lock_guard<std::mutex> lock(m_mutex);
+inline size_t AsyncOutput<T>::getBufferSize() const{
+	const size_t read = m_read.load();
+	const size_t write = m_write.load();
+	const size_t bufSize = m_buffer.size();
 
-	while(m_buffer.size()){
-		m_buffer.pop();
+	return (write + bufSize - read) % bufSize;
+}
+
+template <typename T>
+inline void AsyncOutput<T>::flushBuffer(){
+	size_t read, write;
+	while((read = m_read.load()) !=  (write = m_write.load())){
+		m_buffer[read].reset();
+		m_read.store(getNextValue(read));
 	}
 }
 
@@ -61,16 +61,21 @@ inline void AsyncOutput<T>::reset(){
 
 template <typename T>
 inline void AsyncOutput<T>::update() {
-	std::lock_guard<std::mutex> lock(m_mutex);
+	//No need for lock. update() wont be called.
 
-	if(m_buffer.size()){
-		//There is at least an element at the buffer. Push it into the output
-		Output<T>::push(std::move(m_buffer.front()));
-		m_buffer.pop();
-		m_dropped=0;
-	}else{
-		//Missing element -> dropped
+	const size_t read = m_read.load();
+	const size_t write = m_write.load();
+	const size_t nextRead = getNextValue(read);
+
+	if(read != write) {
+		//There is at least 1 element in the buffer
+		m_dropped = 0;
+		Output<T>::push(std::move(m_buffer[read]));
+		m_read.store(nextRead);
+	} else {
+		//Missing element -> increment the dropped counter
 		m_dropped++;
+
 		if(m_dropped > m_maxDropped && m_maxDropped >= 0){
 			//More than tolerable dropped elements
 			Output<T>::push(std::shared_ptr<const T>());
@@ -81,12 +86,21 @@ inline void AsyncOutput<T>::update() {
 
 template <typename T>
 inline void AsyncOutput<T>::push(std::shared_ptr<const T>&& element){
-	std::lock_guard<std::mutex> lock(m_mutex);
+	std::lock_guard<std::mutex> lock(m_mutex); //Lock if it is being resized.
 
-	if(m_buffer.size() < m_maxBufferSize && m_maxBufferSize >= 0){
-		//Insert it in the buffer
-		m_buffer.emplace(std::forward<std::shared_ptr<const T>>(element));
-	} //else There are too many elements. Discard
+	const size_t read = m_read.load();
+	const size_t write = m_write.load();
+	const size_t nextWrite =  getNextValue(write);
+
+	if(read != nextWrite) {
+		m_buffer[write] = std::forward<std::shared_ptr<const T>>(element);
+		m_write.store(nextWrite);
+	} //else discard element
+}
+
+template <typename T>
+inline size_t AsyncOutput<T>::getNextValue(size_t i) const{
+	return (i + 1) % m_buffer.size();
 }
 
 }

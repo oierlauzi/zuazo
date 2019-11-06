@@ -41,6 +41,9 @@ public:
 	friend bool operator==(const Instance& a, const Instance& b);
 	friend bool operator!=(const Instance& a, const Instance& b);
 
+	void						begin();
+	void						end();
+
 	Timing::MainLoop&			getMainLoop();
 	const Timing::MainLoop&		getMainLoop() const;
 
@@ -53,6 +56,17 @@ private:
 	Graphics::Vulkan			m_vulkan;
 
 	static uint32_t				s_instaceCount;
+};
+
+
+class UniqueContext {
+public:
+	UniqueContext(Instance& inst) : m_instance(inst) { m_instance.begin(); }
+	UniqueContext(const UniqueContext& other) = delete;
+	UniqueContext(UniqueContext&& other) = delete;
+	~UniqueContext() { m_instance.end(); }
+private:
+	Instance& 	m_instance;
 };
 
 }
