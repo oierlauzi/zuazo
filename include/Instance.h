@@ -29,7 +29,7 @@ private:
 	Timing::MainLoop			m_loop;
 	Graphics::Vulkan			m_vulkan;
 
-	static uint32_t				s_instaceCount;
+	static std::atomic<size_t>	s_instaceCount;
 };
 
 }

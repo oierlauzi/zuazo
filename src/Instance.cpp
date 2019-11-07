@@ -4,7 +4,7 @@
 
 namespace Zuazo {
 
-uint32_t Instance::s_instaceCount = 0;
+std::atomic<size_t> Instance::s_instaceCount = 0;
 
 Instance::Instance() {
 	if(s_instaceCount++ == 0){

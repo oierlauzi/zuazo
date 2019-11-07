@@ -11,11 +11,10 @@ MainLoop::MainLoop() :
 
 
 MainLoop::~MainLoop(){
-	{
-		std::lock_guard<std::mutex> lock(m_mutex);
-		m_exit.store(true);
-		m_handleEvents.notify_all();
-	}
+	std::unique_lock<std::mutex> lock(m_mutex);
+	m_exit.store(true);
+	m_handleEvents.notify_all();
+	lock.unlock();
 
 	m_thread.join(); //Wait until it finishes
 }
