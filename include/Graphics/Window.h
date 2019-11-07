@@ -5,6 +5,7 @@
 #include "../Math/Vector.h"
 #include "../Utils/CrossThreadInvocation.h"
 #include "../Timing/Chrono.h"
+#include "../Instance.h"
 #include "../Zuazo.h"
 
 #include <atomic>
@@ -157,6 +158,9 @@ public:
 
 	static std::vector<Vulkan::Extension> getRequiredVulkanExtensions();
 
+	static void							setCallbacksEnabled(bool ena);
+	static bool							getCallbacksEnabled();
+
 	static const Monitor NO_MONITOR;
 private:
 	struct WindowGeometry {
@@ -170,7 +174,6 @@ private:
 	std::optional<WindowGeometry>		m_windowedState;
 
 	Callbacks                           m_callbacks;
-	std::mutex							m_callbackMutex;
 
 	void                                setupWindow();
 
@@ -180,13 +183,21 @@ private:
 	static std::vector<Monitor>         s_monitors;
 
 	static std::atomic<bool>            s_exit;
+	static std::atomic<bool>			s_callbacksEnabled;
+
 	static std::thread                  s_mainThread;
-	static Utils::CrossThreadInvocation s_mainThreadExecutions;				
+	static Utils::CrossThreadInvocation s_mainThreadExecutions;
+	static std::mutex					s_mainThreadMutex;
+	static std::condition_variable		s_mainThreadContinue;
 
 	static void                         mainThreadFunc();
 
 	template<typename T, typename... Args>
 	static T                            mainThreadExecute(const std::function<T(Args...)>& func, Args... args);
+	static void							mainThreadContinue();
+
+	template<typename... Args>
+	static void                         callbackThreadExecute(const std::function<void(Args...)>& func, Args... args);
 
 	static void                         cbkThreadFunc();
 
