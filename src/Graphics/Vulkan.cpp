@@ -1,16 +1,13 @@
 #include <Graphics/Vulkan.h>
 
 #include <Graphics/Window.h>
+#include <Macros.h>
 #include <Zuazo.h>
 
 #include <algorithm>
 #include <vector>
 #include <cstring>
 #include <iostream>
-	
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerCallback(
 											VkDebugUtilsMessageSeverityFlagBitsEXT severity,
@@ -18,15 +15,13 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerCallback(
 											const VkDebugUtilsMessengerCallbackDataEXT* data,
 											void* userData ) 
 {
+	ZUAZO_IGNORE_PARAM(severity);
+	ZUAZO_IGNORE_PARAM(type);
+	ZUAZO_IGNORE_PARAM(userData);
+
 	std::cerr << "Vulkan validation layer: " << data->pMessage << std::endl;
 	return VK_FALSE;
 }
-
-#pragma GCC diagnostic pop
-
-
-
-
 
 
 namespace Zuazo::Graphics {
