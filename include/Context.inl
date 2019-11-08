@@ -6,7 +6,6 @@ namespace Zuazo {
 
 
 inline std::atomic<size_t> Context::s_activeContextCount = 0;
-inline bool	Context::s_callbacksEnabled;
 
 inline Context::Context(Instance& inst) :
 	m_mainLoopLock(inst.getMainLoop().getMutex())
@@ -19,31 +18,36 @@ inline Context::~Context() {
 }
 
 inline Context::operator bool(){
-	return m_mainLoopLock.owns_lock();
+	return isActive();
 }
 
-inline void Context::use(){
+inline void Context::activate(){
 	m_mainLoopLock.lock();
 
 	incrementActiveCounter();
 }
 
-inline void Context::unuse(){
+inline void Context::deactivate(){
 	m_mainLoopLock.unlock();
 
 	decrementActiveCounter();
 }
 
+inline bool Context::isActive() const{
+	return m_mainLoopLock.owns_lock();
+}
+
 inline void Context::incrementActiveCounter(){
-	if(s_activeContextCount++ == 0){
-		s_callbacksEnabled = Graphics::Window::getCallbacksEnabled();
-		if(s_callbacksEnabled) Graphics::Window::setCallbacksEnabled(false); 
+	if(s_activeContextCount.fetch_add(1) == 0){
+		//The first context to activate
+		Graphics::Window::setCallbacksEnabled(false); 
 	} 
 }
 
 inline void Context::decrementActiveCounter(){
-	if(--s_activeContextCount == 0){
-		if(s_callbacksEnabled) Graphics::Window::setCallbacksEnabled(true); 
+	if(s_activeContextCount.fetch_sub(1) == 1){
+		//The last context to deactivate
+		Graphics::Window::setCallbacksEnabled(true); 
 	} 
 }
 

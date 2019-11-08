@@ -20,13 +20,13 @@ public:
 
 	operator bool();
 
-	void use();
-	void unuse();
+	void activate();
+	void deactivate();
+	bool isActive() const;
 private:
 	std::unique_lock<std::mutex>			m_mainLoopLock;
 
 	static std::atomic<size_t>				s_activeContextCount;
-	static bool								s_callbacksEnabled;
 
 	static void								incrementActiveCounter();
 	static void								decrementActiveCounter();

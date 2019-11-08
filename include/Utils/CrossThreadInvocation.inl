@@ -13,29 +13,15 @@ inline CrossThreadInvocation::AsyncExecution<T>::AsyncExecution(std::future<T>&&
 
 template<typename T>
 inline T CrossThreadInvocation::AsyncExecution<T>::getValue() const{
-	wait();
+	std::lock_guard<std::mutex> lock(m_wait); //Wait on the mutex until its freed
 	return m_future.get();
 	
-}
-
-template<typename T>
-inline bool CrossThreadInvocation::AsyncExecution<T>::isReady() const{
-	return m_invoked.load();
-}
-
-template<typename T>
-inline void CrossThreadInvocation::AsyncExecution<T>::wait() const{
-	std::unique_lock<std::mutex> lock(m_invoker.m_mutex);
-
-	//wait until is ready
-	while( !isReady() ){
-		m_invoker.m_invocationHandled.wait(lock);
-	}
-}       
+}    
 
 template<typename T>
 inline void CrossThreadInvocation::AsyncExecution<T>::invoke() {
-	m_future.wait();
+	m_future.wait(); //Execute the future
+	m_lock.unlock();
 }
 
 
@@ -45,8 +31,6 @@ inline void CrossThreadInvocation::AsyncExecution<T>::invoke() {
 
 template<typename T, typename... Args>
 inline std::shared_ptr<CrossThreadInvocation::AsyncExecution<T>> CrossThreadInvocation::execute(const std::function<T(Args...)>& func, Args... args){
-	std::lock_guard<std::mutex> lock(m_mutex);
-	
 	//Create a future object
 	std::shared_ptr<AsyncExecution<T>> invocation(new AsyncExecution<T>(
 		std::future<T>(std::async(std::launch::deferred, func, std::forward<Args>(args)...)),
@@ -62,21 +46,12 @@ inline std::shared_ptr<CrossThreadInvocation::AsyncExecution<T>> CrossThreadInvo
 }
 
 inline void CrossThreadInvocation::handleOneExecution() {
-	std::lock_guard<std::mutex> lock(m_mutex);
-	
 	if(m_invocations.size()){
 		invoke();
-		m_invocationHandled.notify_all();
 	}
 }
 
 inline void CrossThreadInvocation::handleAllExecutions() {
-	std::lock_guard<std::mutex> lock(m_mutex);
-	
-	if(m_invocations.size()){
-		m_invocationHandled.notify_all();
-	}
-
 	while(m_invocations.size()){
 		invoke();
 	}
@@ -84,7 +59,6 @@ inline void CrossThreadInvocation::handleAllExecutions() {
 
 inline void CrossThreadInvocation::invoke() {
 	m_invocations.front()->invoke();
-	m_invocations.front()->m_invoked.store(true);
 	m_invocations.pop();
 }
 

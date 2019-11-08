@@ -7,14 +7,14 @@ namespace Zuazo {
 std::atomic<size_t> Instance::s_instaceCount = 0;
 
 Instance::Instance() {
-	if(s_instaceCount++ == 0){
+	if(s_instaceCount.fetch_add(1) == 0){
 		//I am the first one
 		Graphics::Window::init();
 	}
 }
 
 Instance::~Instance() {
-	if(--s_instaceCount == 0){
+	if(s_instaceCount.fetch_sub(1) == 1){
 		//I am the last one
 		Graphics::Window::terminate();
 	}

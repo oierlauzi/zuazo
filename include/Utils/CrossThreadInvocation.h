@@ -19,13 +19,14 @@ public:
 		friend CrossThreadInvocation;
 	public:
 		AsyncExecutionBase() = default;
-		AsyncExecutionBase(const AsyncExecutionBase& other) = default;
+		AsyncExecutionBase(const AsyncExecutionBase& other) = delete;
 		virtual ~AsyncExecutionBase() = default;
 
-		AsyncExecutionBase&     operator=(const AsyncExecutionBase& other) = default;
+		AsyncExecutionBase&     operator=(const AsyncExecutionBase& other) = delete;
 		
 	protected:
-		std::atomic<bool>       m_invoked = false;
+		mutable std::mutex		m_wait;
+		std::unique_lock<std::mutex> m_lock = std::unique_lock<std::mutex>(m_wait);
 
 	private:
 		virtual void            invoke() = 0;
@@ -35,16 +36,12 @@ public:
 	class AsyncExecution : public AsyncExecutionBase {
 		friend CrossThreadInvocation;
 	public:
-		AsyncExecution(const AsyncExecution& other) = default;
-		AsyncExecution(AsyncExecution&& other) = default;
+		AsyncExecution(const AsyncExecution& other) = delete;
 		virtual ~AsyncExecution() = default;
 
-		AsyncExecution&         operator=(const AsyncExecution& other) = default;
-		AsyncExecution&         operator=(AsyncExecution&& other) = default;
+		AsyncExecution&         operator=(const AsyncExecution& other) = delete;
 
-		T                       getValue() const;
-		bool                    isReady() const;
-		void                    wait() const;           
+		T                       getValue() const;      
 	private:
 		AsyncExecution(std::future<T>&& future, CrossThreadInvocation& invoker);
 
@@ -63,9 +60,6 @@ public:
 	void                    handleAllExecutions();
 private:
 	std::queue<std::shared_ptr<AsyncExecutionBase>> m_invocations;
-
-	std::mutex              m_mutex;
-	std::condition_variable m_invocationHandled;
 
 	void                    invoke();
 };
