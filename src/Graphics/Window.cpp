@@ -85,9 +85,9 @@ Window::Monitor::Mode Window::Monitor::getMode() const{
 	const GLFWvidmode* mod = MT_EXEC(glfwGetVideoMode, m_monitor);
 
 	return Mode{
-		.colorDepth = ColorDepth(mod->redBits, mod->greenBits, mod->blueBits),
-		.size = Math::Vec2i(mod->width, mod->height),
-		.frameRate = Timing::Rate(mod->refreshRate, 1)
+		ColorDepth(mod->redBits, mod->greenBits, mod->blueBits),
+		Math::Vec2i(mod->width, mod->height),
+		Timing::Rate(mod->refreshRate, 1)
 	};
 }
 
@@ -98,9 +98,9 @@ std::vector<Window::Monitor::Mode> Window::Monitor::getModes() const{
 	std::vector<Mode> modes; modes.reserve(cnt);
 	for(int i = 0; i < cnt; i++){
 		modes.emplace_back(Mode{
-			.colorDepth = ColorDepth(mod[i].redBits, mod[i].greenBits, mod[i].blueBits),
-			.size = Math::Vec2i(mod[i].width, mod[i].height),
-			.frameRate = Timing::Rate(mod[i].refreshRate, 1)
+			ColorDepth(mod[i].redBits, mod[i].greenBits, mod[i].blueBits),
+			Math::Vec2i(mod[i].width, mod[i].height),
+			Timing::Rate(mod[i].refreshRate, 1)
 		});
 	}
 
@@ -315,8 +315,8 @@ void Window::setMonitor(const Monitor& mon, const Monitor::Mode& mod){
 			if(!prevMon){
 				//It was windowed. Save its state
 				m_windowedState = {
-					.pos = getPosition(),
-					.size = getSize()
+					getPosition(),
+					getSize()
 				};
 			}
 
