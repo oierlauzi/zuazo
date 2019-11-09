@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Math/Rational.h"
-#include "../Utils/Macros.h"
+#include "../Macros.h"
 
 #include <bitset>
 

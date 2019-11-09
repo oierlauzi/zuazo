@@ -6,7 +6,7 @@ namespace Zuazo::Signal {
 
 inline Layout::Layout(Instance& inst, std::string&& name) :
 	m_instance(inst),
-	m_name(std::forward<std::string>(name))
+	m_name(std::move(name))
 {
 }
 
@@ -50,7 +50,7 @@ const Instance& Layout::getInstance() const{
 }
 
 inline void Layout::setName(std::string&& name){
-	m_name = std::forward<std::string>(name);
+	m_name = std::move(name);
 }
 
 inline const std::string& Layout::getName() const{

@@ -9,7 +9,7 @@ namespace Zuazo::Signal {
 inline PadBase::PadBase(const std::type_index& type, Direction dir, std::string&& name) :
 	m_type(type),
 	m_direction(dir),
-	m_name(std::forward<std::string>(name))
+	m_name(std::move(name))
 {
 }
 
@@ -104,7 +104,7 @@ inline void PadBase::setDirection(Direction dir) {
 }
 
 inline void PadBase::setName(std::string&& name){
-	m_name = std::forward<std::string>(name);
+	m_name = std::move(name);
 }
 
 }

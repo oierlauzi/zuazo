@@ -8,7 +8,7 @@ namespace Zuazo::Signal {
 
 template <typename T>
 inline OutputPad<T>::OutputPad(std::string&& name) : 
-	PadBase(typeid(T), PadBase::Direction::OUTPUT, std::forward<std::string>(name))
+	PadBase(typeid(T), PadBase::Direction::OUTPUT, std::move(name))
 {
 }
 

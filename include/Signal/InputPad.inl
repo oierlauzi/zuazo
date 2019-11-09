@@ -9,7 +9,7 @@ inline const std::shared_ptr<const T> InputPad<T>::NO_SIGNAL;
 
 template <typename T>
 inline InputPad<T>::InputPad(std::string&& name) : 
-	PadBase(typeid(T), PadBase::Direction::INPUT, std::forward<std::string>(name))
+	PadBase(typeid(T), PadBase::Direction::INPUT, std::move(name))
 {
 }
 

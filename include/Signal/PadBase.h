@@ -3,8 +3,6 @@
 #include <string>
 #include <typeindex>
 
-#include "../Utils/Macros.h"
-
 namespace Zuazo::Signal {
 
 class Layout;

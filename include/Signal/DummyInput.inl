@@ -4,7 +4,7 @@ namespace Zuazo::Signal {
 
 template<typename T>
 DummyInput<T>::DummyInput(std::string&& name) :
-	InputPad<T>(std::forward<std::string>(name)),
+	InputPad<T>(move(name)),
 	destination(*this)
 {
 }

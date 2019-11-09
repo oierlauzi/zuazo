@@ -93,7 +93,7 @@ inline void AsyncOutput<T>::push(std::shared_ptr<const T>&& element){
 	const size_t nextWrite =  getNextValue(write);
 
 	if(read != nextWrite) {
-		m_buffer[write] = std::forward<std::shared_ptr<const T>>(element);
+		m_buffer[write] = std::move(element);
 		m_write.store(nextWrite);
 	} //else discard element
 }

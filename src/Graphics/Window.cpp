@@ -138,7 +138,7 @@ std::condition_variable Window::s_mainThreadContinue;
 
 
 Window::Window(const Math::Vec2i& size, std::string&& name, const Monitor& mon) :
-	m_name(std::forward<std::string>(name)),
+	m_name(std::move(name)),
 	m_window(MT_EXEC(glfwCreateWindow, 
 		size.x,
 		size.y,
@@ -212,7 +212,7 @@ void Window::unbind(){
 
 
 void Window::setName(std::string&& name){
-	m_name = std::forward<std::string>(name);
+	m_name = std::move(name);
 	MT_EXEC(glfwSetWindowTitle, m_window, m_name.c_str());
 }
 
@@ -289,7 +289,7 @@ Window::State Window::getState() const{
 }
 
 void Window::setStateCallback(StateCallback&& cbk){
-	m_callbacks.stateCbk = std::forward<StateCallback>(cbk);
+	m_callbacks.stateCbk = std::move(cbk);
 }
 
 const Window::StateCallback& Window::getStateCallback() const{
@@ -373,7 +373,7 @@ Math::Vec2i Window::getPosition() const{
 }
 
 void Window::setPositionCallback(PositionCallback&& cbk){
-	m_callbacks.positionCbk = std::forward<PositionCallback>(cbk);
+	m_callbacks.positionCbk = std::move(cbk);
 }
 
 const Window::PositionCallback& Window::getPositionCallback() const{
@@ -392,7 +392,7 @@ Math::Vec2i Window::getSize() const{
 }
 
 void Window::setSizeCallback(SizeCallback&& cbk){
-	m_callbacks.sizeCbk = std::forward<SizeCallback>(cbk);
+	m_callbacks.sizeCbk = std::move(cbk);
 }
 
 const Window::SizeCallback& Window::getSizeCallback() const{
@@ -414,7 +414,7 @@ Resolution Window::getResolution() const{
 }
 
 void Window::setResolutionCallback(ResolutionCallback&& cbk){
-	m_callbacks.resolutionCbk = std::forward<ResolutionCallback>(cbk);
+	m_callbacks.resolutionCbk = std::move(cbk);
 }
 
 const Window::ResolutionCallback& Window::getResolutionCallback() const{
@@ -428,7 +428,7 @@ Math::Vec2f Window::getScale() const{
 }
 
 void Window::setScaleCallback(ScaleCallback&& cbk){
-	m_callbacks.scaleCbk = std::forward<ResolutionCallback>(cbk);
+	m_callbacks.scaleCbk = std::move(cbk);
 }
 
 const Window::ScaleCallback& Window::getScaleCallback() const{
@@ -445,7 +445,7 @@ bool Window::shouldClose() const{
 }
 
 void Window::setCloseCallback(CloseCallback&& cbk){
-	m_callbacks.closeCbk = std::forward<CloseCallback>(cbk);
+	m_callbacks.closeCbk = std::move(cbk);
 }
 
 const Window::CloseCallback& Window::getCloseCallback() const{
@@ -457,7 +457,7 @@ void Window::focus(){
 }
 
 void Window::setFocusCallback(FocusCallback&& cbk){
-	m_callbacks.focusCbk = std::forward<FocusCallback>(cbk);
+	m_callbacks.focusCbk = std::move(cbk);
 }
 
 const Window::FocusCallback& Window::getFocusCallback() const{
@@ -465,7 +465,7 @@ const Window::FocusCallback& Window::getFocusCallback() const{
 }
 
 void Window::setRefreshCallback(RefreshCallback&& cbk){
-	m_callbacks.refreshCbk = std::forward<RefreshCallback>(cbk);
+	m_callbacks.refreshCbk = std::move(cbk);
 }
 
 const Window::RefreshCallback& Window::getRefreshCallback() const{
@@ -473,7 +473,7 @@ const Window::RefreshCallback& Window::getRefreshCallback() const{
 }
 
 void Window::setCallbacks(Callbacks&& cbks){
-	m_callbacks = std::forward<Callbacks>(cbks);
+	m_callbacks = std::move(cbks);
 }
 
 const Window::Callbacks& Window::getCallbacks() const{
@@ -563,10 +563,10 @@ void Window::mainThreadFunc(){
 template<typename T, typename... Args>
 inline T Window::mainThreadExecute(const std::function<T(Args...)>& func, Args... args){
 	if(std::this_thread::get_id() == s_mainThread.get_id()){
-		return func(std::forward<Args>(args)...); //We are on the main thread. Simply execute it
+		return func(std::move(args)...); //We are on the main thread. Simply execute it
 	}else {
 		std::unique_lock<std::mutex> lock(s_mainThreadMutex);
-		auto futur = s_mainThreadExecutions.execute(func, std::forward<Args>(args)...);
+		auto futur = s_mainThreadExecutions.execute(func, std::move(args)...);
 		mainThreadContinue();
 		lock.unlock();
 

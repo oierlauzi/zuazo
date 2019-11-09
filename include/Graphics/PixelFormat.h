@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PixelComponent.h"
-#include "../Utils/Macros.h"
+#include "../Macros.h"
 
 #include <array>
 #include <utility>

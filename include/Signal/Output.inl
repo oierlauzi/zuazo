@@ -11,7 +11,7 @@ inline void Output<T>::reset(){
 
 template <typename T>
 inline void Output<T>::push(std::shared_ptr<const T>&& element){
-	m_lastElement = std::forward<std::shared_ptr<const T>>(element);
+	m_lastElement = std::move(element);
 }
 
 template <typename T>

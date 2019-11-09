@@ -43,8 +43,6 @@ public:
 		Period              m_period = Period::zero();
 	};
 
-	friend Event;
-
 	Scheduler() = default;
 	Scheduler(const Scheduler& other) = delete;
 	Scheduler(Scheduler&& other);

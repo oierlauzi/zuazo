@@ -4,7 +4,7 @@ namespace Zuazo::Signal {
 
 template <typename T>
 inline LazyOutput<T>::LazyOutput(Timing::ExternalEvent& evnt, std::string&& name) :
-	Output<T>(std::forward<std::string>(name)),
+	Output<T>(std::move(name)),
 	m_event(evnt)
 {
 }
