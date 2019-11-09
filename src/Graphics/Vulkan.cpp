@@ -26,10 +26,12 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerCallback(
 
 namespace Zuazo::Graphics {
 
-Vulkan::Vulkan() :
-	m_instance(nullptr),
-	m_messenger(nullptr)
-{
+
+/*
+ * Vulkan::Instance
+ */
+
+Vulkan::Instance::Instance(){
 	const Zuazo::ApplicationInfo& zzAppInfo = getApplicationInfo();
 
 	//Fill the application information
@@ -41,26 +43,20 @@ Vulkan::Vulkan() :
 	appInfo.engineVersion = 0; VK_MAKE_VERSION(Zuazo::version[0], Zuazo::version[1], Zuazo::version[2]);
 	appInfo.apiVersion = VK_API_VERSION_1_0;
 
-	//Copy the required extensions
-	auto requiredExtensions = getRequiredExtensions();
-	std::vector<const char*> requiredExtensionNames(requiredExtensions.size());
-	for(size_t i = 0; i < requiredExtensions.size(); i++){
-		requiredExtensionNames[i] = requiredExtensions[i].extensionName;
-	}
+	//Get the required extensions
+	const auto extensions = getExtensions();
+	const auto extensionNames = getNames(extensions);
 
-	//Copy the validation layers
-	auto validationLayers = getValidationLayers();
-	std::vector<const char*> validationLayerNames(validationLayers.size());
-	for(size_t i = 0; i < validationLayers.size(); i++){
-		validationLayerNames[i] = validationLayers[i].layerName;
-	}
+	//Get the validation layers
+	const auto validationLayers = getValidationLayers();
+	const auto validationLayerNames = getNames(validationLayers);
 
 	//Fill the instace information
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
-	createInfo.enabledExtensionCount = requiredExtensionNames.size();
-	createInfo.ppEnabledExtensionNames = requiredExtensionNames.data();
+	createInfo.enabledExtensionCount = extensionNames.size();
+	createInfo.ppEnabledExtensionNames = extensionNames.data();
 	createInfo.enabledLayerCount = validationLayerNames.size();
 	createInfo.ppEnabledLayerNames = validationLayerNames.data();
 
@@ -72,35 +68,177 @@ Vulkan::Vulkan() :
 			break; //Everything OK.
 
 		default:
-			//Unexpected error
+			//TODO Unexpected error
 			break;
-	}
-
-	if(validationLayers.size()){
-		//We are using validation layers
-		setupValidationLayers();
 	}
 }
 
-Vulkan::~Vulkan(){
+Vulkan::Instance::~Instance(){
 	if(m_instance){
-		if(m_messenger) {
-			//Clean validation layers
-			cleanValidationLayers();
-		}
-
 		vkDestroyInstance(m_instance, nullptr);
 	}
 }
 
 
 
-void Vulkan::setupValidationLayers(){
-	//Request the functions to Vulkan
-	auto vkCreateDebugUtilsMessengerEXT = 
-		requestFunction<PFN_vkCreateDebugUtilsMessengerEXT>("vkCreateDebugUtilsMessengerEXT");
 
-	if(vkCreateDebugUtilsMessengerEXT) {
+VkInstance Vulkan::Instance::get(){
+	return m_instance;
+}
+
+
+
+
+std::vector<Vulkan::Extension> Vulkan::Instance::getSupportedExtensions(){
+	//Get all the avalible extensions
+	uint32_t count;
+	vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr);
+
+	std::vector<Extension> extensions(count);
+	vkEnumerateInstanceExtensionProperties(nullptr, &count, extensions.data());
+
+	return extensions;
+}
+
+std::vector<Vulkan::Extension> Vulkan::Instance::getExtensions(){
+	const auto required = getRequiredExtensions();
+	const auto available = getSupportedExtensions();
+	std::vector<Extension> extensions;
+
+	//Check for availability of all required extensions
+	for(const auto& requiredExt : required){
+		for(const auto& availableExt : available){
+			if(std::strncmp(requiredExt.extensionName, availableExt.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0){
+				if(requiredExt.specVersion <= availableExt.specVersion){
+					extensions.push_back(availableExt);
+				}
+			}
+		}
+	}
+
+	if(extensions.size() != required.size()){
+		//There are missing extensions
+		std::vector<Extension> missing;
+
+		//Get all the missing extensions
+		for(const auto& requiredExt : required){
+			bool found = false;
+
+			for(const auto& ext : extensions){
+				if(std::strncmp(requiredExt.extensionName, ext.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0){
+					found = true;
+					break;
+				}
+			}
+
+			if(!found){
+				missing.push_back(requiredExt);
+			}
+		}
+
+		//TODO Error, extension not found
+	}
+
+	return extensions;
+}
+
+std::vector<const char*> Vulkan::Instance::getNames(const std::vector<Extension>& ext){
+	std::vector<const char*> names;
+	const size_t nExtensions = ext.size();
+
+	names.reserve(nExtensions);
+	for(size_t i = 0; i < nExtensions; i++){
+		names.push_back(ext[i].extensionName);
+	}
+
+	return names;
+}
+
+
+
+
+
+std::vector<Vulkan::ValidationLayer> Vulkan::Instance::getSupportedValidationLayers(){
+	//Get all the available validation layers
+	uint32_t count;
+	vkEnumerateInstanceLayerProperties(&count, nullptr);
+
+	std::vector<ValidationLayer> validationLayers(count);
+	vkEnumerateInstanceLayerProperties(&count, validationLayers.data());
+
+	return validationLayers;
+}
+
+std::vector<Vulkan::ValidationLayer> Vulkan::Instance::getValidationLayers(){
+	const auto required = getRequieredValidationLayers();
+	const auto available = getSupportedValidationLayers();
+	std::vector<ValidationLayer> layers;
+
+	//Check for availability of all required validation layers
+	for(const auto& requiredVl : required){
+		for(const auto& availableVl : available){
+			if(std::strncmp(requiredVl.layerName, availableVl.layerName, VK_MAX_EXTENSION_NAME_SIZE) == 0){
+				if(requiredVl.specVersion <= availableVl.specVersion){
+					layers.push_back(availableVl);
+				}
+			}
+		}
+	}
+
+	if(layers.size() != required.size()){
+		//There are missing validation layers
+		std::vector<ValidationLayer> missing;
+
+		//Get all the missing extensions
+		for(const auto& requiredVl : required){
+			bool found = false;
+
+			for(const auto& vl : layers){
+				if(std::strncmp(requiredVl.layerName, vl.layerName, VK_MAX_EXTENSION_NAME_SIZE) == 0){
+					found = true;
+					break;
+				}
+			}
+
+			if(!found){
+				missing.push_back(requiredVl);
+			}
+		}
+
+
+		//TODO Error, layer not found
+	}
+
+	return layers;
+}
+
+std::vector<const char*> Vulkan::Instance::getNames(const std::vector<ValidationLayer>& vl){
+	std::vector<const char*> names;
+	const size_t nLayers = vl.size();
+
+	names.reserve(nLayers);
+	for(size_t i = 0; i < nLayers; i++){
+		names.push_back(vl[i].layerName);
+	}
+
+	return names;
+}
+
+
+
+/*
+ * Vulkan::Messenger
+ */
+
+
+Vulkan::Messenger::Messenger(Instance& instance) :
+	m_instance(instance)
+{
+	if(getApplicationInfo().isDebug) {
+		//Request the functions to Vulkan
+		auto vkCreateDebugUtilsMessengerEXT = 
+			m_instance.requestFunction<PFN_vkCreateDebugUtilsMessengerEXT>("vkCreateDebugUtilsMessengerEXT");
+
 		//Setup validation layer callback
 		VkDebugUtilsMessengerCreateInfoEXT layerInfo = {};
 		layerInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -115,72 +253,88 @@ void Vulkan::setupValidationLayers(){
 		layerInfo.pUserData = this;
 
 		//Create the messenger
-		vkCreateDebugUtilsMessengerEXT(m_instance, &layerInfo, nullptr, &m_messenger);
+		VkResult err = vkCreateDebugUtilsMessengerEXT(m_instance.get(), &layerInfo, nullptr, &m_messenger);
+
+		switch(err){
+			case VK_SUCCESS:
+				break; //Everything OK.
+
+			default:
+				//TODO Unexpected error
+				break;
+		}
 	}
 }
 
-void Vulkan::cleanValidationLayers(){
-	//Request the functions to Vulkan
-	auto vkDestroyDebugUtilsMessengerEXT = 
-		requestFunction<PFN_vkDestroyDebugUtilsMessengerEXT>("vkDestroyDebugUtilsMessengerEXT");
+Vulkan::Messenger::~Messenger() {
+	if(m_messenger){
+		//Request the functions to Vulkan
+		auto vkDestroyDebugUtilsMessengerEXT = 
+			m_instance.requestFunction<PFN_vkDestroyDebugUtilsMessengerEXT>("vkDestroyDebugUtilsMessengerEXT");
 
-	if(vkDestroyDebugUtilsMessengerEXT) {
-		vkDestroyDebugUtilsMessengerEXT(m_instance, m_messenger, nullptr);
+		vkDestroyDebugUtilsMessengerEXT(m_instance.get(), m_messenger, nullptr);
 	}
 }
 
-template<typename F>
-F Vulkan::requestFunction(const std::string& name){
-	return reinterpret_cast<F>(vkGetInstanceProcAddr(m_instance, name.c_str()));
+
+
+
+VkDebugUtilsMessengerEXT Vulkan::Messenger::get() {
+	return m_messenger;
+}
+
+
+
+/*
+ * Vulkan::Vulkan
+ */
+
+Vulkan::Vulkan() :
+	m_instance(),
+	m_messenger(m_instance)
+{
+}
+
+Vulkan::Instance& Vulkan::getInstance(){
+	return m_instance;
 }
 
 std::vector<Vulkan::Extension> Vulkan::getRequiredExtensions(){
-	std::vector<Vulkan::Extension> extensions;
+	std::vector<Extension> extensions;
 
-	//Add the window extensions
-	auto windowExtensions = Window::getRequiredVulkanExtensions();
+	//Add window swap-chain extensions
+	const auto windowExtensions = Window::getRequiredVulkanExtensions();
 	std::copy(
 		windowExtensions.cbegin(),
 		windowExtensions.cend(),
 		std::back_insert_iterator(extensions)
 	);
 
-	//Add debug extension
-	if(getApplicationInfo().isDebug){
-		Extension ext;
-		strncpy(ext.extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE);
-		ext.specVersion = 0;
+	if(Zuazo::getApplicationInfo().isDebug){
+		//Add debug utils extension requirement
+		Extension ext = {};
+		std::strncpy(ext.extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE);
 		extensions.push_back(ext);
 	}
 
 	return extensions;
 }
 
-std::vector<Vulkan::ValidationLayer> Vulkan::getValidationLayers(){
+std::vector<Vulkan::ValidationLayer> Vulkan::getRequieredValidationLayers(){
 	std::vector<ValidationLayer> validationLayers;
 
-	if(getApplicationInfo().isDebug){
-		const std::vector<const char*> interestedValidationLayers = {
-			"VK_LAYER_KHRONOS_validation"
-		};		
-
-		//Get all the avalible validation layers
-		uint32_t count;
-		vkEnumerateInstanceLayerProperties(&count, nullptr);
-		std::vector<ValidationLayer> avalibleValidationLayers(count);
-		vkEnumerateInstanceLayerProperties(&count, avalibleValidationLayers.data());
-
-		//Compare the two sets and use the common validation layers
-		for(auto interested : interestedValidationLayers){
-			for(const auto& avalible : avalibleValidationLayers){
-				if(strncmp(interested, avalible.layerName, VK_MAX_EXTENSION_NAME_SIZE) == 0){
-					validationLayers.emplace_back(avalible);
-				}
-			}
-		}
+	if(Zuazo::getApplicationInfo().isDebug){
+		//Add debug utils extension requirement
+		//Khronos validation layer
+		ValidationLayer khronosValidation = {};
+		std::strncpy(khronosValidation.layerName, "VK_LAYER_KHRONOS_validation", VK_MAX_EXTENSION_NAME_SIZE);
+		validationLayers.push_back(khronosValidation);
 	}
 
 	return validationLayers;
 }
+
+
+
 
 }
