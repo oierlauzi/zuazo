@@ -8,6 +8,7 @@
 #include <vector>
 #include <cstring>
 #include <iostream>
+#include <set>
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerCallback(
 											VkDebugUtilsMessageSeverityFlagBitsEXT severity,
@@ -88,8 +89,20 @@ VkInstance Vulkan::Instance::get(){
 
 
 
+std::vector<Vulkan::PhysicalDevice> Vulkan::Instance::getPhysicalDevices() const{
+	//Get all the avalible devices
+	uint32_t count;
+	vkEnumeratePhysicalDevices(m_instance, &count, nullptr);
 
-std::vector<Vulkan::Extension> Vulkan::Instance::getSupportedExtensions(){
+	std::vector<PhysicalDevice> devices(count);
+	vkEnumeratePhysicalDevices(m_instance, &count, devices.data());
+
+	return devices;
+}
+
+
+
+std::vector<Vulkan::Extension> Vulkan::Instance::getAvailableExtensions(){
 	//Get all the avalible extensions
 	uint32_t count;
 	vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr);
@@ -102,7 +115,7 @@ std::vector<Vulkan::Extension> Vulkan::Instance::getSupportedExtensions(){
 
 std::vector<Vulkan::Extension> Vulkan::Instance::getExtensions(){
 	const auto required = getRequiredExtensions();
-	const auto available = getSupportedExtensions();
+	const auto available = getAvailableExtensions();
 	std::vector<Extension> extensions;
 
 	//Check for availability of all required extensions
@@ -111,6 +124,7 @@ std::vector<Vulkan::Extension> Vulkan::Instance::getExtensions(){
 			if(std::strncmp(requiredExt.extensionName, availableExt.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0){
 				if(requiredExt.specVersion <= availableExt.specVersion){
 					extensions.push_back(availableExt);
+					break;
 				}
 			}
 		}
@@ -158,7 +172,7 @@ std::vector<const char*> Vulkan::Instance::getNames(const std::vector<Extension>
 
 
 
-std::vector<Vulkan::ValidationLayer> Vulkan::Instance::getSupportedValidationLayers(){
+std::vector<Vulkan::ValidationLayer> Vulkan::Instance::getAvailableValidationLayers(){
 	//Get all the available validation layers
 	uint32_t count;
 	vkEnumerateInstanceLayerProperties(&count, nullptr);
@@ -171,7 +185,7 @@ std::vector<Vulkan::ValidationLayer> Vulkan::Instance::getSupportedValidationLay
 
 std::vector<Vulkan::ValidationLayer> Vulkan::Instance::getValidationLayers(){
 	const auto required = getRequieredValidationLayers();
-	const auto available = getSupportedValidationLayers();
+	const auto available = getAvailableValidationLayers();
 	std::vector<ValidationLayer> layers;
 
 	//Check for availability of all required validation layers
@@ -180,6 +194,7 @@ std::vector<Vulkan::ValidationLayer> Vulkan::Instance::getValidationLayers(){
 			if(std::strncmp(requiredVl.layerName, availableVl.layerName, VK_MAX_EXTENSION_NAME_SIZE) == 0){
 				if(requiredVl.specVersion <= availableVl.specVersion){
 					layers.push_back(availableVl);
+					break;
 				}
 			}
 		}
@@ -237,23 +252,23 @@ Vulkan::Messenger::Messenger(Instance& instance) :
 	if(getApplicationInfo().isDebug) {
 		//Request the functions to Vulkan
 		auto vkCreateDebugUtilsMessengerEXT = 
-			m_instance.requestFunction<PFN_vkCreateDebugUtilsMessengerEXT>("vkCreateDebugUtilsMessengerEXT");
+			m_instance.getFunction<PFN_vkCreateDebugUtilsMessengerEXT>("vkCreateDebugUtilsMessengerEXT");
 
 		//Setup validation layer callback
-		VkDebugUtilsMessengerCreateInfoEXT layerInfo = {};
-		layerInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-		layerInfo.messageSeverity = 
+		VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+		createInfo.messageSeverity = 
 					VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | 
 					VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
-		layerInfo.messageType = 
+		createInfo.messageType = 
 					VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
 					VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
 					VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-		layerInfo.pfnUserCallback = validationLayerCallback;
-		layerInfo.pUserData = this;
+		createInfo.pfnUserCallback = validationLayerCallback;
+		createInfo.pUserData = this;
 
 		//Create the messenger
-		VkResult err = vkCreateDebugUtilsMessengerEXT(m_instance.get(), &layerInfo, nullptr, &m_messenger);
+		VkResult err = vkCreateDebugUtilsMessengerEXT(m_instance.get(), &createInfo, nullptr, &m_messenger);
 
 		switch(err){
 			case VK_SUCCESS:
@@ -270,7 +285,7 @@ Vulkan::Messenger::~Messenger() {
 	if(m_messenger){
 		//Request the functions to Vulkan
 		auto vkDestroyDebugUtilsMessengerEXT = 
-			m_instance.requestFunction<PFN_vkDestroyDebugUtilsMessengerEXT>("vkDestroyDebugUtilsMessengerEXT");
+			m_instance.getFunction<PFN_vkDestroyDebugUtilsMessengerEXT>("vkDestroyDebugUtilsMessengerEXT");
 
 		vkDestroyDebugUtilsMessengerEXT(m_instance.get(), m_messenger, nullptr);
 	}
@@ -284,20 +299,135 @@ VkDebugUtilsMessengerEXT Vulkan::Messenger::get() {
 }
 
 
+/*
+ * Vulkan::Device
+ */
+
+Vulkan::Device::Device(PhysicalDevice dev){
+	const auto availableQueueFamilies = getAvailableQueueFamilies(dev);
+	const auto graphicsQueueIdx = getQueueFamilyIndex(availableQueueFamilies, VK_QUEUE_GRAPHICS_BIT);
+	const auto computeQueueIdx = getQueueFamilyIndex(availableQueueFamilies, VK_QUEUE_COMPUTE_BIT);
+	const auto transferQueueIdx = getQueueFamilyIndex(availableQueueFamilies, VK_QUEUE_TRANSFER_BIT);
+
+	const std::set<size_t> indices {
+		graphicsQueueIdx,
+		computeQueueIdx,
+		transferQueueIdx
+	};
+
+	const float queuePriorities = 1.0f;
+
+	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+	for(auto ite = indices.cbegin(); ite != indices.cend(); ++ite){
+		VkDeviceQueueCreateInfo createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		createInfo.queueFamilyIndex = *ite;
+		createInfo.queueCount = 1;
+		createInfo.pQueuePriorities = &queuePriorities;
+
+		queueCreateInfos.push_back(createInfo);
+	}
+
+	VkDeviceCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	createInfo.pQueueCreateInfos = queueCreateInfos.data();
+	createInfo.queueCreateInfoCount = queueCreateInfos.size();
+
+
+	//Create the logical device
+	VkResult err = vkCreateDevice(dev, &createInfo, nullptr, &m_device);
+
+	switch(err){
+		case VK_SUCCESS:
+			break; //Everything OK.
+
+		default:
+			//TODO Unexpected error
+			break;
+	}
+
+	//Fill the queues
+	vkGetDeviceQueue(m_device, graphicsQueueIdx, 0, &m_graphicsQueue);
+	vkGetDeviceQueue(m_device, computeQueueIdx, 0, &m_computeQueue);
+	vkGetDeviceQueue(m_device, transferQueueIdx, 0, &m_transferQueue);
+}
+
+Vulkan::Device::~Device(){
+	if(m_device){
+		vkDestroyDevice(m_device, nullptr);
+	}
+}
+
+
+
+VkDevice Vulkan::Device::get(){
+	return m_device;
+}
+
+VkQueue Vulkan::Device::getGraphicsQueue(){
+	return m_graphicsQueue;
+}
+
+VkQueue Vulkan::Device::getComputeQueue(){
+	return m_computeQueue;
+}
+
+VkQueue Vulkan::Device::getTranseferQueue(){
+	return m_transferQueue;
+}
+
+
+
+
+std::vector<Vulkan::QueueFamily> Vulkan::Device::getAvailableQueueFamilies(PhysicalDevice dev){
+	//Get all the available validation layers
+	uint32_t count;
+	vkGetPhysicalDeviceQueueFamilyProperties(dev, &count, nullptr);
+
+	std::vector<QueueFamily> queueFamilies(count);
+	vkGetPhysicalDeviceQueueFamilyProperties(dev, &count, queueFamilies.data());
+
+	return queueFamilies;
+}
+
+size_t Vulkan::Device::getQueueFamilyIndex(const std::vector<QueueFamily>& qf, uint32_t flags){
+	for(size_t i = 0; i < qf.size(); i++){
+		if((qf[i].queueFlags & flags) && qf[i].queueCount > 0) {
+			return i;
+		}
+	}
+
+	return -1; //TODO Error: not found
+}
+
 
 /*
  * Vulkan::Vulkan
  */
 
+std::function<int32_t(const Vulkan::PhysicalDeviceInfo&)> Vulkan::deviceScoreFunc;
+
 Vulkan::Vulkan() :
 	m_instance(),
-	m_messenger(m_instance)
+	m_messenger(m_instance),
+	m_device(selectDevice(m_instance.getPhysicalDevices()))
 {
 }
 
 Vulkan::Instance& Vulkan::getInstance(){
 	return m_instance;
 }
+
+Vulkan::Messenger& Vulkan::getMessenger(){
+	return m_messenger;
+}
+
+Vulkan::Device& Vulkan::getDevice(){
+	return m_device;
+}
+
+
+
 
 std::vector<Vulkan::Extension> Vulkan::getRequiredExtensions(){
 	std::vector<Extension> extensions;
@@ -334,7 +464,56 @@ std::vector<Vulkan::ValidationLayer> Vulkan::getRequieredValidationLayers(){
 	return validationLayers;
 }
 
+Vulkan::PhysicalDevice Vulkan::selectDevice(const std::vector<PhysicalDevice>& devices){
+	std::pair<PhysicalDevice, int> best = {{}, -1};
 
+	for(const auto& device : devices){
+		const int deviceScore = getScore(device);
+		if(deviceScore > best.second){
+			best = {device, deviceScore};
+		}
+	}
 
+	if(best.second < 0){
+		//TODO error no devices
+	}
+
+	return best.first;
+}
+
+int32_t Vulkan::getScore(const PhysicalDevice& dev){
+	PhysicalDeviceInfo deviceInfo;
+
+	//Get properties and features
+	vkGetPhysicalDeviceProperties(dev, &deviceInfo.properties);
+	vkGetPhysicalDeviceFeatures(dev, &deviceInfo.features);
+
+	if(!isDeviceSupported(deviceInfo)){
+		return -1; //Not suppoted
+	}
+
+	if(deviceScoreFunc){
+		return deviceScoreFunc(deviceInfo);
+	} else {
+		return defaultDeviceScoreFunc(deviceInfo);
+	}
+}
+
+bool Vulkan::isDeviceSupported(const PhysicalDeviceInfo& devInfo){
+	ZUAZO_IGNORE_PARAM(devInfo);
+	return true;
+}
+
+int32_t Vulkan::defaultDeviceScoreFunc(const PhysicalDeviceInfo& devInfo){
+	int32_t score = 0;
+
+	if(devInfo.properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU){
+		score += 1024;
+	}
+
+	score += devInfo.properties.limits.maxImageDimension2D;
+
+	return score;
+}
 
 }

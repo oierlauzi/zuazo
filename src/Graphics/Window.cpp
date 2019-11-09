@@ -222,7 +222,7 @@ const std::string& Window::getName() const{
 
 
 void Window::setState(State st){
-	auto lastState = getState(); //TODO
+	auto lastState = getState();
 	if(lastState != st){
 		//Leave it on normal state
 		switch (lastState) {
