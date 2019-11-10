@@ -1,5 +1,7 @@
 #include "Vulkan.h"
 
+#include "../Exception.h"
+
 namespace Zuazo::Graphics {
 
 template<typename F>
@@ -7,7 +9,7 @@ inline F Vulkan::Instance::getFunction(const std::string& name) const{
 	auto func = vkGetInstanceProcAddr(m_instance, name.c_str());
 
 	if(!func){
-		//TODO error
+		throw Exception("Requested function " + name + " was not found");
 	}
 
 	return reinterpret_cast<F>(func);

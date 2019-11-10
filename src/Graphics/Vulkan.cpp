@@ -3,6 +3,7 @@
 #include <Graphics/Window.h>
 #include <Macros.h>
 #include <Zuazo.h>
+#include <Exception.h>
 
 #include <algorithm>
 #include <vector>
@@ -69,8 +70,7 @@ Vulkan::Instance::Instance(){
 			break; //Everything OK.
 
 		default:
-			//TODO Unexpected error
-			break;
+			throw Exception("Error creating a Vulkan instance");
 	}
 }
 
@@ -150,7 +150,14 @@ std::vector<Vulkan::Extension> Vulkan::Instance::getExtensions(){
 			}
 		}
 
-		//TODO Error, extension not found
+		std::string missingNames;
+
+		for(const auto& m : missing){
+			missingNames += m.extensionName;
+			missingNames += "\n";
+		}
+
+		throw Exception("Missing Vulkan extensions:\n" + missingNames);
 	}
 
 	return extensions;
@@ -220,8 +227,13 @@ std::vector<Vulkan::ValidationLayer> Vulkan::Instance::getValidationLayers(){
 			}
 		}
 
+		std::string missingNames;
+		for(const auto& m : missing){
+			missingNames += m.layerName;
+			missingNames += "\n";
+		}
 
-		//TODO Error, layer not found
+		throw Exception("Missing Vulkan validation layers:\n" + missingNames);
 	}
 
 	return layers;
@@ -275,8 +287,7 @@ Vulkan::Messenger::Messenger(Instance& instance) :
 				break; //Everything OK.
 
 			default:
-				//TODO Unexpected error
-				break;
+				throw Exception("Error creating Vulkan validation layer messenger");
 		}
 	}
 }
@@ -342,8 +353,7 @@ Vulkan::Device::Device(PhysicalDevice dev){
 			break; //Everything OK.
 
 		default:
-			//TODO Unexpected error
-			break;
+			throw Exception("Error creating Vulkan device");
 	}
 
 	//Fill the queues
@@ -397,7 +407,7 @@ size_t Vulkan::Device::getQueueFamilyIndex(const std::vector<QueueFamily>& qf, u
 		}
 	}
 
-	return -1; //TODO Error: not found
+	throw Exception("Required Vulkan queue family not found");
 }
 
 
@@ -475,7 +485,7 @@ Vulkan::PhysicalDevice Vulkan::selectDevice(const std::vector<PhysicalDevice>& d
 	}
 
 	if(best.second < 0){
-		//TODO error no devices
+		throw Exception("No compatible GPU cards were found");
 	}
 
 	return best.first;
