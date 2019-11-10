@@ -1,8 +1,5 @@
 #pragma once
 
-#include "Timing/MainLoop.h"
-#include "Graphics/Vulkan.h"
-
 #include <array>
 #include <string>
 

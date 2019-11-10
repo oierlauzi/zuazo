@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Resolution.h"
-#include "Vulkan.h"
+#include "Vulkan/Instance.h"
+#include "Vulkan/PhysicalDevice.h"
 #include "../Math/Vector.h"
 #include "../Utils/CrossThreadInvocation.h"
 #include "../Timing/Chrono.h"
-#include "../Instance.h"
 #include "../Zuazo.h"
 
 #include <atomic>
@@ -25,7 +25,6 @@
 namespace Zuazo::Graphics {
 
 class Window {
-	friend Zuazo::Instance;
 public:
 
 	enum class State {
@@ -88,6 +87,15 @@ public:
 		CloseCallback                       closeCbk;
 		RefreshCallback                     refreshCbk;
 		FocusCallback                       focusCbk;
+	};
+
+	class Instance {
+	public:
+		Instance();
+		Instance(const Instance& other) = delete;
+		~Instance();
+	private:
+		static std::atomic<size_t>			s_instanceCount;
 	};
 
 	Window() = default;
@@ -157,6 +165,7 @@ public:
 	static const std::vector<Monitor>&  getMonitors();
 
 	static std::vector<Vulkan::Extension> getRequiredVulkanExtensions();
+	static bool							getPresentationSupport(Vulkan::Instance& inst, Vulkan::PhysicalDevice& dev, uint32_t family);
 
 	static void							setCallbacksEnabled(bool ena);
 	static bool							getCallbacksEnabled();

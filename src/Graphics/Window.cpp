@@ -119,6 +119,27 @@ Timing::Rate Window::Monitor::getRate() const{
 	return getMode().frameRate;
 }
 
+
+/*
+ * INSTANCE
+ */
+
+std::atomic<size_t>	Window::Instance::s_instanceCount = 0;
+
+Window::Instance::Instance(){
+	if(s_instanceCount.fetch_add(1) == 0){
+		//First instance, init window
+		Window::init();
+	}
+}
+
+Window::Instance::~Instance(){
+	if(s_instanceCount.fetch_sub(1) == 1){
+		//Last instance. Teminate window
+		Window::terminate();
+	}
+}
+
 /*
  * WINDOW
  */
@@ -505,6 +526,10 @@ std::vector<Vulkan::Extension> Window::getRequiredVulkanExtensions(){
 	}
 
 	return extensions;
+}
+
+bool Window::getPresentationSupport(Vulkan::Instance& inst, Vulkan::PhysicalDevice& dev, uint32_t family){
+	return glfwGetPhysicalDevicePresentationSupport(inst.get(), dev.get(), family);
 }
 
 void Window::setCallbacksEnabled(bool ena){

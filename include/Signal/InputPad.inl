@@ -1,6 +1,7 @@
 #include "InputPad.h"
 
 #include "OutputPad.h"
+#include "../Exception.h"
 
 namespace Zuazo::Signal {
 
@@ -22,17 +23,21 @@ inline InputPad<T>::~InputPad(){
 
 template <typename T>
 inline void InputPad<T>::setSource(OutputPad<T>* src){
-	if(m_owner && src.m_owner) {
-		if(m_owner->getInstance() == src.m_owner->getInstance()){
-			if(m_source) m_source->m_consumers.erase(this);
-			m_source = src;
-			if(m_source) m_source->m_consumers.emplace(this);
-		} else {
-			//TODO error
+	if(src){
+		const auto owner1 = this->getOwner();
+		const auto owner2 = src->getOwner();
+
+		if(owner1 && owner2){
+			if(owner1->getInstance() != owner2->getInstance()){
+				throw Exception("Pads must be owned with the same instance");
+			}
 		}
-	} else {
-		//TODO Error
 	}
+
+
+	if(m_source) m_source->m_consumers.erase(this);
+	m_source = src;
+	if(m_source) m_source->m_consumers.emplace(this);
 }
 
 template <typename T>

@@ -1,35 +1,28 @@
 #pragma once
 
 #include "Timing/MainLoop.h"
-#include "Graphics/Vulkan.h"
+#include "Graphics/Instance.h"
 
 namespace Zuazo {
 
 class Instance {
 public:
-	Instance();
+	Instance() = default;
 	Instance(const Instance& other) = delete;
 	Instance(Instance&& other) = delete;
-	~Instance();
+	~Instance() = default;
 
 	Instance& operator=(const Instance& other) = delete;
 	Instance& operator=(Instance&& other) = delete;
 
-	friend bool operator==(const Instance& a, const Instance& b);
-	friend bool operator!=(const Instance& a, const Instance& b);
-
 	Timing::MainLoop&			getMainLoop();
 	const Timing::MainLoop&		getMainLoop() const;
 
-	Graphics::Vulkan&			getVulkan();
-	const Graphics::Vulkan&		getVulkan() const;
-
-	static uint32_t				getInstaceCount();
+	Graphics::Instance&			getGraphics();
+	const Graphics::Instance&	getGraphics() const;
 private:
 	Timing::MainLoop			m_loop;
-	Graphics::Vulkan			m_vulkan;
-
-	static std::atomic<size_t>	s_instaceCount;
+	Graphics::Instance			m_graphics;
 };
 
 }

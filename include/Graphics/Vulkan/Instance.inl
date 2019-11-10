@@ -1,8 +1,8 @@
-#include "Vulkan.h"
+#include "Instance.h"
 
-#include "../Exception.h"
+#include "../../Exception.h"
 
-namespace Zuazo::Graphics {
+namespace Zuazo::Graphics::Vulkan {
 
 template<typename F>
 inline F Vulkan::Instance::getFunction(const std::string& name) const{
@@ -14,5 +14,6 @@ inline F Vulkan::Instance::getFunction(const std::string& name) const{
 
 	return reinterpret_cast<F>(func);
 }
+
 
 }

@@ -4,6 +4,7 @@
 #include "OutputPad.h"
 #include "InputPad.h"
 #include "../Zuazo.h"
+#include "../Instance.h"
 
 #include <set>
 #include <string>
