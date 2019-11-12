@@ -2,6 +2,8 @@
 
 #include <Exception.h>
 
+#include <cassert>
+
 namespace Zuazo::Graphics::Vulkan {
 
 Device::Device(PhysicalDevice& dev, const std::vector<QueueFamily>& queueFamilies) {
@@ -69,6 +71,9 @@ Device::Device(PhysicalDevice& dev, const std::vector<QueueFamily>& queueFamilie
 				j++;
 			}
 		}
+				
+		//Array should be full
+		assert(j == m_queues.back().size());
 	}
 }
 
