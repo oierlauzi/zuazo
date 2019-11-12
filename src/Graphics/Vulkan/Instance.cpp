@@ -21,11 +21,13 @@ Instance::Instance(const std::vector<Extension>& ext, const std::vector<Validati
 	appInfo.apiVersion = VK_API_VERSION_1_0;
 
 	//Get the required extensions
-	const auto extensions = getExtensions(ext);
+	const auto availableExtensions = getAvailableExtensions();
+	const auto extensions = getUsedExtensions(availableExtensions, ext);
 	const auto extensionNames = getNames(extensions);
 
 	//Get the validation layers
-	const auto validationLayers = getValidationLayers(vl);
+	const auto availableValidationLayers = getAvailableValidationLayers();
+	const auto validationLayers = getUsedValidationLayers(availableValidationLayers, vl);
 	const auto validationLayerNames = getNames(validationLayers);
 
 	//Fill the instace information
@@ -47,19 +49,6 @@ Instance::Instance(const std::vector<Extension>& ext, const std::vector<Validati
 		default:
 			throw Exception("Error creating a Vulkan instance");
 	}
-
-	//Get all the avalible devices
-	uint32_t count;
-	vkEnumeratePhysicalDevices(m_instance, &count, nullptr);
-
-	std::vector<VkPhysicalDevice> devices(count);
-	vkEnumeratePhysicalDevices(m_instance, &count, devices.data());
-
-	m_physicalDevices.reserve(count);
-
-	for(auto dev : devices){
-		m_physicalDevices.emplace_back(PhysicalDevice(*this, dev));
-	}
 }
 
 Instance::~Instance(){
@@ -74,9 +63,20 @@ VkInstance Instance::get(){
 	return m_instance;
 }
 
-const std::vector<PhysicalDevice>& Instance::getPhysicalDevices() const{
-	return m_physicalDevices;
+std::vector<PhysicalDevice> Instance::getPhysicalDevices() const{
+	const auto availableDevices = getPhysicalDevices(m_instance);
+
+	//Insert them on the vector
+	std::vector<PhysicalDevice> physicalDevices;
+	physicalDevices.reserve(availableDevices.size());
+	for(auto dev : availableDevices){
+		physicalDevices.emplace_back(PhysicalDevice(dev));
+	}
+
+	return physicalDevices;
 }
+
+
 
 
 
@@ -91,59 +91,6 @@ std::vector<Extension> Instance::getAvailableExtensions(){
 	return extensions;
 }
 
-std::vector<Extension> Instance::getExtensions(std::vector<Extension> required){
-	const auto available = getAvailableExtensions();
-	std::vector<Extension> extensions;
-
-	//Check for availability of all required extensions
-	auto ite = required.begin();
-	while(ite != required.end()){
-		bool found = false;
-
-		for(const auto& availableExt : available){
-			if(std::strncmp(ite->extensionName, availableExt.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0){
-				if(ite->specVersion <= availableExt.specVersion){
-					extensions.push_back(availableExt);
-					found = true;
-					break;
-				}
-			}
-		}
-
-		if(found){
-			ite = required.erase(ite);
-		}else {
-			++ite;
-		}
-	}
-
-	if(required.size()){
-		//There are missing extensions
-
-		std::string missingNames;
-		for(const auto& m : required){
-			missingNames += m.extensionName;
-			missingNames += "\n";
-		}
-
-		throw Exception("Missing Vulkan extensions:\n" + missingNames);
-	}
-
-	return extensions;
-}
-
-std::vector<const char*> Instance::getNames(const std::vector<Extension>& ext){
-	std::vector<const char*> names;
-	const size_t nExtensions = ext.size();
-
-	names.reserve(nExtensions);
-	for(size_t i = 0; i < nExtensions; i++){
-		names.push_back(ext[i].extensionName);
-	}
-
-	return names;
-}
-
 
 std::vector<ValidationLayer> Instance::getAvailableValidationLayers(){
 	//Get all the available validation layers
@@ -156,58 +103,15 @@ std::vector<ValidationLayer> Instance::getAvailableValidationLayers(){
 	return validationLayers;
 }
 
-std::vector<ValidationLayer> Instance::getValidationLayers(std::vector<ValidationLayer> required){
-	const auto available = getAvailableValidationLayers();
-	std::vector<ValidationLayer> layers;
+std::vector<VkPhysicalDevice> Instance::getPhysicalDevices(VkInstance inst){
+	//Get all the avalible devices
+	uint32_t count;
+	vkEnumeratePhysicalDevices(inst, &count, nullptr);
 
-	//Check for availability of all required validation layers
-	auto ite = required.begin();
-	while(ite != required.end()){
-		bool found = false;
+	std::vector<VkPhysicalDevice> devices(count);
+	vkEnumeratePhysicalDevices(inst, &count, devices.data());
 
-		for(const auto& availableVl : available){
-			if(std::strncmp(ite->layerName, availableVl.layerName, VK_MAX_EXTENSION_NAME_SIZE) == 0){
-				if(ite->specVersion <= availableVl.specVersion){
-					layers.push_back(availableVl);
-					found = true;
-					break;
-				}
-			}
-		}
-
-		if(found){
-			ite = required.erase(ite);
-		}else {
-			++ite;
-		}
-	}
-
-	if(required.size()){
-		//There are missing validation layers
-
-		std::string missingNames;
-		for(const auto& m : required){
-			missingNames += m.layerName;
-			missingNames += "\n";
-		}
-
-		throw Exception("Missing Vulkan validation layers:\n" + missingNames);
-	}
-
-	return layers;
+	return devices;
 }
-
-std::vector<const char*> Instance::getNames(const std::vector<ValidationLayer>& ext){
-	std::vector<const char*> names;
-	const size_t nExtensions = ext.size();
-
-	names.reserve(nExtensions);
-	for(size_t i = 0; i < nExtensions; i++){
-		names.push_back(ext[i].layerName);
-	}
-
-	return names;
-}
-
 
 }

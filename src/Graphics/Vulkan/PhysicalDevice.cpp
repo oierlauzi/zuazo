@@ -1,54 +1,71 @@
 #include <Graphics/Vulkan/PhysicalDevice.h>
 
-#include <Graphics/Window.h>
-
 namespace Zuazo::Graphics::Vulkan {
 
 
-PhysicalDevice::PhysicalDevice(Instance& inst, VkPhysicalDevice dev) :
-	m_device(dev),
-	m_queueFamilies(getAvailableQueueFamilies(m_device))
+PhysicalDevice::PhysicalDevice(VkPhysicalDevice dev) :
+	m_physicalDevice(dev),
+	m_queueFamilies(getQueueFamilies(m_physicalDevice)),
+	m_availableExtensions(getAvailableExtensions(m_physicalDevice)),
+	m_availableValidationLayers(getAvailableValidationLayers(m_physicalDevice))
 {
-	vkGetPhysicalDeviceProperties(m_device, &m_properties);
-	vkGetPhysicalDeviceFeatures(m_device, &m_features);
-
-	for(size_t i = 0; i < m_queueFamilies.size(); i++){
-		if(Window::getPresentationSupport(inst , *this, i)){
-			m_presentationIndices.push_back(i);
-		}
-	}
+	//Query features and properties
+	vkGetPhysicalDeviceProperties(m_physicalDevice, &m_properties);
+	vkGetPhysicalDeviceFeatures(m_physicalDevice, &m_features);
 }
 
 VkPhysicalDevice PhysicalDevice::get(){
-	return m_device;
+	return m_physicalDevice;
 }
 
-const VkPhysicalDeviceProperties& PhysicalDevice::getProperties() const{
+const PhysicalDevice::Properties& PhysicalDevice::getProperties() const{
 	return m_properties;
 }
 
-const VkPhysicalDeviceFeatures& PhysicalDevice::getFetures() const{
+const PhysicalDevice::Features& PhysicalDevice::getFeatures() const{
 	return m_features;
 }
 
-const std::vector<PhysicalDevice::QueueFamily>&	PhysicalDevice::getQueueFamilies() const{
+const std::vector<QueueFamily>& PhysicalDevice::getQueueFamilies() const{
 	return m_queueFamilies;
 }
 
-const std::vector<uint32_t>& PhysicalDevice::getPresentationIndices() const{
-	return m_presentationIndices;
+const std::vector<Extension>& PhysicalDevice::getAvailableExtensions() const{
+	return m_availableExtensions;
 }
 
-std::vector<PhysicalDevice::QueueFamily> PhysicalDevice::getAvailableQueueFamilies(VkPhysicalDevice dev){
-	//Get all the available validation layers
+const std::vector<ValidationLayer>&	PhysicalDevice::getAvailableValidationLayers() const{
+	return m_availableValidationLayers;
+}
+
+
+
+
+std::vector<QueueFamily> PhysicalDevice::getQueueFamilies(VkPhysicalDevice dev) {
 	uint32_t count;
 	vkGetPhysicalDeviceQueueFamilyProperties(dev, &count, nullptr);
-
 	std::vector<QueueFamily> queueFamilies(count);
 	vkGetPhysicalDeviceQueueFamilyProperties(dev, &count, queueFamilies.data());
 
 	return queueFamilies;
 }
 
+std::vector<Extension> PhysicalDevice::getAvailableExtensions(VkPhysicalDevice dev){
+	uint32_t count;
+	vkEnumerateDeviceExtensionProperties(dev, nullptr, &count, nullptr);
+	std::vector<Extension> extensions(count);
+	vkEnumerateDeviceExtensionProperties(dev, nullptr, &count, extensions.data());
+
+	return extensions;
+}
+
+std::vector<ValidationLayer> PhysicalDevice::getAvailableValidationLayers(VkPhysicalDevice dev){
+	uint32_t count;
+	vkEnumerateDeviceLayerProperties(dev, &count, nullptr);
+	std::vector<ValidationLayer> validationLayers(count);
+	vkEnumerateDeviceLayerProperties(dev, &count, validationLayers.data());
+
+	return validationLayers;
+}
 
 }

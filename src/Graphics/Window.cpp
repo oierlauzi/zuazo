@@ -231,6 +231,22 @@ void Window::unbind(){
 	glfwMakeContextCurrent(nullptr);
 }
 
+Vulkan::Surface	Window::getSurface(Vulkan::Instance& instance) const {
+	//Try to create the surface
+	VkSurfaceKHR surface;
+	VkResult err = glfwCreateWindowSurface(instance.get(), m_window, nullptr, &surface);
+
+	switch(err){
+	case VK_SUCCESS:
+		break; //All ok
+
+	default:
+		throw Exception("Error creating Vulkan surface");
+	}
+
+	return Vulkan::Surface(instance, surface);
+}	
+
 
 void Window::setName(std::string&& name){
 	m_name = std::move(name);
@@ -532,6 +548,18 @@ bool Window::getPresentationSupport(Vulkan::Instance& inst, Vulkan::PhysicalDevi
 	return glfwGetPhysicalDevicePresentationSupport(inst.get(), dev.get(), family);
 }
 
+std::vector<uint32_t> Window::getPresentationQueueFamilies(Vulkan::Instance& inst, Vulkan::PhysicalDevice& dev){
+	std::vector<uint32_t> result;
+
+	for(size_t i = 0; i < dev.getQueueFamilies().size(); i++){
+		if(getPresentationSupport(inst, dev, i)){
+			result.push_back(i);
+		}
+	}
+
+	return result;
+}
+
 void Window::setCallbacksEnabled(bool ena){
 	std::lock_guard<std::mutex>  lock(s_mainThreadMutex);
 	mainThreadContinue();
@@ -568,6 +596,9 @@ void Window::mainThreadFunc(){
 
 	//Set all callbacks
 	glfwSetMonitorCallback(monitorCbk);
+
+	//Set Vulkan compatibility
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 	//Main loop
 	while(!s_exit.load()){

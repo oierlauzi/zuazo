@@ -8,7 +8,7 @@ class Messenger{
 public:
 	using Callback = PFN_vkDebugUtilsMessengerCallbackEXT;
 
-	Messenger(Instance& instance, Callback cbk = defaultCallback);
+	Messenger(Instance& instance, Callback cbk);
 	Messenger(const Messenger& other) = delete;
 	~Messenger();
 
@@ -17,8 +17,6 @@ private:
 	Instance&							m_instance;
 
 	VkDebugUtilsMessengerEXT 			m_messenger = nullptr;
-
-	static const Callback				defaultCallback;
 };
 
 }

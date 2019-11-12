@@ -1,6 +1,13 @@
 #pragma once 
 
-#include "Instance.h"
+#include "Queue.h"
+#include "Extension.h"
+#include "ValidationLayer.h"
+
+#include <vector>
+
+#include <vulkan/vulkan.h>
+
 
 namespace Zuazo::Graphics::Vulkan {
 
@@ -9,28 +16,33 @@ class Instance;
 class PhysicalDevice {
 	friend Instance;
 public:
-	using QueueFamily = VkQueueFamilyProperties;
+	using Properties = VkPhysicalDeviceProperties;
+	using Features = VkPhysicalDeviceFeatures;
 
-	PhysicalDevice(const PhysicalDevice& other) = default;
 	~PhysicalDevice() = default;
 
-	PhysicalDevice&						operator=(const PhysicalDevice& other) = default;
-
 	VkPhysicalDevice					get();
-	const VkPhysicalDeviceProperties&	getProperties() const;
-	const VkPhysicalDeviceFeatures&		getFetures() const;
+
+	const Properties&					getProperties() const;
+	const Features&						getFeatures() const;
 	const std::vector<QueueFamily>&		getQueueFamilies() const;
-	const std::vector<uint32_t>&		getPresentationIndices() const;
+	const std::vector<Extension>&		getAvailableExtensions() const;
+	const std::vector<ValidationLayer>&	getAvailableValidationLayers() const;
+
 private:
-	PhysicalDevice(Instance& inst, VkPhysicalDevice dev);
+	PhysicalDevice(VkPhysicalDevice dev);
 
-	VkPhysicalDevice					m_device = nullptr;
-	VkPhysicalDeviceProperties 			m_properties;
-	VkPhysicalDeviceFeatures			m_features;
+	VkPhysicalDevice					m_physicalDevice = nullptr;
+
+	Properties							m_properties;
+	Features							m_features;
 	std::vector<QueueFamily>			m_queueFamilies;
-	std::vector<uint32_t>				m_presentationIndices;			
+	std::vector<Extension>				m_availableExtensions;
+	std::vector<ValidationLayer>		m_availableValidationLayers;
 
-	static std::vector<QueueFamily>		getAvailableQueueFamilies(VkPhysicalDevice dev);
+	static std::vector<QueueFamily>		getQueueFamilies(VkPhysicalDevice dev);
+	static std::vector<Extension>		getAvailableExtensions(VkPhysicalDevice dev);
+	static std::vector<ValidationLayer>	getAvailableValidationLayers(VkPhysicalDevice dev);
 };
 
 }

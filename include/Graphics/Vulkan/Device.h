@@ -1,33 +1,30 @@
 #pragma once 
 
-#include "Instance.h"
+#include "Queue.h"
 #include "PhysicalDevice.h"
+#include "Extension.h"
+#include "ValidationLayer.h"
 
 #include <vector>
 #include <map>
 
 namespace Zuazo::Graphics::Vulkan {
 
-using QueueFamily = VkQueueFamilyProperties;
-using Queue = VkQueue;
-
 class Device {
 public:	
-	Device(PhysicalDevice& dev, const std::vector<QueueFamily>& queueFamilies);
+	Device(PhysicalDevice& dev, const std::vector<QueueFamily>& queueFamilies, const std::vector<Extension>& extensions, const std::vector<ValidationLayer>& validationLayers);
 	Device(const Device& other) = delete;
 	~Device();
 
 	VkDevice								get();
-	const std::vector<std::vector<Queue>>& 	getQueues();
 
+	const std::vector<std::vector<Queue>>&	getQueues() const;
 private:
-	VkDevice								m_device = nullptr;
-	std::vector<std::vector<Queue>>			m_queues;
+	PhysicalDevice& 						m_physicalDevice;
 
-	static std::vector<QueueFamily>			getQueueFamilies(const std::vector<QueueFamily>& available, std::vector<QueueFamily> required);
-	static std::map<uint32_t, uint32_t>		getQueueFamilyIndices(const std::vector<QueueFamily>& available, std::vector<QueueFamily> requested);
-	static size_t							getQueueFamilyIndex(const std::vector<QueueFamily>& qf, uint32_t flags);
-	static bool								isSuitable(uint32_t required, uint32_t available);
+	VkDevice								m_device = nullptr;
+
+	std::vector<std::vector<Queue>>			m_queues;
 };
 
 }

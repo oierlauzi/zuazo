@@ -1,30 +1,8 @@
 #include <Graphics/Vulkan/Messenger.h>
 
 #include <Exception.h>
-#include <Macros.h>
-
-#include <iostream>
 
 namespace Zuazo::Graphics::Vulkan {
-
-static VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerDefaultCallback(
-											VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-											VkDebugUtilsMessageTypeFlagsEXT type,
-											const VkDebugUtilsMessengerCallbackDataEXT* data,
-											void* userData ) 
-{
-	ZUAZO_IGNORE_PARAM(severity);
-	ZUAZO_IGNORE_PARAM(type);
-	ZUAZO_IGNORE_PARAM(userData);
-
-	std::cerr << "Vulkan validation layer: " << data->pMessage << std::endl;
-	return VK_FALSE;
-}
-
-const Messenger::Callback Messenger::defaultCallback = validationLayerDefaultCallback;
-
-
-
 
 Messenger::Messenger(Instance& instance, Callback cbk) :
 	m_instance(instance)
