@@ -533,10 +533,9 @@ std::vector<vk::ExtensionProperties> Window::getRequiredVulkanExtensions(){
 	extensions.reserve(glfwExtensionCount);
 
 	for(size_t i = 0; i < glfwExtensionCount; i++){
-		vk::ExtensionProperties ext;
+		VkExtensionProperties ext = {};
 		strncpy(ext.extensionName, glfwExtensions[i], VK_MAX_EXTENSION_NAME_SIZE);
-		ext.specVersion = 0;
-		extensions.push_back(ext);
+		extensions.emplace_back(ext);
 	}
 
 	return extensions;

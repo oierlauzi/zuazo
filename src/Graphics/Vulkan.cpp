@@ -2,6 +2,7 @@
 
 #include <Zuazo.h>
 #include <Exception.h>
+#include <Macros.h>
 #include <Graphics/Window.h>
 
 #include <cstring>
@@ -56,6 +57,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerCallback(
 
 	std::cout << message.str() << std::endl;
 
+	ZUAZO_IGNORE_PARAM(userData);
+
 	return VK_FALSE;
 }
 
@@ -89,7 +92,7 @@ Vulkan::Vulkan()
 	, m_loader(*m_instance, vk::Device())
 	, m_messenger(createMessenger(*m_instance, m_loader))
 	, m_physicalDevice(getBestPhysicalDevice(*m_instance))
-	, m_device(createDevice(m_physicalDevice))
+	, m_device(createDevice(*m_instance, m_physicalDevice))
 	, m_queues(getQueues(*m_device))
 {
 }
@@ -243,11 +246,83 @@ vk::PhysicalDevice Vulkan::getBestPhysicalDevice(const vk::Instance& instance){
 	return best.first.value();
 }
 
-vk::Device Vulkan::createDevice(const vk::PhysicalDevice& physicalDevice){
+vk::Device Vulkan::createDevice(const vk::Instance& instance, const vk::PhysicalDevice& physicalDevice){
+	//Get all the required queue families
+	auto requiredQueueFamilies = getRequiredQueueFamilies(instance, physicalDevice);
+	const auto availableQueueFamilies = physicalDevice.getQueueFamilyProperties();
+	const auto usedQueueFamilies = getUsedQueueFamilies(availableQueueFamilies, requiredQueueFamilies);
 
-	vk::DeviceCreateInfo createInfo{
+	if(requiredQueueFamilies.size()){
+		throw Exception("There are missing queue families");
+	}
 
-	};
+	const auto usedQueueFamilyIndices = getQueueFamilyIndices(availableQueueFamilies, usedQueueFamilies);
+
+
+	//Get the validation layers
+	auto requiredLayers = getRequiredLayers();
+	const auto availableLayers = physicalDevice.enumerateDeviceLayerProperties();
+	const auto usedLayers = getUsedLayers(availableLayers, requiredLayers);
+
+	if(requiredLayers.size()){
+		//There are missing layers
+		std::string missingNames;
+
+		for(const auto& m : requiredLayers){
+			missingNames += m.layerName;
+			missingNames += "\n";
+		}
+
+		throw Exception("Missing Vulkan device validation layers:\n" + missingNames);
+	}
+
+	const auto usedLayerNames = getNames(usedLayers);
+
+
+	//Get the extensions
+	auto requiredExtensions = getRequiredDeviceExtensions();
+	const auto availableExtensions = physicalDevice.enumerateDeviceExtensionProperties();
+	const auto usedExtensions = getUsedExtensions(availableExtensions, requiredExtensions);
+
+	if(requiredExtensions.size()){
+		//There are missing extensions
+		std::string missingNames;
+
+		for(const auto& m : requiredExtensions){
+			missingNames += m.extensionName;
+			missingNames += "\n";
+		}
+
+		throw Exception("Missing Vulkan device extensions:\n" + missingNames);
+	}
+
+
+	const auto usedExtensionNames = getNames(usedExtensions);
+
+	//Fill the queue create infos
+	const float queuePriority = 1.0f;
+	std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+	queueCreateInfos.reserve(usedQueueFamilyIndices.size());
+
+	for(auto ite = usedQueueFamilyIndices.cbegin(); ite != usedQueueFamilyIndices.cend(); ++ite){
+		queueCreateInfos.emplace_back(
+			vk::DeviceQueueCreateFlags(),
+			ite->first,
+			ite->second,
+			&queuePriority
+		);
+	}
+
+
+	vk::DeviceCreateInfo createInfo(
+		{},
+		queueCreateInfos.size(),
+		queueCreateInfos.data(),
+		usedLayerNames.size(),
+		usedLayerNames.data(),
+		usedExtensionNames.size(),
+		usedExtensionNames.data()
+	);
 
 	return physicalDevice.createDevice(createInfo);
 }
@@ -267,9 +342,9 @@ std::vector<vk::LayerProperties> Vulkan::getRequiredLayers(){
 	if(Zuazo::getApplicationInfo().isDebug){
 		//Add debug utils extension requirement
 		//Khronos validation layer
-		vk::LayerProperties khronosValidation = {};
+		VkLayerProperties khronosValidation = {};
 		std::strncpy(khronosValidation.layerName, "VK_LAYER_KHRONOS_validation", VK_MAX_EXTENSION_NAME_SIZE);
-		validationLayers.push_back(khronosValidation);
+		validationLayers.emplace_back(khronosValidation);
 	}
 
 	return validationLayers;
@@ -288,9 +363,9 @@ std::vector<vk::ExtensionProperties> Vulkan::getRequiredInstanceExtensions(){
 
 	if(Zuazo::getApplicationInfo().isDebug){
 		//Add debug utils extension requirement
-		vk::ExtensionProperties ext = {};
+		VkExtensionProperties ext = {};
 		std::strncpy(ext.extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE);
-		extensions.push_back(ext);
+		extensions.emplace_back(ext);
 	}
 
 	return extensions;
@@ -319,9 +394,9 @@ std::vector<vk::ExtensionProperties> Vulkan::getRequiredDeviceExtensions(){
 	std::vector<vk::ExtensionProperties> extensions;
 
 	//Require swapchain extension
-	vk::ExtensionProperties swapchainExtension = {};
+	VkExtensionProperties swapchainExtension = {};
 	std::strncpy(swapchainExtension.extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE);
-	extensions.push_back(swapchainExtension);
+	extensions.emplace_back(swapchainExtension);
 
 	return extensions;
 }

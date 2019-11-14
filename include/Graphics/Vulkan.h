@@ -48,7 +48,7 @@ private:
 	static vk::Instance								createInstance();
 	static UniqueDebugUtilsMessengerEXT				createMessenger(const vk::Instance& instance, const vk::DispatchLoaderDynamic& loader);
 	static vk::PhysicalDevice						getBestPhysicalDevice(const vk::Instance& instance);
-	static vk::Device								createDevice(const vk::PhysicalDevice& physicalDevice);
+	static vk::Device								createDevice(const vk::Instance& instance, const vk::PhysicalDevice& physicalDevice);
 	static std::array<vk::Queue, QUEUE_NUM>			getQueues(const vk::Device& dev);
 
 	static std::vector<vk::LayerProperties> 		getRequiredLayers();
