@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Timing/MainLoop.h"
-#include "Graphics/Instance.h"
+#include "Graphics/Window.h"
+#include "Graphics/Vulkan.h"
 
 namespace Zuazo {
 
@@ -15,14 +16,15 @@ public:
 	Instance& operator=(const Instance& other) = delete;
 	Instance& operator=(Instance&& other) = delete;
 
-	Timing::MainLoop&			getMainLoop();
-	const Timing::MainLoop&		getMainLoop() const;
+	const Graphics::Vulkan&		getVulkan() const;
+	Graphics::Vulkan&			getVulkan();
 
-	Graphics::Instance&			getGraphics();
-	const Graphics::Instance&	getGraphics() const;
+	const Timing::MainLoop&		getMainLoop() const;
+	Timing::MainLoop&			getMainLoop();
 private:
+	Graphics::Window			m_windowInstance;
+	Graphics::Vulkan			m_vulkan;
 	Timing::MainLoop			m_loop;
-	Graphics::Instance			m_graphics;
 };
 
 }

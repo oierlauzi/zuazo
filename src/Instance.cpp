@@ -1,21 +1,22 @@
 #include <Instance.h>
 
-#include <Graphics/Window.h>
-
 namespace Zuazo {
 
-Timing::MainLoop& Instance::getMainLoop(){
-	return m_loop;
-}
 const Timing::MainLoop& Instance::getMainLoop() const{
 	return m_loop;
 }
 
-Graphics::Instance& Instance::getGraphics(){
-	return m_graphics;
+Timing::MainLoop& Instance::getMainLoop(){
+	return m_loop;
 }
-const Graphics::Instance& Instance::getGraphics() const{
-	return m_graphics;
+
+
+const Graphics::Vulkan& Instance::getVulkan() const{
+	return m_vulkan;
+}
+
+Graphics::Vulkan& Instance::getVulkan(){
+	return m_vulkan;
 }
 
 }

@@ -1,5 +1,7 @@
 #include <Graphics/Window.h>
 
+#include <Exception.h>
+
 #include <iostream>
 #include <cstring>
 
@@ -231,20 +233,16 @@ void Window::unbind(){
 	glfwMakeContextCurrent(nullptr);
 }
 
-Vulkan::Surface	Window::getSurface(Vulkan::Instance& instance) const {
+vk::SurfaceKHR	Window::getSurface(const vk::Instance& instance) const {
 	//Try to create the surface
 	VkSurfaceKHR surface;
-	VkResult err = glfwCreateWindowSurface(instance.get(), m_window, nullptr, &surface);
+	VkResult err = glfwCreateWindowSurface(instance, m_window, nullptr, &surface);
 
-	switch(err){
-	case VK_SUCCESS:
-		break; //All ok
-
-	default:
+	if(err != VK_SUCCESS){
 		throw Exception("Error creating Vulkan surface");
 	}
 
-	return Vulkan::Surface(instance, surface);
+	return surface;
 }	
 
 
@@ -527,15 +525,15 @@ const std::vector<Window::Monitor>& Window::getMonitors(){
 	return s_monitors;
 }
 
-std::vector<Vulkan::Extension> Window::getRequiredVulkanExtensions(){
+std::vector<vk::ExtensionProperties> Window::getRequiredVulkanExtensions(){
 	uint32_t glfwExtensionCount;
 	const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-	std::vector<Vulkan::Extension> extensions;
+	std::vector<vk::ExtensionProperties> extensions;
 	extensions.reserve(glfwExtensionCount);
 
 	for(size_t i = 0; i < glfwExtensionCount; i++){
-		Vulkan::Extension ext;
+		vk::ExtensionProperties ext;
 		strncpy(ext.extensionName, glfwExtensions[i], VK_MAX_EXTENSION_NAME_SIZE);
 		ext.specVersion = 0;
 		extensions.push_back(ext);
@@ -544,15 +542,16 @@ std::vector<Vulkan::Extension> Window::getRequiredVulkanExtensions(){
 	return extensions;
 }
 
-bool Window::getPresentationSupport(Vulkan::Instance& inst, Vulkan::PhysicalDevice& dev, uint32_t family){
-	return glfwGetPhysicalDevicePresentationSupport(inst.get(), dev.get(), family);
+bool Window::getPresentationSupport(const vk::Instance& instance, const vk::PhysicalDevice& device, uint32_t family){
+	return glfwGetPhysicalDevicePresentationSupport(instance, device, family);
 }
 
-std::vector<uint32_t> Window::getPresentationQueueFamilies(Vulkan::Instance& inst, Vulkan::PhysicalDevice& dev){
+std::vector<uint32_t> Window::getPresentationQueueFamilies(const vk::Instance& instance, const vk::PhysicalDevice& device){
 	std::vector<uint32_t> result;
+	const size_t nQueueFamilies = device.getQueueFamilyProperties().size();
 
-	for(size_t i = 0; i < dev.getQueueFamilies().size(); i++){
-		if(getPresentationSupport(inst, dev, i)){
+	for(size_t i = 0; i < nQueueFamilies; i++){
+		if(getPresentationSupport(instance, device, i)){
 			result.push_back(i);
 		}
 	}

@@ -1,9 +1,7 @@
 #pragma once
 
 #include "Resolution.h"
-#include "Vulkan/Instance.h"
-#include "Vulkan/Surface.h"
-#include "Vulkan/PhysicalDevice.h"
+#include "Vulkan.h"
 #include "../Math/Vector.h"
 #include "../Utils/CrossThreadInvocation.h"
 #include "../Timing/Chrono.h"
@@ -112,7 +110,7 @@ public:
 
 	void                                bind();
 	void                                unbind();
-	Vulkan::Surface						getSurface(Vulkan::Instance& instance) const;				
+	vk::SurfaceKHR						getSurface(const vk::Instance& instance) const;				
 
 
 	void                                setName(std::string&& name);
@@ -167,9 +165,9 @@ public:
 
 	static const std::vector<Monitor>&  getMonitors();
 
-	static std::vector<Vulkan::Extension> getRequiredVulkanExtensions();
-	static bool							getPresentationSupport(Vulkan::Instance& inst, Vulkan::PhysicalDevice& dev, uint32_t family);
-	static std::vector<uint32_t>		getPresentationQueueFamilies(Vulkan::Instance& inst, Vulkan::PhysicalDevice& dev);
+	static std::vector<vk::ExtensionProperties> getRequiredVulkanExtensions();
+	static bool							getPresentationSupport(const vk::Instance& instance, const vk::PhysicalDevice& device, uint32_t family);
+	static std::vector<uint32_t>		getPresentationQueueFamilies(const vk::Instance& instance, const vk::PhysicalDevice& device);
 
 	static void							setCallbacksEnabled(bool ena);
 	static bool							getCallbacksEnabled();
