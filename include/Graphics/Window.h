@@ -25,6 +25,14 @@ namespace Zuazo::Graphics {
 
 class Window {
 public:
+	class Instance {
+	public:
+		Instance();
+		Instance(const Instance& other) = delete;
+		~Instance();
+	private:
+		static std::atomic<size_t>			s_instanceCount;
+	};
 
 	enum class State {
 		NORMAL,
@@ -86,15 +94,6 @@ public:
 		CloseCallback                       closeCbk;
 		RefreshCallback                     refreshCbk;
 		FocusCallback                       focusCbk;
-	};
-
-	class Instance {
-	public:
-		Instance();
-		Instance(const Instance& other) = delete;
-		~Instance();
-	private:
-		static std::atomic<size_t>			s_instanceCount;
 	};
 
 	Window() = default;

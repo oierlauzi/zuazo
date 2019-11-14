@@ -22,6 +22,27 @@ static void theFastestFunctionInTheWorld(){
 }
 
 /*
+ * INSTANCE
+ */
+
+std::atomic<size_t>	Window::Instance::s_instanceCount = 0;
+
+Window::Instance::Instance(){
+	if(s_instanceCount.fetch_add(1) == 0){
+		//First instance, init window
+		Window::init();
+	}
+}
+
+Window::Instance::~Instance(){
+	if(s_instanceCount.fetch_sub(1) == 1){
+		//Last instance. Teminate window
+		Window::terminate();
+	}
+}
+
+
+/*
  * MONITOR
  */
 
@@ -119,27 +140,6 @@ Math::Vec2i Window::Monitor::getSize() const{
 
 Timing::Rate Window::Monitor::getRate() const{
 	return getMode().frameRate;
-}
-
-
-/*
- * INSTANCE
- */
-
-std::atomic<size_t>	Window::Instance::s_instanceCount = 0;
-
-Window::Instance::Instance(){
-	if(s_instanceCount.fetch_add(1) == 0){
-		//First instance, init window
-		Window::init();
-	}
-}
-
-Window::Instance::~Instance(){
-	if(s_instanceCount.fetch_sub(1) == 1){
-		//Last instance. Teminate window
-		Window::terminate();
-	}
 }
 
 /*
@@ -543,7 +543,11 @@ std::vector<vk::ExtensionProperties> Window::getRequiredVulkanExtensions(){
 }
 
 bool Window::getPresentationSupport(const vk::Instance& instance, const vk::PhysicalDevice& device, uint32_t family){
-	return glfwGetPhysicalDevicePresentationSupport(instance, device, family);
+	return glfwGetPhysicalDevicePresentationSupport(
+		static_cast<VkInstance>(instance), 
+		static_cast<VkPhysicalDevice>(device), 
+		family
+	);
 }
 
 std::vector<uint32_t> Window::getPresentationQueueFamilies(const vk::Instance& instance, const vk::PhysicalDevice& device){

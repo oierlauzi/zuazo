@@ -193,39 +193,6 @@ vk::Instance Vulkan::createInstance(){
 	return vk::createInstance(createInfo);
 }
 
-vk::PhysicalDevice Vulkan::getBestPhysicalDevice(const vk::Instance& instance){
-	const auto devices = instance.enumeratePhysicalDevices();
-
-	std::pair<std::optional<vk::PhysicalDevice>, uint32_t> best({}, 0);
-
-	for(const auto& device : devices){
-
-		if(getPhysicalDeviceSupport(instance, device) == false)
-			continue; //Not supported
-
-		const uint32_t score = deviceScoreFunc(device);
-
-		if(score > best.second){
-			best = {device, score};
-		}
-	}
-
-	if(best.first.has_value() == false){
-		throw Exception("No compatible GPUs were found");
-	}
-
-	return best.first.value();
-}
-
-vk::Device Vulkan::createDevice(const vk::PhysicalDevice& physicalDevice){
-
-	vk::DeviceCreateInfo createInfo{
-
-	};
-
-	return physicalDevice.createDevice(createInfo);
-}
-
 Vulkan::UniqueDebugUtilsMessengerEXT Vulkan::createMessenger(const vk::Instance& instance, const vk::DispatchLoaderDynamic& loader) {
 	using Deleter = vk::UniqueHandleTraits<vk::DebugUtilsMessengerEXT, vk::DispatchLoaderDynamic>::deleter;
 
@@ -249,6 +216,40 @@ Vulkan::UniqueDebugUtilsMessengerEXT Vulkan::createMessenger(const vk::Instance&
 		messenger,
 		Deleter(instance, nullptr, loader)
 	);
+}
+
+vk::PhysicalDevice Vulkan::getBestPhysicalDevice(const vk::Instance& instance){
+	const auto devices = instance.enumeratePhysicalDevices();
+
+	std::pair<std::optional<vk::PhysicalDevice>, uint32_t> best({}, 0);
+
+	for(const auto& device : devices){
+
+		if(getPhysicalDeviceSupport(instance, device) == false){
+			continue; //Not supported
+		}
+
+		const uint32_t score = deviceScoreFunc(device);
+
+		if(score > best.second){
+			best = {device, score};
+		}
+	}
+
+	if(best.first.has_value() == false){
+		throw Exception("No compatible GPUs were found");
+	}
+
+	return best.first.value();
+}
+
+vk::Device Vulkan::createDevice(const vk::PhysicalDevice& physicalDevice){
+
+	vk::DeviceCreateInfo createInfo{
+
+	};
+
+	return physicalDevice.createDevice(createInfo);
 }
 
 std::array<vk::Queue, Vulkan::QUEUE_NUM> Vulkan::getQueues(const vk::Device& dev){

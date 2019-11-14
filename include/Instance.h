@@ -22,7 +22,7 @@ public:
 	const Timing::MainLoop&		getMainLoop() const;
 	Timing::MainLoop&			getMainLoop();
 private:
-	Graphics::Window			m_windowInstance;
+	Graphics::Window::Instance	m_windowInstance;
 	Graphics::Vulkan			m_vulkan;
 	Timing::MainLoop			m_loop;
 };
