@@ -170,6 +170,10 @@ Window::Window(const Math::Vec2i& size, std::string&& name, const Monitor& mon) 
 		static_cast<GLFWwindow*>(nullptr)
 	))
 {
+	if(m_window == nullptr){
+		throw Exception("Error creating the window");
+	}
+
 	setupWindow();
 }
 
