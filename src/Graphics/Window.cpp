@@ -237,7 +237,9 @@ void Window::unbind(){
 	glfwMakeContextCurrent(nullptr);
 }
 
-vk::SurfaceKHR	Window::getSurface(const vk::Instance& instance) const {
+vk::UniqueSurfaceKHR Window::getSurface(const vk::Instance& instance) const {
+	using Deleter = vk::UniqueHandleTraits<vk::SurfaceKHR, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE>::deleter;
+
 	//Try to create the surface
 	VkSurfaceKHR surface;
 	VkResult err = glfwCreateWindowSurface(instance, m_window, nullptr, &surface);
@@ -246,7 +248,10 @@ vk::SurfaceKHR	Window::getSurface(const vk::Instance& instance) const {
 		throw Exception("Error creating Vulkan surface");
 	}
 
-	return surface;
+	return vk::UniqueSurfaceKHR(
+		surface,
+		Deleter(instance, nullptr, VULKAN_HPP_DEFAULT_DISPATCHER)
+	);
 }	
 
 

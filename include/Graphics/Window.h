@@ -109,7 +109,7 @@ public:
 
 	void                                bind();
 	void                                unbind();
-	vk::SurfaceKHR						getSurface(const vk::Instance& instance) const;				
+	vk::UniqueSurfaceKHR				getSurface(const vk::Instance& instance) const;				
 
 
 	void                                setName(std::string&& name);

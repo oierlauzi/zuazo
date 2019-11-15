@@ -57,7 +57,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerCallback(
 		}
 	}
 
-	std::cout << message.str() << std::endl;
+	std::cerr << message.str() << std::endl;
 
 	return VK_FALSE;
 }
@@ -128,7 +128,7 @@ const vk::Queue& Vulkan::getPresentationQueue() const{
 
 
 
-vk::Instance Vulkan::createInstance(){
+vk::UniqueInstance Vulkan::createInstance(){
 	//Get the application information
 	const auto& appName = Zuazo::getApplicationInfo().name;
 	const auto& appVersion = Zuazo::getApplicationInfo().version;
@@ -193,7 +193,7 @@ vk::Instance Vulkan::createInstance(){
 		usedExtensionNames.data()
 	);
 
-	return vk::createInstance(createInfo);
+	return vk::createInstanceUnique(createInfo);
 }
 
 Vulkan::UniqueDebugUtilsMessengerEXT Vulkan::createMessenger(	const vk::Instance& instance, 
@@ -250,7 +250,7 @@ vk::PhysicalDevice Vulkan::getBestPhysicalDevice(const vk::Instance& instance){
 	return best.first.value();
 }
 
-vk::Device Vulkan::createDevice(const vk::Instance& instance, const vk::PhysicalDevice& physicalDevice){
+vk::UniqueDevice Vulkan::createDevice(const vk::Instance& instance, const vk::PhysicalDevice& physicalDevice){
 	//Get all the required queue families
 	auto requiredQueueFamilies = getRequiredQueueFamilies(instance, physicalDevice);
 	const auto availableQueueFamilies = physicalDevice.getQueueFamilyProperties();
@@ -328,7 +328,7 @@ vk::Device Vulkan::createDevice(const vk::Instance& instance, const vk::Physical
 		usedExtensionNames.data()
 	);
 
-	return physicalDevice.createDevice(createInfo);
+	return physicalDevice.createDeviceUnique(createInfo);
 }
 
 std::array<vk::Queue, Vulkan::QUEUE_NUM> Vulkan::getQueues(	const vk::Instance& instance, 
@@ -398,7 +398,9 @@ std::vector<vk::QueueFamilyProperties> Vulkan::getRequiredQueueFamilies(const vk
 		throw Exception("Device has not presentation queues");
 	}
 
-	queueFamilies[PRESENTATION_QUEUE] = dev.getQueueFamilyProperties()[presentationFamilies[0]];
+	auto presentationQueue = dev.getQueueFamilyProperties()[presentationFamilies[0]];
+	presentationQueue.queueCount = 1;
+	queueFamilies[PRESENTATION_QUEUE] = presentationQueue;
 
 	return queueFamilies;
 }
