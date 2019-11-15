@@ -8,6 +8,7 @@
 #include <cstring>
 #include <iostream>
 #include <sstream>
+#include <cassert>
 
 namespace Zuazo::Graphics {
 
@@ -24,6 +25,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerCallback(
 	 */
 	std::ostringstream message;
 
+	message << "On Vulkan: " << userData << "\n";
 	message << vk::to_string(static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>(severity)) << ": " << vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(type)) << ":\n";
 	message << "\t" << "messageIDName   = <" << data->pMessageIdName << ">\n";
 	message << "\t" << "messageIdNumber = " << data->messageIdNumber << "\n";
@@ -57,8 +59,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerCallback(
 
 	std::cout << message.str() << std::endl;
 
-	ZUAZO_IGNORE_PARAM(userData);
-
 	return VK_FALSE;
 }
 
@@ -90,10 +90,10 @@ Vulkan::DeviceScoreFunc Vulkan::deviceScoreFunc = [] (const vk::PhysicalDevice& 
 Vulkan::Vulkan() 
 	: m_instance(createInstance())
 	, m_loader(*m_instance, vk::Device())
-	, m_messenger(createMessenger(*m_instance, m_loader))
+	, m_messenger(createMessenger(*m_instance, m_loader, this))
 	, m_physicalDevice(getBestPhysicalDevice(*m_instance))
 	, m_device(createDevice(*m_instance, m_physicalDevice))
-	, m_queues(getQueues(*m_device))
+	, m_queues(getQueues(*m_instance, m_physicalDevice, *m_device))
 {
 }
 
@@ -196,7 +196,10 @@ vk::Instance Vulkan::createInstance(){
 	return vk::createInstance(createInfo);
 }
 
-Vulkan::UniqueDebugUtilsMessengerEXT Vulkan::createMessenger(const vk::Instance& instance, const vk::DispatchLoaderDynamic& loader) {
+Vulkan::UniqueDebugUtilsMessengerEXT Vulkan::createMessenger(	const vk::Instance& instance, 
+																const vk::DispatchLoaderDynamic& loader, 
+																Vulkan* vk ) 
+{
 	using Deleter = vk::UniqueHandleTraits<vk::DebugUtilsMessengerEXT, vk::DispatchLoaderDynamic>::deleter;
 
 	vk::DebugUtilsMessengerEXT messenger;
@@ -209,7 +212,8 @@ Vulkan::UniqueDebugUtilsMessengerEXT Vulkan::createMessenger(const vk::Instance&
 			vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
 			vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
 			vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
-			validationLayerCallback
+			validationLayerCallback,
+			vk
 		);
 
 		messenger = instance.createDebugUtilsMessengerEXT(createInfo, nullptr, loader);
@@ -327,9 +331,18 @@ vk::Device Vulkan::createDevice(const vk::Instance& instance, const vk::Physical
 	return physicalDevice.createDevice(createInfo);
 }
 
-std::array<vk::Queue, Vulkan::QUEUE_NUM> Vulkan::getQueues(const vk::Device& dev){
-	//TODO
-	return {};
+std::array<vk::Queue, Vulkan::QUEUE_NUM> Vulkan::getQueues(	const vk::Instance& instance, 
+															const vk::PhysicalDevice& physicalDevice, 
+															const vk::Device& dev )
+{
+	const auto queues = getQueues(physicalDevice, dev, getRequiredQueueFamilies(instance, physicalDevice));
+
+	std::array<vk::Queue, Vulkan::QUEUE_NUM> result;
+	for(size_t i = 0; i < QUEUE_NUM; i++){
+		result[i] = queues[i][0];
+	}
+
+	return result;
 }
 
 
@@ -601,5 +614,40 @@ size_t Vulkan::getQueueFamilyIndex(const std::vector<vk::QueueFamilyProperties>&
 	throw Exception("Requested queue family not found!");
 }
 
+std::vector<std::vector<vk::Queue>>	Vulkan::getQueues(	const vk::PhysicalDevice& physicalDevice,
+														const vk::Device& dev,
+														const std::vector<vk::QueueFamilyProperties>& queueFamilies )
+{
+	std::vector<std::vector<vk::Queue>> result;
+	result.reserve(queueFamilies.size());
+
+	const auto availableQueueFamilies = physicalDevice.getQueueFamilyProperties();
+
+	//Query the queues
+	for(const auto& queueFamily : queueFamilies){
+		result.emplace_back(std::vector<vk::Queue>(queueFamily.queueCount));
+
+		//Get the indices corresponding to this family
+		//It might be distributed among more than one available family
+		const auto indices = getQueueFamilyIndices(
+			availableQueueFamilies, 
+			std::vector<vk::QueueFamilyProperties>(1, queueFamily)
+		);
+
+		//Iterate though the returned families and assign them to the queue vector
+		size_t j = 0; //Queue # counter
+		for(const auto& index : indices){
+			for(size_t i = 0; i < index.second; i++){
+				result.back()[j] = dev.getQueue(index.first, i);
+				j++;
+			}
+		}
+				
+		//Array should be full
+		assert(j == result.back().size());
+	}
+
+	return result;
+}
 
 }
