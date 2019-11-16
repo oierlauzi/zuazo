@@ -3,6 +3,7 @@
 #include <Zuazo.h>
 #include <Exception.h>
 #include <Macros.h>
+#include <Graphics/VulkanUtils.h>
 #include <Graphics/Window.h>
 
 #include <cstring>
@@ -92,8 +93,8 @@ Vulkan::Vulkan()
 	, m_loader(*m_instance, vk::Device())
 	, m_messenger(createMessenger(*m_instance, m_loader, this))
 	, m_physicalDevice(getBestPhysicalDevice(*m_instance))
-	, m_device(createDevice(*m_instance, m_physicalDevice))
-	, m_queues(getQueues(*m_instance, m_physicalDevice, *m_device))
+	, m_queues(QUEUE_NUM, std::vector<vk::Queue>(1))
+	, m_device(createDevice(*m_instance, m_physicalDevice, m_queues))
 {
 }
 
@@ -110,19 +111,19 @@ const vk::Device& Vulkan::getDevice() const{
 }
 
 const vk::Queue& Vulkan::getGraphicsQueue() const{
-	return m_queues[GRAPHICS_QUEUE];
+	return m_queues[GRAPHICS_QUEUE][0];
 }
 
 const vk::Queue& Vulkan::getComputeQueue() const{
-	return m_queues[COMPUTE_QUEUE];
+	return m_queues[COMPUTE_QUEUE][0];
 }
 
 const vk::Queue& Vulkan::getTransferQueue() const{
-	return m_queues[TRANSFER_QUEUE];
+	return m_queues[TRANSFER_QUEUE][0];
 }
 
 const vk::Queue& Vulkan::getPresentationQueue() const{
-	return m_queues[PRESENTATION_QUEUE];
+	return m_queues[PRESENTATION_QUEUE][0];
 }
 
 
@@ -144,7 +145,7 @@ vk::UniqueInstance Vulkan::createInstance(){
 
 	//Get the validation layers
 	auto requiredLayers = getRequiredLayers();
-	const auto availableLayers = getAvailableInstanceLayers();
+	const auto availableLayers = vk::enumerateInstanceLayerProperties();
 	const auto usedLayers = getUsedLayers(availableLayers, requiredLayers);
 
 	if(requiredLayers.size()){
@@ -164,7 +165,7 @@ vk::UniqueInstance Vulkan::createInstance(){
 
 	//Get the extensions
 	auto requiredExtensions = getRequiredInstanceExtensions();
-	const auto availableExtensions = getAvailableInstanceExtensions();
+	const auto availableExtensions = vk::enumerateInstanceExtensionProperties();
 	const auto usedExtensions = getUsedExtensions(availableExtensions, requiredExtensions);
 
 	if(requiredExtensions.size()){
@@ -250,7 +251,10 @@ vk::PhysicalDevice Vulkan::getBestPhysicalDevice(const vk::Instance& instance){
 	return best.first.value();
 }
 
-vk::UniqueDevice Vulkan::createDevice(const vk::Instance& instance, const vk::PhysicalDevice& physicalDevice){
+vk::UniqueDevice Vulkan::createDevice(	const vk::Instance& instance, 
+										const vk::PhysicalDevice& physicalDevice,
+										std::vector<std::vector<vk::Queue>>& queues )
+{
 	//Get all the required queue families
 	auto requiredQueueFamilies = getRequiredQueueFamilies(instance, physicalDevice);
 	const auto availableQueueFamilies = physicalDevice.getQueueFamilyProperties();
@@ -328,21 +332,13 @@ vk::UniqueDevice Vulkan::createDevice(const vk::Instance& instance, const vk::Ph
 		usedExtensionNames.data()
 	);
 
-	return physicalDevice.createDeviceUnique(createInfo);
-}
+	auto device = physicalDevice.createDeviceUnique(createInfo);
 
-std::array<vk::Queue, Vulkan::QUEUE_NUM> Vulkan::getQueues(	const vk::Instance& instance, 
-															const vk::PhysicalDevice& physicalDevice, 
-															const vk::Device& dev )
-{
-	const auto queues = getQueues(physicalDevice, dev, getRequiredQueueFamilies(instance, physicalDevice));
+	//Fill the queue vector
+	requiredQueueFamilies = getRequiredQueueFamilies(instance, physicalDevice); //Refill it
+	queues = getQueues(*device, availableQueueFamilies, requiredQueueFamilies);
 
-	std::array<vk::Queue, Vulkan::QUEUE_NUM> result;
-	for(size_t i = 0; i < QUEUE_NUM; i++){
-		result[i] = queues[i][0];
-	}
-
-	return result;
+	return device;
 }
 
 
@@ -416,105 +412,6 @@ std::vector<vk::ExtensionProperties> Vulkan::getRequiredDeviceExtensions(){
 	return extensions;
 }
 
-
-
-
-std::vector<vk::LayerProperties> Vulkan::getAvailableInstanceLayers(){
-	return vk::enumerateInstanceLayerProperties();
-}
-
-std::vector<vk::LayerProperties> Vulkan::getUsedLayers(	const std::vector<vk::LayerProperties>& available, 
-														std::vector<vk::LayerProperties>& required )
-{
-	std::vector<vk::LayerProperties> layers;
-
-	auto ite = required.begin();
-	while(ite != required.end()){
-		bool found = false;
-
-		for(const auto& availableVl : available){
-			if(std::strncmp(ite->layerName, availableVl.layerName, VK_MAX_EXTENSION_NAME_SIZE) == 0){
-				if(ite->specVersion <= availableVl.specVersion){
-					layers.push_back(availableVl);
-					found = true;
-					break;
-				}
-			}
-		}
-
-		//Advance to the next one
-		if(found){
-			ite = required.erase(ite);
-		}else {
-			++ite;
-		}
-	}
-
-	return layers;
-}
-
-std::vector<const char*> Vulkan::getNames(const std::vector<vk::LayerProperties>& layers){
-	std::vector<const char*> names(layers.size());
-
-	for(size_t i = 0; i < names.size(); i++){
-		names[i] = layers[i].layerName;
-	}
-
-	return names;
-}
-
-
-
-
-
-std::vector<vk::ExtensionProperties> Vulkan::getAvailableInstanceExtensions(){
-	return vk::enumerateInstanceExtensionProperties();
-}
-
-std::vector<vk::ExtensionProperties> Vulkan::getUsedExtensions(	const std::vector<vk::ExtensionProperties>& available, 
-																std::vector<vk::ExtensionProperties>& required )
-{
-	std::vector<vk::ExtensionProperties> extensions;
-
-	//Check for availability of all required extensions
-	auto ite = required.begin();
-	while(ite != required.end()){
-		bool found = false;
-
-		for(const auto& availableExt : available){
-			if(std::strncmp(ite->extensionName, availableExt.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0){
-				if(ite->specVersion <= availableExt.specVersion){
-					extensions.push_back(availableExt);
-					found = true;
-					break;
-				}
-			}
-		}
-
-		//Advance to the next one
-		if(found){
-			ite = required.erase(ite);
-		}else {
-			++ite;
-		}
-	}
-
-	return extensions;
-}
-
-std::vector<const char*> Vulkan::getNames(const std::vector<vk::ExtensionProperties>& ext){
-	std::vector<const char*> names(ext.size());
-
-	for(size_t i = 0; i < names.size(); i++){
-		names[i] = ext[i].extensionName;
-	}
-
-	return names;
-}
-
-
-
-
 bool Vulkan::getPhysicalDeviceSupport(const vk::Instance& instance, const vk::PhysicalDevice& device){
 	//Window support is required
 	if(Window::getPresentationQueueFamilies(instance, device).size() == 0){
@@ -546,110 +443,6 @@ bool Vulkan::getPhysicalDeviceSupport(const vk::Instance& instance, const vk::Ph
 	}
 
 	return true;
-}
-
-
-
-
-bool Vulkan::getQueueFamilyCompatibility(vk::QueueFlags required, vk::QueueFlags available){
-	return (required & available) == required;
-}
-
-std::vector<vk::QueueFamilyProperties> Vulkan::getUsedQueueFamilies(const std::vector<vk::QueueFamilyProperties>& available, 
-																	std::vector<vk::QueueFamilyProperties>& required )
-{
-	std::vector<vk::QueueFamilyProperties> queueFamilies;
-
-	auto ite = required.begin();
-	while(ite != required.end()){
-		for(const auto& availableQf : available){
-			if(getQueueFamilyCompatibility(ite->queueFlags, availableQf.queueFlags)){
-				vk::QueueFamilyProperties queue = availableQf;
-
-				if(ite->queueCount > availableQf.queueCount){
-					//Not enough of this queue family. Add the exisiting ones
-					queueFamilies.push_back(queue);
-					ite->queueCount -= queue.queueCount;
-				} else {
-					//Add only the required amount
-					queue.queueCount = ite->queueCount;
-					queueFamilies.push_back(queue);
-					ite->queueCount = 0;
-					break;
-				}
-			}
-		}
-
-		//Next requirement
-		if(ite->queueCount == 0){
-			ite = required.erase(ite);
-		}else {
-			++ite;
-		}
-	}
-	
-	return queueFamilies;
-}
-
-std::map<uint32_t, uint32_t> Vulkan::getQueueFamilyIndices(	const std::vector<vk::QueueFamilyProperties>& available, 
-															const std::vector<vk::QueueFamilyProperties>& requested )
-{
-	std::map<uint32_t, uint32_t> result;
-
-	for(const auto& req : requested){
-		const size_t idx = getQueueFamilyIndex(available, req.queueFlags);
-		result[idx] = std::max(result[idx], req.queueCount);
-	}
-
-	return result;
-}
-
-size_t Vulkan::getQueueFamilyIndex(const std::vector<vk::QueueFamilyProperties>& qf, vk::QueueFlags flags){
-	size_t i;
-
-	for(i = 0; i < qf.size(); i++){
-		if(getQueueFamilyCompatibility(flags, qf[i].queueFlags) && (qf[i].queueCount > 0)) {
-			return i;
-		}
-	}
-
-	throw Exception("Requested queue family not found!");
-}
-
-std::vector<std::vector<vk::Queue>>	Vulkan::getQueues(	const vk::PhysicalDevice& physicalDevice,
-														const vk::Device& dev,
-														const std::vector<vk::QueueFamilyProperties>& queueFamilies )
-{
-	std::vector<std::vector<vk::Queue>> result;
-	result.reserve(queueFamilies.size());
-
-	const auto availableQueueFamilies = physicalDevice.getQueueFamilyProperties();
-
-	//Query the queues
-	for(const auto& queueFamily : queueFamilies){
-		result.emplace_back(std::vector<vk::Queue>(queueFamily.queueCount));
-
-		//Get the indices corresponding to this family
-		//It might be distributed among more than one available family
-		const auto indices = getQueueFamilyIndices(
-			availableQueueFamilies, 
-			std::vector<vk::QueueFamilyProperties>(1, queueFamily)
-		);
-
-		//Iterate though the returned families and assign them to the queue vector
-		size_t j = 0; //Queue # counter
-		for(const auto& index : indices){
-			for(size_t i = 0; i < index.second; i++){
-				result.back()[j] = dev.getQueue(index.first, i);
-				j++;
-			}
-		}
-				
-		//Array should be full
-		assert(j == result.back().size());
-	}
-
-	return result;
 }
 
 }
