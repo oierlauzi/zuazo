@@ -21,6 +21,21 @@ constexpr Resolution::Resolution(const Math::Vec2<T>& res) :
 {
 }
 
+constexpr Resolution::Resolution(vk::Extent2D extent) :
+    width(extent.width),
+    height(extent.height)
+{
+}
+
+
+constexpr bool Resolution::operator==(const Resolution& other) const {
+    return (width == other.width) && (height == other.height);
+}
+
+constexpr bool Resolution::operator!=(const Resolution& other) const {
+    return !(*this == other);
+}
+
 template<typename T>
 constexpr Resolution::operator Math::Vec2<T>() const {
     return Math::Vec2<T>(
@@ -28,6 +43,14 @@ constexpr Resolution::operator Math::Vec2<T>() const {
         static_cast<T>(height)
     );
 }
+
+constexpr Resolution::operator vk::Extent2D() const {
+    return vk::Extent2D(
+        width,
+        height
+    );
+}
+
 
 constexpr Resolution::operator bool() const{
     return (width > 0) && (height > 0);
