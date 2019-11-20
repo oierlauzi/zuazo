@@ -2,44 +2,74 @@
 
 namespace Zuazo::Graphics {
 
-constexpr PixelComponent::PixelComponent() :
-	type(NONE),
-	depth(0),
-	plane(0),
-	subsampling(),
-	flags(EMPTY)
-{
+constexpr bool PixelComponent::operator==(const PixelComponent& other) const{
+	return 
+		type == other.type &&
+		depth == other.depth &&
+		flags == other.flags &&
+		plane == other.plane &&
+		subsampling.x == other.subsampling.x &&
+		subsampling.y == other.subsampling.y;
 }
 
-constexpr PixelComponent::PixelComponent(uint depth) :
-	type(NONE),
-	depth(depth),
-	plane(0),
-	subsampling(),
-	flags(EMPTY)
-{
+constexpr bool PixelComponent::operator!=(const PixelComponent& other) const{
+	return !operator==(other);
 }
 
-constexpr PixelComponent::PixelComponent(PixelComponentType type, uint depth, uint plane, const Subsampling& subs, Flags flags) :
-	type(type),
-	depth(depth),
-	plane(plane),
-	subsampling(subs),
-	flags(flags)
-{
-}
-
-constexpr PixelComponent::PixelComponent(const PixelComponent& other, uint plane, const Subsampling& subs) : 
-	type(other.type),
-	depth(other.depth),
-	plane(plane),
-	subsampling(subs),
-	flags(other.flags)
-{
-}
 
 constexpr PixelComponent::operator bool() const{
-	return depth && type;
+	return depth && ( type != Type::NONE );
 }
+
+constexpr PixelComponent modifyType(const PixelComponent& component, PixelComponent::Type newType){
+	return PixelComponent {
+		newType,
+		component.depth,
+		component.flags,
+		component.plane,
+		component.subsampling
+	};
+}
+
+constexpr PixelComponent modifyDepth(const PixelComponent& component, uint32_t newDepth){
+	return PixelComponent {
+		component.type,
+		newDepth,
+		component.flags,
+		component.plane,
+		component.subsampling
+	};
+}
+
+constexpr PixelComponent modifyFlags(const PixelComponent& component, PixelComponent::Flags newFlags){
+	return PixelComponent {
+		component.type,
+		component.depth,
+		newFlags,
+		component.plane,
+		component.subsampling
+	};
+}
+
+constexpr PixelComponent modifyPlane(const PixelComponent& component, uint32_t newPlane){
+	return PixelComponent {
+		component.type,
+		component.depth,
+		component.flags,
+		newPlane,
+		component.subsampling
+	};
+}
+
+constexpr PixelComponent modifySubsampling(const PixelComponent& component, PixelComponent::Subsampling newSubsampling){
+	return PixelComponent {
+		component.type,
+		component.depth,
+		component.flags,
+		component.plane,
+		newSubsampling
+	};
+}
+
 
 }
