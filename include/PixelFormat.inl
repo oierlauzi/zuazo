@@ -142,28 +142,27 @@ constexpr PixelFormat getMemoryRepresentation(const PixelFormat& fmt){
 			return fmt; //Word size not supported by CPU
 		}
 
+		for(const auto& comp : fmt.components){
+			if(comp.depth == 0){
+				continue;
+			}
+
+			if((comp.depth % ZUAZO_BYTE_SIZE) && (ZUAZO_BYTE_SIZE % comp.depth)){ 
+				return fmt; //Size not multiple of a byte nor nibble
+			}
+		}
+
 		PixelFormat result = {};
+		uint32_t size = 0;
 
-		size_t i = 0;
-
-		while(i < PixelFormat::MAX_COMPONENTS) {
+		for(size_t i = 0; i < PixelFormat::MAX_COMPONENTS;) {
 			size_t count = 0;
-			uint32_t size = 0;
+			size = 0;
 
 			//Count the components corresponding to this iteration
-			for(size_t j = i; j < PixelFormat::MAX_COMPONENTS; j++){
-				const auto& comp = fmt.components[j];
-
-				if(comp.depth % ZUAZO_BYTE_SIZE){ //FIXME: Should be correct with nibbles
-					return fmt; //Size not multiple of a byte
-				}
-
+			for(size_t j = i; j < PixelFormat::MAX_COMPONENTS && size < fmt.wordSize; j++){
 				count++;
-				size += comp.depth;
-			
-				if(size >= fmt.wordSize){
-					break; //Done with this word
-				}
+				size += fmt.components[j].depth;
 			}
 
 			if(size == 0){
@@ -175,8 +174,21 @@ constexpr PixelFormat getMemoryRepresentation(const PixelFormat& fmt){
 			}
 
 			//Reverse components
-			for(size_t j = 0; j < count; j++){
-				result.components[i + j] = fmt.components[i + count - j - 1];
+			for(size_t j = 0; j < count;){
+
+				//Get if a byte contains multiple components
+				size_t components = 0;
+				size = 0;
+				for(size_t h = 0; size < ZUAZO_BYTE_SIZE; h++){
+					components++;
+					size += fmt.components[i + h].depth;
+				}
+
+				for(size_t h = 0; h < components; h++){
+					result.components[i + count - components - j + h] = fmt.components[i + j + h];
+				}
+
+				j += components;
 			}
 
 			i += count; //Advance

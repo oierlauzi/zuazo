@@ -13,6 +13,7 @@ Surface::Surface(const Vulkan& vulkan, const Window& window, bool vSync)
 	: m_surface(window.getSurface(vulkan.getInstance()))
 	, m_swapchain(createSwapchain(vulkan, *m_surface, static_cast<vk::Extent2D>(window.getResolution()), vSync))
 	, m_images(getImages(vulkan, *m_swapchain))
+	, m_imageViews()
 {
 
 }

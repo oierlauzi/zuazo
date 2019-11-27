@@ -60,6 +60,8 @@ namespace Zuazo::PixelFormats {
 	constexpr PixelFormat Y64				{ { PixelComponents::Y64 } };
 	constexpr PixelFormat Y64f				{ { PixelComponents::Y64f } };
 
+	constexpr PixelFormat Y4A4				{ { PixelComponents::Y4, PixelComponents::A4 } };
+	constexpr PixelFormat A4Y4				{ { PixelComponents::A4, PixelComponents::Y4 } };
 	constexpr PixelFormat Y8A8				{ { PixelComponents::Y8, PixelComponents::A8 } };
 	constexpr PixelFormat A8Y8				{ { PixelComponents::A8, PixelComponents::Y8 } };
 	constexpr PixelFormat Y16A16			{ { PixelComponents::Y16, PixelComponents::A16 } };
@@ -82,6 +84,10 @@ namespace Zuazo::PixelFormats {
 	constexpr PixelFormat R32fG32fB32f		{ { PixelComponents::R32f, PixelComponents::G32f, PixelComponents::B32f } };
 	constexpr PixelFormat B32fG32fR32f		{ { PixelComponents::B32f, PixelComponents::G32f, PixelComponents::R32f } };
 
+	constexpr PixelFormat A4R4G4B4			{ { PixelComponents::A4, PixelComponents::R4, PixelComponents::G4, PixelComponents::B4 } };
+	constexpr PixelFormat A4B4G4R4			{ { PixelComponents::A4, PixelComponents::B4, PixelComponents::G4, PixelComponents::R4 } };
+	constexpr PixelFormat R4G4B4A4			{ { PixelComponents::R4, PixelComponents::G4, PixelComponents::B4, PixelComponents::A4 } };
+	constexpr PixelFormat B4G4R4A4			{ { PixelComponents::B4, PixelComponents::G4, PixelComponents::R4, PixelComponents::A4 } };
 	constexpr PixelFormat A8R8G8B8			{ { PixelComponents::A8, PixelComponents::R8, PixelComponents::G8, PixelComponents::B8 } };
 	constexpr PixelFormat A8B8G8R8			{ { PixelComponents::A8, PixelComponents::B8, PixelComponents::G8, PixelComponents::R8 } };
 	constexpr PixelFormat R8G8B8A8			{ { PixelComponents::R8, PixelComponents::G8, PixelComponents::B8, PixelComponents::A8 } };
@@ -101,8 +107,14 @@ namespace Zuazo::PixelFormats {
 
 
 	//CPU-word packed formats
+	constexpr PixelFormat Y4A4_8			= modifyWordSize(Y4A4, 8);
+	constexpr PixelFormat A4Y4_8			= modifyWordSize(A4Y4, 8);
 	constexpr PixelFormat Y8A8_16			= modifyWordSize(Y8A8, 16);
 	constexpr PixelFormat A8Y8_16			= modifyWordSize(A8Y8, 16);
+	constexpr PixelFormat A4R4G4B4_16		= modifyWordSize(A4R4G4B4, 16);
+	constexpr PixelFormat A4B4G4R4_16		= modifyWordSize(A4B4G4R4, 16);
+	constexpr PixelFormat R4G4B4A4_16		= modifyWordSize(R4G4B4A4, 16);
+	constexpr PixelFormat B4G4R4A4_16		= modifyWordSize(B4G4R4A4, 16);
 	constexpr PixelFormat R5G6B5_16			{ { PixelComponents::R5, PixelComponents::G6, PixelComponents::B5 }, 16 };
 	constexpr PixelFormat B5G6R5_16			{ { PixelComponents::B5, PixelComponents::G6, PixelComponents::R5 }, 16 };
 	constexpr PixelFormat Y16A16_32			= modifyWordSize(Y16A16, 32);
