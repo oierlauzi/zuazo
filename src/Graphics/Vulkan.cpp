@@ -10,6 +10,7 @@
 #include <iostream>
 #include <sstream>
 #include <cassert>
+#include <set>
 
 namespace Zuazo::Graphics {
 
@@ -27,7 +28,9 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerCallback(
 	std::ostringstream message;
 
 	message << "On Vulkan: " << userData << "\n";
-	message << vk::to_string(static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>(severity)) << ": " << vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(type)) << ":\n";
+	message 
+		<< vk::to_string(static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>(severity)) 
+		<< ": " << vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(type)) << ":\n";
 	message << "\t" << "messageIDName   = <" << data->pMessageIdName << ">\n";
 	message << "\t" << "messageIdNumber = " << data->messageIdNumber << "\n";
 	message << "\t" << "message         = <" << data->pMessage << ">\n";
@@ -50,7 +53,9 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerCallback(
 		message << "\t" << "Objects:\n";
 		for (uint8_t i = 0; i < data->objectCount; i++) {
 			message << "\t\t" << "Object " << i << "\n";
-			message << "\t\t\t" << "objectType   = " << vk::to_string(static_cast<vk::ObjectType>(data->pObjects[i].objectType)) << "\n";
+			message 
+				<< "\t\t\t" << "objectType   = " 
+				<< vk::to_string(static_cast<vk::ObjectType>(data->pObjects[i].objectType)) << "\n";
 			message << "\t\t\t" << "objectHandle = " << data->pObjects[i].objectHandle << "\n";
 			if (data->pObjects[i].pObjectName) {
 				message << "\t\t\t" << "objectName   = <" << data->pObjects[i].pObjectName << ">\n";
@@ -93,8 +98,9 @@ Vulkan::Vulkan()
 	, m_loader(*m_instance, vk::Device())
 	, m_messenger(createMessenger(*m_instance, m_loader, this))
 	, m_physicalDevice(getBestPhysicalDevice(*m_instance))
-	, m_queues(QUEUE_NUM, std::vector<vk::Queue>(1))
-	, m_device(createDevice(*m_instance, m_physicalDevice, m_queues))
+	, m_queueIndices(getQueueIndices(*m_instance, m_physicalDevice))
+	, m_device(createDevice(m_physicalDevice, m_queueIndices))
+	, m_queues(getQueues(*m_device, m_queueIndices))
 {
 }
 
@@ -111,19 +117,35 @@ const vk::Device& Vulkan::getDevice() const{
 }
 
 const vk::Queue& Vulkan::getGraphicsQueue() const{
-	return m_queues[GRAPHICS_QUEUE][0];
+	return m_queues[GRAPHICS_QUEUE];
+}
+
+uint32_t Vulkan::getGraphicsQueueIndex() const{
+	return m_queueIndices[GRAPHICS_QUEUE];
 }
 
 const vk::Queue& Vulkan::getComputeQueue() const{
-	return m_queues[COMPUTE_QUEUE][0];
+	return m_queues[COMPUTE_QUEUE];
+}
+
+uint32_t Vulkan::getComputeQueueIndex() const{
+	return m_queueIndices[COMPUTE_QUEUE];
 }
 
 const vk::Queue& Vulkan::getTransferQueue() const{
-	return m_queues[TRANSFER_QUEUE][0];
+	return m_queues[TRANSFER_QUEUE];
+}
+
+uint32_t Vulkan::getTransferQueueIndex() const{
+	return m_queueIndices[TRANSFER_QUEUE];
 }
 
 const vk::Queue& Vulkan::getPresentationQueue() const{
-	return m_queues[PRESENTATION_QUEUE][0];
+	return m_queues[PRESENTATION_QUEUE];
+}
+
+uint32_t Vulkan::getPresentationQueueIndex() const{
+	return m_queueIndices[PRESENTATION_QUEUE];
 }
 
 
@@ -251,21 +273,41 @@ vk::PhysicalDevice Vulkan::getBestPhysicalDevice(const vk::Instance& instance){
 	return best.first.value();
 }
 
-vk::UniqueDevice Vulkan::createDevice(	const vk::Instance& instance, 
-										const vk::PhysicalDevice& physicalDevice,
-										std::vector<std::vector<vk::Queue>>& queues )
+std::array<uint32_t, Vulkan::QUEUE_NUM>	Vulkan::getQueueIndices(const vk::Instance& inst, 
+																const vk::PhysicalDevice& dev )
 {
-	//Get all the required queue families
-	auto requiredQueueFamilies = getRequiredQueueFamilies(instance, physicalDevice);
-	const auto availableQueueFamilies = physicalDevice.getQueueFamilyProperties();
-	const auto usedQueueFamilies = getUsedQueueFamilies(availableQueueFamilies, requiredQueueFamilies);
+	std::array<uint32_t, Vulkan::QUEUE_NUM>	queues;
 
-	if(requiredQueueFamilies.size()){
-		throw Exception("There are missing queue families");
+	const auto queueFamilies = dev.getQueueFamilyProperties();
+
+	//Add the queue families
+	queues[GRAPHICS_QUEUE] = getQueueFamilyIndex(queueFamilies, vk::QueueFlagBits::eGraphics);
+	queues[COMPUTE_QUEUE] = getQueueFamilyIndex(queueFamilies, vk::QueueFlagBits::eCompute);
+	queues[TRANSFER_QUEUE] = getQueueFamilyIndex(queueFamilies, vk::QueueFlagBits::eTransfer);
+
+
+	//Add a queue family compatible with presentation
+	const auto presentFamilies = Window::getPresentationQueueFamilies(inst, dev);
+	if(presentFamilies.size() == 0){
+		throw Exception("Device has not presentation queues");
 	}
 
-	const auto usedQueueFamilyIndices = getQueueFamilyIndices(availableQueueFamilies, usedQueueFamilies);
+	//Try to assign the graphics queue
+	if(std::find(presentFamilies.cbegin(), presentFamilies.cend(), queues[GRAPHICS_QUEUE]) != presentFamilies.cend()){
+		queues[PRESENTATION_QUEUE] = queues[GRAPHICS_QUEUE];
+	} else {
+		queues[PRESENTATION_QUEUE] = presentFamilies[0];
+	}
 
+	return queues;
+}
+
+
+vk::UniqueDevice Vulkan::createDevice(	const vk::PhysicalDevice& physicalDevice,
+										const std::array<uint32_t, QUEUE_NUM>& queueIndices )
+{
+	//Get the queues
+	std::set<uint32_t> uniqueQueueFamilies(queueIndices.cbegin(), queueIndices.cend());
 
 	//Get the validation layers
 	auto requiredLayers = getRequiredLayers();
@@ -310,13 +352,13 @@ vk::UniqueDevice Vulkan::createDevice(	const vk::Instance& instance,
 	//Fill the queue create infos
 	const float queuePriority = 1.0f;
 	std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-	queueCreateInfos.reserve(usedQueueFamilyIndices.size());
+	queueCreateInfos.reserve(uniqueQueueFamilies.size());
 
-	for(auto ite = usedQueueFamilyIndices.cbegin(); ite != usedQueueFamilyIndices.cend(); ++ite){
+	for(auto q : uniqueQueueFamilies){
 		queueCreateInfos.emplace_back(
 			vk::DeviceQueueCreateFlags(),
-			ite->first,
-			ite->second,
+			q,
+			1,
 			&queuePriority
 		);
 	}
@@ -332,15 +374,20 @@ vk::UniqueDevice Vulkan::createDevice(	const vk::Instance& instance,
 		usedExtensionNames.data()
 	);
 
-	auto device = physicalDevice.createDeviceUnique(createInfo);
-
-	//Fill the queue vector
-	requiredQueueFamilies = getRequiredQueueFamilies(instance, physicalDevice); //Refill it
-	queues = getQueues(*device, availableQueueFamilies, requiredQueueFamilies);
-
-	return device;
+	return physicalDevice.createDeviceUnique(createInfo);
 }
 
+std::array<vk::Queue, Vulkan::QUEUE_NUM> Vulkan::getQueues(	const vk::Device& device, 
+															const std::array<uint32_t, QUEUE_NUM>& queueIndices )
+{
+	std::array<vk::Queue, Vulkan::QUEUE_NUM> queues;
+
+	for(size_t i = 0; i < QUEUE_NUM; i++){
+		queues[i] = device.getQueue(queueIndices[i], 0);
+	}
+
+	return queues;
+}
 
 
 
@@ -380,27 +427,6 @@ std::vector<vk::ExtensionProperties> Vulkan::getRequiredInstanceExtensions(){
 	return extensions;
 }
 
-std::vector<vk::QueueFamilyProperties> Vulkan::getRequiredQueueFamilies(const vk::Instance& inst, const vk::PhysicalDevice& dev){
-	std::vector<vk::QueueFamilyProperties> queueFamilies(QUEUE_NUM);
-
-	//								  Queue family 				Qty.	Ignore	Ignore
-	queueFamilies[GRAPHICS_QUEUE] = { VK_QUEUE_GRAPHICS_BIT, 	1, 		0, 		{}		};
-	queueFamilies[COMPUTE_QUEUE]  = { VK_QUEUE_COMPUTE_BIT, 	1, 		0, 		{}		};
-	queueFamilies[TRANSFER_QUEUE] = { VK_QUEUE_TRANSFER_BIT, 	1, 		0, 		{}		};
-	
-	//Add a queue family compatible with presentation
-	const auto presentationFamilies = Window::getPresentationQueueFamilies(inst, dev);
-	if(presentationFamilies.size() == 0){
-		throw Exception("Device has not presentation queues");
-	}
-
-	auto presentationQueue = dev.getQueueFamilyProperties()[presentationFamilies[0]];
-	presentationQueue.queueCount = 1;
-	queueFamilies[PRESENTATION_QUEUE] = presentationQueue;
-
-	return queueFamilies;
-}
-
 std::vector<vk::ExtensionProperties> Vulkan::getRequiredDeviceExtensions(){
 	std::vector<vk::ExtensionProperties> extensions;
 
@@ -410,6 +436,14 @@ std::vector<vk::ExtensionProperties> Vulkan::getRequiredDeviceExtensions(){
 	extensions.emplace_back(swapchainExtension);
 
 	return extensions;
+}
+
+std::vector<vk::QueueFamilyProperties> 	Vulkan::getRequiredQueueFamilies(){
+	return {
+		VkQueueFamilyProperties{ VK_QUEUE_GRAPHICS_BIT,	1,	0,	{} },
+		VkQueueFamilyProperties{ VK_QUEUE_COMPUTE_BIT,	1,	0,	{} },
+		VkQueueFamilyProperties{ VK_QUEUE_TRANSFER_BIT,	1,	0,	{} }
+	};
 }
 
 bool Vulkan::getPhysicalDeviceSupport(const vk::Instance& instance, const vk::PhysicalDevice& device){
@@ -435,7 +469,7 @@ bool Vulkan::getPhysicalDeviceSupport(const vk::Instance& instance, const vk::Ph
 	}
 
 	//Check device queue family support
-	auto requiredQueueFamilies = getRequiredQueueFamilies(instance, device);
+	auto requiredQueueFamilies = getRequiredQueueFamilies();
 	const auto availableQueueFamilies = device.getQueueFamilyProperties();
 	getUsedQueueFamilies(availableQueueFamilies, requiredQueueFamilies);
 	if(requiredQueueFamilies.size()){

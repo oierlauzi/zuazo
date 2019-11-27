@@ -1,15 +1,15 @@
 #include "PixelComponent.h"
 
-namespace Zuazo::Graphics {
+namespace Zuazo {
 
 constexpr bool PixelComponent::operator==(const PixelComponent& other) const{
 	return 
 		type == other.type &&
 		depth == other.depth &&
-		flags == other.flags &&
 		plane == other.plane &&
 		subsampling.x == other.subsampling.x &&
-		subsampling.y == other.subsampling.y;
+		subsampling.y == other.subsampling.y &&
+		flags == other.flags;
 }
 
 constexpr bool PixelComponent::operator!=(const PixelComponent& other) const{
@@ -25,9 +25,9 @@ constexpr PixelComponent modifyType(const PixelComponent& component, PixelCompon
 	return PixelComponent {
 		newType,
 		component.depth,
-		component.flags,
 		component.plane,
-		component.subsampling
+		component.subsampling,
+		component.flags
 	};
 }
 
@@ -35,19 +35,9 @@ constexpr PixelComponent modifyDepth(const PixelComponent& component, uint32_t n
 	return PixelComponent {
 		component.type,
 		newDepth,
-		component.flags,
 		component.plane,
-		component.subsampling
-	};
-}
-
-constexpr PixelComponent modifyFlags(const PixelComponent& component, PixelComponent::Flags newFlags){
-	return PixelComponent {
-		component.type,
-		component.depth,
-		newFlags,
-		component.plane,
-		component.subsampling
+		component.subsampling,
+		component.flags
 	};
 }
 
@@ -55,9 +45,9 @@ constexpr PixelComponent modifyPlane(const PixelComponent& component, uint32_t n
 	return PixelComponent {
 		component.type,
 		component.depth,
-		component.flags,
 		newPlane,
-		component.subsampling
+		component.subsampling,
+		component.flags
 	};
 }
 
@@ -65,11 +55,20 @@ constexpr PixelComponent modifySubsampling(const PixelComponent& component, Pixe
 	return PixelComponent {
 		component.type,
 		component.depth,
-		component.flags,
 		component.plane,
-		newSubsampling
+		newSubsampling,
+		component.flags
 	};
 }
 
+constexpr PixelComponent modifyFlags(const PixelComponent& component, PixelComponent::Flags newFlags){
+	return PixelComponent {
+		component.type,
+		component.depth,
+		component.plane,
+		component.subsampling,
+		newFlags
+	};
+}
 
 }

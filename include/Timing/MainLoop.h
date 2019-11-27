@@ -34,9 +34,9 @@ private:
 	Duration                            m_elapsed;
 
 	std::atomic<bool>                   m_exit;
-	std::thread                         m_thread;
 	mutable std::mutex                  m_mutex;
 	mutable std::condition_variable     m_handleEvents;
+	std::thread                         m_thread;
 
 	void                                threadFunc();
 };

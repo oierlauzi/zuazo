@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../Math/Rational.h"
-#include "../Macros.h"
+#include "Math/Rational.h"
+#include "Macros.h"
 
 #include <bitset>
 
-namespace Zuazo::Graphics {
+namespace Zuazo {
 
 struct PixelComponent{
 	enum class Type {
@@ -26,7 +26,7 @@ struct PixelComponent{
 
 		//ADD HERE
 
-		COMPONENT_TYPE_COUNT
+		COUNT
 	};
 
 	enum class Flags {
@@ -36,16 +36,16 @@ struct PixelComponent{
 	};
 
 	struct Subsampling {
-		uint8_t x = 1, y = 1; 
+		uint16_t x = 1, y = 1; 
 	};
 
-	static constexpr Subsampling NO_SUBSAMPLING = Subsampling{1, 1};
+	static constexpr Subsampling NO_SUBSAMPLING {1, 1};
 
 	Type						type = Type::NONE;
 	uint32_t					depth = 0;
-	Flags						flags = {};
 	uint32_t					plane = 0;
 	Subsampling					subsampling = NO_SUBSAMPLING;
+	Flags						flags = {};
 
 	constexpr PixelComponent() = default;
 	constexpr PixelComponent(const PixelComponent& other) = default;
@@ -64,15 +64,15 @@ ZUAZO_ENUM_FLAG_OPERATORS(PixelComponent::Flags)
 
 constexpr PixelComponent modifyType(const PixelComponent& component, PixelComponent::Type newType);
 constexpr PixelComponent modifyDepth(const PixelComponent& component, uint32_t newDepth);
-constexpr PixelComponent modifyFlags(const PixelComponent& component, PixelComponent::Flags newFlags);
 constexpr PixelComponent modifyPlane(const PixelComponent& component, uint32_t newPlane);
 constexpr PixelComponent modifySubsampling(const PixelComponent& component, PixelComponent::Subsampling newSubsampling);
+constexpr PixelComponent modifyFlags(const PixelComponent& component, PixelComponent::Flags newFlags);
 
 } //namespace Zuazo
 
 #include "PixelComponent.inl"
 
-namespace Zuazo::Graphics::PixelComponents {
+namespace Zuazo::PixelComponents {
 	constexpr PixelComponent NONE   = { PixelComponent::Type::NONE,	0  };
 	constexpr PixelComponent NONE1  = { PixelComponent::Type::NONE,	1  };
 	constexpr PixelComponent NONE2  = { PixelComponent::Type::NONE,	2  };
@@ -103,12 +103,13 @@ namespace Zuazo::Graphics::PixelComponents {
 	constexpr PixelComponent R12    = { PixelComponent::Type::R, 	12 	};
 	constexpr PixelComponent R14    = { PixelComponent::Type::R, 	14 	};
 	constexpr PixelComponent R16    = { PixelComponent::Type::R, 	16 	};
-	constexpr PixelComponent R16f   = { PixelComponent::Type::R, 	16,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent R16f   = modifyFlags(R16, PixelComponent::Flags::IEEE_754);
+	constexpr PixelComponent R20    = { PixelComponent::Type::R, 	20 	};
 	constexpr PixelComponent R24    = { PixelComponent::Type::R, 	24 	};
 	constexpr PixelComponent R32    = { PixelComponent::Type::R, 	32 	};
-	constexpr PixelComponent R32f   = { PixelComponent::Type::R, 	32,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent R32f   = modifyFlags(R32, PixelComponent::Flags::IEEE_754);
 	constexpr PixelComponent R64    = { PixelComponent::Type::R, 	64 	};
-	constexpr PixelComponent R64f   = { PixelComponent::Type::R, 	64,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent R64f   = modifyFlags(R64, PixelComponent::Flags::IEEE_754);
 
 	constexpr PixelComponent G1     = { PixelComponent::Type::G, 	1  	};
 	constexpr PixelComponent G2     = { PixelComponent::Type::G, 	2  	};
@@ -122,12 +123,13 @@ namespace Zuazo::Graphics::PixelComponents {
 	constexpr PixelComponent G12    = { PixelComponent::Type::G, 	12 	};
 	constexpr PixelComponent G14    = { PixelComponent::Type::G, 	14 	};
 	constexpr PixelComponent G16    = { PixelComponent::Type::G, 	16 	};
-	constexpr PixelComponent G16f   = { PixelComponent::Type::G, 	16,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent G16f   = modifyFlags(G16, PixelComponent::Flags::IEEE_754);
+	constexpr PixelComponent G20    = { PixelComponent::Type::G, 	20 	};
 	constexpr PixelComponent G24    = { PixelComponent::Type::G, 	24 	};
 	constexpr PixelComponent G32    = { PixelComponent::Type::G, 	32 	};
-	constexpr PixelComponent G32f   = { PixelComponent::Type::G, 	32,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent G32f   = modifyFlags(G32, PixelComponent::Flags::IEEE_754);
 	constexpr PixelComponent G64    = { PixelComponent::Type::G, 	64 	};
-	constexpr PixelComponent G64f   = { PixelComponent::Type::G, 	64,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent G64f   = modifyFlags(G64, PixelComponent::Flags::IEEE_754);
 
 	constexpr PixelComponent B1     = { PixelComponent::Type::B, 	1  	};
 	constexpr PixelComponent B2     = { PixelComponent::Type::B, 	2  	};
@@ -141,12 +143,13 @@ namespace Zuazo::Graphics::PixelComponents {
 	constexpr PixelComponent B12    = { PixelComponent::Type::B, 	12 	};
 	constexpr PixelComponent B14    = { PixelComponent::Type::B, 	14 	};
 	constexpr PixelComponent B16    = { PixelComponent::Type::B, 	16 	};
-	constexpr PixelComponent B16f   = { PixelComponent::Type::B, 	16,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent B16f   = modifyFlags(B16, PixelComponent::Flags::IEEE_754);
+	constexpr PixelComponent B20    = { PixelComponent::Type::B, 	20 	};
 	constexpr PixelComponent B24    = { PixelComponent::Type::B, 	24 	};
 	constexpr PixelComponent B32    = { PixelComponent::Type::B, 	32 	};
-	constexpr PixelComponent B32f   = { PixelComponent::Type::B, 	32,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent B32f   = modifyFlags(B32, PixelComponent::Flags::IEEE_754);
 	constexpr PixelComponent B64    = { PixelComponent::Type::B, 	64 	};
-	constexpr PixelComponent B64f   = { PixelComponent::Type::B, 	64,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent B64f   = modifyFlags(B64, PixelComponent::Flags::IEEE_754);
 
 	constexpr PixelComponent A1     = { PixelComponent::Type::A, 	1  	};
 	constexpr PixelComponent A2     = { PixelComponent::Type::A, 	2  	};
@@ -160,12 +163,13 @@ namespace Zuazo::Graphics::PixelComponents {
 	constexpr PixelComponent A12    = { PixelComponent::Type::A, 	12 	};
 	constexpr PixelComponent A14    = { PixelComponent::Type::A, 	14 	};
 	constexpr PixelComponent A16    = { PixelComponent::Type::A, 	16 	};
-	constexpr PixelComponent A16f   = { PixelComponent::Type::A, 	16,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent A16f   = modifyFlags(A16, PixelComponent::Flags::IEEE_754);
+	constexpr PixelComponent A20    = { PixelComponent::Type::A, 	20 	};
 	constexpr PixelComponent A24    = { PixelComponent::Type::A, 	24 	};
 	constexpr PixelComponent A32    = { PixelComponent::Type::A, 	32 	};
-	constexpr PixelComponent A32f   = { PixelComponent::Type::A, 	32,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent A32f   = modifyFlags(A32, PixelComponent::Flags::IEEE_754);
 	constexpr PixelComponent A64    = { PixelComponent::Type::A, 	64 	};
-	constexpr PixelComponent A64f   = { PixelComponent::Type::A, 	64,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent A64f   = modifyFlags(A64, PixelComponent::Flags::IEEE_754);
 
 	constexpr PixelComponent Y1     = { PixelComponent::Type::Y, 	1  	};
 	constexpr PixelComponent Y2     = { PixelComponent::Type::Y, 	2  	};
@@ -179,12 +183,13 @@ namespace Zuazo::Graphics::PixelComponents {
 	constexpr PixelComponent Y12    = { PixelComponent::Type::Y, 	12 	};
 	constexpr PixelComponent Y14    = { PixelComponent::Type::Y, 	14 	};
 	constexpr PixelComponent Y16    = { PixelComponent::Type::Y, 	16 	};
-	constexpr PixelComponent Y16f   = { PixelComponent::Type::Y, 	16,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent Y16f   = modifyFlags(Y16, PixelComponent::Flags::IEEE_754);
+	constexpr PixelComponent Y20    = { PixelComponent::Type::Y, 	20 	};
 	constexpr PixelComponent Y24    = { PixelComponent::Type::Y, 	24 	};
 	constexpr PixelComponent Y32    = { PixelComponent::Type::Y, 	32 	};
-	constexpr PixelComponent Y32f   = { PixelComponent::Type::Y, 	32,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent Y32f   = modifyFlags(Y32, PixelComponent::Flags::IEEE_754);
 	constexpr PixelComponent Y64    = { PixelComponent::Type::Y, 	64 	};
-	constexpr PixelComponent Y64f   = { PixelComponent::Type::Y, 	64,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent Y64f   = modifyFlags(Y64, PixelComponent::Flags::IEEE_754);
 
 	constexpr PixelComponent U1     = { PixelComponent::Type::U, 	1  	};
 	constexpr PixelComponent U2     = { PixelComponent::Type::U, 	2  	};
@@ -198,12 +203,13 @@ namespace Zuazo::Graphics::PixelComponents {
 	constexpr PixelComponent U12    = { PixelComponent::Type::U, 	12 	};
 	constexpr PixelComponent U14    = { PixelComponent::Type::U, 	14 	};
 	constexpr PixelComponent U16    = { PixelComponent::Type::U, 	16 	};
-	constexpr PixelComponent U16f   = { PixelComponent::Type::U, 	16,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent U16f   = modifyFlags(U16, PixelComponent::Flags::IEEE_754);
+	constexpr PixelComponent U20    = { PixelComponent::Type::U, 	20 	};
 	constexpr PixelComponent U24    = { PixelComponent::Type::U, 	24 	};
 	constexpr PixelComponent U32    = { PixelComponent::Type::U, 	32 	};
-	constexpr PixelComponent U32f   = { PixelComponent::Type::U, 	32,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent U32f   = modifyFlags(U32, PixelComponent::Flags::IEEE_754);
 	constexpr PixelComponent U64    = { PixelComponent::Type::U, 	64 	};
-	constexpr PixelComponent U64f   = { PixelComponent::Type::U, 	64,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent U64f   = modifyFlags(U64, PixelComponent::Flags::IEEE_754);
 
 	constexpr PixelComponent V1     = { PixelComponent::Type::V, 	1  	};
 	constexpr PixelComponent V2     = { PixelComponent::Type::V, 	2  	};
@@ -217,11 +223,12 @@ namespace Zuazo::Graphics::PixelComponents {
 	constexpr PixelComponent V12    = { PixelComponent::Type::V, 	12 	};
 	constexpr PixelComponent V14    = { PixelComponent::Type::V, 	14 	};
 	constexpr PixelComponent V16    = { PixelComponent::Type::V, 	16 	};
-	constexpr PixelComponent V16f   = { PixelComponent::Type::V, 	16,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent V16f   = modifyFlags(V16, PixelComponent::Flags::IEEE_754);
+	constexpr PixelComponent V20    = { PixelComponent::Type::V, 	20 	};
 	constexpr PixelComponent V24    = { PixelComponent::Type::V, 	24 	};
 	constexpr PixelComponent V32    = { PixelComponent::Type::V, 	32 	};
-	constexpr PixelComponent V32f   = { PixelComponent::Type::V, 	32,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent V32f   = modifyFlags(V32, PixelComponent::Flags::IEEE_754);
 	constexpr PixelComponent V64    = { PixelComponent::Type::V, 	64 	};
-	constexpr PixelComponent V64f   = { PixelComponent::Type::V, 	64,	PixelComponent::Flags::IEEE_754 };
+	constexpr PixelComponent V64f   = modifyFlags(V64, PixelComponent::Flags::IEEE_754);
 
 }

@@ -219,23 +219,10 @@ Window& Window::operator=(Window&& other) {
 
 
 
-bool operator==(const Window& x, const Window& y){
-	return x.m_window == y.m_window;
-}
-
 Window::operator bool() const {
 	return m_window;
 }
 
-
-
-void Window::bind(){
-	glfwMakeContextCurrent(m_window);
-}
-
-void Window::unbind(){
-	glfwMakeContextCurrent(nullptr);
-}
 
 vk::UniqueSurfaceKHR Window::getSurface(const vk::Instance& instance) const {
 	using Deleter = vk::UniqueHandleTraits<vk::SurfaceKHR, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE>::deleter;
@@ -522,10 +509,6 @@ void Window::setCallbacks(Callbacks&& cbks){
 
 const Window::Callbacks& Window::getCallbacks() const{
 	return m_callbacks;
-}
-
-void Window::swapBuffers() const{
-	glfwSwapBuffers(m_window); 
 }
 
 

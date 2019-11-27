@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Resolution.h"
 #include "Vulkan.h"
 #include "../Math/Vector.h"
 #include "../Utils/CrossThreadInvocation.h"
 #include "../Timing/Chrono.h"
+#include "../Resolution.h"
 #include "../Zuazo.h"
 
 #include <atomic>
@@ -104,11 +104,9 @@ public:
 
 	Window&                             operator=(Window&& other);
 
-	friend bool                         operator==(const Window& x, const Window& y);
 	operator bool() const;
 
-	void                                bind();
-	void                                unbind();
+
 	vk::UniqueSurfaceKHR				getSurface(const vk::Instance& instance) const;				
 
 
@@ -159,8 +157,6 @@ public:
 
 	void								setCallbacks(Callbacks&& cbks);
 	const Callbacks&					getCallbacks() const;
-
-	void                                swapBuffers() const;
 
 	static const std::vector<Monitor>&  getMonitors();
 
