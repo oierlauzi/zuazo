@@ -71,4 +71,31 @@ constexpr PixelComponent modifyFlags(const PixelComponent& component, PixelCompo
 	};
 }
 
+constexpr bool areCompatible(PixelComponent a, PixelComponent b){
+	PixelComponent::Flags flags = {};
+
+	//Ignore forced endianess if needed
+	#if ZUAZO_IS_LITTLE_ENDIAN
+		flags |= PixelComponent::Flags::FORCE_LITTLE_ENDIAN;
+	#elif ZUAZO_IS_BIG_ENDIAN
+		flags |= PixelComponent::Flags::FORCE_BIG_ENDIAN;
+	#endif
+
+	PixelComponent::Flags mask = ~flags;
+
+	a = modifyFlags(a, a.flags & mask);	
+	b = modifyFlags(b, b.flags & mask);	
+
+	//Ignore empty componets
+	if(a.depth == 0){
+		a = {};
+	}
+
+	if(b.depth == 0){
+		b = {};
+	}
+
+	return a == b;
+}
+
 }

@@ -10,7 +10,7 @@ namespace Zuazo {
 struct PixelComponent{
 	enum class Type {
 		NONE        =0,				///Does not represent any pixel component
-		N			=NONE,			///Short form of NONE
+		X			=NONE,			///Short form of NONE
 		RED         ,				///Represents a red subpixel
 		R           =RED,			///Short form of RED
 		GREEN       ,				///Represents a green subpixel
@@ -30,7 +30,14 @@ struct PixelComponent{
 	};
 
 	enum class Flags {
-		IEEE_754	=ZUAZO_BIT(0), 	///Floating point, IEEE_754 standard 
+		IEEE_754			= ZUAZO_BIT(0), 	///Floating point, IEEE_754 standard 
+		FORCE_LITTLE_ENDIAN = ZUAZO_BIT(1),		///Always stored as little endian\
+												@note If no endianess is specified, system endianess\
+												will be used
+
+		FORCE_BIG_ENDIAN	= ZUAZO_BIT(2)		///Always stored as big endian.\
+												@note If no endianess is specified, system endianess\
+												will be used
 
 		//ADD HERE
 	};
@@ -67,29 +74,33 @@ constexpr PixelComponent modifyDepth(const PixelComponent& component, uint32_t n
 constexpr PixelComponent modifyPlane(const PixelComponent& component, uint32_t newPlane);
 constexpr PixelComponent modifySubsampling(const PixelComponent& component, PixelComponent::Subsampling newSubsampling);
 constexpr PixelComponent modifyFlags(const PixelComponent& component, PixelComponent::Flags newFlags);
+constexpr bool areCompatible(PixelComponent a, PixelComponent b);
 
 } //namespace Zuazo
 
 #include "PixelComponent.inl"
 
 namespace Zuazo::PixelComponents {
-	constexpr PixelComponent NONE   = { PixelComponent::Type::NONE,	0  };
-	constexpr PixelComponent NONE1  = { PixelComponent::Type::NONE,	1  };
-	constexpr PixelComponent NONE2  = { PixelComponent::Type::NONE,	2  };
-	constexpr PixelComponent NONE3  = { PixelComponent::Type::NONE,	3  };
-	constexpr PixelComponent NONE4  = { PixelComponent::Type::NONE,	4  };
-	constexpr PixelComponent NONE5  = { PixelComponent::Type::NONE,	5  };
-	constexpr PixelComponent NONE6  = { PixelComponent::Type::NONE,	6  };
-	constexpr PixelComponent NONE7  = { PixelComponent::Type::NONE,	7  };
-	constexpr PixelComponent NONE8  = { PixelComponent::Type::NONE,	8  };
-	constexpr PixelComponent NONE10 = { PixelComponent::Type::NONE,	10 };
-	constexpr PixelComponent NONE12 = { PixelComponent::Type::NONE,	12 };
-	constexpr PixelComponent NONE14 = { PixelComponent::Type::NONE,	14 };
-	constexpr PixelComponent NONE16 = { PixelComponent::Type::NONE,	16 };
-	constexpr PixelComponent NONE24 = { PixelComponent::Type::NONE,	24 };
-	constexpr PixelComponent NONE32 = { PixelComponent::Type::NONE,	32 };
-	constexpr PixelComponent NONE48 = { PixelComponent::Type::NONE,	48 };
-	constexpr PixelComponent NONE64 = { PixelComponent::Type::NONE,	64 };
+	constexpr PixelComponent NONE   = { PixelComponent::Type::X,	0	};
+
+	constexpr PixelComponent X1 	= { PixelComponent::Type::X,	1 	};
+	constexpr PixelComponent X2 	= { PixelComponent::Type::X,	2 	};
+	constexpr PixelComponent X3 	= { PixelComponent::Type::X,	3 	};
+	constexpr PixelComponent X4 	= { PixelComponent::Type::X,	4 	};
+	constexpr PixelComponent X5 	= { PixelComponent::Type::X,	5 	};
+	constexpr PixelComponent X6 	= { PixelComponent::Type::X,	6 	};
+	constexpr PixelComponent X7 	= { PixelComponent::Type::X,	7 	};
+	constexpr PixelComponent X8 	= { PixelComponent::Type::X,	8 	};
+	constexpr PixelComponent X9		= { PixelComponent::Type::X,	9 	};
+	constexpr PixelComponent X10	= { PixelComponent::Type::X,	10	};
+	constexpr PixelComponent X11	= { PixelComponent::Type::X,	11	};
+	constexpr PixelComponent X12	= { PixelComponent::Type::X,	12	};
+	constexpr PixelComponent X14	= { PixelComponent::Type::X,	14	};
+	constexpr PixelComponent X16	= { PixelComponent::Type::X,	16	};
+	constexpr PixelComponent X24	= { PixelComponent::Type::X,	24	};
+	constexpr PixelComponent X32	= { PixelComponent::Type::X,	32	};
+	constexpr PixelComponent X48	= { PixelComponent::Type::X,	48	};
+	constexpr PixelComponent X64	= { PixelComponent::Type::X,	64	};
 
 	constexpr PixelComponent R1     = { PixelComponent::Type::R, 	1  	};
 	constexpr PixelComponent R2     = { PixelComponent::Type::R, 	2  	};
@@ -99,7 +110,9 @@ namespace Zuazo::PixelComponents {
 	constexpr PixelComponent R6     = { PixelComponent::Type::R, 	6  	};
 	constexpr PixelComponent R7     = { PixelComponent::Type::R, 	7  	};
 	constexpr PixelComponent R8     = { PixelComponent::Type::R, 	8  	};
-	constexpr PixelComponent R10    = { PixelComponent::Type::R, 	10 	};
+	constexpr PixelComponent R9		= { PixelComponent::Type::R,	9 	};
+	constexpr PixelComponent R10	= { PixelComponent::Type::R,	10	};
+	constexpr PixelComponent R11	= { PixelComponent::Type::R,	11	};
 	constexpr PixelComponent R12    = { PixelComponent::Type::R, 	12 	};
 	constexpr PixelComponent R14    = { PixelComponent::Type::R, 	14 	};
 	constexpr PixelComponent R16    = { PixelComponent::Type::R, 	16 	};
@@ -119,7 +132,9 @@ namespace Zuazo::PixelComponents {
 	constexpr PixelComponent G6     = { PixelComponent::Type::G, 	6  	};
 	constexpr PixelComponent G7     = { PixelComponent::Type::G, 	7  	};
 	constexpr PixelComponent G8     = { PixelComponent::Type::G, 	8  	};
-	constexpr PixelComponent G10    = { PixelComponent::Type::G, 	10 	};
+	constexpr PixelComponent G9		= { PixelComponent::Type::G,	9 	};
+	constexpr PixelComponent G10	= { PixelComponent::Type::G,	10	};
+	constexpr PixelComponent G11	= { PixelComponent::Type::G,	11	};
 	constexpr PixelComponent G12    = { PixelComponent::Type::G, 	12 	};
 	constexpr PixelComponent G14    = { PixelComponent::Type::G, 	14 	};
 	constexpr PixelComponent G16    = { PixelComponent::Type::G, 	16 	};
@@ -139,7 +154,9 @@ namespace Zuazo::PixelComponents {
 	constexpr PixelComponent B6     = { PixelComponent::Type::B, 	6  	};
 	constexpr PixelComponent B7     = { PixelComponent::Type::B, 	7  	};
 	constexpr PixelComponent B8     = { PixelComponent::Type::B, 	8  	};
-	constexpr PixelComponent B10    = { PixelComponent::Type::B, 	10 	};
+	constexpr PixelComponent B9		= { PixelComponent::Type::B,	9 	};
+	constexpr PixelComponent B10	= { PixelComponent::Type::B,	10	};
+	constexpr PixelComponent B11	= { PixelComponent::Type::B,	11	};
 	constexpr PixelComponent B12    = { PixelComponent::Type::B, 	12 	};
 	constexpr PixelComponent B14    = { PixelComponent::Type::B, 	14 	};
 	constexpr PixelComponent B16    = { PixelComponent::Type::B, 	16 	};
@@ -159,7 +176,9 @@ namespace Zuazo::PixelComponents {
 	constexpr PixelComponent A6     = { PixelComponent::Type::A, 	6  	};
 	constexpr PixelComponent A7     = { PixelComponent::Type::A, 	7  	};
 	constexpr PixelComponent A8     = { PixelComponent::Type::A, 	8  	};
-	constexpr PixelComponent A10    = { PixelComponent::Type::A, 	10 	};
+	constexpr PixelComponent A9		= { PixelComponent::Type::A,	9 	};
+	constexpr PixelComponent A10	= { PixelComponent::Type::A,	10	};
+	constexpr PixelComponent A11	= { PixelComponent::Type::A,	11	};
 	constexpr PixelComponent A12    = { PixelComponent::Type::A, 	12 	};
 	constexpr PixelComponent A14    = { PixelComponent::Type::A, 	14 	};
 	constexpr PixelComponent A16    = { PixelComponent::Type::A, 	16 	};
@@ -179,7 +198,9 @@ namespace Zuazo::PixelComponents {
 	constexpr PixelComponent Y6     = { PixelComponent::Type::Y, 	6  	};
 	constexpr PixelComponent Y7     = { PixelComponent::Type::Y, 	7  	};
 	constexpr PixelComponent Y8     = { PixelComponent::Type::Y, 	8  	};
-	constexpr PixelComponent Y10    = { PixelComponent::Type::Y, 	10 	};
+	constexpr PixelComponent Y9		= { PixelComponent::Type::Y,	9 	};
+	constexpr PixelComponent Y10	= { PixelComponent::Type::Y,	10	};
+	constexpr PixelComponent Y11	= { PixelComponent::Type::Y,	11	};
 	constexpr PixelComponent Y12    = { PixelComponent::Type::Y, 	12 	};
 	constexpr PixelComponent Y14    = { PixelComponent::Type::Y, 	14 	};
 	constexpr PixelComponent Y16    = { PixelComponent::Type::Y, 	16 	};
@@ -199,7 +220,9 @@ namespace Zuazo::PixelComponents {
 	constexpr PixelComponent U6     = { PixelComponent::Type::U, 	6  	};
 	constexpr PixelComponent U7     = { PixelComponent::Type::U, 	7  	};
 	constexpr PixelComponent U8     = { PixelComponent::Type::U, 	8  	};
-	constexpr PixelComponent U10    = { PixelComponent::Type::U, 	10 	};
+	constexpr PixelComponent U9		= { PixelComponent::Type::U,	9 	};
+	constexpr PixelComponent U10	= { PixelComponent::Type::U,	10	};
+	constexpr PixelComponent U11	= { PixelComponent::Type::U,	11	};
 	constexpr PixelComponent U12    = { PixelComponent::Type::U, 	12 	};
 	constexpr PixelComponent U14    = { PixelComponent::Type::U, 	14 	};
 	constexpr PixelComponent U16    = { PixelComponent::Type::U, 	16 	};
@@ -219,7 +242,9 @@ namespace Zuazo::PixelComponents {
 	constexpr PixelComponent V6     = { PixelComponent::Type::V, 	6  	};
 	constexpr PixelComponent V7     = { PixelComponent::Type::V, 	7  	};
 	constexpr PixelComponent V8     = { PixelComponent::Type::V, 	8  	};
-	constexpr PixelComponent V10    = { PixelComponent::Type::V, 	10 	};
+	constexpr PixelComponent V9		= { PixelComponent::Type::V,	9 	};
+	constexpr PixelComponent V10	= { PixelComponent::Type::V,	10	};
+	constexpr PixelComponent V11	= { PixelComponent::Type::V,	11	};
 	constexpr PixelComponent V12    = { PixelComponent::Type::V, 	12 	};
 	constexpr PixelComponent V14    = { PixelComponent::Type::V, 	14 	};
 	constexpr PixelComponent V16    = { PixelComponent::Type::V, 	16 	};

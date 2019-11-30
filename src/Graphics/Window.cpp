@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <cstring>
+#include <future>
 
 namespace Zuazo::Graphics {
 
@@ -155,9 +156,11 @@ std::atomic<bool> Window::s_exit;
 std::atomic<bool> Window::s_callbacksEnabled;
 
 std::thread Window::s_mainThread;
-Utils::CrossThreadInvocation Window::s_mainThreadExecutions;
 std::mutex Window::s_mainThreadMutex;
 std::condition_variable Window::s_mainThreadContinue;
+
+std::condition_variable	Window::s_mainThreadExecutionsComplete;
+std::queue<std::function<void(void)>> Window::s_mainThreadExecutions;
 
 
 Window::Window(const Math::Vec2i& size, std::string&& name, const Monitor& mon) :
@@ -596,7 +599,12 @@ void Window::mainThreadFunc(){
 
 	//Main loop
 	while(!s_exit.load()){
-		s_mainThreadExecutions.handleAllExecutions();
+
+		while(s_mainThreadExecutions.size()){
+			s_mainThreadExecutions.front()();
+			s_mainThreadExecutions.pop();
+			s_mainThreadExecutionsComplete.notify_all();
+		}
 
 		if(s_callbacksEnabled.load()){
 			lock.unlock();
@@ -616,15 +624,21 @@ inline T Window::mainThreadExecute(const std::function<T(Args...)>& func, Args..
 		return func(std::move(args)...); //We are on the main thread. Simply execute it
 	}else {
 		std::unique_lock<std::mutex> lock(s_mainThreadMutex);
-		auto futur = s_mainThreadExecutions.execute(func, std::move(args)...);
-		mainThreadContinue();
-		lock.unlock();
 
-		return futur->getValue();
+		//Create a future object to pass it to the main thread
+		auto futur = std::async(std::launch::deferred, func, std::move(args)...);
+		s_mainThreadExecutions.emplace([&futur] () -> void { futur.wait(); });
+		
+		//Wait until execution is complete
+		mainThreadContinue();
+		s_mainThreadExecutionsComplete.wait(lock);
+
+		return futur.get();
 	}
 }
 
 void Window::mainThreadContinue(){
+
 	if(s_callbacksEnabled.load()){
 		glfwPostEmptyEvent();
 	} else {
@@ -789,11 +803,11 @@ void Window::init(){
 }
 
 void Window::terminate(){
-	s_exit.store(true);
-
 	std::unique_lock<std::mutex> lock(s_mainThreadMutex);
+	s_exit.store(true);
 	mainThreadContinue();
 	lock.unlock();
+	
 	s_mainThread.join();
 
 	s_monitors.clear();

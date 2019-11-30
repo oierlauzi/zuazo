@@ -2,7 +2,6 @@
 
 #include "Vulkan.h"
 #include "../Math/Vector.h"
-#include "../Utils/CrossThreadInvocation.h"
 #include "../Timing/Chrono.h"
 #include "../Resolution.h"
 #include "../Zuazo.h"
@@ -17,6 +16,7 @@
 #include <functional> 
 #include <future>
 #include <optional>
+#include <queue>
 
 #define GLFW_INCLUDE_NONE //Don't include GL
 #include <GLFW/glfw3.h>
@@ -192,9 +192,11 @@ private:
 	static std::atomic<bool>			s_callbacksEnabled;
 
 	static std::thread                  s_mainThread;
-	static Utils::CrossThreadInvocation s_mainThreadExecutions;
 	static std::mutex					s_mainThreadMutex;
 	static std::condition_variable		s_mainThreadContinue;
+
+	static std::condition_variable		s_mainThreadExecutionsComplete;
+	static std::queue<std::function<void(void)>> s_mainThreadExecutions;
 
 	static void                         mainThreadFunc();
 

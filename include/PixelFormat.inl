@@ -179,7 +179,7 @@ constexpr PixelFormat getMemoryRepresentation(const PixelFormat& fmt){
 				//Get if a byte contains multiple components
 				size_t components = 0;
 				size = 0;
-				for(size_t h = 0; size < ZUAZO_BYTE_SIZE; h++){
+				for(size_t h = 0; size < ZUAZO_BYTE_SIZE && i + h < PixelFormat::MAX_COMPONENTS; h++){
 					components++;
 					size += fmt.components[i + h].depth;
 				}
@@ -213,6 +213,23 @@ constexpr PixelFormat reverse(const PixelFormat& fmt){
 	}
 
 	return modifyComponents(fmt, comp);
+}
+
+constexpr bool areCompatible(PixelFormat a, PixelFormat b){
+	a = getMemoryRepresentation(a);
+	b = getMemoryRepresentation(b);
+
+	if(a.wordSize != b.wordSize){
+		return false;
+	}
+
+	for(size_t i = 0; i < PixelFormat::MAX_COMPONENTS; i++){
+		if(!areCompatible(a.components[i], b.components[i])){
+			return false;
+		}
+	}
+
+	return true;
 }
 
 }
