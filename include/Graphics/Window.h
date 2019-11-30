@@ -4,7 +4,6 @@
 #include "../Math/Vector.h"
 #include "../Timing/Chrono.h"
 #include "../Resolution.h"
-#include "../Zuazo.h"
 
 #include <atomic>
 #include <memory>
@@ -97,7 +96,7 @@ public:
 	};
 
 	Window() = default;
-	Window(const  Math::Vec2i& size, std::string&& name = std::string(getApplicationInfo().name), const Monitor& mon = NO_MONITOR);
+	Window(const  Math::Vec2i& size, std::string&& name = "", const Monitor& monitor = NO_MONITOR);
 	Window(const Window& other) = delete;
 	Window(Window&& other);
 	virtual ~Window();
@@ -188,6 +187,8 @@ private:
 
 	static std::vector<Monitor>         s_monitors;
 
+	static std::atomic<size_t>			s_windowCount;
+
 	static std::atomic<bool>            s_exit;
 	static std::atomic<bool>			s_callbacksEnabled;
 
@@ -198,16 +199,14 @@ private:
 	static std::condition_variable		s_mainThreadExecutionsComplete;
 	static std::queue<std::function<void(void)>> s_mainThreadExecutions;
 
+	static GLFWwindow*					createWindow(int x, int y, const char* name, GLFWmonitor* monitor);
+	static void							destroyWindow(GLFWwindow* window);
+
 	static void                         mainThreadFunc();
 
-	template<typename T, typename... Args>
-	static T                            mainThreadExecute(const std::function<T(Args...)>& func, Args... args);
+	template<typename T, typename Func, typename... Args>
+	static T 							mainThreadExecute(Func&& func, Args&&... args);
 	static void							mainThreadContinue();
-
-	template<typename... Args>
-	static void                         callbackThreadExecute(const std::function<void(Args...)>& func, Args... args);
-
-	static void                         cbkThreadFunc();
 
 	static void                         setupCbks(GLFWwindow* win);
 	

@@ -8,16 +8,6 @@
 
 namespace Zuazo::Graphics {
 
-#define MT_EXEC_NO_ARGS(x)              \
-	mainThreadExecute(                  \
-		std::function{x}                \
-	)
-
-#define MT_EXEC(x, ...)                 \
-	mainThreadExecute(                  \
-		std::function{x}, __VA_ARGS__   \
-	)
-
 static void theFastestFunctionInTheWorld(){
 	return;
 }
@@ -26,7 +16,7 @@ static void theFastestFunctionInTheWorld(){
  * INSTANCE
  */
 
-std::atomic<size_t>	Window::Instance::s_instanceCount = 0;
+std::atomic<size_t>	Window::Instance::s_instanceCount(0);
 
 Window::Instance::Instance(){
 	if(s_instanceCount.fetch_add(1) == 0){
@@ -88,25 +78,25 @@ Window::Monitor::operator bool() const{
 
 
 std::string Window::Monitor::getName() const{
-	const char* name = MT_EXEC(glfwGetMonitorName, m_monitor);
+	const char* name = mainThreadExecute<const char*>(glfwGetMonitorName, m_monitor);
 	return std::string(name);
 }
 
 Math::Vec2i Window::Monitor::getPosition() const{
 	Math::Vec2i result;
-	MT_EXEC(glfwGetMonitorPos, m_monitor, &result.x, &result.y);
+	mainThreadExecute<void>(glfwGetMonitorPos, m_monitor, &result.x, &result.y);
 	return result;
 }
 
 Math::Vec2d Window::Monitor::getPhysicalSize() const{
 	Math::Vec2i result;
-	MT_EXEC(glfwGetMonitorPhysicalSize, m_monitor, &result.x, &result.y);
+	mainThreadExecute<void>(glfwGetMonitorPhysicalSize, m_monitor, &result.x, &result.y);
 	return Math::Vec2d(result) / 1e3;
 }
 
 
 Window::Monitor::Mode Window::Monitor::getMode() const{
-	const GLFWvidmode* mod = MT_EXEC(glfwGetVideoMode, m_monitor);
+	const GLFWvidmode* mod = mainThreadExecute<const GLFWvidmode*>(glfwGetVideoMode, m_monitor);
 
 	return Mode{
 		ColorDepth(mod->redBits, mod->greenBits, mod->blueBits),
@@ -117,7 +107,7 @@ Window::Monitor::Mode Window::Monitor::getMode() const{
 
 std::vector<Window::Monitor::Mode> Window::Monitor::getModes() const{
 	int cnt;
-	const GLFWvidmode* mod = MT_EXEC(glfwGetVideoModes, m_monitor, &cnt);
+	const GLFWvidmode* mod = mainThreadExecute<const GLFWvidmode*>(glfwGetVideoModes, m_monitor, &cnt);
 
 	std::vector<Mode> modes; modes.reserve(cnt);
 	for(int i = 0; i < cnt; i++){
@@ -151,6 +141,7 @@ const Window::Monitor Window::NO_MONITOR;
 
 std::vector<Window::Monitor> Window::s_monitors;
 
+std::atomic<size_t>	Window::s_windowCount;
 
 std::atomic<bool> Window::s_exit;
 std::atomic<bool> Window::s_callbacksEnabled;
@@ -163,14 +154,13 @@ std::condition_variable	Window::s_mainThreadExecutionsComplete;
 std::queue<std::function<void(void)>> Window::s_mainThreadExecutions;
 
 
-Window::Window(const Math::Vec2i& size, std::string&& name, const Monitor& mon) :
+Window::Window(const Math::Vec2i& size, std::string&& name, const Monitor& monitor) :
 	m_name(std::move(name)),
-	m_window(MT_EXEC(glfwCreateWindow, 
+	m_window(mainThreadExecute<GLFWwindow*>(createWindow, 
 		size.x,
 		size.y,
 		m_name.c_str(),
-		mon.m_monitor, 
-		static_cast<GLFWwindow*>(nullptr)
+		monitor.m_monitor
 	))
 {
 	if(m_window == nullptr){
@@ -196,13 +186,13 @@ Window::Window(Window&& other) :
 
 Window::~Window(){
 	if(m_window){
-		MT_EXEC(glfwDestroyWindow, m_window);
+		mainThreadExecute<void>(destroyWindow, m_window);
 	}
 }
 
 Window& Window::operator=(Window&& other) {
 	if(m_window){
-		MT_EXEC(glfwDestroyWindow, m_window);
+		mainThreadExecute<void>(glfwDestroyWindow, m_window);
 	}
 
 	m_name = std::move(other.m_name);
@@ -247,7 +237,7 @@ vk::UniqueSurfaceKHR Window::getSurface(const vk::Instance& instance) const {
 
 void Window::setName(std::string&& name){
 	m_name = std::move(name);
-	MT_EXEC(glfwSetWindowTitle, m_window, m_name.c_str());
+	mainThreadExecute<void>(glfwSetWindowTitle, m_window, m_name.c_str());
 }
 
 const std::string& Window::getName() const{
@@ -261,7 +251,7 @@ void Window::setState(State st){
 		//Leave it on normal state
 		switch (lastState) {
 		case State::HIDDEN:
-			MT_EXEC(glfwShowWindow, m_window);
+			mainThreadExecute<void>(glfwShowWindow, m_window);
 			break;
 
 		case State::FULLSCREEN:
@@ -269,11 +259,11 @@ void Window::setState(State st){
 			break;
 
 		case State::ICONIFIED:
-			MT_EXEC(glfwRestoreWindow, m_window);
+			mainThreadExecute<void>(glfwRestoreWindow, m_window);
 			break;
 
 		case State::MAXIMIZED:
-			MT_EXEC(glfwRestoreWindow, m_window);
+			mainThreadExecute<void>(glfwRestoreWindow, m_window);
 			break;
 		
 		default: //State::NORMAL
@@ -283,7 +273,7 @@ void Window::setState(State st){
 		//Switch to the desired state
 		switch (st) {
 		case State::HIDDEN:
-			MT_EXEC(glfwHideWindow, m_window);
+			mainThreadExecute<void>(glfwHideWindow, m_window);
 			break;
 
 		case State::FULLSCREEN:
@@ -291,11 +281,11 @@ void Window::setState(State st){
 			break;
 
 		case State::ICONIFIED:
-			MT_EXEC(glfwIconifyWindow, m_window);
+			mainThreadExecute<void>(glfwIconifyWindow, m_window);
 			break;
 
 		case State::MAXIMIZED:
-			MT_EXEC(glfwMaximizeWindow, m_window);
+			mainThreadExecute<void>(glfwMaximizeWindow, m_window);
 			break;
 		
 		default: //State::NORMAL
@@ -307,13 +297,13 @@ void Window::setState(State st){
 Window::State Window::getState() const{
 	State result;
 
-	if(!MT_EXEC(glfwGetWindowAttrib, m_window, GLFW_VISIBLE)){
+	if(!mainThreadExecute<int>(glfwGetWindowAttrib, m_window, GLFW_VISIBLE)){
 		result = State::HIDDEN;
-	} else if(MT_EXEC(glfwGetWindowMonitor, m_window)){
+	} else if(mainThreadExecute<GLFWmonitor*>(glfwGetWindowMonitor, m_window)){
 		result = State::FULLSCREEN;
-	}else if(MT_EXEC(glfwGetWindowAttrib, m_window, GLFW_ICONIFIED)){
+	}else if(mainThreadExecute<int>(glfwGetWindowAttrib, m_window, GLFW_ICONIFIED)){
 		result = State::ICONIFIED;
-	} else if(MT_EXEC(glfwGetWindowAttrib, m_window, GLFW_MAXIMIZED)){
+	} else if(mainThreadExecute<int>(glfwGetWindowAttrib, m_window, GLFW_MAXIMIZED)){
 		result = State::MAXIMIZED;
 	} else {
 		result = State::NORMAL;
@@ -356,7 +346,7 @@ void Window::setMonitor(const Monitor& mon, const Monitor::Mode& mod){
 
 			Math::Vec2i pos = mon.getPosition();
 
-			MT_EXEC(glfwSetWindowMonitor, 
+			mainThreadExecute<void>(glfwSetWindowMonitor, 
 				m_window, 
 				mon.m_monitor, 
 				pos.x,
@@ -367,7 +357,7 @@ void Window::setMonitor(const Monitor& mon, const Monitor::Mode& mod){
 			);
 		} else {
 			//It is going to be windowed
-			MT_EXEC(glfwSetWindowMonitor, 
+			mainThreadExecute<void>(glfwSetWindowMonitor, 
 				m_window, 
 				static_cast<GLFWmonitor*>(nullptr), 
 				m_windowedState->pos.x,
@@ -386,7 +376,7 @@ void Window::setMonitor(const Monitor& mon, const Monitor::Mode& mod){
 }
 
 const Window::Monitor& Window::getMonitor() const{
-	GLFWmonitor* mon = MT_EXEC(glfwGetWindowMonitor, m_window);
+	GLFWmonitor* mon = mainThreadExecute<GLFWmonitor*>(glfwGetWindowMonitor, m_window);
 
 	if(mon){
 		return getMonitor(mon);
@@ -397,12 +387,12 @@ const Window::Monitor& Window::getMonitor() const{
 
 
 void Window::setPosition(const Math::Vec2i& pos){
-	MT_EXEC(glfwSetWindowPos, m_window, pos.x, pos.y);
+	mainThreadExecute<void>(glfwSetWindowPos, m_window, pos.x, pos.y);
 }
 
 Math::Vec2i Window::getPosition() const{
 	Math::Vec2i result;
-	MT_EXEC(glfwGetWindowPos, m_window, &result.x, &result.y);
+	mainThreadExecute<void>(glfwGetWindowPos, m_window, &result.x, &result.y);
 	return result;
 }
 
@@ -416,12 +406,12 @@ const Window::PositionCallback& Window::getPositionCallback() const{
 
 
 void Window::setSize(const Math::Vec2i& size){
-	MT_EXEC(glfwSetWindowSize, m_window, size.x, size.y);
+	mainThreadExecute<void>(glfwSetWindowSize, m_window, size.x, size.y);
 }
 
 Math::Vec2i Window::getSize() const{
 	Math::Vec2i result;
-	MT_EXEC(glfwGetWindowSize, m_window, &result.x, &result.y);
+	mainThreadExecute<void>(glfwGetWindowSize, m_window, &result.x, &result.y);
 	return result;
 }
 
@@ -434,16 +424,16 @@ const Window::SizeCallback& Window::getSizeCallback() const{
 }
 
 void Window::setOpacity(float opa){
-	MT_EXEC(glfwSetWindowOpacity, m_window, opa);
+	mainThreadExecute<void>(glfwSetWindowOpacity, m_window, opa);
 }
 
 float Window::getOpacity() const{
-	return MT_EXEC(glfwGetWindowOpacity, m_window);
+	return mainThreadExecute<float>(glfwGetWindowOpacity, m_window);
 }
 
 Resolution Window::getResolution() const{
 	int x, y;
-	MT_EXEC(glfwGetFramebufferSize, m_window, &x, &y);
+	mainThreadExecute<void>(glfwGetFramebufferSize, m_window, &x, &y);
 	return Resolution(x, y);
 }
 
@@ -457,7 +447,7 @@ const Window::ResolutionCallback& Window::getResolutionCallback() const{
 
 Math::Vec2f Window::getScale() const{
 	Math::Vec2f result;
-	MT_EXEC(glfwGetWindowContentScale, m_window, &result.x, &result.y);
+	mainThreadExecute<void>(glfwGetWindowContentScale, m_window, &result.x, &result.y);
 	return result;
 }
 
@@ -470,12 +460,12 @@ const Window::ScaleCallback& Window::getScaleCallback() const{
 }
 
 void Window::close(){
-	MT_EXEC(glfwDestroyWindow, m_window);
+	mainThreadExecute<void>(glfwDestroyWindow, m_window);
 	m_window = nullptr;
 }
 
 bool Window::shouldClose() const{
-	return MT_EXEC(glfwWindowShouldClose, m_window);
+	return mainThreadExecute<int>(glfwWindowShouldClose, m_window);
 }
 
 void Window::setCloseCallback(CloseCallback&& cbk){
@@ -487,7 +477,7 @@ const Window::CloseCallback& Window::getCloseCallback() const{
 }
 
 void Window::focus(){
-	return MT_EXEC(glfwFocusWindow, m_window);
+	return mainThreadExecute<void>(glfwFocusWindow, m_window);
 }
 
 void Window::setFocusCallback(FocusCallback&& cbk){
@@ -572,10 +562,26 @@ bool  Window::getCallbacksEnabled(){
 
 void Window::setupWindow(){
 	glfwSetWindowUserPointer(m_window, this);
-	MT_EXEC(setupCbks, m_window);
+	mainThreadExecute<void>(setupCbks, m_window);
 }
 
 
+
+GLFWwindow* Window::createWindow(int x, int y, const char* name, GLFWmonitor* monitor){
+	s_windowCount.fetch_add(1);
+	return glfwCreateWindow(
+		x,
+		y,
+		name,
+		monitor,
+		nullptr
+	);
+}
+
+void Window::destroyWindow(GLFWwindow* window){
+	glfwDestroyWindow(window);
+	s_windowCount.fetch_sub(1);
+}
 
 
 void Window::mainThreadFunc(){
@@ -606,7 +612,7 @@ void Window::mainThreadFunc(){
 			s_mainThreadExecutionsComplete.notify_all();
 		}
 
-		if(s_callbacksEnabled.load()){
+		if(s_callbacksEnabled.load() && s_windowCount.load()){
 			lock.unlock();
 			glfwWaitEvents();
 			lock.lock();
@@ -618,15 +624,19 @@ void Window::mainThreadFunc(){
 	glfwTerminate();
 }
 
-template<typename T, typename... Args>
-inline T Window::mainThreadExecute(const std::function<T(Args...)>& func, Args... args){
+template<typename T, typename Func, typename... Args>
+inline T Window::mainThreadExecute(Func&& func, Args&&... args){
 	if(std::this_thread::get_id() == s_mainThread.get_id()){
-		return func(std::move(args)...); //We are on the main thread. Simply execute it
+		return func(std::forward<Args>(args)...); //We are on the main thread. Simply execute it
 	}else {
 		std::unique_lock<std::mutex> lock(s_mainThreadMutex);
 
 		//Create a future object to pass it to the main thread
-		auto futur = std::async(std::launch::deferred, func, std::move(args)...);
+		auto futur = std::async(
+			std::launch::deferred, 
+			std::forward<Func>(func), 
+			std::forward<Args>(args)...
+		);
 		s_mainThreadExecutions.emplace([&futur] () -> void { futur.wait(); });
 		
 		//Wait until execution is complete
@@ -639,7 +649,7 @@ inline T Window::mainThreadExecute(const std::function<T(Args...)>& func, Args..
 
 void Window::mainThreadContinue(){
 
-	if(s_callbacksEnabled.load()){
+	if(s_callbacksEnabled.load() && s_windowCount.load()){
 		glfwPostEmptyEvent();
 	} else {
 		s_mainThreadContinue.notify_all();
@@ -795,11 +805,13 @@ const Window::Monitor& Window::getMonitor(GLFWmonitor* mon){
 
 
 void Window::init(){
+	s_windowCount.store(0);
+
 	s_exit.store(false);
 	s_callbacksEnabled.store(true);
 
 	s_mainThread = std::thread(mainThreadFunc);
-	MT_EXEC_NO_ARGS(theFastestFunctionInTheWorld); //Wait for completion
+	mainThreadExecute<void>(theFastestFunctionInTheWorld); //Wait for completion
 }
 
 void Window::terminate(){
