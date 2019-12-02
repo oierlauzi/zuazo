@@ -27,7 +27,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerCallback(
 	 */
 	std::ostringstream message;
 
-	message << "On Vulkan: " << userData << "\n";
 	message 
 		<< vk::to_string(static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>(severity)) 
 		<< ": " << vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(type)) << ":\n";
@@ -65,39 +64,23 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerCallback(
 
 	std::cerr << message.str() << std::endl;
 
+	ZUAZO_IGNORE_PARAM(userData);
+
 	return VK_FALSE;
 }
 
 
 
 
+Vulkan::Vulkan(	const std::string& appName, 
+		const Version& appVersion, 
+		Verbosity verbosity, 
+		const DeviceScoreFunc& scoreFunc )
 
-
-
-Vulkan::DeviceScoreFunc Vulkan::deviceScoreFunc = [] (const vk::PhysicalDevice& dev) -> uint32_t {
-	int32_t score = 0;
-	const auto properties = dev.getProperties();
-	//const auto features = dev.getFeatures();
-
-	if(properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu){
-		score += 1024;
-	}
-
-	score += properties.limits.maxImageDimension2D;
-
-	return score;
-};
-
-
-
-
-
-
-Vulkan::Vulkan() 
-	: m_instance(createInstance())
+	: m_instance(createInstance(appName, appVersion, verbosity))
 	, m_loader(*m_instance, vk::Device())
-	, m_messenger(createMessenger(*m_instance, m_loader, this))
-	, m_physicalDevice(getBestPhysicalDevice(*m_instance))
+	, m_messenger(createMessenger(*m_instance, m_loader, verbosity))
+	, m_physicalDevice(getBestPhysicalDevice(*m_instance, scoreFunc))
 	, m_queueIndices(getQueueIndices(*m_instance, m_physicalDevice))
 	, m_device(createDevice(m_physicalDevice, m_queueIndices))
 	, m_queues(getQueues(*m_device, m_queueIndices))
@@ -150,12 +133,27 @@ uint32_t Vulkan::getPresentationQueueIndex() const{
 
 
 
+uint32_t Vulkan::defaultDeviceScoreFunc(const vk::PhysicalDevice& physicalDevice){
+	int32_t score = 0;
+	const auto properties = physicalDevice.getProperties();
+	//const auto features = dev.getFeatures();
 
-vk::UniqueInstance Vulkan::createInstance(){
-	//Get the application information
-	const auto& appName = Zuazo::getApplicationInfo().name;
-	const auto& appVersion = Zuazo::getApplicationInfo().version;
+	if(properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu){
+		score += 1024;
+	}
 
+	score += properties.limits.maxImageDimension2D;
+
+	return score;
+}
+
+
+
+vk::UniqueInstance Vulkan::createInstance(	const std::string& appName, 
+											const Version& appVersion, 
+											Verbosity verbosity )
+{
+	//Set the application information
 	vk::ApplicationInfo appInfo {
 		appName.c_str(),
 		VK_MAKE_VERSION(appVersion[0], appVersion[1], appVersion[2]),
@@ -166,7 +164,7 @@ vk::UniqueInstance Vulkan::createInstance(){
 
 
 	//Get the validation layers
-	auto requiredLayers = getRequiredLayers();
+	auto requiredLayers = getRequiredLayers(verbosity);
 	const auto availableLayers = vk::enumerateInstanceLayerProperties();
 	const auto usedLayers = getUsedLayers(availableLayers, requiredLayers);
 
@@ -186,7 +184,7 @@ vk::UniqueInstance Vulkan::createInstance(){
 
 
 	//Get the extensions
-	auto requiredExtensions = getRequiredInstanceExtensions();
+	auto requiredExtensions = getRequiredInstanceExtensions(verbosity);
 	const auto availableExtensions = vk::enumerateInstanceExtensionProperties();
 	const auto usedExtensions = getUsedExtensions(availableExtensions, requiredExtensions);
 
@@ -221,13 +219,13 @@ vk::UniqueInstance Vulkan::createInstance(){
 
 Vulkan::UniqueDebugUtilsMessengerEXT Vulkan::createMessenger(	const vk::Instance& instance, 
 																const vk::DispatchLoaderDynamic& loader, 
-																Vulkan* vk ) 
+																Verbosity verbosity ) 
 {
 	using Deleter = vk::UniqueHandleTraits<vk::DebugUtilsMessengerEXT, vk::DispatchLoaderDynamic>::deleter;
 
 	vk::DebugUtilsMessengerEXT messenger;
 
-	if(getApplicationInfo().isDebug){
+	if(verbosity == Verbosity::ENABLE_VALIDATION_LAYERS){
 		vk::DebugUtilsMessengerCreateInfoEXT createInfo(
 			{},
 			vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
@@ -236,7 +234,7 @@ Vulkan::UniqueDebugUtilsMessengerEXT Vulkan::createMessenger(	const vk::Instance
 			vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
 			vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
 			validationLayerCallback,
-			vk
+			nullptr
 		);
 
 		messenger = instance.createDebugUtilsMessengerEXT(createInfo, nullptr, loader);
@@ -248,7 +246,9 @@ Vulkan::UniqueDebugUtilsMessengerEXT Vulkan::createMessenger(	const vk::Instance
 	);
 }
 
-vk::PhysicalDevice Vulkan::getBestPhysicalDevice(const vk::Instance& instance){
+vk::PhysicalDevice Vulkan::getBestPhysicalDevice(	const vk::Instance& instance, 
+													const DeviceScoreFunc& scoreFunc )
+{
 	const auto devices = instance.enumeratePhysicalDevices();
 
 	std::pair<std::optional<vk::PhysicalDevice>, uint32_t> best({}, 0);
@@ -259,7 +259,7 @@ vk::PhysicalDevice Vulkan::getBestPhysicalDevice(const vk::Instance& instance){
 			continue; //Not supported
 		}
 
-		const uint32_t score = deviceScoreFunc(device);
+		const uint32_t score = scoreFunc(device);
 
 		if(score > best.second){
 			best = {device, score};
@@ -309,26 +309,6 @@ vk::UniqueDevice Vulkan::createDevice(	const vk::PhysicalDevice& physicalDevice,
 	//Get the queues
 	std::set<uint32_t> uniqueQueueFamilies(queueIndices.cbegin(), queueIndices.cend());
 
-	//Get the validation layers
-	auto requiredLayers = getRequiredLayers();
-	const auto availableLayers = physicalDevice.enumerateDeviceLayerProperties();
-	const auto usedLayers = getUsedLayers(availableLayers, requiredLayers);
-
-	if(requiredLayers.size()){
-		//There are missing layers
-		std::string missingNames;
-
-		for(const auto& m : requiredLayers){
-			missingNames += m.layerName;
-			missingNames += "\n";
-		}
-
-		throw Exception("Missing Vulkan device validation layers:\n" + missingNames);
-	}
-
-	const auto usedLayerNames = getNames(usedLayers);
-
-
 	//Get the extensions
 	auto requiredExtensions = getRequiredDeviceExtensions();
 	const auto availableExtensions = physicalDevice.enumerateDeviceExtensionProperties();
@@ -368,8 +348,8 @@ vk::UniqueDevice Vulkan::createDevice(	const vk::PhysicalDevice& physicalDevice,
 		{},
 		queueCreateInfos.size(),
 		queueCreateInfos.data(),
-		usedLayerNames.size(),
-		usedLayerNames.data(),
+		0,
+		nullptr,
 		usedExtensionNames.size(),
 		usedExtensionNames.data()
 	);
@@ -392,10 +372,10 @@ std::array<vk::Queue, Vulkan::QUEUE_NUM> Vulkan::getQueues(	const vk::Device& de
 
 
 
-std::vector<vk::LayerProperties> Vulkan::getRequiredLayers(){
+std::vector<vk::LayerProperties> Vulkan::getRequiredLayers(Verbosity verbosity){
 	std::vector<vk::LayerProperties> validationLayers;
 
-	if(Zuazo::getApplicationInfo().isDebug){
+	if(verbosity == Verbosity::ENABLE_VALIDATION_LAYERS){
 		//Add debug utils extension requirement
 		//Khronos validation layer
 		VkLayerProperties khronosValidation = {};
@@ -406,7 +386,7 @@ std::vector<vk::LayerProperties> Vulkan::getRequiredLayers(){
 	return validationLayers;
 }
 
-std::vector<vk::ExtensionProperties> Vulkan::getRequiredInstanceExtensions(){
+std::vector<vk::ExtensionProperties> Vulkan::getRequiredInstanceExtensions(Verbosity verbosity){
 	std::vector<vk::ExtensionProperties> extensions;
 
 	//Add window swap-chain extensions
@@ -417,7 +397,7 @@ std::vector<vk::ExtensionProperties> Vulkan::getRequiredInstanceExtensions(){
 		std::back_insert_iterator(extensions)
 	);
 
-	if(Zuazo::getApplicationInfo().isDebug){
+	if(verbosity == Verbosity::ENABLE_VALIDATION_LAYERS){
 		//Add debug utils extension requirement
 		VkExtensionProperties ext = {};
 		std::strncpy(ext.extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE);
@@ -449,14 +429,6 @@ std::vector<vk::QueueFamilyProperties> 	Vulkan::getRequiredQueueFamilies(){
 bool Vulkan::getPhysicalDeviceSupport(const vk::Instance& instance, const vk::PhysicalDevice& device){
 	//Window support is required
 	if(Window::getPresentationQueueFamilies(instance, device).size() == 0){
-		return false;
-	}
-
-	//Check device validation layer support
-	auto requiredLayers = getRequiredLayers();
-	const auto availableLayers = device.enumerateDeviceLayerProperties();
-	getUsedLayers(availableLayers, requiredLayers);
-	if(requiredLayers.size()){
 		return false;
 	}
 
