@@ -57,6 +57,7 @@ namespace Zuazo::PixelFormats {
 	//Grayscale formats
 	constexpr PixelFormat Y8				{ { PixelComponents::Y8 } };
 	constexpr PixelFormat Y16				{ { PixelComponents::Y16 } };
+	constexpr PixelFormat Y16f				{ { PixelComponents::Y16f } };
 	constexpr PixelFormat Y32				{ { PixelComponents::Y32 } };
 	constexpr PixelFormat Y32f				{ { PixelComponents::Y32f } };
 	constexpr PixelFormat Y64				{ { PixelComponents::Y64 } };
@@ -68,6 +69,8 @@ namespace Zuazo::PixelFormats {
 	constexpr PixelFormat A8Y8				{ { PixelComponents::A8, PixelComponents::Y8 } };
 	constexpr PixelFormat Y16A16			{ { PixelComponents::Y16, PixelComponents::A16 } };
 	constexpr PixelFormat A16Y16			{ { PixelComponents::A16, PixelComponents::Y16 } };
+	constexpr PixelFormat Y16fA16f			{ { PixelComponents::Y16f, PixelComponents::A16f } };
+	constexpr PixelFormat A16fY16f			{ { PixelComponents::A16f, PixelComponents::Y16f } };
 	constexpr PixelFormat Y32A32			{ { PixelComponents::Y32, PixelComponents::A32 } };
 	constexpr PixelFormat A32Y32			{ { PixelComponents::A32, PixelComponents::Y32 } };
 	constexpr PixelFormat Y32fA32f			{ { PixelComponents::Y32f, PixelComponents::A32f } };
@@ -114,10 +117,16 @@ namespace Zuazo::PixelFormats {
 	constexpr PixelFormat B8G8R8			{ { PixelComponents::B8, PixelComponents::G8, PixelComponents::R8 } };
 	constexpr PixelFormat R16G16B16			{ { PixelComponents::R16, PixelComponents::G16, PixelComponents::B16 } };
 	constexpr PixelFormat B16G16R16			{ { PixelComponents::B16, PixelComponents::G16, PixelComponents::R16 } };
+	constexpr PixelFormat R16fG16fB16f		{ { PixelComponents::R16f, PixelComponents::G16f, PixelComponents::B16f } };
+	constexpr PixelFormat B16fG16fR16f		{ { PixelComponents::B16f, PixelComponents::G16f, PixelComponents::R16f } };
 	constexpr PixelFormat R32G32B32			{ { PixelComponents::R32, PixelComponents::G32, PixelComponents::B32 } };
 	constexpr PixelFormat B32G32R32 		{ { PixelComponents::B32, PixelComponents::G32, PixelComponents::R32 } };
 	constexpr PixelFormat R32fG32fB32f		{ { PixelComponents::R32f, PixelComponents::G32f, PixelComponents::B32f } };
 	constexpr PixelFormat B32fG32fR32f		{ { PixelComponents::B32f, PixelComponents::G32f, PixelComponents::R32f } };
+	constexpr PixelFormat R64G64B64			{ { PixelComponents::R64, PixelComponents::G64, PixelComponents::B64 } };
+	constexpr PixelFormat B64G64R64 		{ { PixelComponents::B64, PixelComponents::G64, PixelComponents::R64 } };
+	constexpr PixelFormat R64fG64fB64f		{ { PixelComponents::R64f, PixelComponents::G64f, PixelComponents::B64f } };
+	constexpr PixelFormat B64fG64fR64f		{ { PixelComponents::B64f, PixelComponents::G64f, PixelComponents::R64f } };
 
 	constexpr PixelFormat X2R2G2B2			{ { PixelComponents::X2, PixelComponents::R2, PixelComponents::G2, PixelComponents::B2 } };
 	constexpr PixelFormat X2B2G2R2			{ { PixelComponents::X2, PixelComponents::B2, PixelComponents::G2, PixelComponents::R2 } };
@@ -152,6 +161,10 @@ namespace Zuazo::PixelFormats {
 	constexpr PixelFormat A16B16G16R16		{ { PixelComponents::A16, PixelComponents::B16, PixelComponents::G16, PixelComponents::R16 } };
 	constexpr PixelFormat R16G16B16A16		{ { PixelComponents::R16, PixelComponents::G16, PixelComponents::B16, PixelComponents::A16 } };
 	constexpr PixelFormat B16G16R16A16		{ { PixelComponents::B16, PixelComponents::G16, PixelComponents::R16, PixelComponents::A16 } };
+	constexpr PixelFormat A16fR16fG16fB16f	{ { PixelComponents::A16f, PixelComponents::R16f, PixelComponents::G16f, PixelComponents::B16f } };
+	constexpr PixelFormat A16fB16fG16fR16f	{ { PixelComponents::A16f, PixelComponents::B16f, PixelComponents::G16f, PixelComponents::R16f } };
+	constexpr PixelFormat R16fG16fB16fA16f	{ { PixelComponents::R16f, PixelComponents::G16f, PixelComponents::B16f, PixelComponents::A16f } };
+	constexpr PixelFormat B16fG16fR16fA16f	{ { PixelComponents::B16f, PixelComponents::G16f, PixelComponents::R16f, PixelComponents::A16f } };
 	constexpr PixelFormat A32R32G32B32		{ { PixelComponents::A32, PixelComponents::R32, PixelComponents::G32, PixelComponents::B32 } };
 	constexpr PixelFormat A32B32G32R32		{ { PixelComponents::A32, PixelComponents::B32, PixelComponents::G32, PixelComponents::R32 } };
 	constexpr PixelFormat R32G32B32A32		{ { PixelComponents::R32, PixelComponents::G32, PixelComponents::B32, PixelComponents::A32 } };
@@ -160,6 +173,14 @@ namespace Zuazo::PixelFormats {
 	constexpr PixelFormat A32fB32fG32fR32f	{ { PixelComponents::A32f, PixelComponents::B32f, PixelComponents::G32f, PixelComponents::R32f } };
 	constexpr PixelFormat R32fG32fB32fA32f	{ { PixelComponents::R32f, PixelComponents::G32f, PixelComponents::B32f, PixelComponents::A32f } };
 	constexpr PixelFormat B32fG32fR32fA32f	{ { PixelComponents::B32f, PixelComponents::G32f, PixelComponents::R32f, PixelComponents::A32f } };
+	constexpr PixelFormat A64R64G64B64		{ { PixelComponents::A64, PixelComponents::R64, PixelComponents::G64, PixelComponents::B64 } };
+	constexpr PixelFormat A64B64G64R64		{ { PixelComponents::A64, PixelComponents::B64, PixelComponents::G64, PixelComponents::R64 } };
+	constexpr PixelFormat R64G64B64A64		{ { PixelComponents::R64, PixelComponents::G64, PixelComponents::B64, PixelComponents::A64 } };
+	constexpr PixelFormat B64G64R64A64		{ { PixelComponents::B64, PixelComponents::G64, PixelComponents::R64, PixelComponents::A64 } };
+	constexpr PixelFormat A64fR64fG64fB64f	{ { PixelComponents::A64f, PixelComponents::R64f, PixelComponents::G64f, PixelComponents::B64f } };
+	constexpr PixelFormat A64fB64fG64fR64f	{ { PixelComponents::A64f, PixelComponents::B64f, PixelComponents::G64f, PixelComponents::R64f } };
+	constexpr PixelFormat R64fG64fB64fA64f	{ { PixelComponents::R64f, PixelComponents::G64f, PixelComponents::B64f, PixelComponents::A64f } };
+	constexpr PixelFormat B64fG64fR64fA64f	{ { PixelComponents::B64f, PixelComponents::G64f, PixelComponents::R64f, PixelComponents::A64f } };
 					
 
 	/*
