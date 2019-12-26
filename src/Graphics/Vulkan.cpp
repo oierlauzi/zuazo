@@ -12,6 +12,8 @@
 #include <cassert>
 #include <set>
 
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+
 namespace Zuazo::Graphics {
 
 
@@ -77,14 +79,23 @@ Vulkan::Vulkan(	const std::string& appName,
 		Verbosity verbosity, 
 		const DeviceScoreFunc& scoreFunc )
 
-	: m_instance(createInstance(appName, appVersion, verbosity))
-	, m_loader(*m_instance, vk::Device())
-	, m_messenger(createMessenger(*m_instance, m_loader, verbosity))
-	, m_physicalDevice(getBestPhysicalDevice(*m_instance, scoreFunc))
-	, m_queueIndices(getQueueIndices(*m_instance, m_physicalDevice))
-	, m_device(createDevice(m_physicalDevice, m_queueIndices))
-	, m_queues(getQueues(*m_device, m_queueIndices))
+	: m_loader()
+	, m_dispatcher(createDispatcher(m_loader))
+	, m_instance(createInstance(m_dispatcher, appName, appVersion, verbosity))
+	, m_messenger(createMessenger(m_dispatcher, *m_instance, verbosity))
+	, m_physicalDevice(getBestPhysicalDevice(m_dispatcher, *m_instance, scoreFunc))
+	, m_queueIndices(getQueueIndices(m_dispatcher, *m_instance, m_physicalDevice))
+	, m_device(createDevice(m_dispatcher, m_physicalDevice, m_queueIndices))
+	, m_queues(getQueues(m_dispatcher, *m_device, m_queueIndices))
 {
+}
+
+const vk::DynamicLoader& Vulkan::getLoader() const{
+	return m_loader;
+}
+
+const vk::DispatchLoaderDynamic& Vulkan::getDispatcher() const{
+	return m_dispatcher;
 }
 
 const vk::Instance& Vulkan::getInstance() const{
@@ -131,11 +142,9 @@ uint32_t Vulkan::getPresentationQueueIndex() const{
 	return m_queueIndices[PRESENTATION_QUEUE];
 }
 
-
-
-uint32_t Vulkan::defaultDeviceScoreFunc(const vk::PhysicalDevice& physicalDevice){
+uint32_t Vulkan::defaultDeviceScoreFunc(const vk::DispatchLoaderDynamic& disp, const vk::PhysicalDevice& physicalDevice){
 	int32_t score = 0;
-	const auto properties = physicalDevice.getProperties();
+	const auto properties = physicalDevice.getProperties(disp);
 	//const auto features = dev.getFeatures();
 
 	if(properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu){
@@ -149,23 +158,32 @@ uint32_t Vulkan::defaultDeviceScoreFunc(const vk::PhysicalDevice& physicalDevice
 
 
 
-vk::UniqueInstance Vulkan::createInstance(	const std::string& appName, 
+vk::DispatchLoaderDynamic Vulkan::createDispatcher(const vk::DynamicLoader& loader){
+	vk::DispatchLoaderDynamic dispatch;
+
+	auto vkGetInstanceProcAddr = loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+	dispatch.init(vkGetInstanceProcAddr);
+
+	return dispatch;
+}
+
+vk::UniqueInstance Vulkan::createInstance(	vk::DispatchLoaderDynamic& disp,
+											const std::string& appName, 
 											const Version& appVersion, 
 											Verbosity verbosity )
 {
 	//Set the application information
-	vk::ApplicationInfo appInfo {
+	vk::ApplicationInfo appInfo(
 		appName.c_str(),
 		VK_MAKE_VERSION(appVersion[0], appVersion[1], appVersion[2]),
 		"Zuazo",
 		VK_MAKE_VERSION(version[0], version[1], version[2]),
-		VK_API_VERSION_1_0
-	};
-
+		VK_API_VERSION_1_1
+	);
 
 	//Get the validation layers
 	auto requiredLayers = getRequiredLayers(verbosity);
-	const auto availableLayers = vk::enumerateInstanceLayerProperties();
+	const auto availableLayers = vk::enumerateInstanceLayerProperties(disp);
 	const auto usedLayers = getUsedLayers(availableLayers, requiredLayers);
 
 	if(requiredLayers.size()){
@@ -185,7 +203,7 @@ vk::UniqueInstance Vulkan::createInstance(	const std::string& appName,
 
 	//Get the extensions
 	auto requiredExtensions = getRequiredInstanceExtensions(verbosity);
-	const auto availableExtensions = vk::enumerateInstanceExtensionProperties();
+	const auto availableExtensions = vk::enumerateInstanceExtensionProperties(nullptr, disp);
 	const auto usedExtensions = getUsedExtensions(availableExtensions, requiredExtensions);
 
 	if(requiredExtensions.size()){
@@ -203,7 +221,6 @@ vk::UniqueInstance Vulkan::createInstance(	const std::string& appName,
 
 	const auto usedExtensionNames = getNames(usedExtensions);
 
-
 	//Create the vulkan instance
 	vk::InstanceCreateInfo createInfo(
 		{},
@@ -213,13 +230,17 @@ vk::UniqueInstance Vulkan::createInstance(	const std::string& appName,
 		usedExtensionNames.size(),
 		usedExtensionNames.data()
 	);
+	auto instance = vk::createInstanceUnique(createInfo, nullptr, disp);
 
-	return vk::createInstanceUnique(createInfo);
+	//Add the available functions to the dispatcher
+	disp.init(*instance);
+
+	return instance;
 }
 
-Vulkan::UniqueDebugUtilsMessengerEXT Vulkan::createMessenger(	const vk::Instance& instance, 
-																const vk::DispatchLoaderDynamic& loader, 
-																Verbosity verbosity ) 
+vk::UniqueDebugUtilsMessengerEXT Vulkan::createMessenger(	const vk::DispatchLoaderDynamic& disp,
+															const vk::Instance& instance,
+															Verbosity verbosity ) 
 {
 	using Deleter = vk::UniqueHandleTraits<vk::DebugUtilsMessengerEXT, vk::DispatchLoaderDynamic>::deleter;
 
@@ -237,29 +258,30 @@ Vulkan::UniqueDebugUtilsMessengerEXT Vulkan::createMessenger(	const vk::Instance
 			nullptr
 		);
 
-		messenger = instance.createDebugUtilsMessengerEXT(createInfo, nullptr, loader);
+		messenger = instance.createDebugUtilsMessengerEXT(createInfo, nullptr, disp);
 	}
 
-	return UniqueDebugUtilsMessengerEXT(
+	return vk::UniqueDebugUtilsMessengerEXT(
 		messenger,
-		Deleter(instance, nullptr, loader)
+		Deleter(instance, nullptr, disp)
 	);
 }
 
-vk::PhysicalDevice Vulkan::getBestPhysicalDevice(	const vk::Instance& instance, 
+vk::PhysicalDevice Vulkan::getBestPhysicalDevice(	const vk::DispatchLoaderDynamic& disp,
+													const vk::Instance& instance, 
 													const DeviceScoreFunc& scoreFunc )
 {
-	const auto devices = instance.enumeratePhysicalDevices();
+	const auto devices = instance.enumeratePhysicalDevices(disp);
 
 	std::pair<std::optional<vk::PhysicalDevice>, uint32_t> best({}, 0);
 
 	for(const auto& device : devices){
 
-		if(getPhysicalDeviceSupport(instance, device) == false){
+		if(getPhysicalDeviceSupport(disp, instance, device) == false){
 			continue; //Not supported
 		}
 
-		const uint32_t score = scoreFunc(device);
+		const uint32_t score = scoreFunc(disp, device);
 
 		if(score > best.second){
 			best = {device, score};
@@ -273,12 +295,13 @@ vk::PhysicalDevice Vulkan::getBestPhysicalDevice(	const vk::Instance& instance,
 	return best.first.value();
 }
 
-std::array<uint32_t, Vulkan::QUEUE_NUM>	Vulkan::getQueueIndices(const vk::Instance& inst, 
+std::array<uint32_t, Vulkan::QUEUE_NUM>	Vulkan::getQueueIndices(const vk::DispatchLoaderDynamic& disp,
+																const vk::Instance& inst, 
 																const vk::PhysicalDevice& dev )
 {
 	std::array<uint32_t, Vulkan::QUEUE_NUM>	queues;
 
-	const auto queueFamilies = dev.getQueueFamilyProperties();
+	const auto queueFamilies = dev.getQueueFamilyProperties(disp);
 
 	//Add the queue families
 	queues[GRAPHICS_QUEUE] = getQueueFamilyIndex(queueFamilies, vk::QueueFlagBits::eGraphics);
@@ -287,7 +310,7 @@ std::array<uint32_t, Vulkan::QUEUE_NUM>	Vulkan::getQueueIndices(const vk::Instan
 
 
 	//Add a queue family compatible with presentation
-	const auto presentFamilies = Window::getPresentationQueueFamilies(inst, dev);
+	const auto presentFamilies = Window::getPresentationQueueFamilies(disp, inst, dev);
 	if(presentFamilies.size() == 0){
 		throw Exception("Device has not presentation queues");
 	}
@@ -303,7 +326,8 @@ std::array<uint32_t, Vulkan::QUEUE_NUM>	Vulkan::getQueueIndices(const vk::Instan
 }
 
 
-vk::UniqueDevice Vulkan::createDevice(	const vk::PhysicalDevice& physicalDevice,
+vk::UniqueDevice Vulkan::createDevice(	vk::DispatchLoaderDynamic& disp,
+										const vk::PhysicalDevice& physicalDevice,
 										const std::array<uint32_t, QUEUE_NUM>& queueIndices )
 {
 	//Get the queues
@@ -311,7 +335,7 @@ vk::UniqueDevice Vulkan::createDevice(	const vk::PhysicalDevice& physicalDevice,
 
 	//Get the extensions
 	auto requiredExtensions = getRequiredDeviceExtensions();
-	const auto availableExtensions = physicalDevice.enumerateDeviceExtensionProperties();
+	const auto availableExtensions = physicalDevice.enumerateDeviceExtensionProperties(nullptr, disp);
 	const auto usedExtensions = getUsedExtensions(availableExtensions, requiredExtensions);
 
 	if(requiredExtensions.size()){
@@ -353,17 +377,22 @@ vk::UniqueDevice Vulkan::createDevice(	const vk::PhysicalDevice& physicalDevice,
 		usedExtensionNames.size(),
 		usedExtensionNames.data()
 	);
+	auto dev = physicalDevice.createDeviceUnique(createInfo, nullptr, disp);
 
-	return physicalDevice.createDeviceUnique(createInfo);
+	//Register the device specific functions 
+	disp.init(*dev);
+
+	return dev;
 }
 
-std::array<vk::Queue, Vulkan::QUEUE_NUM> Vulkan::getQueues(	const vk::Device& device, 
+std::array<vk::Queue, Vulkan::QUEUE_NUM> Vulkan::getQueues(	const vk::DispatchLoaderDynamic& disp,
+															const vk::Device& device, 
 															const std::array<uint32_t, QUEUE_NUM>& queueIndices )
 {
 	std::array<vk::Queue, Vulkan::QUEUE_NUM> queues;
 
 	for(size_t i = 0; i < QUEUE_NUM; i++){
-		queues[i] = device.getQueue(queueIndices[i], 0);
+		queues[i] = device.getQueue(queueIndices[i], 0, disp);
 	}
 
 	return queues;
@@ -418,7 +447,7 @@ std::vector<vk::ExtensionProperties> Vulkan::getRequiredDeviceExtensions(){
 	return extensions;
 }
 
-std::vector<vk::QueueFamilyProperties> 	Vulkan::getRequiredQueueFamilies(){
+std::vector<vk::QueueFamilyProperties> Vulkan::getRequiredQueueFamilies(){
 	return {
 		VkQueueFamilyProperties{ VK_QUEUE_GRAPHICS_BIT,	1,	0,	{} },
 		VkQueueFamilyProperties{ VK_QUEUE_COMPUTE_BIT,	1,	0,	{} },
@@ -426,15 +455,28 @@ std::vector<vk::QueueFamilyProperties> 	Vulkan::getRequiredQueueFamilies(){
 	};
 }
 
-bool Vulkan::getPhysicalDeviceSupport(const vk::Instance& instance, const vk::PhysicalDevice& device){
+bool Vulkan::getPhysicalDeviceSupport(	const vk::DispatchLoaderDynamic& disp,
+										const vk::Instance& instance, 
+										const vk::PhysicalDevice& device )
+{	
+	auto features = device.getFeatures2<vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceSamplerYcbcrConversionFeatures>(disp);
+
+	//Require YCbCr support
+	const auto& ycbcrSamplerSupport = features.get<vk::PhysicalDeviceSamplerYcbcrConversionFeatures>();
+
+	if(ycbcrSamplerSupport.samplerYcbcrConversion == false){
+		return false;
+	}
+
+
 	//Window support is required
-	if(Window::getPresentationQueueFamilies(instance, device).size() == 0){
+	if(Window::getPresentationQueueFamilies(disp, instance, device).size() == 0){
 		return false;
 	}
 
 	//Check device extension support
 	auto requiredExtensions = getRequiredDeviceExtensions();
-	const auto availableExtensions = device.enumerateDeviceExtensionProperties();
+	const auto availableExtensions = device.enumerateDeviceExtensionProperties(nullptr, disp);
 	getUsedExtensions(availableExtensions, requiredExtensions);
 	if(requiredExtensions.size()){
 		return false;
@@ -442,7 +484,7 @@ bool Vulkan::getPhysicalDeviceSupport(const vk::Instance& instance, const vk::Ph
 
 	//Check device queue family support
 	auto requiredQueueFamilies = getRequiredQueueFamilies();
-	const auto availableQueueFamilies = device.getQueueFamilyProperties();
+	const auto availableQueueFamilies = device.getQueueFamilyProperties(disp);
 	getUsedQueueFamilies(availableQueueFamilies, requiredQueueFamilies);
 	if(requiredQueueFamilies.size()){
 		return false;

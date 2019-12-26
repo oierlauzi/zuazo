@@ -30,7 +30,7 @@ private:
 
 	Destination& operator=(Destination&& other) = default;
 
-	virtual const std::shared_ptr<const T>& get() const final;
+	virtual const T& get() const final;
 
 	const DummyInput& m_owner;
 };

@@ -16,7 +16,7 @@ public:
 
 	Source source;
 protected:
-	virtual const std::shared_ptr<const T>& get() const final;
+	virtual const T& get() const final;
 };
 
 template <typename T>

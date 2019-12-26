@@ -217,8 +217,10 @@ Window::operator bool() const {
 }
 
 
-vk::UniqueSurfaceKHR Window::getSurface(const vk::Instance& instance) const {
-	using Deleter = vk::UniqueHandleTraits<vk::SurfaceKHR, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE>::deleter;
+vk::UniqueSurfaceKHR Window::getSurface(	const vk::DispatchLoaderDynamic& disp,
+											const vk::Instance& instance ) const 
+{
+	using Deleter = vk::UniqueHandleTraits<vk::SurfaceKHR, vk::DispatchLoaderDynamic>::deleter;
 
 	//Try to create the surface
 	VkSurfaceKHR surface;
@@ -230,7 +232,7 @@ vk::UniqueSurfaceKHR Window::getSurface(const vk::Instance& instance) const {
 
 	return vk::UniqueSurfaceKHR(
 		surface,
-		Deleter(instance, nullptr, VULKAN_HPP_DEFAULT_DISPATCHER)
+		Deleter(instance, nullptr, disp)
 	);
 }	
 
@@ -534,9 +536,9 @@ bool Window::getPresentationSupport(const vk::Instance& instance, const vk::Phys
 	);
 }
 
-std::vector<uint32_t> Window::getPresentationQueueFamilies(const vk::Instance& instance, const vk::PhysicalDevice& device){
+std::vector<uint32_t> Window::getPresentationQueueFamilies(const vk::DispatchLoaderDynamic& disp, const vk::Instance& instance, const vk::PhysicalDevice& device){
 	std::vector<uint32_t> result;
-	const size_t nQueueFamilies = device.getQueueFamilyProperties().size();
+	const size_t nQueueFamilies = device.getQueueFamilyProperties(disp).size();
 
 	for(size_t i = 0; i < nQueueFamilies; i++){
 		if(getPresentationSupport(instance, device, i)){

@@ -18,15 +18,15 @@ public:
 	OutputPad(const OutputPad& other) = delete;
 	virtual ~OutputPad();
 
-	const std::set<InputPad<T>*>&        getConsumers() const;
+	const std::set<InputPad<T>*>&		getConsumers() const;
 protected:
-	virtual const std::shared_ptr<const T>& get() const = 0;
+	virtual const T&					get() const = 0;
 	
 private:
 	OutputPad(OutputPad&& other);
-	OutputPad&                          operator=(OutputPad&& other);
+	OutputPad&							operator=(OutputPad&& other);
 
-	std::set<InputPad<T>*>               m_consumers;
+	std::set<InputPad<T>*>				m_consumers;
 };
 
 }

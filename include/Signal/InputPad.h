@@ -24,9 +24,9 @@ protected:
 	InputPad&                               operator=(const InputPad& other);
 	InputPad&                               operator=(InputPad&& other);
 
-	static const std::shared_ptr<const T>   NO_SIGNAL;
+	static const T							NO_SIGNAL;
 
-	const std::shared_ptr<const T>&         get() const;
+	const T&         						get() const;
 private:
 	OutputPad<T>*                           m_source = nullptr;
 };

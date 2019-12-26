@@ -6,7 +6,7 @@
 namespace Zuazo::Signal {
 
 template <typename T>
-inline const std::shared_ptr<const T> InputPad<T>::NO_SIGNAL;
+inline const T InputPad<T>::NO_SIGNAL = T();
 
 template <typename T>
 inline InputPad<T>::InputPad(std::string&& name) : 
@@ -80,7 +80,7 @@ InputPad<T>& InputPad<T>::operator=(InputPad&& other){
 }
 
 template <typename T>
-inline const std::shared_ptr<const T>& InputPad<T>::get() const{
+inline const T& InputPad<T>::get() const{
 	if(m_source) {
 		return m_source->get();
 	} else {

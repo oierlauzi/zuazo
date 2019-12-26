@@ -1,6 +1,7 @@
 #include "Layout.h"
 
 #include <utility>
+#include "../Exception.h"
 
 namespace Zuazo::Signal {
 
@@ -66,22 +67,22 @@ inline std::set<const PadBase*>  Layout::getPads() const{
 }
 
 template<typename T>
-inline OutputPad<T>* Layout::getOutput(const std::string& str){
+inline OutputPad<T>& Layout::getOutput(const std::string_view& str){
 	return findOutput<T>(str);
 }
 
 template<typename T>
-inline const OutputPad<T>* Layout::getOutput(const std::string& str) const{
+inline const OutputPad<T>& Layout::getOutput(const std::string_view& str) const{
 	return findOutput<T>(str);
 }
 
 template<typename T>
-inline InputPad<T>* Layout::getInput(const std::string& str){
+inline InputPad<T>& Layout::getInput(const std::string_view& str){
 	return findInput<T>(str);
 }
 
 template<typename T>
-inline const InputPad<T>* Layout::getInput(const std::string& str) const{
+inline const InputPad<T>& Layout::getInput(const std::string_view& str) const{
 	return findInput<T>(str);
 }              
 
@@ -99,32 +100,38 @@ inline void Layout::removePad(PadBase& pad){
 	}
 }
 
-template<typename T>
-OutputPad<T>* Layout::findOutput(const std::string& name) const{
+inline PadBase& Layout::findPad(	const std::string_view& name, 
+									PadBase::Direction dir, 
+									const std::type_info& type ) const
+{
 	for(auto pad : m_pads) {
-		if( (pad->getDirection() == PadBase::Direction::OUTPUT) && 
-			pad->getName() == name &&
-			pad->getType() == typeid(T)
-		){
-			return dynamic_cast<OutputPad<T>*>(pad);
+		if( pad->getName() == name &&
+			pad->getDirection() == dir && 
+			pad->getType() == type )
+		{
+			return *pad;
 		}
 	}
 
-	return nullptr;
+	throw Exception("Requested pad not found");
 }
 
 template<typename T>
-InputPad<T>* Layout::findInput(const std::string& name) const{
-	for(auto pad : m_pads) {
-		if( (pad->getDirection() == PadBase::Direction::INPUT) && 
-			pad->getName() == name &&
-			pad->getType() == typeid(T)
-		){
-			return dynamic_cast<InputPad<T>*>(pad);
-		}
-	}
+inline OutputPad<T>& Layout::findOutput(const std::string_view& name) const{
+	return dynamic_cast<OutputPad<T>&>( findPad(
+		name,
+		PadBase::Direction::OUTPUT,
+		typeid(T)
+	));
+}
 
-	return nullptr;
+template<typename T>
+inline InputPad<T>& Layout::findInput(const std::string_view& name) const{
+	return dynamic_cast<InputPad<T>&>( findPad(
+		name,
+		PadBase::Direction::INPUT,
+		typeid(T)
+	));
 }
 
 }

@@ -106,7 +106,7 @@ public:
 	operator bool() const;
 
 
-	vk::UniqueSurfaceKHR				getSurface(const vk::Instance& instance) const;				
+	vk::UniqueSurfaceKHR				getSurface(const vk::DispatchLoaderDynamic& disp, const vk::Instance& instance) const;				
 
 
 	void                                setName(std::string&& name);
@@ -161,7 +161,7 @@ public:
 
 	static std::vector<vk::ExtensionProperties> getRequiredVulkanExtensions();
 	static bool							getPresentationSupport(const vk::Instance& instance, const vk::PhysicalDevice& device, uint32_t family);
-	static std::vector<uint32_t>		getPresentationQueueFamilies(const vk::Instance& instance, const vk::PhysicalDevice& device);
+	static std::vector<uint32_t>		getPresentationQueueFamilies(const vk::DispatchLoaderDynamic& disp, const vk::Instance& instance, const vk::PhysicalDevice& device);
 
 	static void							setCallbacksEnabled(bool ena);
 	static bool							getCallbacksEnabled();

@@ -22,9 +22,9 @@ public:
 
 	AsyncOutput&                        operator=(AsyncOutput&& other) = default;
 
-	void								setMaxDropped(int32_t max);
-	int32_t								getMaxDropped() const;
-	uint32_t							getDropped() const;
+	void								setMaxDropped(int max);
+	int									getMaxDropped() const;
+	uint								getDropped() const;
 	void								resetDropped();
 
 	void								setMaxBufferSize(size_t size);
@@ -33,21 +33,21 @@ public:
 	void								flushBuffer();
 
 	void								reset();
-	void								push(std::shared_ptr<const T>&& element);
+	void								push(T&& element);
 
 	virtual void 						update() override;
 
-	static constexpr int32_t			DEFAULT_MAX_DROPPED=3;
-	static constexpr size_t				DEFAULT_MAX_BUFFER_SIZE=3;
+	static constexpr int				DEFAULT_MAX_DROPPED=3;
+	static constexpr uint				DEFAULT_MAX_BUFFER_SIZE=3;
 private:
 	std::mutex							m_mutex;
 
-	int32_t								m_maxDropped = DEFAULT_MAX_DROPPED;
-	uint32_t							m_dropped = 0;
+	int									m_maxDropped = DEFAULT_MAX_DROPPED;
+	uint								m_dropped = 0;
 
 	std::atomic<size_t>					m_read = 0;
 	std::atomic<size_t>					m_write = 0;
-	std::vector<std::shared_ptr<const T>> m_buffer = std::vector<std::shared_ptr<const T>>(DEFAULT_MAX_BUFFER_SIZE);
+	std::vector<T>						m_buffer = std::vector<T>(DEFAULT_MAX_BUFFER_SIZE);
 
 	size_t								getNextValue(size_t i) const;		
 };

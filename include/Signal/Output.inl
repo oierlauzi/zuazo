@@ -10,12 +10,12 @@ inline void Output<T>::reset(){
 }
 
 template <typename T>
-inline void Output<T>::push(std::shared_ptr<const T>&& element){
+inline void Output<T>::push(T&& element){
 	m_lastElement = std::move(element);
 }
 
 template <typename T>
-inline const std::shared_ptr<const T>& Output<T>::get() const{
+inline const T& Output<T>::get() const{
 	return m_lastElement;
 }
 

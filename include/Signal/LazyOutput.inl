@@ -20,7 +20,7 @@ inline uint LazyOutput<T>::getMaximumRecursion() const {
 }
 
 template <typename T>
-inline std::shared_ptr<const T>& LazyOutput<T>::get() const{
+inline const T& LazyOutput<T>::get() const{
 	if(m_recursion < m_maxRecursion){
 		m_recursion++;
 		m_event.invoke();

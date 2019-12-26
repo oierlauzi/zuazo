@@ -1,7 +1,6 @@
 #pragma once
 
 #include "InputPad.h"
-#include "../Timing/Scheduler.h"
 
 #include <memory>
 #include <limits>
@@ -21,28 +20,16 @@ public:
 	Input&                              operator=(const Input& other) = default;
 	Input&                              operator=(Input&& other) = default;
 
-	struct BackupSignal;
-
 	void                                setHold(bool hold);
 	bool                                getHold() const;
 
 	void                                reset();
-	const std::shared_ptr<const T>&     get() const;
+	const T&							get() const;
 	bool                                hasChanged() const;
 
-	static BackupSignal                 backupSignal;
-
-protected:
-	static constexpr Timing::Scheduler::Priority PRIORITY = 100;
-
 private:   
-	mutable std::shared_ptr<const T>    m_lastElement;
+	mutable T							m_lastElement;
 	bool                                m_hold = false;
-};
-
-template <typename T>
-class Input<T>::BackupSignal : public InputPad<T> {
-	friend Input<T>;
 };
 
 }

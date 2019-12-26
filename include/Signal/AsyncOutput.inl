@@ -4,17 +4,17 @@
 namespace Zuazo::Signal {
 
 template <typename T>
-inline void AsyncOutput<T>::setMaxDropped(int32_t max){
+inline void AsyncOutput<T>::setMaxDropped(int max){
 	m_maxDropped = max;
 }
 
 template <typename T>
-inline int32_t AsyncOutput<T>::getMaxDropped() const{
+inline int AsyncOutput<T>::getMaxDropped() const{
 	return m_maxDropped;
 }
 
 template <typename T>
-inline uint32_t AsyncOutput<T>::getDropped() const{
+inline uint AsyncOutput<T>::getDropped() const{
 	return m_dropped;
 }
 
@@ -61,7 +61,8 @@ inline void AsyncOutput<T>::reset(){
 
 template <typename T>
 inline void AsyncOutput<T>::update() {
-	//No need for lock. update() wont be called.
+	//No need for lock buffer resizing. 
+	//update() wont be called while there is an active context
 
 	const size_t read = m_read.load();
 	const size_t write = m_write.load();
@@ -78,14 +79,14 @@ inline void AsyncOutput<T>::update() {
 
 		if(m_dropped > m_maxDropped && m_maxDropped >= 0){
 			//More than tolerable dropped elements
-			Output<T>::push(std::shared_ptr<const T>());
+			Output<T>::push(T());
 		}
 	}
 }
 
 
 template <typename T>
-inline void AsyncOutput<T>::push(std::shared_ptr<const T>&& element){
+inline void AsyncOutput<T>::push(T&& element){
 	std::lock_guard<std::mutex> lock(m_mutex); //Lock if it is being resized.
 
 	const size_t read = m_read.load();

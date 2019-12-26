@@ -15,16 +15,16 @@ public:
 	LazyOutput& operator=(LazyOutput&& other) = default;
 
 
-	void                    setMaximumRecursion(uint rec);
-	uint                    getMaximumRecursion() const;
+	void						setMaximumRecursion(uint rec);
+	uint						getMaximumRecursion() const;
 protected:
-	virtual std::shared_ptr<const T>& get() const final;
+	virtual const T&			get() const final;
 
 private:
-	Timing::ExternalEvent&  m_event;
+	Timing::ExternalEvent&  	m_event;
 
-	mutable uint            m_maxRecursion = 1;
-	mutable uint            m_recursion = 0;
+	mutable uint				m_maxRecursion = 1;
+	mutable uint				m_recursion = 0;
 };
 
 }

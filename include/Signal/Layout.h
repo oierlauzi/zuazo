@@ -31,14 +31,14 @@ public:
 	std::set<const PadBase*>  getPads() const;  
 
 	template<typename T>
-	OutputPad<T>*           getOutput(const std::string& str);
+	OutputPad<T>&			getOutput(const std::string_view& str);
 	template<typename T>
-	const OutputPad<T>*     getOutput(const std::string& str) const;
+	const OutputPad<T>&		getOutput(const std::string_view& str) const;
 
 	template<typename T>
-	InputPad<T>*            getInput(const std::string& str);
+	InputPad<T>&			getInput(const std::string_view& str);
 	template<typename T>
-	const InputPad<T>*      getInput(const std::string& str) const;
+	const InputPad<T>&		getInput(const std::string_view& str) const;
 
 protected:
 	void                    addPad(PadBase& pad);
@@ -50,10 +50,12 @@ private:
 	std::string             m_name;
 	std::set<PadBase*>      m_pads;
 
+
+	PadBase&				findPad(const std::string_view& name, PadBase::Direction dir, const std::type_info& type) const;
 	template<typename T>
-	OutputPad<T>*           findOutput(const std::string& name) const;
+	OutputPad<T>&			findOutput(const std::string_view& name) const;
 	template<typename T>
-	InputPad<T>*            findInput(const std::string& name) const;
+	InputPad<T>&			findInput(const std::string_view& name) const;
 };
 
 }

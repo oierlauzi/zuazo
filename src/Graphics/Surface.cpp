@@ -10,7 +10,7 @@
 namespace Zuazo::Graphics {
 
 Surface::Surface(const Vulkan& vulkan, const Window& window, bool vSync)
-	: m_surface(window.getSurface(vulkan.getInstance()))
+	: m_surface(window.getSurface(vulkan.getDispatcher(), vulkan.getInstance()))
 	, m_swapchain(createSwapchain(vulkan, *m_surface, static_cast<vk::Extent2D>(window.getResolution()), vSync))
 	, m_images(getImages(vulkan, *m_swapchain))
 	, m_imageViews()
@@ -30,9 +30,9 @@ vk::UniqueSwapchainKHR Surface::createSwapchain(const Vulkan& vulkan,
 		throw Exception("Surface not suppoted by the physical device");
 	}
 
-	const auto formats = physicalDevice.getSurfaceFormatsKHR(surface);
-	const auto presentModes = physicalDevice.getSurfacePresentModesKHR(surface);
-	const auto capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
+	const auto formats = physicalDevice.getSurfaceFormatsKHR(surface, vulkan.getDispatcher());
+	const auto presentModes = physicalDevice.getSurfacePresentModesKHR(surface, vulkan.getDispatcher());
+	const auto capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface, vulkan.getDispatcher());
 
 	const auto format = getFormat(formats);
 	const auto presentMode = getPresentMode(presentModes, vSync);
@@ -65,11 +65,11 @@ vk::UniqueSwapchainKHR Surface::createSwapchain(const Vulkan& vulkan,
 	std::cout << extent.width << "x" << extent.height << std::endl;
 	std::cout << "Image count: " << imageCount << std::endl;
 
-	return vulkan.getDevice().createSwapchainKHRUnique(createInfo);
+	return vulkan.getDevice().createSwapchainKHRUnique(createInfo, nullptr, vulkan.getDispatcher());
 }
 
 std::vector<vk::Image> Surface::getImages(const Vulkan& vulkan, const vk::SwapchainKHR& swapchain){
-	return vulkan.getDevice().getSwapchainImagesKHR(swapchain);
+	return vulkan.getDevice().getSwapchainImagesKHR(swapchain, vulkan.getDispatcher());
 }
 
 

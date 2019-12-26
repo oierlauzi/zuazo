@@ -27,7 +27,7 @@ inline DummyInput<T>::Destination::Destination(const DummyInput& owner) :
 }
 
 template<typename T>
-inline const std::shared_ptr<const T>& DummyInput<T>::Destination::get() const {
+inline const T& DummyInput<T>::Destination::get() const {
 	return m_owner.get();
 }
 
