@@ -26,7 +26,7 @@
 #endif
 
 
-#define ZUAZO_ENUM_FLAG_OPERATORS(T)																																				\
+#define ZUAZO_ENUM_BIT_OPERATORS(T)																																					\
 	constexpr T operator~ (T a) { return static_cast<T>( ~static_cast<std::underlying_type<T>::type>(a) ); }																		\
 	constexpr T operator| (T a, T b) { return static_cast<T>( static_cast<std::underlying_type<T>::type>(a) | static_cast<std::underlying_type<T>::type>(b) ); }					\
 	constexpr T operator& (T a, T b) { return static_cast<T>( static_cast<std::underlying_type<T>::type>(a) & static_cast<std::underlying_type<T>::type>(b) ); }					\
@@ -34,6 +34,23 @@
 	constexpr T& operator|= (T& a, T b) { return reinterpret_cast<T&>( reinterpret_cast<std::underlying_type<T>::type&>(a) |= static_cast<std::underlying_type<T>::type>(b) ); }	\
 	constexpr T& operator&= (T& a, T b) { return reinterpret_cast<T&>( reinterpret_cast<std::underlying_type<T>::type&>(a) &= static_cast<std::underlying_type<T>::type>(b) ); }	\
 	constexpr T& operator^= (T& a, T b) { return reinterpret_cast<T&>( reinterpret_cast<std::underlying_type<T>::type&>(a) ^= static_cast<std::underlying_type<T>::type>(b) ); }
+
+#define ZUAZO_ENUM_ARITHMETIC_OPERATORS(T)																																			\
+	constexpr T operator- (T a) { return static_cast<T>( -static_cast<std::underlying_type<T>::type>(a) ); }																		\
+	constexpr T operator- (T a, T b) { return static_cast<T>( static_cast<std::underlying_type<T>::type>(a) - static_cast<std::underlying_type<T>::type>(b) ); }					\
+	constexpr T operator+ (T a, T b) { return static_cast<T>( static_cast<std::underlying_type<T>::type>(a) + static_cast<std::underlying_type<T>::type>(b) ); }					\
+	constexpr T& operator-= (T& a, T b) { return reinterpret_cast<T&>( reinterpret_cast<std::underlying_type<T>::type&>(a) -= static_cast<std::underlying_type<T>::type>(b) ); }	\
+	constexpr T& operator-- (T& a) { return --reinterpret_cast<T&>( reinterpret_cast<std::underlying_type<T>::type&>(a) ); }														\
+	constexpr T operator-- (T& a, int) { return static_cast<T>( reinterpret_cast<std::underlying_type<T>::type&>(a)-- ); }															\
+	constexpr T& operator+= (T& a, T b) { return reinterpret_cast<T&>( reinterpret_cast<std::underlying_type<T>::type&>(a) += static_cast<std::underlying_type<T>::type>(b) ); }	\
+	constexpr T& operator++ (T& a) { return ++reinterpret_cast<T&>( reinterpret_cast<std::underlying_type<T>::type&>(a) ); }														\
+	constexpr T operator++ (T& a, int) { return static_cast<T>( reinterpret_cast<std::underlying_type<T>::type&>(a)++ ); }
+
+#define ZUAZO_ENUM_COMP_OPERATORS(T)																																				\
+	constexpr bool operator< (T a, T b) { static_cast<std::underlying_type<T>::type>(a) < static_cast<std::underlying_type<T>::type>(b); }											\
+	constexpr bool operator> (T a, T b) { static_cast<std::underlying_type<T>::type>(a) > static_cast<std::underlying_type<T>::type>(b); }											\
+	constexpr bool operator<= (T a, T b) { static_cast<std::underlying_type<T>::type>(a) <= static_cast<std::underlying_type<T>::type>(b); }										\
+	constexpr bool operator>= (T a, T b) { static_cast<std::underlying_type<T>::type>(a) >= static_cast<std::underlying_type<T>::type>(b); }
 
 #define ZUAZO_ENUM_LUT_ENTRY(x, ...)			\
 	[ static_cast<size_t>(x) ] = { __VA_ARGS__ }
