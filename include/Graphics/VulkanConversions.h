@@ -11,10 +11,8 @@ namespace Zuazo::Graphics {
 constexpr vk::Extent2D toVulkan(const Resolution& res);
 constexpr Resolution fromVulkan(const vk::Extent2D& res);
 
-using VulkanPixelFormatRep = std::tuple<vk::Format, vk::ComponentMapping>;
-
-constexpr VulkanPixelFormatRep toVulkan(PixelFormat fmt, ColorTransferFunction eotf);
-constexpr PixelFormat fromVulkan(const VulkanPixelFormatRep& fmt);
+constexpr std::tuple<vk::Format, vk::ComponentMapping> toVulkan(PixelFormat fmt, ColorEncoding enc);
+constexpr std::tuple<PixelFormat, ColorEncoding> fromVulkan(vk::Format fmt);
 
 }
 

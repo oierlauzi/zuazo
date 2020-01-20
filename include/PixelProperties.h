@@ -150,19 +150,11 @@ enum class PixelFormat {
 	X2B10G10R10_32,
 	X2G10R10B10_32, 
 	X2G10B10R10_32,
-	R10G10B10X2_32,
-	B10G10R10X2_32,
-	G10R10B10X2_32,
-	G10B10R10X2_32,
 	
 	A2R10G10B10_32, 
 	A2B10G10R10_32,
 	A2G10R10B10_32, 
 	A2G10B10R10_32,
-	R10G10B10A2_32,
-	B10G10R10A2_32,
-	G10R10B10A2_32,
-	G10B10R10A2_32,
 
 	R10X6G10X6B10X6G10X6_S422_16,
 	B10X6G10X6R10X6G10X6_S422_16,
@@ -226,8 +218,8 @@ enum class PixelFormat {
 	A16G16B16R16,
 	R16G16B16A16,
 	B16G16R16A16,
-	G16R16G16A16,
-	G16B16G16A16,
+	G16R16B16A16,
+	G16B16R16A16,
 
 	R16G16B16G16_S422,
 	B16G16R16G16_S422,
@@ -322,7 +314,7 @@ enum class ColorEncoding {
 	NONE = 0,					///<Not supported
 
 	INT,						///<Linearly encoded on a integer
-  	UINT,						///<Linearly encoded on a unsigned integer
+  	UINT,						///<Linearly encoded on a unsigned integer (2's complement)
 	IEEE754,					///<Linearly encoded on a floating point number
 	IEC61966_2_1,				///<Non-linearly encoded on a unsigned integer according to the \
 									IEC 61966-2-1 standard. Used in sRGB and Display P3 color spaces.
