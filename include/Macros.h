@@ -52,9 +52,6 @@
 	constexpr bool operator<= (T a, T b) { static_cast<std::underlying_type<T>::type>(a) <= static_cast<std::underlying_type<T>::type>(b); }										\
 	constexpr bool operator>= (T a, T b) { static_cast<std::underlying_type<T>::type>(a) >= static_cast<std::underlying_type<T>::type>(b); }
 
-#define ZUAZO_ENUM_LUT_ENTRY(x, ...)			\
-	[ static_cast<size_t>(x) ] = { __VA_ARGS__ }
-
 #define ZUAZO_DEFAULT_ASSIGMENT_OPERATORS(T)	\
 	T& operator=(const T& other) = default; 	\
 	T& operator=(T&& other) = default;
