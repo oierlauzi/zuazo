@@ -20,416 +20,93 @@ constexpr Resolution fromVulkan(const vk::Extent2D& res){
 	);
 }
 
+#define ZUAZO_CONSTRUCT_SWIZZLE(r, g, b, a) vk::ComponentMapping( 	\
+	vk::ComponentSwizzle::e##r,										\
+	vk::ComponentSwizzle::e##g,										\
+	vk::ComponentSwizzle::e##b,										\
+	vk::ComponentSwizzle::e##a 										\
+)
+
 constexpr std::tuple<vk::Format, vk::ComponentMapping> toVulkan(PixelFormat fmt, ColorEncoding enc){
 	constexpr vk::ComponentMapping IDENTITY;
 
-	constexpr vk::ComponentMapping R2Y(
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eOne
-	);
+	constexpr auto R2Y 			= ZUAZO_CONSTRUCT_SWIZZLE( Identity, R, R, One );
 
-	constexpr vk::ComponentMapping RG2YX(
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping RG2XY(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping RG2YA(
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eG
-	);
-	constexpr vk::ComponentMapping RG2AY(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eR
-	);
+	constexpr auto RG2YX 		= ZUAZO_CONSTRUCT_SWIZZLE( Identity, R, R, One );
+	constexpr auto RG2XY 		= ZUAZO_CONSTRUCT_SWIZZLE( G, Identity, G, One );
+	constexpr auto RG2YA 		= ZUAZO_CONSTRUCT_SWIZZLE( Identity, R, R, G );
+	constexpr auto RG2AY 		= ZUAZO_CONSTRUCT_SWIZZLE( G, Identity, G, R );
 
-	constexpr vk::ComponentMapping ARGB2XRGB(
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping ARGB2XBGR(
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping ARGB2XGRB(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping ARGB2XGBR(
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping ARGB2RGBX(
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping ARGB2BGRX(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping ARGB2GRBX(
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping ARGB2GBRX(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping ARGB2ARGB = IDENTITY;
-	constexpr vk::ComponentMapping ARGB2ABGR(
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eIdentity
-	);
-	constexpr vk::ComponentMapping ARGB2AGRB(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eIdentity
-	);
-	constexpr vk::ComponentMapping ARGB2AGBR(
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eIdentity
-	);
-	constexpr vk::ComponentMapping ARGB2RGBA(
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eB
-	);
-	constexpr vk::ComponentMapping ARGB2BGRA(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eB
-	);
-	constexpr vk::ComponentMapping ARGB2GRBA(
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eB
-	);
-	constexpr vk::ComponentMapping ARGB2GBRA(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eB
-	);
+	constexpr auto ARGB2XRGB 	= ZUAZO_CONSTRUCT_SWIZZLE( Identity, Identity, Identity, One );
+	constexpr auto ARGB2XBGR 	= ZUAZO_CONSTRUCT_SWIZZLE( B, Identity, R, One );
+	constexpr auto ARGB2XGRB 	= ZUAZO_CONSTRUCT_SWIZZLE( G, R, Identity, One );
+	constexpr auto ARGB2XGBR 	= ZUAZO_CONSTRUCT_SWIZZLE( B, R, G, One );
+	constexpr auto ARGB2RGBX 	= ZUAZO_CONSTRUCT_SWIZZLE( A, R, G, One );
+	constexpr auto ARGB2BGRX 	= ZUAZO_CONSTRUCT_SWIZZLE( G, R, A, One );
+	constexpr auto ARGB2GRBX 	= ZUAZO_CONSTRUCT_SWIZZLE( Identity, A, G, One );
+	constexpr auto ARGB2GBRX 	= ZUAZO_CONSTRUCT_SWIZZLE( G, A, R, One );
+	constexpr auto ARGB2ARGB 	= IDENTITY;
+	constexpr auto ARGB2ABGR 	= ZUAZO_CONSTRUCT_SWIZZLE( B, Identity, R, Identity );
+	constexpr auto ARGB2AGRB 	= ZUAZO_CONSTRUCT_SWIZZLE( G, R, Identity, Identity );
+	constexpr auto ARGB2AGBR 	= ZUAZO_CONSTRUCT_SWIZZLE( B, R, G, Identity );
+	constexpr auto ARGB2RGBA 	= ZUAZO_CONSTRUCT_SWIZZLE( A, R, G, B );
+	constexpr auto ARGB2BGRA 	= ZUAZO_CONSTRUCT_SWIZZLE( G, R, A, B );
+	constexpr auto ARGB2GRBA 	= ZUAZO_CONSTRUCT_SWIZZLE( Identity, A, G, B );
+	constexpr auto ARGB2GBRA 	= ZUAZO_CONSTRUCT_SWIZZLE( G, A, R, B );
 	
-	constexpr vk::ComponentMapping ABGR2XRGB(
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping ABGR2XBGR(
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping ABGR2XGRB(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping ABGR2XGBR(
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping ABGR2RGBX(
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping ABGR2BGRX(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping ABGR2GRBX(
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping ABGR2GBRX(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping ABGR2ARGB(
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eIdentity
-	);
-	constexpr vk::ComponentMapping ABGR2ABGR = IDENTITY;
-	constexpr vk::ComponentMapping ABGR2AGRB(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eIdentity
-	);
-	constexpr vk::ComponentMapping ABGR2AGBR(
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eIdentity
-	);
-	constexpr vk::ComponentMapping ABGR2RGBA(
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eR
-	);
-	constexpr vk::ComponentMapping ABGR2BGRA(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eR
-	);
-	constexpr vk::ComponentMapping ABGR2GRBA(
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eR
-	);
-	constexpr vk::ComponentMapping ABGR2GBRA(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eR
-	);
+	constexpr auto ABGR2XRGB 	= ZUAZO_CONSTRUCT_SWIZZLE( B, Identity, R, One );
+	constexpr auto ABGR2XBGR 	= ZUAZO_CONSTRUCT_SWIZZLE( Identity, Identity, Identity, One );
+	constexpr auto ABGR2XGRB 	= ZUAZO_CONSTRUCT_SWIZZLE( G, B, R, One );
+	constexpr auto ABGR2XGBR 	= ZUAZO_CONSTRUCT_SWIZZLE( Identity, B, G, One );
+	constexpr auto ABGR2RGBX 	= ZUAZO_CONSTRUCT_SWIZZLE( A, B, G, One );
+	constexpr auto ABGR2BGRX 	= ZUAZO_CONSTRUCT_SWIZZLE( G, B, A, One );
+	constexpr auto ABGR2GRBX 	= ZUAZO_CONSTRUCT_SWIZZLE( B, A, G, One );
+	constexpr auto ABGR2GBRX 	= ZUAZO_CONSTRUCT_SWIZZLE( G, A, B, One );
+	constexpr auto ABGR2ARGB 	= ZUAZO_CONSTRUCT_SWIZZLE( B, Identity, R, Identity );
+	constexpr auto ABGR2ABGR 	= IDENTITY;
+	constexpr auto ABGR2AGRB 	= ZUAZO_CONSTRUCT_SWIZZLE( G, B, R, Identity );
+	constexpr auto ABGR2AGBR 	= ZUAZO_CONSTRUCT_SWIZZLE( Identity, B, G, Identity );
+	constexpr auto ABGR2RGBA 	= ZUAZO_CONSTRUCT_SWIZZLE( A, B, G, R );
+	constexpr auto ABGR2BGRA 	= ZUAZO_CONSTRUCT_SWIZZLE( G, B, A, R );
+	constexpr auto ABGR2GRBA 	= ZUAZO_CONSTRUCT_SWIZZLE( B, A, G, R );
+	constexpr auto ABGR2GBRA 	= ZUAZO_CONSTRUCT_SWIZZLE( G, A, Identity, R );
 
-	constexpr vk::ComponentMapping RGBA2XRGB(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping RGBA2XBGR(
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping RGBA2XGRB(
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping RGBA2XGBR(
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping RGBA2RGBX(
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping RGBA2BGRX(
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping RGBA2GRBX(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping RGBA2GBRX(
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping RGBA2ARGB(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eR
-	);
-	constexpr vk::ComponentMapping RGBA2ABGR(
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eR
-	);
-	constexpr vk::ComponentMapping RGBA2AGRB(
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eR
-	);
-	constexpr vk::ComponentMapping RGBA2AGBR(
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eR
-	);
-	constexpr vk::ComponentMapping RGBA2RGBA = IDENTITY;
-	constexpr vk::ComponentMapping RGBA2BGRA(
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eIdentity
-	);
-	constexpr vk::ComponentMapping RGBA2GRBA(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eIdentity
-	);
-	constexpr vk::ComponentMapping RGBA2GBRA(
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eIdentity
-	);
+	constexpr auto RGBA2XRGB 	= ZUAZO_CONSTRUCT_SWIZZLE( G, B, A, One );
+	constexpr auto RGBA2XBGR 	= ZUAZO_CONSTRUCT_SWIZZLE( A, B, G, One );
+	constexpr auto RGBA2XGRB 	= ZUAZO_CONSTRUCT_SWIZZLE( B, Identity, A, One );
+	constexpr auto RGBA2XGBR 	= ZUAZO_CONSTRUCT_SWIZZLE( A, Identity, Identity, One );
+	constexpr auto RGBA2RGBX 	= ZUAZO_CONSTRUCT_SWIZZLE( Identity, Identity, Identity, One );
+	constexpr auto RGBA2BGRX 	= ZUAZO_CONSTRUCT_SWIZZLE( B, Identity, R, One );
+	constexpr auto RGBA2GRBX 	= ZUAZO_CONSTRUCT_SWIZZLE( G, R, Identity, One );
+	constexpr auto RGBA2GBRX 	= ZUAZO_CONSTRUCT_SWIZZLE( B, R, G, One );
+	constexpr auto RGBA2ARGB 	= ZUAZO_CONSTRUCT_SWIZZLE( G, B, A, R );
+	constexpr auto RGBA2ABGR 	= ZUAZO_CONSTRUCT_SWIZZLE( A, B, G, R );
+	constexpr auto RGBA2AGRB 	= ZUAZO_CONSTRUCT_SWIZZLE( B, Identity, A, R );
+	constexpr auto RGBA2AGBR 	= ZUAZO_CONSTRUCT_SWIZZLE( A, Identity, Identity, R );
+	constexpr auto RGBA2RGBA 	= IDENTITY;
+	constexpr auto RGBA2BGRA 	= ZUAZO_CONSTRUCT_SWIZZLE( B, Identity, R, Identity );
+	constexpr auto RGBA2GRBA 	= ZUAZO_CONSTRUCT_SWIZZLE( G, R, Identity, Identity );
+	constexpr auto RGBA2GBRA 	= ZUAZO_CONSTRUCT_SWIZZLE( B, R, G, Identity );
 
-	constexpr vk::ComponentMapping BGRA2XRGB(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping BGRA2XBGR(
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping BGRA2XGRB(
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping BGRA2XGBR(
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping BGRA2RGBX(
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping BGRA2BGRX(
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping BGRA2GRBX(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping BGRA2GBRX(
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eOne
-	);
-	constexpr vk::ComponentMapping BGRA2ARGB(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eB
-	);
-	constexpr vk::ComponentMapping BGRA2ABGR(
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eB
-	);
-	constexpr vk::ComponentMapping BGRA2AGRB(
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eR
-	);
-	constexpr vk::ComponentMapping BGRA2AGBR(
-		vk::ComponentSwizzle::eA,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eB
-	);
-	constexpr vk::ComponentMapping BGRA2RGBA(
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eIdentity
-	);
-	constexpr vk::ComponentMapping BGRA2BGRA = IDENTITY;
-	constexpr vk::ComponentMapping BGRA2GRBA(
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eIdentity
-	);
-	constexpr vk::ComponentMapping BGRA2GBRA(
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eG,
-		vk::ComponentSwizzle::eIdentity
-	);
+	constexpr auto BGRA2XRGB = ZUAZO_CONSTRUCT_SWIZZLE( G, R, A, One );
+	constexpr auto BGRA2XBGR = ZUAZO_CONSTRUCT_SWIZZLE( A, R, G, One );
+	constexpr auto BGRA2XGRB = ZUAZO_CONSTRUCT_SWIZZLE( Identity, Identity, A, One );
+	constexpr auto BGRA2XGBR = ZUAZO_CONSTRUCT_SWIZZLE( A, Identity, R, One );
+	constexpr auto BGRA2RGBX = ZUAZO_CONSTRUCT_SWIZZLE( B, Identity, R, One );
+	constexpr auto BGRA2BGRX = ZUAZO_CONSTRUCT_SWIZZLE( Identity, Identity, Identity, One );
+	constexpr auto BGRA2GRBX = ZUAZO_CONSTRUCT_SWIZZLE( G, B, R, One );
+	constexpr auto BGRA2GBRX = ZUAZO_CONSTRUCT_SWIZZLE( Identity, B, G, One );
+	constexpr auto BGRA2ARGB = ZUAZO_CONSTRUCT_SWIZZLE( G, R, A, B );
+	constexpr auto BGRA2ABGR = ZUAZO_CONSTRUCT_SWIZZLE( A, R, G, B );
+	constexpr auto BGRA2AGRB = ZUAZO_CONSTRUCT_SWIZZLE( Identity, Identity, A, R );
+	constexpr auto BGRA2AGBR = ZUAZO_CONSTRUCT_SWIZZLE( A, Identity, R, B );
+	constexpr auto BGRA2RGBA = ZUAZO_CONSTRUCT_SWIZZLE( B, Identity, R, Identity );
+	constexpr auto BGRA2BGRA = IDENTITY;
+	constexpr auto BGRA2GRBA = ZUAZO_CONSTRUCT_SWIZZLE( G, B, R, Identity );
+	constexpr auto BGRA2GBRA = ZUAZO_CONSTRUCT_SWIZZLE( Identity, B, G, Identity );
 
-	constexpr vk::ComponentMapping RGB2BGR(
-		vk::ComponentSwizzle::eB,
-		vk::ComponentSwizzle::eIdentity,
-		vk::ComponentSwizzle::eR,
-		vk::ComponentSwizzle::eIdentity
-	);
-	constexpr vk::ComponentMapping BGR2RGB = RGB2BGR;
+	constexpr auto RGB2BGR = ZUAZO_CONSTRUCT_SWIZZLE( B, Identity, R, Identity );
+	constexpr auto BGR2RGB = RGB2BGR;
 
 	//Decide the equivalent
 	switch (enc){
