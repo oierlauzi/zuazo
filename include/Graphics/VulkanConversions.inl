@@ -1,6 +1,6 @@
 #include "VulkanConversions.h"
 
-#include "Macros.h"
+#include "../Macros.h"
 
 #include <utility>
 
@@ -587,5 +587,80 @@ constexpr std::tuple<PixelFormat, ColorEncoding> fromVulkan(vk::Format fmt){
 	default: return {};
 	}
 }
+
+constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorEncoding enc){
+	constexpr vk::ColorSpaceKHR ERROR = static_cast<vk::ColorSpaceKHR>(-1);
+
+	switch(enc){
+	case ColorEncoding::UINT:
+	case ColorEncoding::INT:
+	case ColorEncoding::IEEE754:
+		//Linear encoding
+		switch(prim){
+		case ColorPrimaries::BT709: 	return vk::ColorSpaceKHR::eBt709LinearEXT;
+		case ColorPrimaries::BT2020:	return vk::ColorSpaceKHR::eBt2020LinearEXT;
+		case ColorPrimaries::SMPTE432:	return vk::ColorSpaceKHR::eDisplayP3LinearEXT;
+		case ColorPrimaries::ADOBE_RGB:	return vk::ColorSpaceKHR::eAdobergbLinearEXT;
+		default: return ERROR;
+		}
+	case ColorEncoding::IEC61966_2_1:
+		//IEC61966_2_1 non linear encoding
+		switch(prim){
+		case ColorPrimaries::BT709: 	return vk::ColorSpaceKHR::eSrgbNonlinear;
+		case ColorPrimaries::SMPTE432:	return vk::ColorSpaceKHR::eDisplayP3NonlinearEXT;
+		default: return ERROR;
+		}
+	default: return ERROR;
+	}
+}
+
+constexpr std::tuple<ColorPrimaries, ColorEncoding> fromVulkan(vk::ColorSpaceKHR space){
+	switch(space){
+	case vk::ColorSpaceKHR::eBt709LinearEXT: return { ColorPrimaries::BT709, ColorEncoding::NONE };
+	case vk::ColorSpaceKHR::eBt2020LinearEXT: return { ColorPrimaries::BT2020, ColorEncoding::NONE };
+	case vk::ColorSpaceKHR::eDisplayP3LinearEXT: return { ColorPrimaries::SMPTE432, ColorEncoding::NONE };
+	case vk::ColorSpaceKHR::eAdobergbLinearEXT: return { ColorPrimaries::ADOBE_RGB, ColorEncoding::NONE };
+	case vk::ColorSpaceKHR::eSrgbNonlinear: return { ColorPrimaries::BT709, ColorEncoding::IEC61966_2_1 };
+	case vk::ColorSpaceKHR::eDisplayP3NonlinearEXT: return { ColorPrimaries::SMPTE432, ColorEncoding::IEC61966_2_1 };
+	default: return {};
+	}
+}
+
+inline vk::SurfaceFormatKHR toVulkan(PixelFormat fmt, ColorPrimaries prim, ColorEncoding enc){
+	const auto [format, swizzle] = toVulkan(fmt, enc);
+	if(format == vk::Format::eUndefined || swizzle != vk::ComponentMapping()) return {};
+
+	const vk::ColorSpaceKHR space = toVulkan(prim, enc);
+	if(space == static_cast<vk::ColorSpaceKHR>(-1)) return {};
+	
+	return vk::SurfaceFormatKHR(
+		format,
+		space		
+	);
+}
+
+inline std::tuple<PixelFormat, ColorPrimaries, ColorEncoding> fromVulkan(const vk::SurfaceFormatKHR& fmt){
+	const auto[format, enc] = fromVulkan(fmt.format);
+	if(format == PixelFormat::NONE || enc == ColorEncoding::NONE) return {};
+
+	const auto[prim, enc2] = fromVulkan(fmt.colorSpace);
+	if(prim == ColorPrimaries::NONE) return {};
+	if(enc2 == ColorEncoding::NONE){
+		//Linear encoding
+		switch(enc){
+		case ColorEncoding::UINT:
+		case ColorEncoding::INT:
+		case ColorEncoding::IEEE754:
+			break;
+		default: return {};
+		}
+	} else {
+		//Non linear encoding
+		if(enc2 != enc) return {};
+	}
+
+	return {format, prim, enc};
+}
+
 
 }

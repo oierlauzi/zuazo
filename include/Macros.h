@@ -47,10 +47,10 @@
 	constexpr T operator++ (T& a, int) { return static_cast<T>( reinterpret_cast<std::underlying_type<T>::type&>(a)++ ); }
 
 #define ZUAZO_ENUM_COMP_OPERATORS(T)																																				\
-	constexpr bool operator< (T a, T b) { static_cast<std::underlying_type<T>::type>(a) < static_cast<std::underlying_type<T>::type>(b); }											\
-	constexpr bool operator> (T a, T b) { static_cast<std::underlying_type<T>::type>(a) > static_cast<std::underlying_type<T>::type>(b); }											\
-	constexpr bool operator<= (T a, T b) { static_cast<std::underlying_type<T>::type>(a) <= static_cast<std::underlying_type<T>::type>(b); }										\
-	constexpr bool operator>= (T a, T b) { static_cast<std::underlying_type<T>::type>(a) >= static_cast<std::underlying_type<T>::type>(b); }
+	constexpr bool operator< (T a, T b) { return static_cast<std::underlying_type<T>::type>(a) < static_cast<std::underlying_type<T>::type>(b); }											\
+	constexpr bool operator> (T a, T b) { return static_cast<std::underlying_type<T>::type>(a) > static_cast<std::underlying_type<T>::type>(b); }											\
+	constexpr bool operator<= (T a, T b) { return static_cast<std::underlying_type<T>::type>(a) <= static_cast<std::underlying_type<T>::type>(b); }										\
+	constexpr bool operator>= (T a, T b) { return static_cast<std::underlying_type<T>::type>(a) >= static_cast<std::underlying_type<T>::type>(b); }
 
 #define ZUAZO_DEFAULT_ASSIGMENT_OPERATORS(T)	\
 	T& operator=(const T& other) = default; 	\

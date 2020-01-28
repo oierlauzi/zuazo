@@ -1,4 +1,4 @@
-#include <Graphics/Surface.h>
+#include <Graphics/Swapchain.h>
 
 #include <Exception.h>
 
@@ -9,24 +9,32 @@
 
 namespace Zuazo::Graphics {
 
-Surface::Surface(const Vulkan& vulkan, const Window& window, bool vSync)
-	: m_surface(window.getSurface(vulkan.getDispatcher(), vulkan.getInstance()))
-	, m_swapchain(createSwapchain(vulkan, *m_surface, static_cast<vk::Extent2D>(window.getResolution()), vSync))
+Swapchain::Swapchain(	const Vulkan& vulkan,
+						const vk::SurfaceKHR& surface,
+						Resolution resolution,
+						ColorPrimaries primaries, 
+						ColorEncoding encoding, 
+						PixelFormat format )
+	: m_surface(surface)
+	, m_swapchain(createSwapchain(
+		vulkan, 
+		m_surface,
+		toVulkan(resolution), 
+		toVulkan(format, primaries, encoding)
+	))
 	, m_images(getImages(vulkan, *m_swapchain))
 	, m_imageViews()
 {
-
 }
 
 
-
-vk::UniqueSwapchainKHR Surface::createSwapchain(const Vulkan& vulkan, 
-												const vk::SurfaceKHR& surface, 
-												vk::Extent2D resolution, 
-												bool vSync )
+vk::UniqueSwapchainKHR Swapchain::createSwapchain(	const Vulkan& vulkan, 
+													const vk::SurfaceKHR& surface, 
+													vk::Extent2D resolution, 
+													const vk::SurfaceFormatKHR& format )
 {
 	const auto& physicalDevice = vulkan.getPhysicalDevice();
-	if(!physicalDevice.getSurfaceSupportKHR(0, surface)){
+	if(!physicalDevice.getSurfaceSupportKHR(0, surface, vulkan.getDispatcher())){
 		throw Exception("Surface not suppoted by the physical device");
 	}
 
@@ -34,18 +42,18 @@ vk::UniqueSwapchainKHR Surface::createSwapchain(const Vulkan& vulkan,
 	const auto presentModes = physicalDevice.getSurfacePresentModesKHR(surface, vulkan.getDispatcher());
 	const auto capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface, vulkan.getDispatcher());
 
-	const auto format = getFormat(formats);
-	const auto presentMode = getPresentMode(presentModes, vSync);
+	const auto surfaceFormat = getFormat(formats, format);
+	const auto presentMode = getPresentMode(presentModes);
 	const auto extent = getExtent(capabilities, resolution);
-	const uint32_t imageCount = getImageCount(capabilities);
+	const auto imageCount = getImageCount(capabilities);
 	const auto queueFamilies = getQueueFamilies(vulkan);
 
 	const vk::SwapchainCreateInfoKHR createInfo(
 		{},
 		surface,
 		imageCount,
-		format.format,
-		format.colorSpace,
+		surfaceFormat.format,
+		surfaceFormat.colorSpace,
 		extent,
 		1,
 		vk::ImageUsageFlagBits::eColorAttachment,
@@ -60,7 +68,7 @@ vk::UniqueSwapchainKHR Surface::createSwapchain(const Vulkan& vulkan,
 	);
 
 	std::cout << "Selected swapchain settings:" << std::endl;
-	std::cout << vk::to_string(format.format) << " " << vk::to_string(format.colorSpace) << std::endl;
+	std::cout << vk::to_string(surfaceFormat.format) << " " << vk::to_string(surfaceFormat.colorSpace) << std::endl;
 	std::cout << vk::to_string(presentMode) << std::endl;
 	std::cout << extent.width << "x" << extent.height << std::endl;
 	std::cout << "Image count: " << imageCount << std::endl;
@@ -68,7 +76,7 @@ vk::UniqueSwapchainKHR Surface::createSwapchain(const Vulkan& vulkan,
 	return vulkan.getDevice().createSwapchainKHRUnique(createInfo, nullptr, vulkan.getDispatcher());
 }
 
-std::vector<vk::Image> Surface::getImages(const Vulkan& vulkan, const vk::SwapchainKHR& swapchain){
+std::vector<vk::Image> Swapchain::getImages(const Vulkan& vulkan, const vk::SwapchainKHR& swapchain){
 	return vulkan.getDevice().getSwapchainImagesKHR(swapchain, vulkan.getDispatcher());
 }
 
@@ -76,51 +84,30 @@ std::vector<vk::Image> Surface::getImages(const Vulkan& vulkan, const vk::Swapch
 
 
 
-vk::SurfaceFormatKHR Surface::getFormat(const std::vector<vk::SurfaceFormatKHR>& formats) {
-	vk::SurfaceFormatKHR desired; 
-	desired.format = vk::Format::eB8G8R8A8Unorm;
-	desired.colorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
-
-	if(std::find(formats.cbegin(), formats.cend(), desired) != formats.cend()){
-		return desired;
+vk::SurfaceFormatKHR Swapchain::getFormat(const std::vector<vk::SurfaceFormatKHR>& surfaceFormats, const vk::SurfaceFormatKHR& format) {
+	if(std::find(surfaceFormats.cbegin(), surfaceFormats.cend(), format) != surfaceFormats.cend()){
+		return format;
 	}
 
 	throw Exception("No compatible surface format was found");
 }
 
-vk::PresentModeKHR Surface::getPresentMode(const std::vector<vk::PresentModeKHR>& presentModes, bool vSync) {
-	std::vector<vk::PresentModeKHR> desiredModes;
+vk::PresentModeKHR Swapchain::getPresentMode(const std::vector<vk::PresentModeKHR>& presentModes) {
+	const std::vector<vk::PresentModeKHR> prefered = {
+		vk::PresentModeKHR::eMailbox,
+		vk::PresentModeKHR::eFifo //Required to be supported.
+	};
 
-	if(vSync){
-		desiredModes = {
-			vk::PresentModeKHR::eMailbox,
-			vk::PresentModeKHR::eFifo
-		};
-	} else {
-		desiredModes = {
-			vk::PresentModeKHR::eFifoRelaxed,
-			vk::PresentModeKHR::eImmediate
-		};
-	}
-
-	for(const auto& desired : desiredModes){
-		if(std::find(presentModes.cbegin(), presentModes.cend(), desired) != presentModes.cend()){
-			return desired;
+	for(auto mode : prefered){
+		if(std::find(presentModes.cbegin(), presentModes.cend(), mode) != presentModes.cend()){
+			return mode; //Found a apropiate one
 		}
 	}
 
-	std::string errMsg = "No present modes compatible with vSync=";
-	if(vSync){
-		errMsg+="true";
-	}else{
-		errMsg+="false";
-	}
-	errMsg+=" were found";
-
-	throw Exception(errMsg);
+	throw Exception("No compatible presentation mode was found");
 }
 
-vk::Extent2D Surface::getExtent(const vk::SurfaceCapabilitiesKHR& cap, vk::Extent2D windowExtent){
+vk::Extent2D Swapchain::getExtent(const vk::SurfaceCapabilitiesKHR& cap, vk::Extent2D windowExtent){
 	constexpr uint32_t MAX_EXTENT = std::numeric_limits<uint32_t>::max();
 
 	if(cap.currentExtent.width == MAX_EXTENT || cap.currentExtent.height == MAX_EXTENT){
@@ -133,7 +120,7 @@ vk::Extent2D Surface::getExtent(const vk::SurfaceCapabilitiesKHR& cap, vk::Exten
 	}
 }
 
-uint32_t Surface::getImageCount(const vk::SurfaceCapabilitiesKHR& cap){
+uint32_t Swapchain::getImageCount(const vk::SurfaceCapabilitiesKHR& cap){
 	const uint32_t desired = cap.minImageCount + 1;
 
 	if(cap.maxImageCount){
@@ -143,7 +130,7 @@ uint32_t Surface::getImageCount(const vk::SurfaceCapabilitiesKHR& cap){
 	}
 }
 
-std::vector<uint32_t> Surface::getQueueFamilies(const Vulkan& vulkan){
+std::vector<uint32_t> Swapchain::getQueueFamilies(const Vulkan& vulkan){
 	const std::set<uint32_t> families = {
 		vulkan.getGraphicsQueueIndex(),
 		vulkan.getPresentationQueueIndex()

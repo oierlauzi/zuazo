@@ -217,14 +217,12 @@ Window::operator bool() const {
 }
 
 
-vk::UniqueSurfaceKHR Window::getSurface(	const vk::DispatchLoaderDynamic& disp,
-											const vk::Instance& instance ) const 
-{
+vk::UniqueSurfaceKHR Window::getSurface(const Vulkan& vk) const {
 	using Deleter = vk::UniqueHandleTraits<vk::SurfaceKHR, vk::DispatchLoaderDynamic>::deleter;
 
 	//Try to create the surface
 	VkSurfaceKHR surface;
-	VkResult err = glfwCreateWindowSurface(instance, m_window, nullptr, &surface);
+	VkResult err = glfwCreateWindowSurface(vk.getInstance(), m_window, nullptr, &surface);
 
 	if(err != VK_SUCCESS){
 		throw Exception("Error creating Vulkan surface");
@@ -232,7 +230,7 @@ vk::UniqueSurfaceKHR Window::getSurface(	const vk::DispatchLoaderDynamic& disp,
 
 	return vk::UniqueSurfaceKHR(
 		surface,
-		Deleter(instance, nullptr, disp)
+		Deleter(vk.getInstance(), nullptr, vk.getDispatcher())
 	);
 }	
 

@@ -106,7 +106,7 @@ public:
 	operator bool() const;
 
 
-	vk::UniqueSurfaceKHR				getSurface(const vk::DispatchLoaderDynamic& disp, const vk::Instance& instance) const;				
+	vk::UniqueSurfaceKHR				getSurface(const Vulkan& vk) const;				
 
 
 	void                                setName(std::string&& name);

@@ -308,8 +308,7 @@ enum class ColorEncoding {
 	UINT,						///<Linearly encoded on a unsigned integer
   	INT,						///<Linearly encoded on a integer (2's complement)
 	IEEE754,					///<Linearly encoded on a floating point number
-	IEC61966_2_1,				///<Non-linearly encoded on a unsigned integer according to the \
-									IEC 61966-2-1 standard. Used in sRGB and Display P3 color spaces.
+	IEC61966_2_1,				///<Non-linearly encoded on a unsigned integer according to the IEC 61966-2-1 standard. Used in sRGB and Display P3 color spaces.
 
 	//Add here
 
