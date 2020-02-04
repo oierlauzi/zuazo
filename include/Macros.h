@@ -17,6 +17,12 @@
 #define ZUAZO_IS_64BIT (__WORDSIZE == 64)
 #define ZUAZO_BYTE_SIZE (CHAR_BIT)
 
+#ifdef NDEBUG
+	#define ZUAZO_IS_DEBUG (false)
+#else
+	#define ZUAZO_IS_DEBUG (true)
+#endif
+
 #if ZUAZO_IS_BIG_ENDIAN
 	#define ZUAZO_BE_LE(be, le)	(be)
 #elif ZUAZO_IS_LITTLE_ENDIAN

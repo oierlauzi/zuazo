@@ -1,10 +1,42 @@
 #include "VulkanConversions.h"
 
+#include "VulkanUtils.h"
 #include "../Macros.h"
 
 #include <utility>
 
 namespace Zuazo::Graphics {
+
+constexpr uint32_t toVulkan(Version version){
+	return VK_MAKE_VERSION(
+		version.getMajor(),
+		version.getMinor(),
+		version.getPatch()
+	);
+}
+
+constexpr vk::DebugUtilsMessageSeverityFlagsEXT toVulkan(Verbosity verbosity){
+	vk::DebugUtilsMessageSeverityFlagsEXT flags = {};
+
+	if(verbosity >= Verbosity::VERBOSE) 
+		flags |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose;
+	if(verbosity >= Verbosity::INFO) 
+		flags |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
+	if(verbosity >= Verbosity::WARNING) 
+		flags |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
+	if(verbosity >= Verbosity::ERROR) 
+		flags |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
+
+	return flags;
+}
+
+constexpr Verbosity fromVulkan(vk::DebugUtilsMessageSeverityFlagsEXT verbosity){
+	if(verbosity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose) 	return Verbosity::VERBOSE;
+	if(verbosity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo) 	return Verbosity::INFO;
+	if(verbosity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning) 	return Verbosity::WARNING;
+	if(verbosity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError) 	return Verbosity::ERROR;
+	return Verbosity::SILENT;
+}
 
 constexpr vk::Extent2D toVulkan(const Resolution& res){
 	return vk::Extent2D(
@@ -19,13 +51,6 @@ constexpr Resolution fromVulkan(const vk::Extent2D& res){
 		res.height
 	);
 }
-
-#define ZUAZO_CONSTRUCT_SWIZZLE(r, g, b, a) vk::ComponentMapping( 	\
-	vk::ComponentSwizzle::e##r,										\
-	vk::ComponentSwizzle::e##g,										\
-	vk::ComponentSwizzle::e##b,										\
-	vk::ComponentSwizzle::e##a 										\
-)
 
 constexpr std::tuple<vk::Format, vk::ComponentMapping> toVulkan(PixelFormat fmt, ColorEncoding enc){
 	constexpr vk::ComponentMapping IDENTITY;
@@ -639,7 +664,7 @@ inline vk::SurfaceFormatKHR toVulkan(PixelFormat fmt, ColorPrimaries prim, Color
 	);
 }
 
-inline std::tuple<PixelFormat, ColorPrimaries, ColorEncoding> fromVulkan(const vk::SurfaceFormatKHR& fmt){
+constexpr std::tuple<PixelFormat, ColorPrimaries, ColorEncoding> fromVulkan(const vk::SurfaceFormatKHR& fmt){
 	const auto[format, enc] = fromVulkan(fmt.format);
 	if(format == PixelFormat::NONE || enc == ColorEncoding::NONE) return {};
 

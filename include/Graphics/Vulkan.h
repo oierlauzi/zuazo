@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../Zuazo.h"
+#include "../Version.h"
+#include "../Verbosity.h"
 
 #include <vector>
 #include <array>
@@ -8,6 +9,7 @@
 #include <optional>
 
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#define VULKAN_HPP_DEFAULT_DISPATCHER void()
 #include <vulkan/vulkan.hpp>
 
 #include <cstdint>
@@ -16,14 +18,11 @@ namespace Zuazo::Graphics {
 
 class Vulkan {
 public:
-	enum class Verbosity {
-		DISABLE_VALIDATION_LAYERS,
-		ENABLE_VALIDATION_LAYERS
-	};
+	using DeviceScoreFunc = std::function<uint32_t(const vk::PhysicalDeviceProperties2, const vk::PhysicalDeviceFeatures2&)>;
 
-	using DeviceScoreFunc = std::function<uint32_t(const vk::DispatchLoaderDynamic&, const vk::PhysicalDevice&)>;
-
-	Vulkan(const std::string& appName, const Version& appVersion, Verbosity verbosity, const DeviceScoreFunc& scoreFunc);
+	Vulkan(	const std::string& appName, 
+			Version appVersion,
+			const DeviceScoreFunc& scoreFunc );
 	Vulkan(const Vulkan& other) = delete;
 	~Vulkan() = default;
 
@@ -41,7 +40,8 @@ public:
 	const vk::Queue&								getPresentationQueue() const;
 	uint32_t										getPresentationQueueIndex() const;
 
-	static uint32_t									defaultDeviceScoreFunc(const vk::DispatchLoaderDynamic& disp, const vk::PhysicalDevice& physicalDevice);
+	static uint32_t									defaultDeviceScoreFunc(	const vk::PhysicalDeviceProperties2& properties, 
+																			const vk::PhysicalDeviceFeatures2& features );
 private:
 	enum QueueIndices {
 		GRAPHICS_QUEUE,
@@ -61,19 +61,28 @@ private:
 	std::array<vk::Queue, QUEUE_NUM>				m_queues;
 
 	static vk::DispatchLoaderDynamic				createDispatcher(const vk::DynamicLoader& loader);
-	static vk::UniqueInstance						createInstance(vk::DispatchLoaderDynamic& disp, const std::string& appName, const Version& appVersion, Verbosity verbosity);
-	static vk::UniqueDebugUtilsMessengerEXT			createMessenger(const vk::DispatchLoaderDynamic& disp, const vk::Instance& instance, Verbosity verbosity);
-	static vk::PhysicalDevice						getBestPhysicalDevice(const vk::DispatchLoaderDynamic& disp, const vk::Instance& instance, const DeviceScoreFunc& scoreFunc);
-	static std::array<uint32_t, QUEUE_NUM>			getQueueIndices(const vk::DispatchLoaderDynamic& disp, const vk::Instance& inst, const vk::PhysicalDevice& dev);
-	static vk::UniqueDevice							createDevice(vk::DispatchLoaderDynamic& disp, const vk::PhysicalDevice& physicalDevice, const std::array<uint32_t, QUEUE_NUM>& queueIndices);
-	static std::array<vk::Queue, QUEUE_NUM>			getQueues(const vk::DispatchLoaderDynamic& disp, const vk::Device& device, const std::array<uint32_t, QUEUE_NUM>& queueIndices);
+	static vk::UniqueInstance						createInstance(	vk::DispatchLoaderDynamic& disp, 
+																	const char* appName, 
+																	uint32_t appVersion );
+	static vk::UniqueDebugUtilsMessengerEXT			createMessenger(const vk::DispatchLoaderDynamic& disp, 
+																	const vk::Instance& instance );
+	static vk::PhysicalDevice						getBestPhysicalDevice(	const vk::DispatchLoaderDynamic& disp, 
+																			const vk::Instance& instance, 
+																			const DeviceScoreFunc& scoreFunc );
+	static std::array<uint32_t, QUEUE_NUM>			getQueueIndices(const vk::DispatchLoaderDynamic& disp, 
+																	const vk::Instance& inst, 
+																	const vk::PhysicalDevice& dev );
+	static vk::UniqueDevice							createDevice(	vk::DispatchLoaderDynamic& disp, 
+																	const vk::PhysicalDevice& physicalDevice, 
+																	const std::array<uint32_t, QUEUE_NUM>& queueIndices );
+	static std::array<vk::Queue, QUEUE_NUM>			getQueues(	const vk::DispatchLoaderDynamic& disp, 
+																const vk::Device& device, 
+																const std::array<uint32_t, QUEUE_NUM>& queueIndices);
 
-	static std::vector<vk::LayerProperties> 		getRequiredLayers(Verbosity verbosity);
-	static std::vector<vk::ExtensionProperties>		getRequiredInstanceExtensions(Verbosity verbosity);
+	static std::vector<vk::LayerProperties> 		getRequiredLayers();
+	static std::vector<vk::ExtensionProperties>		getRequiredInstanceExtensions();
 	static std::vector<vk::ExtensionProperties>		getRequiredDeviceExtensions();
 	static std::vector<vk::QueueFamilyProperties> 	getRequiredQueueFamilies();
-
-	static bool										getPhysicalDeviceSupport(const vk::DispatchLoaderDynamic& disp, const vk::Instance& instance, const vk::PhysicalDevice& device);
 };
 
 }

@@ -1,5 +1,7 @@
 #include <Graphics/Vulkan.h>
 
+#include <Graphics/VulkanConversions.h>
+
 #include <Zuazo.h>
 #include <Exception.h>
 #include <Macros.h>
@@ -12,26 +14,28 @@
 #include <cassert>
 #include <set>
 
-VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+#if (ZUAZO_IS_DEBUG == true)
+	#define ZUAZO_ENABLE_VALIDATION_LAYERS
+#endif
 
 namespace Zuazo::Graphics {
 
-
-static VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerCallback(
-											VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-											VkDebugUtilsMessageTypeFlagsEXT type,
-											const VkDebugUtilsMessengerCallbackDataEXT* data,
-											void* userData ) 
+VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerCallback(	VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+														VkDebugUtilsMessageTypeFlagsEXT type,
+														const VkDebugUtilsMessengerCallbackDataEXT* data,
+														void* userData ) 
 {
 	/*
 	 * Based on:
 	 * https://github.com/KhronosGroup/Vulkan-Hpp/blob/master/samples/CreateDebugUtilsMessenger/CreateDebugUtilsMessenger.cpp
 	 */
+
 	std::ostringstream message;
 
 	message 
 		<< vk::to_string(static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>(severity)) 
 		<< ": " << vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(type)) << ":\n";
+	message << vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(type)) << ":\n";
 	message << "\t" << "messageIDName   = <" << data->pMessageIdName << ">\n";
 	message << "\t" << "messageIdNumber = " << data->messageIdNumber << "\n";
 	message << "\t" << "message         = <" << data->pMessage << ">\n";
@@ -71,18 +75,14 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerCallback(
 	return VK_FALSE;
 }
 
-
-
-
 Vulkan::Vulkan(	const std::string& appName, 
-		const Version& appVersion, 
-		Verbosity verbosity, 
+		Version appVersion,
 		const DeviceScoreFunc& scoreFunc )
 
 	: m_loader()
 	, m_dispatcher(createDispatcher(m_loader))
-	, m_instance(createInstance(m_dispatcher, appName, appVersion, verbosity))
-	, m_messenger(createMessenger(m_dispatcher, *m_instance, verbosity))
+	, m_instance(createInstance(m_dispatcher, appName.c_str(), toVulkan(appVersion)))
+	, m_messenger(createMessenger(m_dispatcher, *m_instance))
 	, m_physicalDevice(getBestPhysicalDevice(m_dispatcher, *m_instance, scoreFunc))
 	, m_queueIndices(getQueueIndices(m_dispatcher, *m_instance, m_physicalDevice))
 	, m_device(createDevice(m_dispatcher, m_physicalDevice, m_queueIndices))
@@ -142,16 +142,22 @@ uint32_t Vulkan::getPresentationQueueIndex() const{
 	return m_queueIndices[PRESENTATION_QUEUE];
 }
 
-uint32_t Vulkan::defaultDeviceScoreFunc(const vk::DispatchLoaderDynamic& disp, const vk::PhysicalDevice& physicalDevice){
+uint32_t Vulkan::defaultDeviceScoreFunc(const vk::PhysicalDeviceProperties2& properties, 
+										const vk::PhysicalDeviceFeatures2& features )
+{
+	//Scores
+	constexpr uint32_t DISCRETE_GPU_SCORE = 1 << 16;
+	
 	int32_t score = 0;
-	const auto properties = physicalDevice.getProperties(disp);
-	//const auto features = dev.getFeatures();
 
-	if(properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu){
-		score += 1024;
+	if(properties.properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu){
+		score += DISCRETE_GPU_SCORE;
 	}
 
-	score += properties.limits.maxImageDimension2D;
+	score += properties.properties.limits.maxImageDimension2D;
+
+	//To avoid warnings
+	ZUAZO_IGNORE_PARAM(features);
 
 	return score;
 }
@@ -168,21 +174,20 @@ vk::DispatchLoaderDynamic Vulkan::createDispatcher(const vk::DynamicLoader& load
 }
 
 vk::UniqueInstance Vulkan::createInstance(	vk::DispatchLoaderDynamic& disp,
-											const std::string& appName, 
-											const Version& appVersion, 
-											Verbosity verbosity )
+											const char* appName, 
+											uint32_t appVersion )
 {
 	//Set the application information
 	vk::ApplicationInfo appInfo(
-		appName.c_str(),
-		VK_MAKE_VERSION(appVersion[0], appVersion[1], appVersion[2]),
+		appName,
+		appVersion,
 		"Zuazo",
-		VK_MAKE_VERSION(version[0], version[1], version[2]),
+		toVulkan(runtimeVersion),
 		VK_API_VERSION_1_1
 	);
 
 	//Get the validation layers
-	auto requiredLayers = getRequiredLayers(verbosity);
+	auto requiredLayers = getRequiredLayers();
 	const auto availableLayers = vk::enumerateInstanceLayerProperties(disp);
 	const auto usedLayers = getUsedLayers(availableLayers, requiredLayers);
 
@@ -202,7 +207,7 @@ vk::UniqueInstance Vulkan::createInstance(	vk::DispatchLoaderDynamic& disp,
 
 
 	//Get the extensions
-	auto requiredExtensions = getRequiredInstanceExtensions(verbosity);
+	auto requiredExtensions = getRequiredInstanceExtensions();
 	const auto availableExtensions = vk::enumerateInstanceExtensionProperties(nullptr, disp);
 	const auto usedExtensions = getUsedExtensions(availableExtensions, requiredExtensions);
 
@@ -239,32 +244,30 @@ vk::UniqueInstance Vulkan::createInstance(	vk::DispatchLoaderDynamic& disp,
 }
 
 vk::UniqueDebugUtilsMessengerEXT Vulkan::createMessenger(	const vk::DispatchLoaderDynamic& disp,
-															const vk::Instance& instance,
-															Verbosity verbosity ) 
+															const vk::Instance& instance ) 
 {
-	using Deleter = vk::UniqueHandleTraits<vk::DebugUtilsMessengerEXT, vk::DispatchLoaderDynamic>::deleter;
-
-	vk::DebugUtilsMessengerEXT messenger;
-
-	if(verbosity == Verbosity::ENABLE_VALIDATION_LAYERS){
-		vk::DebugUtilsMessengerCreateInfoEXT createInfo(
-			{},
+	#ifdef ZUAZO_ENABLE_VALIDATION_LAYERS
+		constexpr auto msgSeverity =
 			vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
-			vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning,
+			vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
+
+		constexpr auto msgTypes = 	
 			vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
 			vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
-			vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
+			vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
+
+		vk::DebugUtilsMessengerCreateInfoEXT createInfo(
+			{},
+			msgSeverity,
+			msgTypes,
 			validationLayerCallback,
 			nullptr
 		);
 
-		messenger = instance.createDebugUtilsMessengerEXT(createInfo, nullptr, disp);
-	}
-
-	return vk::UniqueDebugUtilsMessengerEXT(
-		messenger,
-		Deleter(instance, nullptr, disp)
-	);
+		return instance.createDebugUtilsMessengerEXTUnique(createInfo, nullptr, disp);
+	#else
+		return {};
+	#endif
 }
 
 vk::PhysicalDevice Vulkan::getBestPhysicalDevice(	const vk::DispatchLoaderDynamic& disp,
@@ -276,12 +279,37 @@ vk::PhysicalDevice Vulkan::getBestPhysicalDevice(	const vk::DispatchLoaderDynami
 	std::pair<std::optional<vk::PhysicalDevice>, uint32_t> best({}, 0);
 
 	for(const auto& device : devices){
+		const auto properties = device.getProperties2(disp);
+		auto featureChain = device.getFeatures2<
+			vk::PhysicalDeviceFeatures2, 
+			vk::PhysicalDeviceSamplerYcbcrConversionFeatures >(disp);
 
-		if(getPhysicalDeviceSupport(disp, instance, device) == false){
-			continue; //Not supported
+		//Require YCbCr support
+		const auto ycbcrSupport = featureChain.get<vk::PhysicalDeviceSamplerYcbcrConversionFeatures>();
+		if(!ycbcrSupport.samplerYcbcrConversion) continue;
+
+		//Window support is required
+		if(Window::getPresentationQueueFamilies(disp, instance, device).size() == 0){
+			continue;
 		}
 
-		const uint32_t score = scoreFunc(disp, device);
+		//Check device extension support
+		auto requiredExtensions = getRequiredDeviceExtensions();
+		const auto availableExtensions = device.enumerateDeviceExtensionProperties(nullptr, disp);
+		getUsedExtensions(availableExtensions, requiredExtensions);
+		if(requiredExtensions.size()){
+			continue;
+		}
+
+		//Check device queue family support
+		auto requiredQueueFamilies = getRequiredQueueFamilies();
+		const auto availableQueueFamilies = device.getQueueFamilyProperties(disp);
+		getUsedQueueFamilies(availableQueueFamilies, requiredQueueFamilies);
+		if(requiredQueueFamilies.size()){
+			continue;
+		}
+
+		const uint32_t score = scoreFunc(properties, featureChain.get<vk::PhysicalDeviceFeatures2>());
 
 		if(score > best.second){
 			best = {device, score};
@@ -401,21 +429,21 @@ std::array<vk::Queue, Vulkan::QUEUE_NUM> Vulkan::getQueues(	const vk::DispatchLo
 
 
 
-std::vector<vk::LayerProperties> Vulkan::getRequiredLayers(Verbosity verbosity){
+std::vector<vk::LayerProperties> Vulkan::getRequiredLayers(){
 	std::vector<vk::LayerProperties> validationLayers;
 
-	if(verbosity == Verbosity::ENABLE_VALIDATION_LAYERS){
+	#ifdef ZUAZO_ENABLE_VALIDATION_LAYERS
 		//Add debug utils extension requirement
 		//Khronos validation layer
 		VkLayerProperties khronosValidation = {};
 		std::strncpy(khronosValidation.layerName, "VK_LAYER_KHRONOS_validation", VK_MAX_EXTENSION_NAME_SIZE);
 		validationLayers.emplace_back(khronosValidation);
-	}
+	#endif
 
 	return validationLayers;
 }
 
-std::vector<vk::ExtensionProperties> Vulkan::getRequiredInstanceExtensions(Verbosity verbosity){
+std::vector<vk::ExtensionProperties> Vulkan::getRequiredInstanceExtensions(){
 	std::vector<vk::ExtensionProperties> extensions;
 
 	//Add window swap-chain extensions
@@ -426,12 +454,12 @@ std::vector<vk::ExtensionProperties> Vulkan::getRequiredInstanceExtensions(Verbo
 		std::back_insert_iterator(extensions)
 	);
 
-	if(verbosity == Verbosity::ENABLE_VALIDATION_LAYERS){
+	#ifdef ZUAZO_ENABLE_VALIDATION_LAYERS
 		//Add debug utils extension requirement
 		VkExtensionProperties ext = {};
 		std::strncpy(ext.extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE);
 		extensions.emplace_back(ext);
-	}
+	#endif
 
 	return extensions;
 }
@@ -453,44 +481,6 @@ std::vector<vk::QueueFamilyProperties> Vulkan::getRequiredQueueFamilies(){
 		VkQueueFamilyProperties{ VK_QUEUE_COMPUTE_BIT,	1,	0,	{} },
 		VkQueueFamilyProperties{ VK_QUEUE_TRANSFER_BIT,	1,	0,	{} }
 	};
-}
-
-bool Vulkan::getPhysicalDeviceSupport(	const vk::DispatchLoaderDynamic& disp,
-										const vk::Instance& instance, 
-										const vk::PhysicalDevice& device )
-{	
-	auto features = device.getFeatures2<vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceSamplerYcbcrConversionFeatures>(disp);
-
-	//Require YCbCr support
-	const auto& ycbcrSamplerSupport = features.get<vk::PhysicalDeviceSamplerYcbcrConversionFeatures>();
-
-	if(ycbcrSamplerSupport.samplerYcbcrConversion == false){
-		return false;
-	}
-
-
-	//Window support is required
-	if(Window::getPresentationQueueFamilies(disp, instance, device).size() == 0){
-		return false;
-	}
-
-	//Check device extension support
-	auto requiredExtensions = getRequiredDeviceExtensions();
-	const auto availableExtensions = device.enumerateDeviceExtensionProperties(nullptr, disp);
-	getUsedExtensions(availableExtensions, requiredExtensions);
-	if(requiredExtensions.size()){
-		return false;
-	}
-
-	//Check device queue family support
-	auto requiredQueueFamilies = getRequiredQueueFamilies();
-	const auto availableQueueFamilies = device.getQueueFamilyProperties(disp);
-	getUsedQueueFamilies(availableQueueFamilies, requiredQueueFamilies);
-	if(requiredQueueFamilies.size()){
-		return false;
-	}
-
-	return true;
 }
 
 }

@@ -156,41 +156,4 @@ bool getQueueFamilyCompatibility(vk::QueueFlags required, vk::QueueFlags availab
 	return (required & available) == required;
 }
 
-
-
-
-std::vector<std::vector<vk::Queue>>	getQueues(	const vk::Device& dev,
-												const std::vector<vk::QueueFamilyProperties>& available,
-												const std::vector<vk::QueueFamilyProperties>& requested )
-{
-	std::vector<std::vector<vk::Queue>> result;
-	result.reserve(requested.size());
-
-	//Query the queues
-	for(const auto& queueFamily : requested){
-		result.emplace_back(std::vector<vk::Queue>(queueFamily.queueCount));
-
-		//Get the indices corresponding to this family
-		//It might be distributed among more than one available family
-		const auto indices = getQueueFamilyIndices(
-			available, 
-			std::vector<vk::QueueFamilyProperties>(1, queueFamily)
-		);
-
-		//Iterate though the returned families and assign them to the queue vector
-		size_t j = 0; //Queue # counter
-		for(const auto& index : indices){
-			for(size_t i = 0; i < index.second; i++){
-				result.back()[j] = dev.getQueue(index.first, i);
-				j++;
-			}
-		}
-				
-		//Array should be full
-		assert(j == result.back().size());
-	}
-
-	return result;
-}
-
 }

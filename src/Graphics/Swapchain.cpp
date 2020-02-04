@@ -11,27 +11,48 @@ namespace Zuazo::Graphics {
 
 Swapchain::Swapchain(	const Vulkan& vulkan,
 						const vk::SurfaceKHR& surface,
-						Resolution resolution,
-						ColorPrimaries primaries, 
-						ColorEncoding encoding, 
-						PixelFormat format )
-	: m_surface(surface)
-	, m_swapchain(createSwapchain(
+						const vk::Extent2D& extent,
+						const vk::SurfaceFormatKHR& surfaceFormat,
+						vk::SwapchainKHR old )
+	: m_swapchain(createSwapchain(
 		vulkan, 
-		m_surface,
-		toVulkan(resolution), 
-		toVulkan(format, primaries, encoding)
+		surface,
+		extent, 
+		surfaceFormat,
+		old
 	))
 	, m_images(getImages(vulkan, *m_swapchain))
-	, m_imageViews()
+	, m_imageViews(getImageViews(
+		vulkan, 
+		surfaceFormat.format, 
+		m_images
+	))
 {
+}
+
+
+const vk::SwapchainKHR&	Swapchain::getSwapchain() const {
+	return *m_swapchain;
+}
+
+vk::SwapchainKHR Swapchain::getSwapchain() {
+	return *m_swapchain;
+}
+
+const std::vector<vk::UniqueImageView>& Swapchain::getImageViews() const{
+	return m_imageViews;
+}
+
+std::vector<vk::UniqueImageView>& Swapchain::getImageViews() {
+	return m_imageViews;
 }
 
 
 vk::UniqueSwapchainKHR Swapchain::createSwapchain(	const Vulkan& vulkan, 
 													const vk::SurfaceKHR& surface, 
-													vk::Extent2D resolution, 
-													const vk::SurfaceFormatKHR& format )
+													const vk::Extent2D& extent, 
+													const vk::SurfaceFormatKHR& surfaceFormat,
+													vk::SwapchainKHR old )
 {
 	const auto& physicalDevice = vulkan.getPhysicalDevice();
 	if(!physicalDevice.getSurfaceSupportKHR(0, surface, vulkan.getDispatcher())){
@@ -39,22 +60,22 @@ vk::UniqueSwapchainKHR Swapchain::createSwapchain(	const Vulkan& vulkan,
 	}
 
 	const auto formats = physicalDevice.getSurfaceFormatsKHR(surface, vulkan.getDispatcher());
+	if(std::find(formats.cbegin(), formats.cend(), surfaceFormat) == formats.cend()){
+		throw Exception("Surface format is not supported");
+	}
+
 	const auto presentModes = physicalDevice.getSurfacePresentModesKHR(surface, vulkan.getDispatcher());
 	const auto capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface, vulkan.getDispatcher());
-
-	const auto surfaceFormat = getFormat(formats, format);
-	const auto presentMode = getPresentMode(presentModes);
-	const auto extent = getExtent(capabilities, resolution);
-	const auto imageCount = getImageCount(capabilities);
+	
 	const auto queueFamilies = getQueueFamilies(vulkan);
 
 	const vk::SwapchainCreateInfoKHR createInfo(
 		{},
 		surface,
-		imageCount,
+		getImageCount(capabilities),
 		surfaceFormat.format,
 		surfaceFormat.colorSpace,
-		extent,
+		getExtent(capabilities, extent),
 		1,
 		vk::ImageUsageFlagBits::eColorAttachment,
 		(queueFamilies.size() > 1) ? vk::SharingMode::eConcurrent : vk::SharingMode::eExclusive,
@@ -62,16 +83,10 @@ vk::UniqueSwapchainKHR Swapchain::createSwapchain(	const Vulkan& vulkan,
 		queueFamilies.data(),
 		capabilities.currentTransform,
 		vk::CompositeAlphaFlagBitsKHR::eOpaque,
-		presentMode,
+		getPresentMode(presentModes),
 		true,
-		nullptr
+		old
 	);
-
-	std::cout << "Selected swapchain settings:" << std::endl;
-	std::cout << vk::to_string(surfaceFormat.format) << " " << vk::to_string(surfaceFormat.colorSpace) << std::endl;
-	std::cout << vk::to_string(presentMode) << std::endl;
-	std::cout << extent.width << "x" << extent.height << std::endl;
-	std::cout << "Image count: " << imageCount << std::endl;
 
 	return vulkan.getDevice().createSwapchainKHRUnique(createInfo, nullptr, vulkan.getDispatcher());
 }
@@ -80,16 +95,31 @@ std::vector<vk::Image> Swapchain::getImages(const Vulkan& vulkan, const vk::Swap
 	return vulkan.getDevice().getSwapchainImagesKHR(swapchain, vulkan.getDispatcher());
 }
 
+std::vector<vk::UniqueImageView> Swapchain::getImageViews(	const Vulkan& vulkan,
+															vk::Format format, 
+															const std::vector<vk::Image>& images ) 
+{
+	std::vector<vk::UniqueImageView> result;
+	result.reserve(images.size());
 
+	for(const auto& image : images){
+		vk::ImageViewCreateInfo createInfo(
+			{},
+			image,
+			vk::ImageViewType::e2D,
+			format,
+			{},
+			vk::ImageSubresourceRange(
+				vk::ImageAspectFlagBits::eColor,
+				0, 1, 0, 1
+			)
+		);
 
-
-
-vk::SurfaceFormatKHR Swapchain::getFormat(const std::vector<vk::SurfaceFormatKHR>& surfaceFormats, const vk::SurfaceFormatKHR& format) {
-	if(std::find(surfaceFormats.cbegin(), surfaceFormats.cend(), format) != surfaceFormats.cend()){
-		return format;
+		auto imageView = vulkan.getDevice().createImageViewUnique(createInfo, nullptr, vulkan.getDispatcher());
+		result.emplace_back(std::move(imageView));
 	}
 
-	throw Exception("No compatible surface format was found");
+	return result;
 }
 
 vk::PresentModeKHR Swapchain::getPresentMode(const std::vector<vk::PresentModeKHR>& presentModes) {
