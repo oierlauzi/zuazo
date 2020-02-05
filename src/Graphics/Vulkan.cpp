@@ -142,19 +142,19 @@ uint32_t Vulkan::getPresentationQueueIndex() const{
 	return m_queueIndices[PRESENTATION_QUEUE];
 }
 
-uint32_t Vulkan::defaultDeviceScoreFunc(const vk::PhysicalDeviceProperties2& properties, 
-										const vk::PhysicalDeviceFeatures2& features )
+uint32_t Vulkan::defaultDeviceScoreFunc(const vk::PhysicalDeviceProperties& properties, 
+										const vk::PhysicalDeviceFeatures& features )
 {
 	//Scores
 	constexpr uint32_t DISCRETE_GPU_SCORE = 1 << 16;
-	
+
 	int32_t score = 0;
 
-	if(properties.properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu){
+	if(properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu){
 		score += DISCRETE_GPU_SCORE;
 	}
 
-	score += properties.properties.limits.maxImageDimension2D;
+	score += properties.limits.maxImageDimension2D;
 
 	//To avoid warnings
 	ZUAZO_IGNORE_PARAM(features);
@@ -279,10 +279,11 @@ vk::PhysicalDevice Vulkan::getBestPhysicalDevice(	const vk::DispatchLoaderDynami
 	std::pair<std::optional<vk::PhysicalDevice>, uint32_t> best({}, 0);
 
 	for(const auto& device : devices){
-		const auto properties = device.getProperties2(disp);
+		const auto properties = device.getProperties(disp);
 		auto featureChain = device.getFeatures2<
 			vk::PhysicalDeviceFeatures2, 
 			vk::PhysicalDeviceSamplerYcbcrConversionFeatures >(disp);
+		const auto& features = featureChain.get<vk::PhysicalDeviceFeatures2>().features;
 
 		//Require YCbCr support
 		const auto ycbcrSupport = featureChain.get<vk::PhysicalDeviceSamplerYcbcrConversionFeatures>();
@@ -309,8 +310,11 @@ vk::PhysicalDevice Vulkan::getBestPhysicalDevice(	const vk::DispatchLoaderDynami
 			continue;
 		}
 
-		const uint32_t score = scoreFunc(properties, featureChain.get<vk::PhysicalDeviceFeatures2>());
+		const uint32_t score = scoreFunc(properties, features);
 
+		//Evaluate if the device is the best
+		//If the score is 0 device is considered not suitable
+		//as 0 > 0 == false
 		if(score > best.second){
 			best = {device, score};
 		}

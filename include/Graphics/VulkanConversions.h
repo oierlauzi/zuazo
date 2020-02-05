@@ -12,9 +12,6 @@ namespace Zuazo::Graphics {
 
 constexpr uint32_t toVulkan(Version version);
 
-constexpr vk::DebugUtilsMessageSeverityFlagsEXT toVulkan(Verbosity verbosity);
-constexpr Verbosity fromVulkan(vk::DebugUtilsMessageSeverityFlagsEXT verbosity);
-
 constexpr vk::Extent2D toVulkan(const Resolution& res);
 constexpr Resolution fromVulkan(const vk::Extent2D& res);
 

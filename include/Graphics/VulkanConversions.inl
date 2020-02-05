@@ -15,29 +15,6 @@ constexpr uint32_t toVulkan(Version version){
 	);
 }
 
-constexpr vk::DebugUtilsMessageSeverityFlagsEXT toVulkan(Verbosity verbosity){
-	vk::DebugUtilsMessageSeverityFlagsEXT flags = {};
-
-	if(verbosity >= Verbosity::VERBOSE) 
-		flags |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose;
-	if(verbosity >= Verbosity::INFO) 
-		flags |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
-	if(verbosity >= Verbosity::WARNING) 
-		flags |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
-	if(verbosity >= Verbosity::ERROR) 
-		flags |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
-
-	return flags;
-}
-
-constexpr Verbosity fromVulkan(vk::DebugUtilsMessageSeverityFlagsEXT verbosity){
-	if(verbosity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose) 	return Verbosity::VERBOSE;
-	if(verbosity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo) 	return Verbosity::INFO;
-	if(verbosity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning) 	return Verbosity::WARNING;
-	if(verbosity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError) 	return Verbosity::ERROR;
-	return Verbosity::SILENT;
-}
-
 constexpr vk::Extent2D toVulkan(const Resolution& res){
 	return vk::Extent2D(
 		res.width,
@@ -144,7 +121,7 @@ constexpr std::tuple<vk::Format, vk::ComponentMapping> toVulkan(PixelFormat fmt,
 		case PixelFormat::A4Y4_8:			return { vk::Format::eR4G4UnormPack8, RG2AY };
 
 		case PixelFormat::X4R4G4B4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2XRGB };
-		case PixelFormat::X4B4G4R4_16:		return { vk::Format::eR4G4B4A4UnormPack16,RGBA2XBGR };
+		case PixelFormat::X4B4G4R4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2XBGR };
 		case PixelFormat::X4G4R4B4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2XRGB };
 		case PixelFormat::X4G4B4R4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2XGBR };
 		case PixelFormat::R4G4B4X4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2RGBX };
