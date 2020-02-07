@@ -3,6 +3,8 @@
 #include "Macros.h"
 #include "Version.h"
 #include "Verbosity.h"
+#include "PixelFormat.h"
+#include "PixelEncoding.h"
 #include "Timing/MainLoop.h"
 #include "Graphics/Window.h"
 #include "Graphics/Vulkan.h"
@@ -42,6 +44,10 @@ public:
 	const Timing::MainLoop&		getMainLoop() const;
 	Timing::MainLoop&			getMainLoop();
 
+	const std::vector<std::tuple<PixelFormat, PixelEncoding>>& getSupportedInputFormats() const;
+	const std::vector<std::tuple<PixelFormat, PixelEncoding>>& getSupportedInputYcbcrFormats() const;
+	const std::vector<std::tuple<PixelFormat, PixelEncoding>>& getSupportedOutputFormats() const;
+
 	static void 				defaultLogFunc(	const Instance& inst, 
 												Verbosity severity, 
 												const std::string_view& msg );
@@ -51,6 +57,11 @@ private:
 	Graphics::Vulkan			m_vulkan;
 	Timing::MainLoop			m_loop;
 
+	std::vector<std::tuple<PixelFormat, PixelEncoding>> m_inputFormats;
+	std::vector<std::tuple<PixelFormat, PixelEncoding>> m_inputYcbcrFormats;
+	std::vector<std::tuple<PixelFormat, PixelEncoding>> m_outputFormats;
+
+	void 						setupSupportedFormats();
 	std::string					generateInitMessage() const;
 };
 

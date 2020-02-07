@@ -142,22 +142,68 @@ uint32_t Vulkan::getPresentationQueueIndex() const{
 	return m_queueIndices[PRESENTATION_QUEUE];
 }
 
-uint32_t Vulkan::defaultDeviceScoreFunc(const vk::PhysicalDeviceProperties& properties, 
-										const vk::PhysicalDeviceFeatures& features )
+vk::FormatProperties Vulkan::getFormatFeatures(vk::Format format) const {
+	return m_physicalDevice.getFormatProperties(format, m_dispatcher);
+}
+
+uint32_t Vulkan::defaultDeviceScoreFunc(const vk::DispatchLoaderDynamic& disp,
+										vk::PhysicalDevice device )
 {
 	//Scores
-	constexpr uint32_t DISCRETE_GPU_SCORE = 1 << 16;
+	constexpr uint32_t MINIMUM_SCORE = 1;
+	constexpr uint32_t DISCRETE_GPU_SCORE = 128;
+	constexpr uint32_t SRC_FORMAT_SCORE = 3;
+	constexpr uint32_t DST_FORMAT_SCORE = 3;
+	constexpr uint32_t YCBCR_FORMAT_SCORE = 3;
+	constexpr uint32_t TEXTURE_RESOLUTION_REDUCTION = 1024;
+	constexpr uint32_t FRAMEBUFFER_RESOLUTION_REDUCTION = 1024;
 
-	int32_t score = 0;
+	//Sum all the scores
+	int32_t score = MINIMUM_SCORE;
+
+	//Give the score based on the properties
+	const auto properties = device.getProperties(disp);
 
 	if(properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu){
 		score += DISCRETE_GPU_SCORE;
 	}
 
-	score += properties.limits.maxImageDimension2D;
+	score += properties.limits.maxImageDimension2D / TEXTURE_RESOLUTION_REDUCTION;
+	score += properties.limits.maxFramebufferWidth / FRAMEBUFFER_RESOLUTION_REDUCTION;
+	score += properties.limits.maxFramebufferHeight / FRAMEBUFFER_RESOLUTION_REDUCTION;
 
-	//To avoid warnings
-	ZUAZO_IGNORE_PARAM(features);
+	//Give the score based on the supported formats
+	for(int i = VK_FORMAT_BEGIN_RANGE; i < VK_FORMAT_END_RANGE; i++){
+		const auto format = static_cast<vk::Format>(i);
+		const auto formatProperties = device.getFormatProperties(format, disp);
+		const auto formatFeatures = formatProperties.optimalTilingFeatures;
+		
+		if((formatFeatures & SRC_FORMAT_FLAGS) == SRC_FORMAT_FLAGS) score += SRC_FORMAT_SCORE;
+		if((formatFeatures & DST_FORMAT_FLAGS) == DST_FORMAT_FLAGS) score += DST_FORMAT_SCORE;
+		if(formatFeatures & YCBCR_FORMAT_FLAGS) score += YCBCR_FORMAT_SCORE;
+	}
+
+	for(auto format = PixelFormat::NONE; format < PixelFormat::COUNT; format++){
+		for(auto encoding = PixelEncoding::NONE; encoding < PixelEncoding::COUNT; encoding++){
+			const auto [f, s] = toVulkan(format, encoding);
+
+			if(f == vk::Format::eUndefined) continue;
+
+			const auto features = device.getFormatProperties(f, disp);
+
+			if(Graphics::hasSamplerSupport(features)) {
+				score += SRC_FORMAT_SCORE;
+
+				if(Graphics::hasYCbCrSupport(features)){
+					score += YCBCR_FORMAT_SCORE;
+				}
+			}
+
+			if(Graphics::hasFramebufferSupport(features) && s == vk::ComponentMapping()) {
+				score += DST_FORMAT_SCORE;
+			}
+		}
+	}
 
 	return score;
 }
@@ -279,16 +325,6 @@ vk::PhysicalDevice Vulkan::getBestPhysicalDevice(	const vk::DispatchLoaderDynami
 	std::pair<std::optional<vk::PhysicalDevice>, uint32_t> best({}, 0);
 
 	for(const auto& device : devices){
-		const auto properties = device.getProperties(disp);
-		auto featureChain = device.getFeatures2<
-			vk::PhysicalDeviceFeatures2, 
-			vk::PhysicalDeviceSamplerYcbcrConversionFeatures >(disp);
-		const auto& features = featureChain.get<vk::PhysicalDeviceFeatures2>().features;
-
-		//Require YCbCr support
-		const auto ycbcrSupport = featureChain.get<vk::PhysicalDeviceSamplerYcbcrConversionFeatures>();
-		if(!ycbcrSupport.samplerYcbcrConversion) continue;
-
 		//Window support is required
 		if(Window::getPresentationQueueFamilies(disp, instance, device).size() == 0){
 			continue;
@@ -310,11 +346,10 @@ vk::PhysicalDevice Vulkan::getBestPhysicalDevice(	const vk::DispatchLoaderDynami
 			continue;
 		}
 
-		const uint32_t score = scoreFunc(properties, features);
-
 		//Evaluate if the device is the best
 		//If the score is 0 device is considered not suitable
-		//as 0 > 0 == false
+		//as best score starts at 0
+		const uint32_t score = scoreFunc(disp, device);
 		if(score > best.second){
 			best = {device, score};
 		}

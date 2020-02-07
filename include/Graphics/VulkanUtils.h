@@ -14,6 +14,17 @@
 
 namespace Zuazo::Graphics {
 
+static constexpr vk::FormatFeatureFlags			SRC_FORMAT_FLAGS = 	vk::FormatFeatureFlagBits::eTransferDst |
+																	vk::FormatFeatureFlagBits::eSampledImage |
+																	vk::FormatFeatureFlagBits::eSampledImageFilterLinear;
+
+static constexpr vk::FormatFeatureFlags			DST_FORMAT_FLAGS = 	vk::FormatFeatureFlagBits::eTransferSrc |
+																	vk::FormatFeatureFlagBits::eColorAttachmentBlend;
+
+static constexpr vk::FormatFeatureFlags			YCBCR_FORMAT_FLAGS =vk::FormatFeatureFlagBits::eCositedChromaSamples |
+																	vk::FormatFeatureFlagBits::eMidpointChromaSamples;
+
+
 extern std::vector<vk::LayerProperties> 		getUsedLayers(const std::vector<vk::LayerProperties>& available, std::vector<vk::LayerProperties>& required);
 extern std::vector<const char*> 				getNames(const std::vector<vk::LayerProperties>& layer);
 
@@ -21,8 +32,11 @@ extern std::vector<vk::ExtensionProperties> 	getUsedExtensions(const std::vector
 extern std::vector<const char*> 				getNames(const std::vector<vk::ExtensionProperties>& ext);
 
 extern std::vector<vk::QueueFamilyProperties>	getUsedQueueFamilies(const std::vector<vk::QueueFamilyProperties>& available, std::vector<vk::QueueFamilyProperties>& required);
-extern std::map<uint32_t, uint32_t>				getQueueFamilyIndices(const std::vector<vk::QueueFamilyProperties>& available, const std::vector<vk::QueueFamilyProperties>& requested);
 extern size_t									getQueueFamilyIndex(const std::vector<vk::QueueFamilyProperties>& qf, vk::QueueFlags flags);
 extern bool										getQueueFamilyCompatibility(vk::QueueFlags required, vk::QueueFlags available);
+
+bool											hasSamplerSupport(vk::FormatProperties features);
+bool											hasFramebufferSupport(vk::FormatProperties features);
+bool											hasYCbCrSupport(vk::FormatProperties features);
 
 }

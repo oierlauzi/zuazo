@@ -1,6 +1,8 @@
 #include <Instance.h>
 
 #include <Zuazo.h>
+#include <StringConversions.h>
+#include <Graphics/VulkanConversions.h>
 
 #include <iostream>
 #include <sstream>
@@ -15,6 +17,7 @@ Instance::Instance(ApplicationInfo&& applicationInfo)
 		m_applicationInfo.deviceScoreFunc
 	)
 {
+	setupSupportedFormats();
 	log(Verbosity::INFO, generateInitMessage());
 }
 
@@ -45,6 +48,19 @@ Graphics::Vulkan& Instance::getVulkan(){
 	return m_vulkan;
 }
 
+const std::vector<std::tuple<PixelFormat, PixelEncoding>>& Instance::getSupportedInputFormats() const{
+	return m_inputFormats;
+}
+
+const std::vector<std::tuple<PixelFormat, PixelEncoding>>& Instance::getSupportedInputYcbcrFormats() const{
+	return m_inputYcbcrFormats;
+}
+
+const std::vector<std::tuple<PixelFormat, PixelEncoding>>& Instance::getSupportedOutputFormats() const{
+	return m_outputFormats;
+}
+
+
 void Instance::defaultLogFunc(const Instance& inst, Verbosity severity, const std::string_view& msg){
 	std::ostream& output = std::cerr;
 
@@ -58,6 +74,33 @@ void Instance::defaultLogFunc(const Instance& inst, Verbosity severity, const st
 	output << &inst << ": " << msg << std::endl;
 }
 
+
+
+void Instance::setupSupportedFormats(){
+	for(auto format = PixelFormat::NONE; format < PixelFormat::COUNT; format++){
+		for(auto encoding = PixelEncoding::NONE; encoding < PixelEncoding::COUNT; encoding++){
+			const auto [f, s] = Graphics::toVulkan(format, encoding);
+
+			if(f == vk::Format::eUndefined) continue;
+
+			const auto features = m_vulkan.getFormatFeatures(f);
+			const auto pix = std::tuple<PixelFormat, PixelEncoding>(format, encoding);
+
+			if(Graphics::hasSamplerSupport(features)) {
+				m_inputFormats.emplace_back(pix);
+
+				if(Graphics::hasYCbCrSupport(features)){
+					m_inputYcbcrFormats.emplace_back(pix);
+				}
+			}
+
+			if(Graphics::hasFramebufferSupport(features) && s == vk::ComponentMapping()) {
+				m_outputFormats.emplace_back(pix);
+			}
+		}
+	}
+}
+
 std::string Instance::generateInitMessage() const {
 	std::ostringstream message;
 
@@ -65,11 +108,30 @@ std::string Instance::generateInitMessage() const {
 	message << "Instantiated Zuazo " 
 			<< runtimeVersion.getMajor() << "." 
 			<< runtimeVersion.getMinor() << "." 
-			<< runtimeVersion.getPatch();
+			<< runtimeVersion.getPatch() << "\n";
 
 	//Show selected device
 	const auto deviceProperties = m_vulkan.getPhysicalDevice().getProperties(m_vulkan.getDispatcher());
-	message << "\n\t- Selected GPU: " << deviceProperties.deviceName;
+	message << "\t- Selected GPU: " << deviceProperties.deviceName << "\n";
+
+	//Show supported formats
+	message << "\t- Supported input pixel formats:\n";
+	for(const auto& fmt : m_inputFormats ){
+		message << "\t\t- " << toString(std::get<PixelFormat>(fmt)) << "," 
+				<< "\n";
+	}
+
+	message << "\t- Supported input YCbCr pixel formats:\n";
+	for(const auto& fmt : m_inputYcbcrFormats ){
+		message << "\t\t- " << toString(std::get<PixelFormat>(fmt)) << "," 
+				<< "\n";
+	}
+
+	message << "\t- Supported destination pixel formats:\n";
+	for(const auto& fmt : m_outputFormats ){
+		message << "\t\t- " << toString(std::get<PixelFormat>(fmt)) << "," 
+				<< "\n";
+	}
 
 	return message.str();
 }

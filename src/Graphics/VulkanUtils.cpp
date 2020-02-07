@@ -127,19 +127,6 @@ std::vector<vk::QueueFamilyProperties> getUsedQueueFamilies(const std::vector<vk
 	return queueFamilies;
 }
 
-std::map<uint32_t, uint32_t> getQueueFamilyIndices(	const std::vector<vk::QueueFamilyProperties>& available, 
-													const std::vector<vk::QueueFamilyProperties>& requested )
-{
-	std::map<uint32_t, uint32_t> result;
-
-	for(const auto& req : requested){
-		const size_t idx = getQueueFamilyIndex(available, req.queueFlags);
-		result[idx] = std::max(result[idx], req.queueCount);
-	}
-
-	return result;
-}
-
 size_t getQueueFamilyIndex(const std::vector<vk::QueueFamilyProperties>& qf, vk::QueueFlags flags){
 	size_t i;
 
@@ -155,5 +142,29 @@ size_t getQueueFamilyIndex(const std::vector<vk::QueueFamilyProperties>& qf, vk:
 bool getQueueFamilyCompatibility(vk::QueueFlags required, vk::QueueFlags available){
 	return (required & available) == required;
 }
+
+
+bool hasSamplerSupport(vk::FormatProperties features){
+	constexpr auto FLAGS = 	vk::FormatFeatureFlagBits::eTransferDst |
+							vk::FormatFeatureFlagBits::eSampledImage |
+							vk::FormatFeatureFlagBits::eSampledImageFilterLinear;
+
+	return (features.optimalTilingFeatures & FLAGS) == FLAGS;
+}
+
+bool hasFramebufferSupport(vk::FormatProperties features){
+	constexpr auto FLAGS = 	vk::FormatFeatureFlagBits::eTransferSrc |
+							vk::FormatFeatureFlagBits::eColorAttachmentBlend;
+
+	return (features.optimalTilingFeatures & FLAGS) == FLAGS;
+}
+
+bool hasYCbCrSupport(vk::FormatProperties features){
+	constexpr auto FLAGS = 	vk::FormatFeatureFlagBits::eCositedChromaSamples |
+							vk::FormatFeatureFlagBits::eMidpointChromaSamples;
+
+	return (features.optimalTilingFeatures & FLAGS) != vk::FormatFeatureFlags();
+}
+
 
 }

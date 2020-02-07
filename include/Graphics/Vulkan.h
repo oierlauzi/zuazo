@@ -18,7 +18,7 @@ namespace Zuazo::Graphics {
 
 class Vulkan {
 public:
-	using DeviceScoreFunc = std::function<uint32_t(const vk::PhysicalDeviceProperties, const vk::PhysicalDeviceFeatures&)>;
+	using DeviceScoreFunc = std::function<uint32_t(const vk::DispatchLoaderDynamic&, vk::PhysicalDevice)>;
 
 	Vulkan(	const std::string& appName, 
 			Version appVersion,
@@ -40,8 +40,10 @@ public:
 	const vk::Queue&								getPresentationQueue() const;
 	uint32_t										getPresentationQueueIndex() const;
 
-	static uint32_t									defaultDeviceScoreFunc(	const vk::PhysicalDeviceProperties& properties, 
-																			const vk::PhysicalDeviceFeatures& features );
+	vk::FormatProperties							getFormatFeatures(vk::Format format) const;
+
+	static uint32_t									defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp, 
+																			vk::PhysicalDevice device );
 private:
 	enum QueueIndices {
 		GRAPHICS_QUEUE,

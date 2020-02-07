@@ -4,7 +4,7 @@
 #include <endian.h>
 #include <limits.h>
 
-#define ZUAZO_MACRO_EXPAND(x) x
+#define ZUAZO_MACRO_EXPAND(x) (x)
 #define ZUAZO_TO_STRING(x) #x
 
 #define ZUAZO_BIT(x) (1 << (x))
@@ -53,10 +53,12 @@
 	constexpr T operator++ (T& a, int) { return static_cast<T>( reinterpret_cast<std::underlying_type<T>::type&>(a)++ ); }
 
 #define ZUAZO_ENUM_COMP_OPERATORS(T)																																				\
-	constexpr bool operator< (T a, T b) { return static_cast<std::underlying_type<T>::type>(a) < static_cast<std::underlying_type<T>::type>(b); }											\
-	constexpr bool operator> (T a, T b) { return static_cast<std::underlying_type<T>::type>(a) > static_cast<std::underlying_type<T>::type>(b); }											\
-	constexpr bool operator<= (T a, T b) { return static_cast<std::underlying_type<T>::type>(a) <= static_cast<std::underlying_type<T>::type>(b); }										\
+	constexpr bool operator< (T a, T b) { return static_cast<std::underlying_type<T>::type>(a) < static_cast<std::underlying_type<T>::type>(b); }									\
+	constexpr bool operator> (T a, T b) { return static_cast<std::underlying_type<T>::type>(a) > static_cast<std::underlying_type<T>::type>(b); }									\
+	constexpr bool operator<= (T a, T b) { return static_cast<std::underlying_type<T>::type>(a) <= static_cast<std::underlying_type<T>::type>(b); }									\
 	constexpr bool operator>= (T a, T b) { return static_cast<std::underlying_type<T>::type>(a) >= static_cast<std::underlying_type<T>::type>(b); }
+
+#define ZUAZO_ENUM2STR_CASE(ns, e) case ns::e: return ZUAZO_TO_STRING(e);
 
 #define ZUAZO_DEFAULT_ASSIGMENT_OPERATORS(T)	\
 	T& operator=(const T& other) = default; 	\

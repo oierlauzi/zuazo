@@ -3,7 +3,6 @@
 #include "Vulkan.h"
 #include "Window.h"
 #include "VulkanConversions.h"
-#include "../PixelProperties.h"
 
 namespace Zuazo::Graphics {
 
