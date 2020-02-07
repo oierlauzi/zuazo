@@ -91,6 +91,12 @@ void Instance::setupSupportedFormats(){
 
 				if(Graphics::hasYCbCrSupport(features)){
 					m_inputYcbcrFormats.emplace_back(pix);
+
+					if(encoding == PixelEncoding::UINT){
+						const auto pixNar = std::tuple<PixelFormat, PixelEncoding>(format, PixelEncoding::UINT_NARROW);
+						m_inputFormats.emplace_back(pixNar);
+						m_inputYcbcrFormats.emplace_back(pixNar);
+					}
 				}
 			}
 
@@ -117,20 +123,20 @@ std::string Instance::generateInitMessage() const {
 	//Show supported formats
 	message << "\t- Supported input pixel formats:\n";
 	for(const auto& fmt : m_inputFormats ){
-		message << "\t\t- " << toString(std::get<PixelFormat>(fmt)) << "," 
-				<< "\n";
+		message << "\t\t- " << toString(std::get<PixelFormat>(fmt)) << ", " 
+				<< toString(std::get<PixelEncoding>(fmt)) << "\n";
 	}
 
 	message << "\t- Supported input YCbCr pixel formats:\n";
 	for(const auto& fmt : m_inputYcbcrFormats ){
-		message << "\t\t- " << toString(std::get<PixelFormat>(fmt)) << "," 
-				<< "\n";
+		message << "\t\t- " << toString(std::get<PixelFormat>(fmt)) << ", " 
+				<< toString(std::get<PixelEncoding>(fmt)) << "\n";
 	}
 
 	message << "\t- Supported destination pixel formats:\n";
 	for(const auto& fmt : m_outputFormats ){
-		message << "\t\t- " << toString(std::get<PixelFormat>(fmt)) << "," 
-				<< "\n";
+		message << "\t\t- " << toString(std::get<PixelFormat>(fmt)) << ", " 
+				<< toString(std::get<PixelEncoding>(fmt)) << "\n";
 	}
 
 	return message.str();

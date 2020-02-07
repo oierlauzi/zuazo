@@ -5,7 +5,6 @@
 namespace Zuazo {
 
 constexpr  std::string_view toString(PixelFormat format){
-
 	switch(format){
 
 	ZUAZO_ENUM2STR_CASE( PixelFormat, Y4X4_8 )
@@ -28,6 +27,7 @@ constexpr  std::string_view toString(PixelFormat format){
 	ZUAZO_ENUM2STR_CASE( PixelFormat, B4G4R4A4_16 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G4R4B4A4_16 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G4B4R4A4_16 )
+	
 	ZUAZO_ENUM2STR_CASE( PixelFormat, X1R5G5B5_16 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, X1B5G5R5_16 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, X1G5R5B5_16 )
@@ -44,8 +44,10 @@ constexpr  std::string_view toString(PixelFormat format){
 	ZUAZO_ENUM2STR_CASE( PixelFormat, B5G5R5A1_16 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G5R5B5A1_16 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G5B5R5A1_16 )
+
 	ZUAZO_ENUM2STR_CASE( PixelFormat, R5G6B5_16 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, B5G6R5_16 )
+
 	ZUAZO_ENUM2STR_CASE( PixelFormat, Y8 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, Y8A8 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, A8Y8 )
@@ -80,6 +82,7 @@ constexpr  std::string_view toString(PixelFormat format){
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G8_B8R8_S422 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G8_R8B8_S420 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G8_B8R8_S420 )
+
 	ZUAZO_ENUM2STR_CASE( PixelFormat, Y10X6_16 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, Y10X6A10X6_16 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, A10X6Y10X6_16 )
@@ -110,6 +113,7 @@ constexpr  std::string_view toString(PixelFormat format){
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G10X6_B10X6R10X6_S422_16 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G10X6_R10X6B10X6_S420_16 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G10X6_B10X6R10X6_S420_16 )
+
 	ZUAZO_ENUM2STR_CASE( PixelFormat, Y12X4_16 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, Y12X4A12X4_16 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, A12X4Y12X4_16 )
@@ -132,6 +136,7 @@ constexpr  std::string_view toString(PixelFormat format){
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G12X4_B12X4R12X4_S422_16 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G12X4_R12X4B12X4_S420_16 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G12X4_B12X4R12X4_S420_16 )
+
 	ZUAZO_ENUM2STR_CASE( PixelFormat, Y16 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, Y16A16 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, A16Y16 )
@@ -158,6 +163,7 @@ constexpr  std::string_view toString(PixelFormat format){
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G16_B16R16_S422 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G16_R16B16_S420 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G16_B16R16_S420 )
+
 	ZUAZO_ENUM2STR_CASE( PixelFormat, Y32 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, Y32A32 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, A32Y32 )
@@ -173,6 +179,7 @@ constexpr  std::string_view toString(PixelFormat format){
 	ZUAZO_ENUM2STR_CASE( PixelFormat, B32G32R32A32 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G32R32B32A32 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G32B32R32A32 )
+
 	ZUAZO_ENUM2STR_CASE( PixelFormat, Y64 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, Y64A64 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, A64Y64 )
@@ -188,6 +195,19 @@ constexpr  std::string_view toString(PixelFormat format){
 	ZUAZO_ENUM2STR_CASE( PixelFormat, B64G64R64A64 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G64R64B64A64 )
 	ZUAZO_ENUM2STR_CASE( PixelFormat, G64B64R64A64 )
+
+	default: return "";
+	}
+}
+
+constexpr std::string_view toString(PixelEncoding format){
+	switch(format){
+
+	ZUAZO_ENUM2STR_CASE( PixelEncoding, UINT )
+	ZUAZO_ENUM2STR_CASE( PixelEncoding, UINT_NARROW )
+  	ZUAZO_ENUM2STR_CASE( PixelEncoding, INT )
+	ZUAZO_ENUM2STR_CASE( PixelEncoding, IEEE754 )
+	ZUAZO_ENUM2STR_CASE( PixelEncoding, IEC61966_2_1 )
 
 	default: return "";
 	}
