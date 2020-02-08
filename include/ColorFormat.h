@@ -5,7 +5,7 @@
 namespace Zuazo {
 
 /**
- * PixelFormat defines how pixel data is layed out in memory. 
+ * ColorFormat defines how pixel data is layed out in memory. 
  * Please, note that although pixel formats are defined for RGBA 
  * color spaces (or monochrome), they are also apply for YCbCr color spaces.
  * 
@@ -24,7 +24,7 @@ namespace Zuazo {
  * * A _S422 at the end means that it will have a 4:2:2 chroma subsampling scheme. 
  * * A _S420 at the end means that it will have a 4:2:0 chroma subsampling scheme. 
  */
-enum class PixelFormat {
+enum class ColorFormat {
 	NONE = 0,
 
 	//4 BIT COMPONENTS
@@ -274,7 +274,7 @@ enum class PixelFormat {
 	COUNT
 };
 
-ZUAZO_ENUM_ARITHMETIC_OPERATORS(PixelFormat)
-ZUAZO_ENUM_COMP_OPERATORS(PixelFormat)	
+ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorFormat)
+ZUAZO_ENUM_COMP_OPERATORS(ColorFormat)	
 	
 }

@@ -20,8 +20,8 @@ class Vulkan {
 public:
 	using DeviceScoreFunc = std::function<uint32_t(const vk::DispatchLoaderDynamic&, vk::PhysicalDevice)>;
 
-	Vulkan(	const std::string& appName, 
-			Version appVersion,
+	Vulkan(	const char* appName, 
+			uint32_t version,
 			const DeviceScoreFunc& scoreFunc );
 	Vulkan(const Vulkan& other) = delete;
 	~Vulkan() = default;
@@ -41,9 +41,6 @@ public:
 	uint32_t										getPresentationQueueIndex() const;
 
 	vk::FormatProperties							getFormatFeatures(vk::Format format) const;
-
-	static uint32_t									defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp, 
-																			vk::PhysicalDevice device );
 private:
 	enum QueueIndices {
 		GRAPHICS_QUEUE,

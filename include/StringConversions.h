@@ -1,14 +1,14 @@
 #pragma once
 
-#include "PixelFormat.h"
-#include "PixelEncoding.h"
+#include "ColorFormat.h"
+#include "ColorEncoding.h"
 
 #include <string_view>
 
 namespace Zuazo {
 
-constexpr std::string_view toString(PixelFormat format);
-constexpr std::string_view toString(PixelEncoding format);
+constexpr std::string_view toString(ColorFormat format);
+constexpr std::string_view toString(ColorEncoding format);
 
 }
 
