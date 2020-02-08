@@ -204,7 +204,7 @@ constexpr std::string_view toString(ColorEncoding format){
 	switch(format){
 
 	ZUAZO_ENUM2STR_CASE( ColorEncoding, UINT )
-	ZUAZO_ENUM2STR_CASE( ColorEncoding, UINT_NARROW )
+	ZUAZO_ENUM2STR_CASE( ColorEncoding, UINT_ITU_NARROW )
   	ZUAZO_ENUM2STR_CASE( ColorEncoding, INT )
 	ZUAZO_ENUM2STR_CASE( ColorEncoding, IEEE754 )
 	ZUAZO_ENUM2STR_CASE( ColorEncoding, IEC61966_2_1 )

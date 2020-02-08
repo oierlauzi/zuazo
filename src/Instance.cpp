@@ -93,8 +93,7 @@ void Instance::setupSupportedFormats(){
 					m_inputYcbcrFormats.emplace_back(pix);
 
 					if(encoding == ColorEncoding::UINT){
-						const auto pixNar = std::tuple<ColorFormat, ColorEncoding>(format, ColorEncoding::UINT_NARROW);
-						m_inputFormats.emplace_back(pixNar);
+						const auto pixNar = std::tuple<ColorFormat, ColorEncoding>(format, ColorEncoding::UINT_ITU_NARROW);
 						m_inputYcbcrFormats.emplace_back(pixNar);
 					}
 				}

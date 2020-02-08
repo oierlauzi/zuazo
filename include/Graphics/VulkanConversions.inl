@@ -692,7 +692,7 @@ constexpr std::tuple<ColorFormat, ColorPrimaries, ColorEncoding> fromVulkan(cons
 		//Linear encoding
 		switch(enc){
 		case ColorEncoding::UINT:
-		case ColorEncoding::UINT_NARROW:
+		case ColorEncoding::UINT_ITU_NARROW:
 		case ColorEncoding::INT:
 		case ColorEncoding::IEEE754:
 			break;
