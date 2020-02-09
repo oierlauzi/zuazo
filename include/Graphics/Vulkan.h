@@ -2,6 +2,7 @@
 
 #include "../Version.h"
 #include "../Verbosity.h"
+#include "../Utils/BufferView.h"
 
 #include <vector>
 #include <array>
@@ -28,19 +29,25 @@ public:
 
 	const vk::DynamicLoader&						getLoader() const;
 	const vk::DispatchLoaderDynamic&				getDispatcher() const;
-	const vk::Instance&								getInstance() const;
-	const vk::PhysicalDevice&						getPhysicalDevice() const;
-	const vk::Device&								getDevice() const;
-	const vk::Queue&								getGraphicsQueue() const;
+	vk::Instance									getInstance() const;
+	vk::PhysicalDevice								getPhysicalDevice() const;
+	vk::Device										getDevice() const;
 	uint32_t										getGraphicsQueueIndex() const;
-	const vk::Queue&								getComputeQueue() const;
+	vk::Queue										getGraphicsQueue() const;
+	vk::CommandPool									getGraphicsCommandPool() const;
 	uint32_t										getComputeQueueIndex() const;
-	const vk::Queue&								getTransferQueue() const;
+	vk::Queue										getComputeQueue() const;
+	vk::CommandPool									getComputeCommandPool() const;
 	uint32_t										getTransferQueueIndex() const;
-	const vk::Queue&								getPresentationQueue() const;
+	vk::Queue										getTransferQueue() const;
+	vk::CommandPool									getTransferCommandPool() const;
 	uint32_t										getPresentationQueueIndex() const;
+	vk::Queue										getPresentationQueue() const;
+	vk::CommandPool									getPresentationCommandPool() const;
 
 	vk::FormatProperties							getFormatFeatures(vk::Format format) const;
+
+	vk::UniqueShaderModule							getShader(const Utils::BufferView<uint32_t>& code);
 private:
 	enum QueueIndices {
 		GRAPHICS_QUEUE,
@@ -58,6 +65,7 @@ private:
 	std::array<uint32_t, QUEUE_NUM>					m_queueIndices;
 	vk::UniqueDevice								m_device;
 	std::array<vk::Queue, QUEUE_NUM>				m_queues;
+	std::array<vk::UniqueCommandPool, QUEUE_NUM>	m_commandPools;
 
 	static vk::DispatchLoaderDynamic				createDispatcher(const vk::DynamicLoader& loader);
 	static vk::UniqueInstance						createInstance(	vk::DispatchLoaderDynamic& disp, 
@@ -77,7 +85,9 @@ private:
 	static std::array<vk::Queue, QUEUE_NUM>			getQueues(	const vk::DispatchLoaderDynamic& disp, 
 																const vk::Device& device, 
 																const std::array<uint32_t, QUEUE_NUM>& queueIndices);
-
+	static std::array<vk::UniqueCommandPool, QUEUE_NUM> createCommandPools( const vk::DispatchLoaderDynamic& disp, 
+																			const vk::Device& device, 
+																			const std::array<uint32_t, QUEUE_NUM>& queueIndices );
 	static std::vector<vk::LayerProperties> 		getRequiredLayers();
 	static std::vector<vk::ExtensionProperties>		getRequiredInstanceExtensions();
 	static std::vector<vk::ExtensionProperties>		getRequiredDeviceExtensions();

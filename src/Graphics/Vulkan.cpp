@@ -18,6 +18,10 @@
 	#define ZUAZO_ENABLE_VALIDATION_LAYERS
 #endif
 
+#if 0
+	#define ZUAZO_DISABLE_PRESENTATION_SUPPORT
+#endif
+
 namespace Zuazo::Graphics {
 
 VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerCallback(	VkDebugUtilsMessageSeverityFlagBitsEXT severity,
@@ -87,6 +91,7 @@ Vulkan::Vulkan(	const char* appName,
 	, m_queueIndices(getQueueIndices(m_dispatcher, *m_instance, m_physicalDevice))
 	, m_device(createDevice(m_dispatcher, m_physicalDevice, m_queueIndices))
 	, m_queues(getQueues(m_dispatcher, *m_device, m_queueIndices))
+	, m_commandPools(createCommandPools(m_dispatcher, *m_device, m_queueIndices))
 {
 }
 
@@ -98,54 +103,80 @@ const vk::DispatchLoaderDynamic& Vulkan::getDispatcher() const{
 	return m_dispatcher;
 }
 
-const vk::Instance& Vulkan::getInstance() const{
+vk::Instance Vulkan::getInstance() const{
 	return *m_instance;
 }
 
-const vk::PhysicalDevice& Vulkan::getPhysicalDevice() const{
+vk::PhysicalDevice Vulkan::getPhysicalDevice() const{
 	return m_physicalDevice;
 }
 
-const vk::Device& Vulkan::getDevice() const{
+vk::Device Vulkan::getDevice() const{
 	return *m_device;
-}
-
-const vk::Queue& Vulkan::getGraphicsQueue() const{
-	return m_queues[GRAPHICS_QUEUE];
 }
 
 uint32_t Vulkan::getGraphicsQueueIndex() const{
 	return m_queueIndices[GRAPHICS_QUEUE];
 }
 
-const vk::Queue& Vulkan::getComputeQueue() const{
-	return m_queues[COMPUTE_QUEUE];
+vk::Queue Vulkan::getGraphicsQueue() const{
+	return m_queues[GRAPHICS_QUEUE];
+}
+
+vk::CommandPool Vulkan::getGraphicsCommandPool() const{
+	return *(m_commandPools[GRAPHICS_QUEUE]);
 }
 
 uint32_t Vulkan::getComputeQueueIndex() const{
 	return m_queueIndices[COMPUTE_QUEUE];
 }
 
-const vk::Queue& Vulkan::getTransferQueue() const{
-	return m_queues[TRANSFER_QUEUE];
+vk::Queue Vulkan::getComputeQueue() const{
+	return m_queues[COMPUTE_QUEUE];
+}
+
+vk::CommandPool Vulkan::getComputeCommandPool() const{
+	return *(m_commandPools[COMPUTE_QUEUE]);
 }
 
 uint32_t Vulkan::getTransferQueueIndex() const{
 	return m_queueIndices[TRANSFER_QUEUE];
 }
 
-const vk::Queue& Vulkan::getPresentationQueue() const{
-	return m_queues[PRESENTATION_QUEUE];
+vk::Queue Vulkan::getTransferQueue() const{
+	return m_queues[TRANSFER_QUEUE];
+}
+
+vk::CommandPool Vulkan::getTransferCommandPool() const{
+	return *(m_commandPools[TRANSFER_QUEUE]);
 }
 
 uint32_t Vulkan::getPresentationQueueIndex() const{
 	return m_queueIndices[PRESENTATION_QUEUE];
 }
 
+vk::Queue Vulkan::getPresentationQueue() const{
+	return m_queues[PRESENTATION_QUEUE];
+}
+
+vk::CommandPool Vulkan::getPresentationCommandPool() const{
+	return *(m_commandPools[PRESENTATION_QUEUE]);
+}
+
 vk::FormatProperties Vulkan::getFormatFeatures(vk::Format format) const {
 	return m_physicalDevice.getFormatProperties(format, m_dispatcher);
 }
 
+vk::UniqueShaderModule Vulkan::getShader(const Utils::BufferView<uint32_t>& code){
+	vk::ShaderModuleCreateInfo createInfo(
+		{},
+		code.size() * sizeof(uint32_t), code.data()
+	);
+
+	return m_device->createShaderModuleUnique(
+		createInfo, nullptr, m_dispatcher
+	);
+}
 
 
 vk::DispatchLoaderDynamic Vulkan::createDispatcher(const vk::DynamicLoader& loader){
@@ -211,13 +242,11 @@ vk::UniqueInstance Vulkan::createInstance(	vk::DispatchLoaderDynamic& disp,
 	const auto usedExtensionNames = getNames(usedExtensions);
 
 	//Create the vulkan instance
-	vk::InstanceCreateInfo createInfo(
+	const vk::InstanceCreateInfo createInfo(
 		{},
 		&appInfo,
-		usedLayerNames.size(),
-		usedLayerNames.data(),
-		usedExtensionNames.size(),
-		usedExtensionNames.data()
+		usedLayerNames.size(), usedLayerNames.data(),
+		usedExtensionNames.size(), usedExtensionNames.data()
 	);
 	auto instance = vk::createInstanceUnique(createInfo, nullptr, disp);
 
@@ -240,7 +269,7 @@ vk::UniqueDebugUtilsMessengerEXT Vulkan::createMessenger(	const vk::DispatchLoad
 			vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
 			vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
 
-		vk::DebugUtilsMessengerCreateInfoEXT createInfo(
+		const vk::DebugUtilsMessengerCreateInfoEXT createInfo(
 			{},
 			msgSeverity,
 			msgTypes,
@@ -263,8 +292,18 @@ vk::PhysicalDevice Vulkan::getBestPhysicalDevice(	const vk::DispatchLoaderDynami
 	std::pair<std::optional<vk::PhysicalDevice>, uint32_t> best({}, 0);
 
 	for(const auto& device : devices){
-		//Window support is required
-		if(Window::getPresentationQueueFamilies(disp, instance, device).size() == 0){
+		#ifndef ZUAZO_DISABLE_PRESENTATION_SUPPORT
+			//Window support is required
+			if(Window::getPresentationQueueFamilies(disp, instance, device).size() == 0){
+				continue;
+			}
+		#endif
+
+		//Check validation layer support
+		auto requiredLayers = getRequiredLayers();
+		const auto supportedLayers = device.enumerateDeviceLayerProperties(disp);
+		getUsedLayers(supportedLayers, requiredLayers);
+		if(requiredLayers.size()){
 			continue;
 		}
 
@@ -314,18 +353,18 @@ std::array<uint32_t, Vulkan::QUEUE_NUM>	Vulkan::getQueueIndices(const vk::Dispat
 	queues[TRANSFER_QUEUE] = getQueueFamilyIndex(queueFamilies, vk::QueueFlagBits::eTransfer);
 
 
-	//Add a queue family compatible with presentation
-	const auto presentFamilies = Window::getPresentationQueueFamilies(disp, inst, dev);
-	if(presentFamilies.size() == 0){
-		throw Exception("Device has not presentation queues");
-	}
+	#ifndef ZUAZO_DISABLE_PRESENTATION_SUPPORT
+		//Add a queue family compatible with presentation
+		const auto presentFamilies = Window::getPresentationQueueFamilies(disp, inst, dev);
+		assert(presentFamilies.size()); //It should have been checked before
 
-	//Try to assign the graphics queue
-	if(std::find(presentFamilies.cbegin(), presentFamilies.cend(), queues[GRAPHICS_QUEUE]) != presentFamilies.cend()){
-		queues[PRESENTATION_QUEUE] = queues[GRAPHICS_QUEUE];
-	} else {
-		queues[PRESENTATION_QUEUE] = presentFamilies[0];
-	}
+		//Try to assign the graphics queue
+		if(std::find(presentFamilies.cbegin(), presentFamilies.cend(), queues[GRAPHICS_QUEUE]) != presentFamilies.cend()){
+			queues[PRESENTATION_QUEUE] = queues[GRAPHICS_QUEUE];
+		} else {
+			queues[PRESENTATION_QUEUE] = presentFamilies[0];
+		}
+	#endif
 
 	return queues;
 }
@@ -335,30 +374,18 @@ vk::UniqueDevice Vulkan::createDevice(	vk::DispatchLoaderDynamic& disp,
 										const vk::PhysicalDevice& physicalDevice,
 										const std::array<uint32_t, QUEUE_NUM>& queueIndices )
 {
-	//Get the queues
-	std::set<uint32_t> uniqueQueueFamilies(queueIndices.cbegin(), queueIndices.cend());
-
-	//Get the extensions
-	auto requiredExtensions = getRequiredDeviceExtensions();
-	const auto availableExtensions = physicalDevice.enumerateDeviceExtensionProperties(nullptr, disp);
-	const auto usedExtensions = getUsedExtensions(availableExtensions, requiredExtensions);
-
-	if(requiredExtensions.size()){
-		//There are missing extensions
-		std::string missingNames;
-
-		for(const auto& m : requiredExtensions){
-			missingNames += m.extensionName;
-			missingNames += "\n";
-		}
-
-		throw Exception("Missing Vulkan device extensions:\n" + missingNames);
-	}
 
 
-	const auto usedExtensionNames = getNames(usedExtensions);
+	//Get the validation layers and extensions.
+	//They should be available, as we have checked for them when
+	//choosing the physical device
+	const auto layers = getRequiredLayers();
+	const auto layerNames = getNames(layers);
+	const auto extensions = getRequiredDeviceExtensions();
+	const auto extensionNames = getNames(extensions);
 
 	//Fill the queue create infos
+	std::set<uint32_t> uniqueQueueFamilies(queueIndices.cbegin(), queueIndices.cend());
 	const float queuePriority = 1.0f;
 	std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
 	queueCreateInfos.reserve(uniqueQueueFamilies.size());
@@ -367,20 +394,16 @@ vk::UniqueDevice Vulkan::createDevice(	vk::DispatchLoaderDynamic& disp,
 		queueCreateInfos.emplace_back(
 			vk::DeviceQueueCreateFlags(),
 			q,
-			1,
-			&queuePriority
+			1, &queuePriority
 		);
 	}
 
-
-	vk::DeviceCreateInfo createInfo(
+	//Create it
+	const vk::DeviceCreateInfo createInfo(
 		{},
-		queueCreateInfos.size(),
-		queueCreateInfos.data(),
-		0,
-		nullptr,
-		usedExtensionNames.size(),
-		usedExtensionNames.data()
+		queueCreateInfos.size(), queueCreateInfos.data(),
+		layerNames.size(), layerNames.data(),
+		extensionNames.size(), extensionNames.data()
 	);
 	auto dev = physicalDevice.createDeviceUnique(createInfo, nullptr, disp);
 
@@ -403,6 +426,26 @@ std::array<vk::Queue, Vulkan::QUEUE_NUM> Vulkan::getQueues(	const vk::DispatchLo
 	return queues;
 }
 
+std::array<vk::UniqueCommandPool, Vulkan::QUEUE_NUM> Vulkan::createCommandPools(const vk::DispatchLoaderDynamic& disp, 
+																				const vk::Device& device, 
+																				const std::array<uint32_t, QUEUE_NUM>& queueIndices )
+{
+	std::array<vk::UniqueCommandPool, QUEUE_NUM> commandPools;
+	
+	for(size_t i = 0; i < QUEUE_NUM; i++){
+		const vk::CommandPoolCreateInfo createInfo(
+			{},
+			queueIndices[i]
+		);
+
+		commandPools[i] = device.createCommandPoolUnique(
+			createInfo, nullptr, disp
+		);
+	}
+
+	return commandPools;
+}
+
 
 
 
@@ -412,9 +455,8 @@ std::vector<vk::LayerProperties> Vulkan::getRequiredLayers(){
 	#ifdef ZUAZO_ENABLE_VALIDATION_LAYERS
 		//Add debug utils extension requirement
 		//Khronos validation layer
-		VkLayerProperties khronosValidation = {};
-		std::strncpy(khronosValidation.layerName, "VK_LAYER_KHRONOS_validation", VK_MAX_EXTENSION_NAME_SIZE);
-		validationLayers.emplace_back(khronosValidation);
+		validationLayers.emplace_back();
+		std::strncpy(validationLayers.back().layerName, "VK_LAYER_KHRONOS_validation", VK_MAX_EXTENSION_NAME_SIZE);
 	#endif
 
 	return validationLayers;
@@ -423,19 +465,20 @@ std::vector<vk::LayerProperties> Vulkan::getRequiredLayers(){
 std::vector<vk::ExtensionProperties> Vulkan::getRequiredInstanceExtensions(){
 	std::vector<vk::ExtensionProperties> extensions;
 
-	//Add window swap-chain extensions
-	const auto windowExtensions = Window::getRequiredVulkanExtensions();
-	std::copy(
-		windowExtensions.cbegin(),
-		windowExtensions.cend(),
-		std::back_insert_iterator(extensions)
-	);
+	#ifndef ZUAZO_DISABLE_PRESENTATION_SUPPORT
+		//Add window swap-chain extensions
+		const auto windowExtensions = Window::getRequiredVulkanExtensions();
+		std::copy(
+			windowExtensions.cbegin(),
+			windowExtensions.cend(),
+			std::back_insert_iterator(extensions)
+		);
+	#endif
 
 	#ifdef ZUAZO_ENABLE_VALIDATION_LAYERS
 		//Add debug utils extension requirement
-		VkExtensionProperties ext = {};
-		std::strncpy(ext.extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE);
-		extensions.emplace_back(ext);
+		extensions.emplace_back();
+		std::strncpy(extensions.back().extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE);
 	#endif
 
 	return extensions;
@@ -444,10 +487,12 @@ std::vector<vk::ExtensionProperties> Vulkan::getRequiredInstanceExtensions(){
 std::vector<vk::ExtensionProperties> Vulkan::getRequiredDeviceExtensions(){
 	std::vector<vk::ExtensionProperties> extensions;
 
-	//Require swapchain extension
-	VkExtensionProperties swapchainExtension = {};
-	std::strncpy(swapchainExtension.extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE);
-	extensions.emplace_back(swapchainExtension);
+	#ifndef ZUAZO_DISABLE_PRESENTATION_SUPPORT
+		//Require swapchain extension
+		VkExtensionProperties swapchainExtension = {};
+		std::strncpy(swapchainExtension.extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE);
+		extensions.emplace_back(swapchainExtension);
+	#endif
 
 	return extensions;
 }

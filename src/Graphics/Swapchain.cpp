@@ -13,19 +13,21 @@ Swapchain::Swapchain(	const Vulkan& vulkan,
 						const vk::SurfaceKHR& surface,
 						const vk::Extent2D& extent,
 						const vk::SurfaceFormatKHR& surfaceFormat,
+						vk::RenderPass renderPass,
 						vk::SwapchainKHR old )
-	: m_swapchain(createSwapchain(
-		vulkan, 
+	: m_swapchain(createSwapchain( vulkan, 
 		surface,
 		extent, 
 		surfaceFormat,
-		old
-	))
+		old ))
 	, m_images(getImages(vulkan, *m_swapchain))
-	, m_imageViews(getImageViews(
-		vulkan, 
+	, m_imageViews(createImageViews( vulkan, 
 		surfaceFormat.format, 
-		m_images
+		m_images ))
+	, m_framebuffers(createFramebuffers( vulkan,
+		extent,
+		renderPass,
+		m_imageViews
 	))
 {
 }
@@ -39,13 +41,10 @@ vk::SwapchainKHR Swapchain::getSwapchain() {
 	return *m_swapchain;
 }
 
-const std::vector<vk::UniqueImageView>& Swapchain::getImageViews() const{
-	return m_imageViews;
+const std::vector<vk::UniqueFramebuffer>& Swapchain::getFramebuffers() const{
+	return m_framebuffers;
 }
 
-std::vector<vk::UniqueImageView>& Swapchain::getImageViews() {
-	return m_imageViews;
-}
 
 
 vk::UniqueSwapchainKHR Swapchain::createSwapchain(	const Vulkan& vulkan, 
@@ -64,10 +63,17 @@ vk::UniqueSwapchainKHR Swapchain::createSwapchain(	const Vulkan& vulkan,
 		throw Exception("Surface format is not supported");
 	}
 
-	const auto presentModes = physicalDevice.getSurfacePresentModesKHR(surface, vulkan.getDispatcher());
 	const auto capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface, vulkan.getDispatcher());
-	
 	const auto queueFamilies = getQueueFamilies(vulkan);
+	const auto presentModes = physicalDevice.getSurfacePresentModesKHR(surface, vulkan.getDispatcher());
+
+	if(	extent.width < capabilities.minImageExtent.width || 
+		extent.height < capabilities.minImageExtent.height || 
+		extent.width > capabilities.maxImageExtent.width || 
+		extent.height > capabilities.maxImageExtent.height )
+	{
+		throw Exception("Surface extent is not supported");
+	}
 
 	const vk::SwapchainCreateInfoKHR createInfo(
 		{},
@@ -75,7 +81,7 @@ vk::UniqueSwapchainKHR Swapchain::createSwapchain(	const Vulkan& vulkan,
 		getImageCount(capabilities),
 		surfaceFormat.format,
 		surfaceFormat.colorSpace,
-		getExtent(capabilities, extent),
+		extent,
 		1,
 		vk::ImageUsageFlagBits::eColorAttachment,
 		(queueFamilies.size() > 1) ? vk::SharingMode::eConcurrent : vk::SharingMode::eExclusive,
@@ -95,15 +101,15 @@ std::vector<vk::Image> Swapchain::getImages(const Vulkan& vulkan, const vk::Swap
 	return vulkan.getDevice().getSwapchainImagesKHR(swapchain, vulkan.getDispatcher());
 }
 
-std::vector<vk::UniqueImageView> Swapchain::getImageViews(	const Vulkan& vulkan,
-															vk::Format format, 
-															const std::vector<vk::Image>& images ) 
+std::vector<vk::UniqueImageView> Swapchain::createImageViews(	const Vulkan& vulkan,
+																vk::Format format, 
+																const std::vector<vk::Image>& images ) 
 {
 	std::vector<vk::UniqueImageView> result;
 	result.reserve(images.size());
 
 	for(const auto& image : images){
-		vk::ImageViewCreateInfo createInfo(
+		const vk::ImageViewCreateInfo createInfo(
 			{},
 			image,
 			vk::ImageViewType::e2D,
@@ -115,12 +121,45 @@ std::vector<vk::UniqueImageView> Swapchain::getImageViews(	const Vulkan& vulkan,
 			)
 		);
 
-		auto imageView = vulkan.getDevice().createImageViewUnique(createInfo, nullptr, vulkan.getDispatcher());
-		result.emplace_back(std::move(imageView));
+		auto iv = vulkan.getDevice().createImageViewUnique(createInfo, nullptr, vulkan.getDispatcher());
+		result.emplace_back(std::move(iv));
 	}
 
 	return result;
 }
+
+std::vector<vk::UniqueFramebuffer> Swapchain::createFramebuffers(	const Vulkan& vulkan,
+																	const vk::Extent2D& extent,
+																	vk::RenderPass renderPass,
+																	const std::vector<vk::UniqueImageView>& imageViews )
+{
+	std::vector<vk::UniqueFramebuffer> result;
+	result.reserve(imageViews.size());
+
+	for(const auto& img : imageViews){
+		const std::array attachments = {
+			*img
+		};
+
+		const vk::FramebufferCreateInfo createInfo(
+			{},
+			renderPass,
+			attachments.size(),
+			attachments.data(),
+			extent.width, extent.height,
+			1
+		);
+
+		auto fb = vulkan.getDevice().createFramebufferUnique(createInfo, nullptr, vulkan.getDispatcher());
+		result.emplace_back(std::move(fb));
+	}
+
+	return result;
+}
+
+
+
+
 
 vk::PresentModeKHR Swapchain::getPresentMode(const std::vector<vk::PresentModeKHR>& presentModes) {
 	const std::vector<vk::PresentModeKHR> prefered = {
@@ -135,19 +174,6 @@ vk::PresentModeKHR Swapchain::getPresentMode(const std::vector<vk::PresentModeKH
 	}
 
 	throw Exception("No compatible presentation mode was found");
-}
-
-vk::Extent2D Swapchain::getExtent(const vk::SurfaceCapabilitiesKHR& cap, vk::Extent2D windowExtent){
-	constexpr uint32_t MAX_EXTENT = std::numeric_limits<uint32_t>::max();
-
-	if(cap.currentExtent.width == MAX_EXTENT || cap.currentExtent.height == MAX_EXTENT){
-		return vk::Extent2D(
-			std::max(cap.minImageExtent.width, std::min(cap.maxImageExtent.width, windowExtent.width)),
-			std::max(cap.minImageExtent.height, std::min(cap.maxImageExtent.height, windowExtent.height))
-		);
-	} else {
-		return cap.currentExtent;
-	}
 }
 
 uint32_t Swapchain::getImageCount(const vk::SurfaceCapabilitiesKHR& cap){
