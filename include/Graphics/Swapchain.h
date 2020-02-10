@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Vulkan.h"
-#include "Window.h"
 #include "VulkanConversions.h"
 
 namespace Zuazo::Graphics {
@@ -22,8 +21,7 @@ public:
 	Swapchain& 								operator=(const Swapchain& other) = delete;
 	Swapchain& 								operator=(Swapchain&& other) = default;
 
-	const vk::SwapchainKHR&					getSwapchain() const;
-	vk::SwapchainKHR						getSwapchain();
+	vk::SwapchainKHR						getSwapchain() const;
 
 	const std::vector<vk::UniqueFramebuffer>& getFramebuffers() const;
 private:

@@ -21,8 +21,8 @@ class Vulkan {
 public:
 	using DeviceScoreFunc = std::function<uint32_t(const vk::DispatchLoaderDynamic&, vk::PhysicalDevice)>;
 
-	Vulkan(	const char* appName, 
-			uint32_t version,
+	Vulkan(	const std::string_view& appName, 
+			Version appVersion,
 			const DeviceScoreFunc& scoreFunc );
 	Vulkan(const Vulkan& other) = delete;
 	~Vulkan() = default;
@@ -34,16 +34,12 @@ public:
 	vk::Device										getDevice() const;
 	uint32_t										getGraphicsQueueIndex() const;
 	vk::Queue										getGraphicsQueue() const;
-	vk::CommandPool									getGraphicsCommandPool() const;
 	uint32_t										getComputeQueueIndex() const;
 	vk::Queue										getComputeQueue() const;
-	vk::CommandPool									getComputeCommandPool() const;
 	uint32_t										getTransferQueueIndex() const;
 	vk::Queue										getTransferQueue() const;
-	vk::CommandPool									getTransferCommandPool() const;
 	uint32_t										getPresentationQueueIndex() const;
 	vk::Queue										getPresentationQueue() const;
-	vk::CommandPool									getPresentationCommandPool() const;
 
 	vk::FormatProperties							getFormatFeatures(vk::Format format) const;
 
@@ -65,7 +61,6 @@ private:
 	std::array<uint32_t, QUEUE_NUM>					m_queueIndices;
 	vk::UniqueDevice								m_device;
 	std::array<vk::Queue, QUEUE_NUM>				m_queues;
-	std::array<vk::UniqueCommandPool, QUEUE_NUM>	m_commandPools;
 
 	static vk::DispatchLoaderDynamic				createDispatcher(const vk::DynamicLoader& loader);
 	static vk::UniqueInstance						createInstance(	vk::DispatchLoaderDynamic& disp, 
@@ -85,9 +80,7 @@ private:
 	static std::array<vk::Queue, QUEUE_NUM>			getQueues(	const vk::DispatchLoaderDynamic& disp, 
 																const vk::Device& device, 
 																const std::array<uint32_t, QUEUE_NUM>& queueIndices);
-	static std::array<vk::UniqueCommandPool, QUEUE_NUM> createCommandPools( const vk::DispatchLoaderDynamic& disp, 
-																			const vk::Device& device, 
-																			const std::array<uint32_t, QUEUE_NUM>& queueIndices );
+																
 	static std::vector<vk::LayerProperties> 		getRequiredLayers();
 	static std::vector<vk::ExtensionProperties>		getRequiredInstanceExtensions();
 	static std::vector<vk::ExtensionProperties>		getRequiredDeviceExtensions();

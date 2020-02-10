@@ -27,6 +27,14 @@ Pipeline::Pipeline(	const Vulkan& vulkan,
 {
 }
 
+vk::PipelineLayout Pipeline::getPipelineLayout() const{
+	return *m_pipelineLayout;
+}
+
+vk::Pipeline Pipeline::getPipeline() const{
+	return *m_pipeline;
+}
+
 vk::UniquePipelineLayout Pipeline::createPipelineLayout(const Vulkan& vulkan,
 														const Utils::BufferView<vk::DescriptorSetLayout>& uniforms )
 {
@@ -129,10 +137,13 @@ vk::UniquePipeline Pipeline::createPipeline(const Vulkan& vulkan,
 	const std::array colorBlendAttachments = {
 		vk::PipelineColorBlendAttachmentState(
 			enableBlending,
+			//Cf' = Ai*Ci + (1.0-Ai)*Cf; Typical color mixing equation
 			vk::BlendFactor::eSrcAlpha,
 			vk::BlendFactor::eOneMinusSrcAlpha,
 			vk::BlendOp::eAdd,
-			vk::BlendFactor::eSrcAlpha,
+			//Af' = Ai + (1.0-Ai)*Af = Ai + Af - Ai*Af; So that Af' is always greater than Af and Ai
+			//https://www.wolframalpha.com/input/?i=plot+%7C+x+%2B+y+-+x+y+%7C+x+%3D+0+to+1+y+%3D+0+to+1
+			vk::BlendFactor::eOne,
 			vk::BlendFactor::eOneMinusSrcAlpha,
 			vk::BlendOp::eAdd
 		)
@@ -145,13 +156,9 @@ vk::UniquePipeline Pipeline::createPipeline(const Vulkan& vulkan,
 		colorBlendAttachments.size(), colorBlendAttachments.data()
 	);
 
-	const std::array dynamicStates = {
-		vk::DynamicState::eViewport
-	};
-
 	const vk::PipelineDynamicStateCreateInfo dynamicState(
 		{},
-		dynamicStates.size(), dynamicStates.data()
+		0, nullptr
 	);
 
 	const vk::GraphicsPipelineCreateInfo createInfo(

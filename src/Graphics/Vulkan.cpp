@@ -6,7 +6,7 @@
 #include <Exception.h>
 #include <Macros.h>
 #include <Graphics/VulkanUtils.h>
-#include <Graphics/Window.h>
+#include <Graphics/GLFW.h>
 
 #include <cstring>
 #include <iostream>
@@ -79,19 +79,18 @@ VKAPI_ATTR VkBool32 VKAPI_CALL validationLayerCallback(	VkDebugUtilsMessageSever
 	return VK_FALSE;
 }
 
-Vulkan::Vulkan(	const char* appName, 
-				uint32_t appVersion,
+Vulkan::Vulkan(	const std::string_view& appName, 
+				Version appVersion,
 				const DeviceScoreFunc& scoreFunc )
 
 	: m_loader()
 	, m_dispatcher(createDispatcher(m_loader))
-	, m_instance(createInstance(m_dispatcher, appName, appVersion))
+	, m_instance(createInstance(m_dispatcher, appName.data(), toVulkan(appVersion)))
 	, m_messenger(createMessenger(m_dispatcher, *m_instance))
 	, m_physicalDevice(getBestPhysicalDevice(m_dispatcher, *m_instance, scoreFunc))
 	, m_queueIndices(getQueueIndices(m_dispatcher, *m_instance, m_physicalDevice))
 	, m_device(createDevice(m_dispatcher, m_physicalDevice, m_queueIndices))
 	, m_queues(getQueues(m_dispatcher, *m_device, m_queueIndices))
-	, m_commandPools(createCommandPools(m_dispatcher, *m_device, m_queueIndices))
 {
 }
 
@@ -123,20 +122,12 @@ vk::Queue Vulkan::getGraphicsQueue() const{
 	return m_queues[GRAPHICS_QUEUE];
 }
 
-vk::CommandPool Vulkan::getGraphicsCommandPool() const{
-	return *(m_commandPools[GRAPHICS_QUEUE]);
-}
-
 uint32_t Vulkan::getComputeQueueIndex() const{
 	return m_queueIndices[COMPUTE_QUEUE];
 }
 
 vk::Queue Vulkan::getComputeQueue() const{
 	return m_queues[COMPUTE_QUEUE];
-}
-
-vk::CommandPool Vulkan::getComputeCommandPool() const{
-	return *(m_commandPools[COMPUTE_QUEUE]);
 }
 
 uint32_t Vulkan::getTransferQueueIndex() const{
@@ -147,20 +138,12 @@ vk::Queue Vulkan::getTransferQueue() const{
 	return m_queues[TRANSFER_QUEUE];
 }
 
-vk::CommandPool Vulkan::getTransferCommandPool() const{
-	return *(m_commandPools[TRANSFER_QUEUE]);
-}
-
 uint32_t Vulkan::getPresentationQueueIndex() const{
 	return m_queueIndices[PRESENTATION_QUEUE];
 }
 
 vk::Queue Vulkan::getPresentationQueue() const{
 	return m_queues[PRESENTATION_QUEUE];
-}
-
-vk::CommandPool Vulkan::getPresentationCommandPool() const{
-	return *(m_commandPools[PRESENTATION_QUEUE]);
 }
 
 vk::FormatProperties Vulkan::getFormatFeatures(vk::Format format) const {
@@ -292,13 +275,6 @@ vk::PhysicalDevice Vulkan::getBestPhysicalDevice(	const vk::DispatchLoaderDynami
 	std::pair<std::optional<vk::PhysicalDevice>, uint32_t> best({}, 0);
 
 	for(const auto& device : devices){
-		#ifndef ZUAZO_DISABLE_PRESENTATION_SUPPORT
-			//Window support is required
-			if(Window::getPresentationQueueFamilies(disp, instance, device).size() == 0){
-				continue;
-			}
-		#endif
-
 		//Check validation layer support
 		auto requiredLayers = getRequiredLayers();
 		const auto supportedLayers = device.enumerateDeviceLayerProperties(disp);
@@ -322,6 +298,14 @@ vk::PhysicalDevice Vulkan::getBestPhysicalDevice(	const vk::DispatchLoaderDynami
 		if(requiredQueueFamilies.size()){
 			continue;
 		}
+
+		#ifndef ZUAZO_DISABLE_PRESENTATION_SUPPORT
+			//Window support is required
+			const size_t nQueueFamilies = availableQueueFamilies.size();
+			if(GLFW::getPresentationQueueFamilies(instance, device, nQueueFamilies).size() == 0){
+				continue;
+			}
+		#endif
 
 		//Evaluate if the device is the best
 		//If the score is 0 device is considered not suitable
@@ -355,7 +339,7 @@ std::array<uint32_t, Vulkan::QUEUE_NUM>	Vulkan::getQueueIndices(const vk::Dispat
 
 	#ifndef ZUAZO_DISABLE_PRESENTATION_SUPPORT
 		//Add a queue family compatible with presentation
-		const auto presentFamilies = Window::getPresentationQueueFamilies(disp, inst, dev);
+		const auto presentFamilies = GLFW::getPresentationQueueFamilies(inst, dev, queueFamilies.size());
 		assert(presentFamilies.size()); //It should have been checked before
 
 		//Try to assign the graphics queue
@@ -398,13 +382,25 @@ vk::UniqueDevice Vulkan::createDevice(	vk::DispatchLoaderDynamic& disp,
 		);
 	}
 
+	//Select enabled features
+	auto availableFeatures = physicalDevice.getFeatures2<	vk::PhysicalDeviceFeatures2, 
+															vk::PhysicalDeviceSamplerYcbcrConversionFeatures>(disp);
+	decltype(availableFeatures) enabledFeatures;
+
+	if(availableFeatures.get<vk::PhysicalDeviceSamplerYcbcrConversionFeatures>().samplerYcbcrConversion){
+		//Enable YCbCr conversion
+		enabledFeatures.get<vk::PhysicalDeviceSamplerYcbcrConversionFeatures>().samplerYcbcrConversion = true;
+	}
+
 	//Create it
-	const vk::DeviceCreateInfo createInfo(
+	vk::DeviceCreateInfo createInfo(
 		{},
 		queueCreateInfos.size(), queueCreateInfos.data(),
 		layerNames.size(), layerNames.data(),
 		extensionNames.size(), extensionNames.data()
 	);
+	createInfo.pNext = static_cast<const void*>(&(enabledFeatures.get<vk::PhysicalDeviceFeatures2>()));
+
 	auto dev = physicalDevice.createDeviceUnique(createInfo, nullptr, disp);
 
 	//Register the device specific functions 
@@ -424,26 +420,6 @@ std::array<vk::Queue, Vulkan::QUEUE_NUM> Vulkan::getQueues(	const vk::DispatchLo
 	}
 
 	return queues;
-}
-
-std::array<vk::UniqueCommandPool, Vulkan::QUEUE_NUM> Vulkan::createCommandPools(const vk::DispatchLoaderDynamic& disp, 
-																				const vk::Device& device, 
-																				const std::array<uint32_t, QUEUE_NUM>& queueIndices )
-{
-	std::array<vk::UniqueCommandPool, QUEUE_NUM> commandPools;
-	
-	for(size_t i = 0; i < QUEUE_NUM; i++){
-		const vk::CommandPoolCreateInfo createInfo(
-			{},
-			queueIndices[i]
-		);
-
-		commandPools[i] = device.createCommandPoolUnique(
-			createInfo, nullptr, disp
-		);
-	}
-
-	return commandPools;
 }
 
 
@@ -467,7 +443,7 @@ std::vector<vk::ExtensionProperties> Vulkan::getRequiredInstanceExtensions(){
 
 	#ifndef ZUAZO_DISABLE_PRESENTATION_SUPPORT
 		//Add window swap-chain extensions
-		const auto windowExtensions = Window::getRequiredVulkanExtensions();
+		const auto windowExtensions = GLFW::getRequiredVulkanExtensions();
 		std::copy(
 			windowExtensions.cbegin(),
 			windowExtensions.cend(),

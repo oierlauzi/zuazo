@@ -8,9 +8,11 @@ namespace Zuazo::Graphics {
 
 class RenderPass {
 public:
+	RenderPass() = default;
 	RenderPass(	const Vulkan& vulkan,
 				const Utils::BufferView<vk::AttachmentDescription>& attachments,
-				const Utils::BufferView<vk::SubpassDescription>& subpasses);	
+				const Utils::BufferView<vk::SubpassDescription>& subpasses,
+				const Utils::BufferView<vk::SubpassDependency>& subpassDependencies );	
 	RenderPass(const RenderPass& other) = delete;
 	RenderPass(RenderPass&& opther) = default;
 	~RenderPass() = default;
@@ -24,7 +26,8 @@ private:
 
 	static vk::UniqueRenderPass createRenderPass(	const Vulkan& vulkan,
 													const Utils::BufferView<vk::AttachmentDescription>& attachments,
-													const Utils::BufferView<vk::SubpassDescription>& subpasses );
+													const Utils::BufferView<vk::SubpassDescription>& subpasses,
+													const Utils::BufferView<vk::SubpassDependency>& subpassDependencies );
 };
 
 }

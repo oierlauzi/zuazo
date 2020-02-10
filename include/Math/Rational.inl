@@ -97,8 +97,8 @@ constexpr Rational<T>::Rational(Real number) : Rational() {
 template<typename T>
 template<typename Q>
 constexpr Rational<T>::Rational(const Rational<Q>& rat) :
-	m_num(static_cast<Integer>(rat.m_num)),
-	m_den(static_cast<Integer>(rat.m_den))
+	m_num(static_cast<Integer>(rat.getNumerator())),
+	m_den(static_cast<Integer>(rat.getDenominator()))
 {
 }
 

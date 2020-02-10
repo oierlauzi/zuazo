@@ -4,9 +4,10 @@
 #include "Version.h"
 #include "Verbosity.h"
 #include "ColorFormat.h"
+#include "VideoMode.h"
 #include "ColorEncoding.h"
 #include "Timing/MainLoop.h"
-#include "Graphics/Window.h"
+#include "Graphics/GLFW.h"
 #include "Graphics/Vulkan.h"
 
 #include <functional>
@@ -23,6 +24,15 @@ public:
 		std::string		description;
 		Version			version;
 		Verbosity		verbosity = ZUAZO_IS_DEBUG ? Verbosity::INFO : Verbosity::SILENT;
+		VideoMode		defaultVideoMode = {
+							Resolution(1280, 720),
+							AspectRatio(1, 1),
+							Timing::Rate(30, 1),
+							ColorPrimaries::BT709,
+							ColorModel::RGB,
+							ColorEncoding::UINT,
+							ColorFormat::B8G8R8A8
+						};
 		LogFunc			logFunc = defaultLogFunc;
 		DeviceScoreFunc	deviceScoreFunc = defaultDeviceScoreFunc;
 	};
@@ -57,7 +67,7 @@ public:
 														vk::PhysicalDevice device );
 private:
 	ApplicationInfo				m_applicationInfo;
-	Graphics::Window::Instance	m_windowInstance;
+	Graphics::GLFW				m_glfw;
 	Graphics::Vulkan			m_vulkan;
 	Timing::MainLoop			m_loop;
 

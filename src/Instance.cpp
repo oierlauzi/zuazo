@@ -147,20 +147,28 @@ uint32_t Instance::defaultDeviceScoreFunc(const vk::DispatchLoaderDynamic& disp,
 	//Scores
 	constexpr uint32_t MINIMUM_SCORE = 1;
 	constexpr uint32_t DISCRETE_GPU_SCORE = 128;
-	constexpr uint32_t SRC_FORMAT_SCORE = 3;
-	constexpr uint32_t DST_FORMAT_SCORE = 3;
-	constexpr uint32_t YCBCR_FORMAT_SCORE = 3;
+	constexpr uint32_t YCBCR_SAMPLER_SCORE = 64;
+	constexpr uint32_t SAMPLER_FORMAT_SCORE = 4;
+	constexpr uint32_t FRAMEBUFFER_FORMAT_SCORE = 8;
+	constexpr uint32_t YCBCR_FORMAT_SCORE = 4;
 	constexpr uint32_t TEXTURE_RESOLUTION_REDUCTION = 1024;
 	constexpr uint32_t FRAMEBUFFER_RESOLUTION_REDUCTION = 1024;
 
 	//Sum all the scores
 	int32_t score = MINIMUM_SCORE;
 
-	//Give the score based on the properties
+	//Retrieve data about the device	
+	auto features = device.getFeatures2<vk::PhysicalDeviceFeatures2, 
+										vk::PhysicalDeviceSamplerYcbcrConversionFeatures>(disp);
 	const auto properties = device.getProperties(disp);
 
+	//Give the score based on the properties and features
 	if(properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu){
 		score += DISCRETE_GPU_SCORE;
+	}
+
+	if(features.get<vk::PhysicalDeviceSamplerYcbcrConversionFeatures>().samplerYcbcrConversion){
+		score += YCBCR_SAMPLER_SCORE;
 	}
 
 	score += properties.limits.maxImageDimension2D / TEXTURE_RESOLUTION_REDUCTION;
@@ -171,21 +179,20 @@ uint32_t Instance::defaultDeviceScoreFunc(const vk::DispatchLoaderDynamic& disp,
 	for(auto format = ColorFormat::NONE; format < ColorFormat::COUNT; format++){
 		for(auto encoding = ColorEncoding::NONE; encoding < ColorEncoding::COUNT; encoding++){
 			const auto [f, s] = Graphics::toVulkan(format, encoding);
-
 			if(f == vk::Format::eUndefined) continue;
 
 			const auto features = device.getFormatProperties(f, disp);
 
 			if(Graphics::hasSamplerSupport(features)) {
-				score += SRC_FORMAT_SCORE;
-
-				if(Graphics::hasYCbCrSupport(features)){
-					score += YCBCR_FORMAT_SCORE;
-				}
+				score += SAMPLER_FORMAT_SCORE;
 			}
 
 			if(Graphics::hasFramebufferSupport(features) && s == vk::ComponentMapping()) {
-				score += DST_FORMAT_SCORE;
+				score += FRAMEBUFFER_FORMAT_SCORE;
+			}
+
+			if(Graphics::hasYCbCrSupport(features)){
+				score += YCBCR_FORMAT_SCORE;
 			}
 		}
 	}

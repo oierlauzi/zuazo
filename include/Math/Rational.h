@@ -116,6 +116,14 @@ public:
 	 */
 	~Rational()=default;
 
+	/**
+	 * \brief
+	 * Copy assigment operator
+	 * \param[in] other
+	 * The rational to be copied
+	 */
+	constexpr Rational& operator=(const Rational& other) = default;
+
 	//////////////////////////////////////////////
 	//				PUBLIC METHODS				//
 	//////////////////////////////////////////////
@@ -153,7 +161,7 @@ public:
 	explicit constexpr operator Real() const;
 
 	//////////////////////////////////////////////
-	//			ARITHMETIC OPERATORS				//
+	//			ARITHMETIC OPERATORS			//
 	//////////////////////////////////////////////
 
 	template<typename Q>
@@ -166,7 +174,6 @@ public:
 	friend constexpr Rational<Q> operator/(const Rational<Q>& left, const Rational<Q>& right);
 
 	constexpr Rational<T> operator-();
-	constexpr Rational<T>& operator=(const Rational<T>& right) = default;
 	constexpr Rational<T>& operator+=(const Rational<T>& right);
 	constexpr Rational<T>& operator-=(const Rational<T>& right);
 	constexpr Rational<T>& operator*=(const Rational<T>& right);

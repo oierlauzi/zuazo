@@ -7,15 +7,15 @@
 
 namespace Zuazo {
 
-struct Resolution{
-    using Size = int32_t;
+using AspectRatio = Math::Rational<int32_t>;
 
+struct Resolution{
     union {
-    	Size width, x;
+    	uint32_t width, x;
     };
 
 	union {
-    	Size height, y;
+    	uint32_t height, y;
     };
 
     constexpr Resolution();
@@ -34,7 +34,7 @@ struct Resolution{
     constexpr operator Math::Vec2<T>() const;
     constexpr operator bool() const;
 
-	constexpr Math::Rational<Size> getAspectRatio() const;
+	constexpr AspectRatio getAspectRatio() const;
 };
 
 }

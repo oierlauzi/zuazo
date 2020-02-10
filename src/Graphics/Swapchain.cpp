@@ -32,12 +32,7 @@ Swapchain::Swapchain(	const Vulkan& vulkan,
 {
 }
 
-
-const vk::SwapchainKHR&	Swapchain::getSwapchain() const {
-	return *m_swapchain;
-}
-
-vk::SwapchainKHR Swapchain::getSwapchain() {
+vk::SwapchainKHR Swapchain::getSwapchain() const {
 	return *m_swapchain;
 }
 
@@ -54,18 +49,17 @@ vk::UniqueSwapchainKHR Swapchain::createSwapchain(	const Vulkan& vulkan,
 													vk::SwapchainKHR old )
 {
 	const auto& physicalDevice = vulkan.getPhysicalDevice();
+	const auto formats = physicalDevice.getSurfaceFormatsKHR(surface, vulkan.getDispatcher());
+	const auto capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface, vulkan.getDispatcher());
+	const auto presentModes = physicalDevice.getSurfacePresentModesKHR(surface, vulkan.getDispatcher());
+
 	if(!physicalDevice.getSurfaceSupportKHR(0, surface, vulkan.getDispatcher())){
 		throw Exception("Surface not suppoted by the physical device");
 	}
 
-	const auto formats = physicalDevice.getSurfaceFormatsKHR(surface, vulkan.getDispatcher());
 	if(std::find(formats.cbegin(), formats.cend(), surfaceFormat) == formats.cend()){
 		throw Exception("Surface format is not supported");
 	}
-
-	const auto capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface, vulkan.getDispatcher());
-	const auto queueFamilies = getQueueFamilies(vulkan);
-	const auto presentModes = physicalDevice.getSurfacePresentModesKHR(surface, vulkan.getDispatcher());
 
 	if(	extent.width < capabilities.minImageExtent.width || 
 		extent.height < capabilities.minImageExtent.height || 
@@ -75,21 +69,27 @@ vk::UniqueSwapchainKHR Swapchain::createSwapchain(	const Vulkan& vulkan,
 		throw Exception("Surface extent is not supported");
 	}
 
+	const auto imageCount = getImageCount(capabilities);
+	const auto queueFamilies = getQueueFamilies(vulkan);
+	const auto sharingMode = (queueFamilies.size() > 1)
+								? vk::SharingMode::eConcurrent
+								: vk::SharingMode::eExclusive;
+	const auto presentMode = getPresentMode(presentModes);
+
 	const vk::SwapchainCreateInfoKHR createInfo(
 		{},
 		surface,
-		getImageCount(capabilities),
+		imageCount,
 		surfaceFormat.format,
 		surfaceFormat.colorSpace,
 		extent,
 		1,
 		vk::ImageUsageFlagBits::eColorAttachment,
-		(queueFamilies.size() > 1) ? vk::SharingMode::eConcurrent : vk::SharingMode::eExclusive,
-		queueFamilies.size(),
-		queueFamilies.data(),
+		sharingMode,
+		queueFamilies.size(), queueFamilies.data(),
 		capabilities.currentTransform,
 		vk::CompositeAlphaFlagBitsKHR::eOpaque,
-		getPresentMode(presentModes),
+		presentMode,
 		true,
 		old
 	);

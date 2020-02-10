@@ -7,6 +7,7 @@ namespace Zuazo::Graphics {
 
 class Pipeline {
 public:
+	Pipeline() = default;
 	Pipeline(	const Vulkan& vulkan,
 				vk::RenderPass renderPass,
 				vk::Extent2D viewportSize,
@@ -23,6 +24,9 @@ public:
 
 	Pipeline& operator=(const Pipeline& other) = delete;
 	Pipeline& operator=(Pipeline&& other) = default;
+
+	vk::PipelineLayout			getPipelineLayout() const;
+	vk::Pipeline				getPipeline() const;
 
 private:
 	vk::UniquePipelineLayout 	m_pipelineLayout;

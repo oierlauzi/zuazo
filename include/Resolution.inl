@@ -42,8 +42,8 @@ constexpr Resolution::operator bool() const{
     return (width > 0) && (height > 0);
 }
 
-constexpr Math::Rational<Resolution::Size> Resolution::getAspectRatio() const {
-    return Math::Rational<Size>(
+constexpr AspectRatio Resolution::getAspectRatio() const {
+    return AspectRatio(
         width,
         height
     );
