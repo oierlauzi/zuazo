@@ -30,6 +30,8 @@ public:
 
 	GLFW& operator=(const GLFW& other) = delete;
 
+	static std::mutex&							getCallbackMutex();
+
 	static const std::vector<Monitor>& 			getMonitors();
 
 	static std::vector<vk::ExtensionProperties> getRequiredVulkanExtensions();
@@ -41,6 +43,7 @@ public:
 																				uint32_t queueCount);
 
 	static const Monitor NO_MONITOR;
+
 private:
 	static std::atomic<size_t>		s_instanceCount;
 	static std::atomic<size_t>		s_windowCount;
@@ -52,7 +55,8 @@ private:
 	static std::condition_variable	s_threadCompleteCondition;
 	static std::queue<std::function<void(void)>> s_threadExecutions;
 
-	static std::atomic<bool>		s_callbacksEnabled;
+	static std::mutex				s_cbkMutex;
+	static std::atomic<bool>		s_enableCbks;
 
 	static std::vector<Monitor>		s_monitors;
 
@@ -67,8 +71,6 @@ private:
 	static void						addMonitor(GLFWmonitor* mon);
 	static void						eraseMonitor(GLFWmonitor* mon);
 	static const Monitor&			getMonitor(GLFWmonitor* mon);
-	
-	static void						setCallbacksEnabled(bool ena);
 
 	static void						monitorCbk(GLFWmonitor* mon, int evnt);
 	static void						positionCbk(GLFWwindow* win, int x, int y);
@@ -139,17 +141,6 @@ public:
 	using RefreshCallback = std::function<void()>;
 	using FocusCallback = std::function<void(bool)>;
 
-	struct Callbacks {
-		StateCallback			stateCbk;
-		PositionCallback        positionCbk;
-		SizeCallback            sizeCbk;
-		ResolutionCallback      resolutionCbk;
-		ScaleCallback           scaleCbk;
-		CloseCallback           closeCbk;
-		RefreshCallback         refreshCbk;
-		FocusCallback           focusCbk;
-	};
-
 	Window(	const Math::Vec2i& size = { 640, 480 }, 
 			const std::string_view& name = "" );
 	Window(const Window& other) = delete;
@@ -161,37 +152,52 @@ public:
 
 	operator bool() const;
 
-	vk::UniqueSurfaceKHR 	getSurface(const Vulkan& vulkan) const;
+	vk::UniqueSurfaceKHR 		getSurface(const Vulkan& vulkan) const;
 
-	void					setName(const std::string_view& name);
+	void						setName(const std::string_view& name);
 
-	void					setState(State st);
-	State					getState() const;
+	void						setState(State st);
+	State						getState() const;
+	void						setStateCallback(StateCallback&& cbk);
+	const StateCallback&		getStateCallback() const;
 
-	void					setMonitor(const Monitor& mon);
-	void					setMonitor(const Monitor& mon, const Monitor::Mode& mode);
-	const Monitor&			getMonitor() const;
+	void						setMonitor(const Monitor& mon);
+	void						setMonitor(const Monitor& mon, const Monitor::Mode& mode);
+	const Monitor&				getMonitor() const;
 
-	void					setPosition(const Math::Vec2i& pos);
-	Math::Vec2i				getPosition() const;
+	void						setPosition(const Math::Vec2i& pos);
+	Math::Vec2i					getPosition() const;
+	void						setPositionCallback(PositionCallback&& cbk);
+	const PositionCallback&		getPositionCallback() const;
 
-	void					setSize(const Math::Vec2i& size);
-	Math::Vec2i				getSize() const;
+	void						setSize(const Math::Vec2i& size);
+	Math::Vec2i					getSize() const;
+	void						setSizeCallback(SizeCallback&& cbk);
+	const SizeCallback&			getSizeCallback() const;
 
-	void					setOpacity(float opa);
-	float					getOpacity() const;
 
-	Resolution				getResolution() const;
+	void						setOpacity(float opa);
+	float						getOpacity() const;
 
-	Math::Vec2f				getScale() const;
+	Resolution					getResolution() const;
+	void						setResolutionCallback(ResolutionCallback&& cbk);
+	const ResolutionCallback&	getResolutionCallback() const;
 
-	void					close();
-	bool					shouldClose() const;
+	Math::Vec2f					getScale() const;
+	void						setScaleCallback(ScaleCallback&& cbk);
+	const ScaleCallback&		getScaleCallback() const;
 
-	void					focus();
+	void						close();
+	bool						shouldClose() const;
+	void						setCloseCallback(CloseCallback&& cbk);
+	const CloseCallback&		getCloseCallback() const;
 
-	void					setCallbacks(Callbacks&& cbks);
-	const Callbacks&		getCallbacks() const;
+	void						focus();
+	void						setFocusCallback(FocusCallback&& cbk);
+	const FocusCallback&		getFocusCallback() const;
+
+	void						setRefreshCallback(RefreshCallback&& cbk);
+	const RefreshCallback&		getRefreshCallback() const;
 
 
 private:
@@ -199,13 +205,25 @@ private:
 		Math::Vec2i pos, size;
 	};
 
-	GLFWwindow* 			m_window = nullptr;
+	struct Callbacks {
+		StateCallback				stateCbk;
+		PositionCallback			positionCbk;
+		SizeCallback				sizeCbk;
+		ResolutionCallback			resolutionCbk;
+		ScaleCallback				scaleCbk;
+		CloseCallback				closeCbk;
+		RefreshCallback				refreshCbk;
+		FocusCallback				focusCbk;
+	};
 
-	Callbacks				m_callbacks;
+	Callbacks					m_callbacks;	
 	std::optional<WindowGeometry> m_windowedState;
 
+	GLFWwindow* 				m_window = nullptr;
+
 	static GLFWwindow*		createWindow(	int x, int y, 
-											const char* name );
+											const char* name,
+											void* usrPtr );
 	static void				destroyWindow(GLFWwindow* window);
 
 };

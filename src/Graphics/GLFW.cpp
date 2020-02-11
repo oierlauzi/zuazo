@@ -26,7 +26,8 @@ std::condition_variable	GLFW::s_threadContinueCondition;
 std::condition_variable	GLFW::s_threadCompleteCondition;
 std::queue<std::function<void(void)>> GLFW::s_threadExecutions;
 
-std::atomic<bool> GLFW::s_callbacksEnabled;
+std::mutex GLFW::s_cbkMutex;
+std::atomic<bool> GLFW::s_enableCbks;
 
 std::vector<GLFW::Monitor> GLFW::s_monitors;
 
@@ -42,6 +43,10 @@ GLFW::~GLFW(){
 		//Last instance. Teminate
 		terminate();
 	}
+}
+
+std::mutex& GLFW::getCallbackMutex(){
+	return s_cbkMutex;
 }
 
 const std::vector<GLFW::Monitor>& GLFW::getMonitors(){
@@ -98,8 +103,8 @@ void GLFW::initialize(){
 
 	//Set some variables
 	s_threadExit.store(false);
-	s_callbacksEnabled.store(true);
 	s_windowCount.store(0);
+	s_enableCbks.store(false);
 
 	//Initialize thread and wait
 	s_thread = std::thread(threadFunc);
@@ -139,9 +144,13 @@ void GLFW::threadFunc(){
 		s_threadCompleteCondition.notify_all();
 
 		//Wait until an event arises
-		if(s_callbacksEnabled.load() && (s_windowCount.load() > 0)){
+		if(s_windowCount.load() > 0){
 			lock.unlock();
+			s_enableCbks.store(true);
+
 			glfwWaitEvents();
+
+			s_enableCbks.store(false);
 			lock.lock();
 		} else {
 			s_threadContinueCondition.wait(lock);
@@ -158,7 +167,7 @@ void GLFW::threadFunc(){
 }
 
 void GLFW::threadContinue(){
-	if(s_callbacksEnabled.load() && (s_windowCount.load() > 0)){
+	if(s_windowCount.load() > 0){
 		glfwPostEmptyEvent();
 	} else {
 		s_threadContinueCondition.notify_all();
@@ -215,14 +224,11 @@ const GLFW::Monitor& GLFW::getMonitor(GLFWmonitor* mon){
 
 
 //Callbacks
-void GLFW::setCallbacksEnabled(bool ena){
-	std::lock_guard<std::mutex>  lock(s_threadMutex);
-	threadContinue();
-	s_callbacksEnabled.store(ena);
-}
 
 void GLFW::monitorCbk(GLFWmonitor* mon, int evnt){
-	if(s_callbacksEnabled.load()) {
+	if(s_enableCbks.load()) {
+		std::lock_guard<std::mutex> lock(s_cbkMutex);
+
 		if (evnt == GLFW_CONNECTED) {
 			// The monitor was connected
 			addMonitor(mon);
@@ -234,7 +240,9 @@ void GLFW::monitorCbk(GLFWmonitor* mon, int evnt){
 }
 
 void GLFW::positionCbk(GLFWwindow* win, int x, int y){
-	if(s_callbacksEnabled.load()) {
+	if(s_enableCbks.load()) {
+		std::lock_guard<std::mutex> lock(s_cbkMutex);
+
 		Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
 
 		if(window->m_callbacks.positionCbk){
@@ -244,7 +252,9 @@ void GLFW::positionCbk(GLFWwindow* win, int x, int y){
 }
 
 void GLFW::sizeCbk(GLFWwindow* win, int x, int y){
-	if(s_callbacksEnabled.load()) {
+	if(s_enableCbks.load()) {
+		std::lock_guard<std::mutex> lock(s_cbkMutex);
+
 		Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
 
 		if(window->m_callbacks.sizeCbk){
@@ -254,7 +264,9 @@ void GLFW::sizeCbk(GLFWwindow* win, int x, int y){
 }
 
 void GLFW::closeCbk(GLFWwindow* win){
-	if(s_callbacksEnabled.load()) {
+	if(s_enableCbks.load()) {
+		std::lock_guard<std::mutex> lock(s_cbkMutex);
+
 		Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
 
 		if(window->m_callbacks.closeCbk){
@@ -264,7 +276,9 @@ void GLFW::closeCbk(GLFWwindow* win){
 }
 
 void GLFW::refreshCbk(GLFWwindow* win){
-	if(s_callbacksEnabled.load()) {
+	if(s_enableCbks.load()) {
+		std::lock_guard<std::mutex> lock(s_cbkMutex);
+
 		Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
 
 		if(window->m_callbacks.refreshCbk){
@@ -274,7 +288,9 @@ void GLFW::refreshCbk(GLFWwindow* win){
 }
 
 void GLFW::focusCbk(GLFWwindow* win, int x){
-	if(s_callbacksEnabled.load()) {
+	if(s_enableCbks.load()) {
+		std::lock_guard<std::mutex> lock(s_cbkMutex);
+
 		Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
 
 		if(window->m_callbacks.focusCbk){
@@ -284,7 +300,9 @@ void GLFW::focusCbk(GLFWwindow* win, int x){
 }
 
 void GLFW::iconifyCbk(GLFWwindow* win, int x){
-	if(s_callbacksEnabled.load()) {
+	if(s_enableCbks.load()) {
+		std::lock_guard<std::mutex> lock(s_cbkMutex);
+
 		Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
 
 		if(window->m_callbacks.stateCbk){
@@ -298,7 +316,9 @@ void GLFW::iconifyCbk(GLFWwindow* win, int x){
 }
 
 void GLFW::maximizeCbk(GLFWwindow* win, int x){
-	if(s_callbacksEnabled.load()) {
+	if(s_enableCbks.load()) {
+		std::lock_guard<std::mutex> lock(s_cbkMutex);
+
 		Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
 
 		if(window->m_callbacks.stateCbk){
@@ -312,7 +332,9 @@ void GLFW::maximizeCbk(GLFWwindow* win, int x){
 }
 
 void GLFW::framebufferCbk(GLFWwindow* win, int x, int y){
-	if(s_callbacksEnabled.load()) {
+	if(s_enableCbks.load()) {
+		std::lock_guard<std::mutex> lock(s_cbkMutex);
+
 		Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
 
 		if(window->m_callbacks.resolutionCbk){
@@ -322,7 +344,9 @@ void GLFW::framebufferCbk(GLFWwindow* win, int x, int y){
 }
 
 void GLFW::scaleCbk(GLFWwindow* win, float x, float y){
-	if(s_callbacksEnabled.load()) {
+	if(s_enableCbks.load()) {
+		std::lock_guard<std::mutex> lock(s_cbkMutex);
+
 		Window* window = static_cast<Window*>(glfwGetWindowUserPointer(win));
 
 		if(window->m_callbacks.scaleCbk){
@@ -409,19 +433,23 @@ GLFW::Window::Window(	const  Math::Vec2i& size,
 						const std::string_view& name )
 	: m_window(ZUAZO_GLFW_THREAD_EXECUTE(createWindow,
 		size.x, size.y, 
-		name.data()
+		name.data(),
+		static_cast<void*>(this)
 	))
 {
-	glfwSetWindowUserPointer(m_window, this);
+	if(m_window == nullptr){
+		throw Exception("Error creating the GLFW window");
+	}
 }
 
-GLFW::Window::Window(Window&& other)
-	: m_window(other.m_window)
-	, m_callbacks(std::move(other.m_callbacks))
-{
+GLFW::Window::Window(Window&& other) {
+	std::lock_guard<std::mutex> lock(GLFW::s_cbkMutex);
+
+	m_window = other.m_window;
 	other.m_window = nullptr;
 
 	glfwSetWindowUserPointer(m_window, this);
+	m_callbacks = std::move(other.m_callbacks);
 }
 
 GLFW::Window::~Window(){
@@ -431,6 +459,8 @@ GLFW::Window::~Window(){
 }
 
 GLFW::Window& GLFW::Window::operator=(Window&& other){
+	std::lock_guard<std::mutex> lock(GLFW::s_cbkMutex);
+
 	if(m_window){
 		ZUAZO_GLFW_THREAD_EXECUTE(destroyWindow, m_window);
 	}
@@ -480,6 +510,7 @@ void GLFW::Window::setName(const std::string_view& name){
 		m_window, name.data()
 	);
 }
+
 
 
 void GLFW::Window::setState(State st){
@@ -549,6 +580,17 @@ GLFW::Window::State GLFW::Window::getState() const{
 	return result;
 }
 
+void GLFW::Window::setStateCallback(StateCallback&& cbk){
+	std::lock_guard<std::mutex> lock(GLFW::s_cbkMutex);
+	m_callbacks.stateCbk = std::move(cbk);
+}
+
+const GLFW::Window::StateCallback& GLFW::Window::getStateCallback() const{
+	return m_callbacks.stateCbk;
+}
+
+
+
 void GLFW::Window::setMonitor(const Monitor& mon){
 	if(mon){
 		setMonitor(mon, mon.getMode());
@@ -611,6 +653,7 @@ const GLFW::Monitor& GLFW::Window::getMonitor() const{
 }
 
 
+
 void GLFW::Window::setPosition(const Math::Vec2i& pos){
 	ZUAZO_GLFW_THREAD_EXECUTE(glfwSetWindowPos, m_window, pos.x, pos.y);
 }
@@ -620,6 +663,16 @@ Math::Vec2i GLFW::Window::getPosition() const{
 	ZUAZO_GLFW_THREAD_EXECUTE(glfwGetWindowPos, m_window, &result.x, &result.y);
 	return result;
 }
+
+void GLFW::Window::setPositionCallback(PositionCallback&& cbk){
+	std::lock_guard<std::mutex> lock(GLFW::s_cbkMutex);
+	m_callbacks.positionCbk = std::move(cbk);
+}
+
+const GLFW::Window::PositionCallback& GLFW::Window::getPositionCallback() const{
+	return m_callbacks.positionCbk;
+}
+
 
 
 void GLFW::Window::setSize(const Math::Vec2i& size){
@@ -632,6 +685,16 @@ Math::Vec2i GLFW::Window::getSize() const{
 	return result;
 }
 
+void GLFW::Window::setSizeCallback(SizeCallback&& cbk){
+	std::lock_guard<std::mutex> lock(GLFW::s_cbkMutex);
+	m_callbacks.sizeCbk = std::move(cbk);
+}
+
+const GLFW::Window::SizeCallback& GLFW::Window::getSizeCallback() const{
+	return m_callbacks.sizeCbk;
+}
+
+
 
 void GLFW::Window::setOpacity(float opa){
 	ZUAZO_GLFW_THREAD_EXECUTE(glfwSetWindowOpacity, m_window, opa);
@@ -641,11 +704,23 @@ float GLFW::Window::getOpacity() const{
 	return ZUAZO_GLFW_THREAD_EXECUTE(glfwGetWindowOpacity, m_window);
 }
 
+
+
 Resolution GLFW::Window::getResolution() const{
 	int x, y;
 	ZUAZO_GLFW_THREAD_EXECUTE(glfwGetFramebufferSize, m_window, &x, &y);
 	return Resolution(x, y);
 }
+
+void GLFW::Window::setResolutionCallback(ResolutionCallback&& cbk){
+	std::lock_guard<std::mutex> lock(GLFW::s_cbkMutex);
+	m_callbacks.resolutionCbk = std::move(cbk);
+}
+
+const GLFW::Window::ResolutionCallback& GLFW::Window::getResolutionCallback() const{
+	return m_callbacks.resolutionCbk;
+}
+
 
 
 Math::Vec2f GLFW::Window::getScale() const{
@@ -653,6 +728,16 @@ Math::Vec2f GLFW::Window::getScale() const{
 	ZUAZO_GLFW_THREAD_EXECUTE(glfwGetWindowContentScale, m_window, &result.x, &result.y);
 	return result;
 }
+
+void GLFW::Window::setScaleCallback(ScaleCallback&& cbk){
+	std::lock_guard<std::mutex> lock(GLFW::s_cbkMutex);
+	m_callbacks.scaleCbk = std::move(cbk);
+}
+
+const GLFW::Window::ScaleCallback& GLFW::Window::getScaleCallback() const{
+	return m_callbacks.scaleCbk;
+}
+
 
 
 void GLFW::Window::close(){
@@ -664,24 +749,46 @@ bool GLFW::Window::shouldClose() const{
 	return ZUAZO_GLFW_THREAD_EXECUTE(glfwWindowShouldClose, m_window);
 }
 
+void GLFW::Window::setCloseCallback(CloseCallback&& cbk){
+	std::lock_guard<std::mutex> lock(GLFW::s_cbkMutex);
+	m_callbacks.closeCbk = std::move(cbk);
+}
+
+const GLFW::Window::CloseCallback& GLFW::Window::getCloseCallback() const{
+	return m_callbacks.closeCbk;
+}
+
+
 
 void GLFW::Window::focus(){
 	return ZUAZO_GLFW_THREAD_EXECUTE(glfwFocusWindow, m_window);
 }
 
-
-void GLFW::Window::setCallbacks(Callbacks&& cbks){
-	m_callbacks = std::move(cbks);
+void GLFW::Window::setFocusCallback(FocusCallback&& cbk){
+	std::lock_guard<std::mutex> lock(GLFW::s_cbkMutex);
+	m_callbacks.focusCbk = std::move(cbk);
 }
 
-const GLFW::Window::Callbacks& GLFW::Window::getCallbacks() const{
-	return m_callbacks;
+const GLFW::Window::FocusCallback& GLFW::Window::getFocusCallback() const{
+	return m_callbacks.focusCbk;
+}
+
+
+
+void GLFW::Window::setRefreshCallback(RefreshCallback&& cbk){
+	std::lock_guard<std::mutex> lock(GLFW::s_cbkMutex);
+	m_callbacks.refreshCbk = std::move(cbk);
+}
+
+const GLFW::Window::RefreshCallback& GLFW::Window::getRefreshCallback() const{
+	return m_callbacks.refreshCbk;
 }
 
 
 //Create / Destroy
 GLFWwindow* GLFW::Window::createWindow(	int x, int y, 
-										const char* name )
+										const char* name,
+										void* usrPtr )
 {
 	//Set Vulkan compatibility
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -695,10 +802,11 @@ GLFWwindow* GLFW::Window::createWindow(	int x, int y,
 	);
 
 	if(win == nullptr){
-		throw Exception("Error creating the window");
+		return nullptr;
 	}
 
 	//Set all callbacks
+	glfwSetWindowUserPointer(win, usrPtr);
 	glfwSetWindowPosCallback(win, GLFW::positionCbk);
 	glfwSetWindowSizeCallback(win, GLFW::sizeCbk);
 	glfwSetWindowCloseCallback(win, GLFW::closeCbk);
