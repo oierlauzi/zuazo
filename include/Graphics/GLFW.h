@@ -30,9 +30,7 @@ public:
 
 	GLFW& operator=(const GLFW& other) = delete;
 
-	static std::mutex&							getCallbackMutex();
-
-	static const std::vector<Monitor>& 			getMonitors();
+	static std::vector<Monitor> 				getMonitors();
 
 	static std::vector<vk::ExtensionProperties> getRequiredVulkanExtensions();
 	static bool									getPresentationSupport(	const vk::Instance& instance, 
@@ -45,6 +43,10 @@ public:
 	static const Monitor NO_MONITOR;
 
 private:
+	using MonitorHandle = GLFWmonitor*;
+	using WindowHandle = GLFWwindow*;
+
+
 	static std::atomic<size_t>		s_instanceCount;
 	static std::atomic<size_t>		s_windowCount;
 
@@ -54,11 +56,9 @@ private:
 	static std::condition_variable	s_threadContinueCondition;
 	static std::condition_variable	s_threadCompleteCondition;
 	static std::queue<std::function<void(void)>> s_threadExecutions;
-
-	static std::mutex				s_cbkMutex;
 	static std::atomic<bool>		s_enableCbks;
 
-	static std::vector<Monitor>		s_monitors;
+	static std::vector<MonitorHandle> s_monitors;
 
 	static void 					initialize();
 	static void 					terminate();
@@ -68,20 +68,20 @@ private:
 	template<typename T, typename... Args>
 	static T 						threadExecute(std::function<T(Args...)> func, Args... args);
 
-	static void						addMonitor(GLFWmonitor* mon);
-	static void						eraseMonitor(GLFWmonitor* mon);
-	static const Monitor&			getMonitor(GLFWmonitor* mon);
+	static void						addMonitor(MonitorHandle mon);
+	static void						eraseMonitor(MonitorHandle mon);
+	static bool						isValid(MonitorHandle mon);
 
-	static void						monitorCbk(GLFWmonitor* mon, int evnt);
-	static void						positionCbk(GLFWwindow* win, int x, int y);
-	static void						sizeCbk(GLFWwindow* win, int x, int y);
-	static void						closeCbk(GLFWwindow* win);
-	static void						refreshCbk(GLFWwindow* win);
-	static void						focusCbk(GLFWwindow* win, int x);
-	static void						iconifyCbk(GLFWwindow* win, int x);
-	static void						maximizeCbk(GLFWwindow* win, int x);
-	static void						framebufferCbk(GLFWwindow* win, int x, int y);
-	static void						scaleCbk(GLFWwindow* win, float x, float y);
+	static void						monitorCbk(MonitorHandle mon, int evnt);
+	static void						positionCbk(WindowHandle win, int x, int y);
+	static void						sizeCbk(WindowHandle win, int x, int y);
+	static void						closeCbk(WindowHandle win);
+	static void						refreshCbk(WindowHandle win);
+	static void						focusCbk(WindowHandle win, int x);
+	static void						iconifyCbk(WindowHandle win, int x);
+	static void						maximizeCbk(WindowHandle win, int x);
+	static void						framebufferCbk(WindowHandle win, int x, int y);
+	static void						scaleCbk(WindowHandle win, float x, float y);
 };
 
 
@@ -98,12 +98,10 @@ public:
 	};
 
 	Monitor() = default;
-	Monitor(const Monitor& other) = delete; 
-	Monitor(Monitor&& other);
+	Monitor(const Monitor& other) = default; 
 	~Monitor() = default;
 
-	Monitor&							operator=(const Monitor& other) = delete;
-	Monitor&							operator=(Monitor&& other);
+	Monitor&							operator=(const Monitor& other) = default;
 
 	operator bool() const;
 
@@ -114,9 +112,15 @@ public:
 	std::vector<Mode>                   getModes() const;
 
 private:
-	Monitor(GLFWmonitor* mon);
+	Monitor(MonitorHandle mon);
 
-	GLFWmonitor*                        m_monitor = nullptr;
+	MonitorHandle						m_monitor = nullptr;
+
+	static std::string					getNameImpl(MonitorHandle mon);
+	static Math::Vec2i					getPositionImpl(MonitorHandle mon);
+	static Math::Vec2d					getPhysicalSizeImpl(MonitorHandle mon);
+	static Mode							getModeImpl(MonitorHandle mon);
+	static std::vector<Mode>			getModesImpl(MonitorHandle mon);
 };
 
 
@@ -163,7 +167,7 @@ public:
 
 	void						setMonitor(const Monitor& mon);
 	void						setMonitor(const Monitor& mon, const Monitor::Mode& mode);
-	const Monitor&				getMonitor() const;
+	Monitor						getMonitor() const;
 
 	void						setPosition(const Math::Vec2i& pos);
 	Math::Vec2i					getPosition() const;
@@ -216,15 +220,43 @@ private:
 		FocusCallback				focusCbk;
 	};
 
-	Callbacks					m_callbacks;	
-	std::optional<WindowGeometry> m_windowedState;
+	Callbacks						m_callbacks;	
+	WindowGeometry 					m_windowedState;
 
-	GLFWwindow* 				m_window = nullptr;
+	WindowHandle 					m_window = nullptr;
 
-	static GLFWwindow*		createWindow(	int x, int y, 
-											const char* name,
-											void* usrPtr );
-	static void				destroyWindow(GLFWwindow* window);
+	static WindowHandle				createWindow(	int x, int y, 
+													const char* name,
+													void* usrPtr );
+	static void						destroyWindow(WindowHandle window);
+
+	static void						setNameImpl(WindowHandle win, std::string_view name);
+
+	static void						setStateImpl(	WindowHandle win,
+													WindowGeometry* windowedGeom,
+													State st );
+	static State					getStateImpl(WindowHandle win);
+
+	static void						setMonitorImpl(	WindowHandle win, 
+													WindowGeometry* windowedGeom,
+													Monitor newMon, 
+													Monitor::Mode mode );
+	static Monitor					getMonitorImpl(WindowHandle win);
+
+	static void						setPositionImpl(WindowHandle win, Math::Vec2i pos);
+	static Math::Vec2i				getPositionImpl(WindowHandle win);
+
+	static void						setSizeImpl(WindowHandle win, Math::Vec2i size);
+	static Math::Vec2i				getSizeImpl(WindowHandle win);
+
+	static void						setOpacityImpl(WindowHandle win, float opa);
+	static float					getOpacityImpl(WindowHandle win);
+
+	static Resolution				getResolutionImpl(WindowHandle win);
+
+	static Math::Vec2f				getScaleImpl(WindowHandle win);
+
+	static void						focusImpl(WindowHandle win);
 
 };
 
