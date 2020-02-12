@@ -6,10 +6,6 @@
 
 namespace Zuazo::Graphics {
 
-#define ZUAZO_GLFW_THREAD_EXECUTE(func, ...) GLFW::threadExecute(std::function{func}, __VA_ARGS__)
-#define ZUAZO_GLFW_THREAD_EXECUTE0(func) GLFW::threadExecute(std::function{func})
-
-
 /*
  * GLFW
  */
@@ -176,18 +172,18 @@ void GLFW::threadContinue(){
 	}
 }
 
-template<typename T, typename... Args>
-T GLFW::threadExecute(std::function<T(Args...)> func, Args... args){
+template<typename Ret, typename Func, typename... Args>
+Ret GLFW::threadExecute(Func&& func, Args&&... args) {
 	if(std::this_thread::get_id() == s_thread.get_id()){
-		return func(std::move(args)...); //We are on the main thread. Simply execute it
+		return func(std::forward<Args>(args)...); //We are on the main thread. Simply execute it
 	}else {
 		std::unique_lock<std::mutex> lock(s_threadMutex);
 
 		//Create a future object to pass it to the main thread
 		auto futur = std::async(
 			std::launch::deferred, 
-			std::move(func), 
-			std::move(args)...
+			std::forward<Func>(func), 
+			std::forward<Args>(args)...
 		);
 		s_threadExecutions.emplace([&futur] () -> void { futur.wait(); });
 		
@@ -357,27 +353,27 @@ GLFW::Monitor::Monitor(MonitorHandle mon)
 }
 
 GLFW::Monitor::operator bool() const {
-	return ZUAZO_GLFW_THREAD_EXECUTE(isValid, m_monitor);
+	return threadExecute<bool>(isValid, m_monitor);
 }
 
 std::string GLFW::Monitor::getName() const {
-	return ZUAZO_GLFW_THREAD_EXECUTE(getNameImpl, m_monitor);
+	return threadExecute<std::string>(getNameImpl, m_monitor);
 }
 
 Math::Vec2i GLFW::Monitor::getPosition() const {
-	return ZUAZO_GLFW_THREAD_EXECUTE(getPositionImpl, m_monitor);
+	return threadExecute<Math::Vec2i>(getPositionImpl, m_monitor);
 }
 
 Math::Vec2d GLFW::Monitor::getPhysicalSize() const {
-	return ZUAZO_GLFW_THREAD_EXECUTE(getPhysicalSizeImpl, m_monitor);
+	return threadExecute<Math::Vec2d>(getPhysicalSizeImpl, m_monitor);
 }
 
 GLFW::Monitor::Mode GLFW::Monitor::getMode() const {
-	return ZUAZO_GLFW_THREAD_EXECUTE(getModeImpl, m_monitor);
+	return threadExecute<Mode>(getModeImpl, m_monitor);
 }
 
 std::vector<GLFW::Monitor::Mode> GLFW::Monitor::getModes() const {
-	return ZUAZO_GLFW_THREAD_EXECUTE(getModesImpl, m_monitor);
+	return threadExecute<std::vector<Mode>>(getModesImpl, m_monitor);
 }
 
 std::string GLFW::Monitor::getNameImpl(MonitorHandle mon){
@@ -449,9 +445,8 @@ std::vector<GLFW::Monitor::Mode> GLFW::Monitor::getModesImpl(MonitorHandle mon){
 
 GLFW::Window::Window(	const  Math::Vec2i& size, 
 						const std::string_view& name )
-	: m_window(ZUAZO_GLFW_THREAD_EXECUTE(createWindow,
-		size.x, size.y, 
-		name.data(),
+	: m_window(threadExecute<WindowHandle>(createWindow,
+		size, name,
 		static_cast<void*>(this)
 	))
 {
@@ -472,13 +467,13 @@ GLFW::Window::Window(Window&& other) {
 
 GLFW::Window::~Window(){
 	if(m_window){
-		ZUAZO_GLFW_THREAD_EXECUTE(destroyWindow, m_window);
+		threadExecute<void>(destroyWindow, m_window);
 	}
 }
 
 GLFW::Window& GLFW::Window::operator=(Window&& other){
 	if(m_window){
-		ZUAZO_GLFW_THREAD_EXECUTE(destroyWindow, m_window);
+		threadExecute<void>(destroyWindow, m_window);
 	}
 
 	std::lock_guard<std::mutex> lock(GLFW::s_threadMutex);
@@ -524,17 +519,17 @@ vk::UniqueSurfaceKHR GLFW::Window::getSurface(const Vulkan& vulkan) const {
 
 
 void GLFW::Window::setName(const std::string_view& name){
-	ZUAZO_GLFW_THREAD_EXECUTE(setNameImpl, m_window, name);
+	threadExecute<void>(setNameImpl, m_window, name);
 }
 
 
 
 void GLFW::Window::setState(State st){
-	ZUAZO_GLFW_THREAD_EXECUTE(setStateImpl, m_window, &m_windowedState, st);
+	threadExecute<void>(setStateImpl, m_window, &m_windowedState, st);
 }
 
 GLFW::Window::State GLFW::Window::getState() const{
-	return ZUAZO_GLFW_THREAD_EXECUTE(getStateImpl, m_window);
+	return threadExecute<State>(getStateImpl, m_window);
 }
 
 void GLFW::Window::setStateCallback(StateCallback&& cbk){
@@ -557,21 +552,21 @@ void GLFW::Window::setMonitor(const Monitor& mon){
 }
 
 void GLFW::Window::setMonitor(const Monitor& mon, const Monitor::Mode& mode){
-	ZUAZO_GLFW_THREAD_EXECUTE(setMonitorImpl, m_window, &m_windowedState, mon, mode);
+	threadExecute<void>(setMonitorImpl, m_window, &m_windowedState, mon, mode);
 }
 
 GLFW::Monitor GLFW::Window::getMonitor() const{
-	return Monitor(ZUAZO_GLFW_THREAD_EXECUTE(getMonitorImpl, m_window));
+	return Monitor(threadExecute<Monitor>(getMonitorImpl, m_window));
 }
 
 
 
 void GLFW::Window::setPosition(const Math::Vec2i& pos){
-	ZUAZO_GLFW_THREAD_EXECUTE(setPositionImpl, m_window, pos);
+	threadExecute<void>(setPositionImpl, m_window, pos);
 }
 
 Math::Vec2i GLFW::Window::getPosition() const{
-	return ZUAZO_GLFW_THREAD_EXECUTE(getPositionImpl, m_window);
+	return threadExecute<Math::Vec2i>(getPositionImpl, m_window);
 }
 
 void GLFW::Window::setPositionCallback(PositionCallback&& cbk){
@@ -586,11 +581,11 @@ const GLFW::Window::PositionCallback& GLFW::Window::getPositionCallback() const{
 
 
 void GLFW::Window::setSize(const Math::Vec2i& size){
-	ZUAZO_GLFW_THREAD_EXECUTE(setSizeImpl, m_window, size);
+	threadExecute<void>(setSizeImpl, m_window, size);
 }
 
 Math::Vec2i GLFW::Window::getSize() const{
-	return ZUAZO_GLFW_THREAD_EXECUTE(getSizeImpl, m_window);
+	return threadExecute<Math::Vec2i>(getSizeImpl, m_window);
 }
 
 void GLFW::Window::setSizeCallback(SizeCallback&& cbk){
@@ -605,17 +600,17 @@ const GLFW::Window::SizeCallback& GLFW::Window::getSizeCallback() const{
 
 
 void GLFW::Window::setOpacity(float opa){
-	ZUAZO_GLFW_THREAD_EXECUTE(setOpacityImpl, m_window, opa);
+	threadExecute<void>(setOpacityImpl, m_window, opa);
 }
 
 float GLFW::Window::getOpacity() const{
-	return ZUAZO_GLFW_THREAD_EXECUTE(getOpacityImpl, m_window);
+	return threadExecute<float>(getOpacityImpl, m_window);
 }
 
 
 
 Resolution GLFW::Window::getResolution() const{
-	return ZUAZO_GLFW_THREAD_EXECUTE(getResolutionImpl, m_window);
+	return threadExecute<Resolution>(getResolutionImpl, m_window);
 }
 
 void GLFW::Window::setResolutionCallback(ResolutionCallback&& cbk){
@@ -630,7 +625,7 @@ const GLFW::Window::ResolutionCallback& GLFW::Window::getResolutionCallback() co
 
 
 Math::Vec2f GLFW::Window::getScale() const{
-	return ZUAZO_GLFW_THREAD_EXECUTE(getScaleImpl, m_window);
+	return threadExecute<Math::Vec2f>(getScaleImpl, m_window);
 }
 
 void GLFW::Window::setScaleCallback(ScaleCallback&& cbk){
@@ -645,7 +640,7 @@ const GLFW::Window::ScaleCallback& GLFW::Window::getScaleCallback() const{
 
 
 void GLFW::Window::close(){
-	ZUAZO_GLFW_THREAD_EXECUTE(destroyWindow, m_window);
+	threadExecute<void>(destroyWindow, m_window);
 	m_window = nullptr;
 }
 
@@ -665,7 +660,7 @@ const GLFW::Window::CloseCallback& GLFW::Window::getCloseCallback() const{
 
 
 void GLFW::Window::focus(){
-	ZUAZO_GLFW_THREAD_EXECUTE(focusImpl, m_window);
+	threadExecute<void>(focusImpl, m_window);
 }
 
 void GLFW::Window::setFocusCallback(FocusCallback&& cbk){
@@ -690,8 +685,8 @@ const GLFW::Window::RefreshCallback& GLFW::Window::getRefreshCallback() const{
 
 
 //Create / Destroy
-GLFW::WindowHandle GLFW::Window::createWindow(	int x, int y, 
-												const char* name,
+GLFW::WindowHandle GLFW::Window::createWindow(	const Math::Vec2i& size, 
+												const std::string_view& name,
 												void* usrPtr )
 {
 	//Set Vulkan compatibility
@@ -699,8 +694,8 @@ GLFW::WindowHandle GLFW::Window::createWindow(	int x, int y,
 
 	//Create the window
 	WindowHandle win = glfwCreateWindow(
-		x, y,
-		name,
+		size.x, size.y,
+		name.data(),
 		static_cast<MonitorHandle>(nullptr),
 		static_cast<WindowHandle>(nullptr)
 	);
@@ -733,7 +728,7 @@ void GLFW::Window::destroyWindow(WindowHandle window) {
 
 
 
-void GLFW::Window::setNameImpl(WindowHandle win, std::string_view name){
+void GLFW::Window::setNameImpl(WindowHandle win, const std::string_view& name){
 	glfwSetWindowTitle(win, name.data());
 }
 
@@ -824,8 +819,8 @@ GLFW::Window::State GLFW::Window::getStateImpl(WindowHandle win){
 
 void GLFW::Window::setMonitorImpl(	WindowHandle win, 
 									WindowGeometry* windowedGeom,
-									Monitor newMon, 
-									Monitor::Mode mode )
+									const Monitor& newMon, 
+									const Monitor::Mode& mode )
 {
 	const auto oldMonHandle = getMonitorImpl(win).m_monitor;
 	const auto newMonHandle = newMon.m_monitor;
@@ -874,7 +869,7 @@ GLFW::Monitor GLFW::Window::getMonitorImpl(WindowHandle win){
 
 
 
-void GLFW::Window::setPositionImpl(WindowHandle win, Math::Vec2i pos){
+void GLFW::Window::setPositionImpl(WindowHandle win, const Math::Vec2i& pos){
 	glfwSetWindowPos(win, pos.x, pos.y);
 }
 
@@ -886,7 +881,7 @@ Math::Vec2i GLFW::Window::getPositionImpl(WindowHandle win){
 
 
 
-void GLFW::Window::setSizeImpl(WindowHandle win, Math::Vec2i size){
+void GLFW::Window::setSizeImpl(WindowHandle win, const Math::Vec2i& size){
 	glfwSetWindowSize(win, size.x, size.y);
 }
 

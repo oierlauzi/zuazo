@@ -65,8 +65,9 @@ private:
 
 	static void						threadFunc();
 	static void						threadContinue();
-	template<typename T, typename... Args>
-	static T 						threadExecute(std::function<T(Args...)> func, Args... args);
+	template<typename Ret, typename Func, typename... Args>
+	static Ret 						threadExecute(	Func&& func, 
+													Args&&... args );
 
 	static void						addMonitor(MonitorHandle mon);
 	static void						eraseMonitor(MonitorHandle mon);
@@ -225,12 +226,12 @@ private:
 
 	WindowHandle 					m_window = nullptr;
 
-	static WindowHandle				createWindow(	int x, int y, 
-													const char* name,
+	static WindowHandle				createWindow(	const Math::Vec2i& size, 
+													const std::string_view& name,
 													void* usrPtr );
 	static void						destroyWindow(WindowHandle window);
 
-	static void						setNameImpl(WindowHandle win, std::string_view name);
+	static void						setNameImpl(WindowHandle win, const std::string_view& name);
 
 	static void						setStateImpl(	WindowHandle win,
 													WindowGeometry* windowedGeom,
@@ -239,14 +240,14 @@ private:
 
 	static void						setMonitorImpl(	WindowHandle win, 
 													WindowGeometry* windowedGeom,
-													Monitor newMon, 
-													Monitor::Mode mode );
+													const Monitor& newMon, 
+													const Monitor::Mode& mode );
 	static Monitor					getMonitorImpl(WindowHandle win);
 
-	static void						setPositionImpl(WindowHandle win, Math::Vec2i pos);
+	static void						setPositionImpl(WindowHandle win, const Math::Vec2i& pos);
 	static Math::Vec2i				getPositionImpl(WindowHandle win);
 
-	static void						setSizeImpl(WindowHandle win, Math::Vec2i size);
+	static void						setSizeImpl(WindowHandle win, const Math::Vec2i& size);
 	static Math::Vec2i				getSizeImpl(WindowHandle win);
 
 	static void						setOpacityImpl(WindowHandle win, float opa);
