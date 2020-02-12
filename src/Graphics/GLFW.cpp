@@ -461,7 +461,7 @@ GLFW::Window::Window(Window&& other) {
 	m_window = other.m_window;
 	other.m_window = nullptr;
 
-	glfwSetWindowUserPointer(m_window, this);
+	glfwSetWindowUserPointer(m_window, this); //Thread-safe GLFW function
 	m_callbacks = std::move(other.m_callbacks);
 }
 
@@ -483,7 +483,7 @@ GLFW::Window& GLFW::Window::operator=(Window&& other){
 	m_window = other.m_window;
 	other.m_window = nullptr;
 
-	glfwSetWindowUserPointer(m_window, this);
+	glfwSetWindowUserPointer(m_window, this); //Thread-safe GLFW function
 
 	return *this;
 }
@@ -500,7 +500,7 @@ vk::UniqueSurfaceKHR GLFW::Window::getSurface(const Vulkan& vulkan) const {
 
 	//Try to create the surface
 	VkSurfaceKHR surface;
-	VkResult err = glfwCreateWindowSurface(
+	VkResult err = glfwCreateWindowSurface( //Thread-safe GLFW function
 		vulkan.getInstance(), 
 		m_window, 
 		nullptr, 
@@ -645,7 +645,7 @@ void GLFW::Window::close(){
 }
 
 bool GLFW::Window::shouldClose() const{
-	return glfwWindowShouldClose(m_window);
+	return glfwWindowShouldClose(m_window); //Thread-safe GLFW function
 }
 
 void GLFW::Window::setCloseCallback(CloseCallback&& cbk){
