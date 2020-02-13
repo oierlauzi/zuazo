@@ -13,6 +13,7 @@
 #include <string_view>
 #include <queue>
 #include <optional>
+#include <memory>
 
 #define GLFW_INCLUDE_NONE //Don't include GL
 #include <GLFW/glfw3.h>
@@ -24,13 +25,22 @@ public:
 	class Monitor;
 	class Window;
 
+	enum class MonitorEvent {
+		CONNECTED,
+		DISCONNECTED
+	};
+
+	using MonitorCallback = std::function<void(Monitor, MonitorEvent)>;
+
 	GLFW();
 	GLFW(const GLFW& other) = delete;
 	~GLFW();
 
 	GLFW& operator=(const GLFW& other) = delete;
 
-	static std::vector<Monitor> 				getMonitors();
+	static std::vector<Monitor>					getMonitors();
+	static void									setMonitorCallback(MonitorCallback&& cbk);
+	static const MonitorCallback&				getMonitorCallback();
 
 	static std::vector<vk::ExtensionProperties> getRequiredVulkanExtensions();
 	static bool									getPresentationSupport(	const vk::Instance& instance, 
@@ -46,43 +56,21 @@ private:
 	using MonitorHandle = GLFWmonitor*;
 	using WindowHandle = GLFWwindow*;
 
+	class Thread;
 
-	static std::atomic<size_t>		s_instanceCount;
-	static std::atomic<size_t>		s_windowCount;
+	static std::atomic<size_t>			s_instanceCount;
+	static std::unique_ptr<Thread>		s_thread;
+	static std::mutex					s_cbkMutex;
 
-	static std::thread				s_thread;
-	static std::atomic<bool>		s_threadExit;
-	static std::mutex				s_threadMutex;
-	static std::condition_variable	s_threadContinueCondition;
-	static std::condition_variable	s_threadCompleteCondition;
-	static std::queue<std::function<void(void)>> s_threadExecutions;
-	static std::atomic<bool>		s_enableCbks;
+	static MonitorCallback				s_monitorCbk;
+	static MonitorHandle				s_activeMonitorCbk;
 
-	static std::vector<MonitorHandle> s_monitors;
+	static void 						initialize();
+	static void 						terminate();
 
-	static void 					initialize();
-	static void 					terminate();
+	static std::vector<Monitor>			getMonitorsImpl();
 
-	static void						threadFunc();
-	static void						threadContinue();
-	template<typename Ret, typename Func, typename... Args>
-	static Ret 						threadExecute(	Func&& func, 
-													Args&&... args );
-
-	static void						addMonitor(MonitorHandle mon);
-	static void						eraseMonitor(MonitorHandle mon);
-	static bool						isValid(MonitorHandle mon);
-
-	static void						monitorCbk(MonitorHandle mon, int evnt);
-	static void						positionCbk(WindowHandle win, int x, int y);
-	static void						sizeCbk(WindowHandle win, int x, int y);
-	static void						closeCbk(WindowHandle win);
-	static void						refreshCbk(WindowHandle win);
-	static void						focusCbk(WindowHandle win, int x);
-	static void						iconifyCbk(WindowHandle win, int x);
-	static void						maximizeCbk(WindowHandle win, int x);
-	static void						framebufferCbk(WindowHandle win, int x, int y);
-	static void						scaleCbk(WindowHandle win, float x, float y);
+	static void							monitorCbk(MonitorHandle mon, int evnt);
 };
 
 
@@ -117,17 +105,18 @@ private:
 
 	MonitorHandle						m_monitor = nullptr;
 
+	static bool							isValidImpl(MonitorHandle mon);
 	static std::string					getNameImpl(MonitorHandle mon);
 	static Math::Vec2i					getPositionImpl(MonitorHandle mon);
 	static Math::Vec2d					getPhysicalSizeImpl(MonitorHandle mon);
 	static Mode							getModeImpl(MonitorHandle mon);
 	static std::vector<Mode>			getModesImpl(MonitorHandle mon);
+
 };
 
 
 
 class GLFW::Window {
-	friend GLFW;
 public:
 	enum class State {
 		NORMAL,
@@ -228,7 +217,7 @@ private:
 
 	static WindowHandle				createWindow(	const Math::Vec2i& size, 
 													const std::string_view& name,
-													void* usrPtr );
+													Window* usrPtr );
 	static void						destroyWindow(WindowHandle window);
 
 	static void						setNameImpl(WindowHandle win, const std::string_view& name);
@@ -258,6 +247,47 @@ private:
 	static Math::Vec2f				getScaleImpl(WindowHandle win);
 
 	static void						focusImpl(WindowHandle win);
+
+	static void						positionCbk(WindowHandle win, int x, int y);
+	static void						sizeCbk(WindowHandle win, int x, int y);
+	static void						closeCbk(WindowHandle win);
+	static void						refreshCbk(WindowHandle win);
+	static void						focusCbk(WindowHandle win, int x);
+	static void						iconifyCbk(WindowHandle win, int x);
+	static void						maximizeCbk(WindowHandle win, int x);
+	static void						framebufferCbk(WindowHandle win, int x, int y);
+	static void						scaleCbk(WindowHandle win, float x, float y);
+
+};
+
+class GLFW::Thread {
+	friend GLFW::Window;
+public:
+	Thread();
+	Thread(const Thread& other) = delete;
+	~Thread();
+
+	Thread& 						operator=(const Thread& other) = delete;
+
+	template<typename Ret, typename Func, typename... Args>
+	Ret 							execute(Func&& func, Args&&... args);
+
+	bool							getCallbacksEnabled() const;
+private:
+	using QueueFunc = std::function<void(void)>;
+
+	std::atomic<bool>				m_exit;
+	std::atomic<size_t>				m_windowCount;
+	std::atomic<bool>				m_cbkEnabled;
+
+	std::thread						m_thread;
+	std::mutex						m_mutex;
+	std::condition_variable			m_continueCondition;
+	std::condition_variable			m_completeCondition;
+	std::queue<QueueFunc> 			m_executions;
+
+	void							threadFunc();
+	void							threadContinue();
 
 };
 
