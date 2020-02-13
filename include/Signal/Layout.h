@@ -1,28 +1,26 @@
-#pragma once
+#include "PadBase.h" //To prevent include guard errors
 
-#include "PadBase.h"
+#ifndef ZUAZO_SIGNAL_LAYOUT_H_INCLUDED
+#define ZUAZO_SIGNAL_LAYOUT_H_INCLUDED
+
 #include "OutputPad.h"
 #include "InputPad.h"
-#include "../Zuazo.h"
-#include "../Instance.h"
 
 #include <set>
 #include <string>
+#include <string_view>
 
 namespace Zuazo::Signal {
 
 class Layout {
 	friend PadBase;
 public:
-	Layout(Instance& inst, std::string&& name = "");
+	Layout(std::string&& name = "");
 	Layout(const Layout& other) = delete;
 	Layout(Layout&& other);
 	virtual ~Layout();
 
 	Layout&                 operator=(Layout&& other);
-
-	Instance&				getInstance();
-	const Instance&			getInstance() const;
 
 	void                    setName(std::string&& name);
 	const std::string&      getName() const;
@@ -45,7 +43,7 @@ protected:
 	void                    removePad(PadBase& pad);
 
 private:
-	Instance&				m_instance;
+	//TODO add some form of base layout
 
 	std::string             m_name;
 	std::set<PadBase*>      m_pads;
@@ -61,3 +59,4 @@ private:
 }
 
 #include "Layout.inl"
+#endif

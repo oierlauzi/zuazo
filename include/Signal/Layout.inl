@@ -1,20 +1,19 @@
 #include "Layout.h"
 
-#include <utility>
 #include "../Exception.h"
+
+#include <utility>
 
 namespace Zuazo::Signal {
 
-inline Layout::Layout(Instance& inst, std::string&& name) :
-	m_instance(inst),
-	m_name(std::move(name))
+inline Layout::Layout(std::string&& name) 
+	: m_name(std::move(name))
 {
 }
 
-inline Layout::Layout(Layout&& other) :
-	m_instance(other.m_instance),
-	m_name(std::move(other.m_name)),
-	m_pads(std::move(other.m_pads))
+inline Layout::Layout(Layout&& other) 
+	: m_name(std::move(other.m_name))
+	, m_pads(std::move(other.m_pads))
 {
 	for(auto pad : m_pads){
 		pad->m_owner = this;
@@ -40,14 +39,8 @@ inline Layout& Layout::operator=(Layout&& other){
 	for(auto pad : m_pads){
 		pad->m_owner = this;
 	}
-}
 
-Instance& Layout::getInstance(){
-	return m_instance;
-}
-
-const Instance& Layout::getInstance() const{
-	return m_instance;
+	return *this;
 }
 
 inline void Layout::setName(std::string&& name){
@@ -101,7 +94,7 @@ inline void Layout::removePad(PadBase& pad){
 }
 
 inline PadBase& Layout::findPad(	const std::string_view& name, 
-									PadBase::Direction dir, 
+									PadBase::Direction  dir, 
 									const std::type_info& type ) const
 {
 	for(auto pad : m_pads) {

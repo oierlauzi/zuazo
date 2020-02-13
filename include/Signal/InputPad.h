@@ -1,11 +1,10 @@
 #pragma once
 
-#include "PadBase.h"
-
 #include <memory>
 
 namespace Zuazo::Signal {
 
+class PadBase;
 template <typename T>
 class OutputPad;
 

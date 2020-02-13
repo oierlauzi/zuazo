@@ -43,7 +43,7 @@ inline PadBase::Direction PadBase::getDirection() const{
 
 
 
-PadBase::PadBase(const PadBase& other) :
+inline PadBase::PadBase(const PadBase& other) :
 	m_type(other.m_type),
 	m_direction(other.m_direction),
 	m_name(other.m_name)
@@ -51,7 +51,7 @@ PadBase::PadBase(const PadBase& other) :
 	if(other.m_owner) other.m_owner->addPad(*this);
 }
 
-PadBase::PadBase(PadBase&& other) :
+inline PadBase::PadBase(PadBase&& other) :
 	m_type(std::move(other.m_type)),
 	m_direction(std::move(other.m_direction)),
 	m_name(std::move(other.m_name))
@@ -63,7 +63,7 @@ PadBase::PadBase(PadBase&& other) :
 	}
 }
 
-PadBase& PadBase::operator=(const PadBase& other){
+inline PadBase& PadBase::operator=(const PadBase& other){
 	m_type = other.m_type;
 	m_direction = other.m_direction;
 	m_name = other.m_name;
@@ -75,7 +75,7 @@ PadBase& PadBase::operator=(const PadBase& other){
 	return *this;
 }
 
-PadBase& PadBase::operator=(PadBase&& other){
+inline PadBase& PadBase::operator=(PadBase&& other){
 	m_type = std::move(other.m_type);
 	m_direction = std::move(other.m_direction);
 	m_name = std::move(other.m_name);

@@ -1,5 +1,6 @@
 #include "OutputPad.h"
 
+#include "PadBase.h"
 #include "InputPad.h"
 
 #include <utility>

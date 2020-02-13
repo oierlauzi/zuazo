@@ -1,5 +1,6 @@
 #include "InputPad.h"
 
+#include "PadBase.h"
 #include "OutputPad.h"
 #include "../Exception.h"
 
@@ -23,18 +24,6 @@ inline InputPad<T>::~InputPad(){
 
 template <typename T>
 inline void InputPad<T>::setSource(OutputPad<T>* src){
-	if(src){
-		const auto owner1 = this->getOwner();
-		const auto owner2 = src->getOwner();
-
-		if(owner1 && owner2){
-			if(owner1->getInstance() != owner2->getInstance()){
-				throw Exception("Pads must be owned with the same instance");
-			}
-		}
-	}
-
-
 	if(m_source) m_source->m_consumers.erase(this);
 	m_source = src;
 	if(m_source) m_source->m_consumers.emplace(this);
