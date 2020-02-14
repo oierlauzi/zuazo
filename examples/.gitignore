@@ -1,8 +1,0 @@
-#Ignore everything except the C/C++ realted files
-*
-
-!CMakeLists.txt
-!*.hpp
-!*.cpp
-!*.h
-!*.c
