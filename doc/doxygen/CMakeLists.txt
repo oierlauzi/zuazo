@@ -8,8 +8,8 @@ if(DOXYGEN_EXECUTABLE)
     add_custom_target( 
         doxygen
         COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/
         COMMENT "Generating API documentation with Doxygen"
-        VERBATIM 
+        VERBATIM
     )
 endif()
