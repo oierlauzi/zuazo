@@ -40,10 +40,7 @@ public:
 	vk::Queue										getTransferQueue() const;
 	uint32_t										getPresentationQueueIndex() const;
 	vk::Queue										getPresentationQueue() const;
-
-	vk::FormatProperties							getFormatFeatures(vk::Format format) const;
-
-	vk::UniqueShaderModule							getShader(const Utils::BufferView<uint32_t>& code) const;
+	
 private:
 	enum QueueIndices {
 		GRAPHICS_QUEUE,

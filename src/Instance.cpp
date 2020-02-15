@@ -83,7 +83,7 @@ void Instance::setupSupportedFormats(){
 
 			if(f == vk::Format::eUndefined) continue;
 
-			const auto features = m_vulkan.getFormatFeatures(f);
+			const auto features = getFormatFeatures(m_vulkan, f);
 			const auto pix = std::tuple<ColorFormat, ColorEncoding>(format, encoding);
 
 			if(Graphics::hasSamplerSupport(features)) {

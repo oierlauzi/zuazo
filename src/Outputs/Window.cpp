@@ -1,5 +1,7 @@
 #include <Outputs/Window.h>
 #include <Graphics/VulkanConversions.h>
+#include <Graphics/VulkanUtils.h>
+
 #include <window_frag.h>
 #include <window_vert.h>
 
@@ -10,13 +12,13 @@ void Window::open(){
 
 	const auto& videoMode = getVideoMode();
 	const auto& vulkan = getInstance().getVulkan();
-	const auto extent = Graphics::toVulkan(videoMode.resoltion);
+	const auto extent = Graphics::toVulkan(videoMode.resolution);
 	const auto surfaceFormat = Graphics::toVulkan(	videoMode.colorFormat, 
 													videoMode.colorPrimaries, 
 													videoMode.colorEncoding );
 
 	//Create the window, its surface and swapchain. //TODO get surface format compatibility
-	impl.window = Graphics::GLFW::Window(videoMode.resoltion, getName());
+	impl.window = Graphics::GLFW::Window(videoMode.resolution, getName());
 	impl.surface = impl.window.getSurface(vulkan);
 	impl.swapchain = createSwapchain(vulkan, *impl.surface, extent, surfaceFormat);
 	impl.swapchainImageViews = createImageViews(vulkan, *impl.swapchain, surfaceFormat.format);
@@ -27,8 +29,20 @@ void Window::open(){
 	impl.pipeline = createPipeline(vulkan, *impl.renderPass, *impl.pipelineLayout, extent);
 	impl.framebuffers = createFramebuffers(vulkan, *impl.renderPass, impl.swapchainImageViews, extent);
 
+	//Create command pool and command buffers
+	impl.commandPool = createCommandPool(vulkan, vulkan.getGraphicsQueueIndex());
+	impl.commandBuffers = createCommandBuffers(vulkan, *impl.commandPool, impl.framebuffers.size());
+
+	//Create the semaphores
+	impl.imageAvailable = createSemaphore(vulkan);
+	impl.renderFinished = createSemaphore(vulkan);
+
 	m_implementation = std::make_unique<Implementation>(std::move(impl));
 	ZuazoBase::open();
+
+	while(true){
+		drawFrameProvisional();
+	}
 }
 
 void Window::close(){
@@ -41,6 +55,91 @@ void Window::setVideoMode(const VideoMode& videoMode) {
 	ZuazoBase::setVideoMode(videoMode);
 }
 
+void Window::drawFrameProvisional(){
+	const auto& vulkan = getInstance().getVulkan();
+	const auto& impl = *m_implementation;
+
+	const auto index = vulkan.getDevice().acquireNextImageKHR(
+		*impl.swapchain, 						
+		std::numeric_limits<uint64_t>::max(),
+		*impl.imageAvailable,
+		nullptr,
+		vulkan.getDispatcher()
+	);
+
+	const auto& cmdBuffer = *(impl.commandBuffers[index.value]);
+    const auto& frameBuffer = *(impl.framebuffers[index.value]);
+
+	//Begin creating the command buffer
+    const vk::CommandBufferBeginInfo cmdBegin(
+		vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 
+		nullptr
+	);
+    cmdBuffer.begin(cmdBegin, vulkan.getDispatcher());
+
+	const std::array clearValue = {
+		vk::ClearValue(std::array{ 0.0f, 0.0f, 0.0f, 1.0f })
+	};
+
+	vk::RenderPassBeginInfo rendBegin(
+		*impl.renderPass,
+		frameBuffer,
+		vk::Rect2D({0, 0}, Zuazo::Graphics::toVulkan(getVideoMode().resolution)),
+		clearValue.size(), clearValue.data()
+	);
+
+	cmdBuffer.beginRenderPass(rendBegin, vk::SubpassContents::eInline, vulkan.getDispatcher());
+	cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *impl.pipeline, vulkan.getDispatcher());
+
+	cmdBuffer.draw(4, 1, 0, 0, vulkan.getDispatcher());
+
+	cmdBuffer.endRenderPass(vulkan.getDispatcher());
+	cmdBuffer.end(vulkan.getDispatcher());
+
+	//Send it to the queue
+	const std::array waitSemaphores = {
+		*impl.imageAvailable
+	};
+	
+	const std::array signalSemaphores = {
+		*impl.renderFinished
+	};
+
+	const std::array commandBuffers = {
+		cmdBuffer
+	};
+
+	const std::array pipelineStages = {
+		vk::PipelineStageFlags(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+	};
+
+	const vk::SubmitInfo subInfo(
+		waitSemaphores.size(), waitSemaphores.data(),
+		pipelineStages.data(),
+		commandBuffers.size(), commandBuffers.data(),
+		signalSemaphores.size(), signalSemaphores.data()
+	);
+
+	vulkan.getGraphicsQueue().submit(subInfo, nullptr, vulkan.getDispatcher());
+
+	//Present it
+	const std::array swapchains = {
+		*impl.swapchain
+	};
+
+	const std::array indices = {
+		index.value
+	};
+
+	const vk::PresentInfoKHR presentInfo(
+		signalSemaphores.size(), signalSemaphores.data(),
+		swapchains.size(), swapchains.data(), 
+		indices.data(), nullptr
+	);
+
+	vulkan.getPresentationQueue().presentKHR(presentInfo, vulkan.getDispatcher());
+	vulkan.getPresentationQueue().waitIdle(vulkan.getDispatcher());
+}
 
 
 vk::UniqueSwapchainKHR Window::createSwapchain(	const Graphics::Vulkan& vulkan, 
@@ -160,12 +259,23 @@ vk::UniqueRenderPass Window::createRenderPass(	const Graphics::Vulkan& vulkan,
         )
     };
 
+	const std::array subpassDependencies = {
+		vk::SubpassDependency(
+			VK_SUBPASS_EXTERNAL,							//Source subpass
+			0,												//Destination subpass
+			vk::PipelineStageFlagBits::eColorAttachmentOutput,//Source stage
+			vk::PipelineStageFlagBits::eColorAttachmentOutput,//Destination stage
+			{},												//Source access mask
+			vk::AccessFlagBits::eColorAttachmentRead | 		//Destintation access mask
+				vk::AccessFlagBits::eColorAttachmentWrite
+		)
+	};
 
 	const vk::RenderPassCreateInfo createInfo(
 		{},													//Flags
 		attachments.size(), attachments.data(),				//Attachemnts
 		subpasses.size(), subpasses.data(),					//Subpasses
-		0, nullptr											//Subpass dependencies
+		subpassDependencies.size(), subpassDependencies.data()//Subpass dependencies
 	);
 
 	return vulkan.getDevice().createRenderPassUnique(
@@ -192,8 +302,8 @@ vk::UniquePipeline Window::createPipeline(	const Graphics::Vulkan& vulkan,
 											vk::PipelineLayout layout,
 											const vk::Extent2D& extent )
 {
-	const auto vertexShader = vulkan.getShader(Utils::BufferView(window_vert, sizeof(window_vert) / 4));
-	const auto fragmentShader = vulkan.getShader(Utils::BufferView(window_frag, sizeof(window_frag) / 4));
+	const auto vertexShader = createShader(vulkan, Utils::BufferView(window_vert, sizeof(window_vert) / 4));
+	const auto fragmentShader = createShader(vulkan, Utils::BufferView(window_frag, sizeof(window_frag) / 4));
 
 	constexpr auto SHADER_ENTRY_POINT = "main";
 	const std::array shaderStages = {
@@ -217,7 +327,7 @@ vk::UniquePipeline Window::createPipeline(	const Graphics::Vulkan& vulkan,
 
 	const vk::PipelineInputAssemblyStateCreateInfo inputAssembly(
 		{},													//Flags
-		vk::PrimitiveTopology::eTriangleFan,				//Topology
+		vk::PrimitiveTopology::eTriangleStrip,				//Topology
 		false												//Restart enable
 	);
 
@@ -249,7 +359,7 @@ vk::UniquePipeline Window::createPipeline(	const Graphics::Vulkan& vulkan,
 		false,												//Rasterizer discard enable
 		vk::PolygonMode::eFill,								//Plygon mode
 		vk:: CullModeFlagBits::eNone, 						//Cull faces
-		vk::FrontFace::eCounterClockwise,					//Front face direction
+		vk::FrontFace::eClockwise,							//Front face direction
 		false, 0.0f, 0.0f, 0.0f,							//Depth bias
 		1.0f												//Line width
 	);
@@ -274,7 +384,7 @@ vk::UniquePipeline Window::createPipeline(	const Graphics::Vulkan& vulkan,
 
 	const std::array colorBlendAttachments = {
 		vk::PipelineColorBlendAttachmentState(
-			true,											//Enabled
+			false,											//Enabled
 			//Cf' = Ai*Ci + (1.0-Ai)*Cf; Typical color mixing equation
 			vk::BlendFactor::eSrcAlpha,						//Source color weight
 			vk::BlendFactor::eOneMinusSrcAlpha,				//Destination color weight
@@ -283,7 +393,11 @@ vk::UniquePipeline Window::createPipeline(	const Graphics::Vulkan& vulkan,
 			//https://www.wolframalpha.com/input/?i=plot+%7C+x+%2B+y+-+x+y+%7C+x+%3D+0+to+1+y+%3D+0+to+1
 			vk::BlendFactor::eOne,							//Source alpha weight
 			vk::BlendFactor::eOneMinusSrcAlpha,				//Destination alpha weight
-			vk::BlendOp::eAdd								//Alpha operation
+			vk::BlendOp::eAdd,								//Alpha operation
+			vk::ColorComponentFlagBits::eR |				//Color write mask
+				vk::ColorComponentFlagBits::eG |
+				vk::ColorComponentFlagBits::eB |
+				vk::ColorComponentFlagBits::eA
 		)
 	};
 
@@ -349,10 +463,44 @@ std::vector<vk::UniqueFramebuffer> Window::createFramebuffers(	const Graphics::V
 	return result;
 }
 
+vk::UniqueCommandPool Window::createCommandPool(const Graphics::Vulkan& vulkan,
+												uint32_t queueIndex )
+{
+	constexpr auto createFlags = 
+		vk::CommandPoolCreateFlagBits::eTransient | 		//Re-recorded often
+		vk::CommandPoolCreateFlagBits::eResetCommandBuffer;	//Re-recorded individually
+
+	const vk::CommandPoolCreateInfo createInfo(
+		createFlags,										//Flags
+		queueIndex											//Queue index
+	);
+
+	return vulkan.getDevice().createCommandPoolUnique(createInfo, nullptr, vulkan.getDispatcher());
+}
+
+std::vector<vk::UniqueCommandBuffer> Window::createCommandBuffers(	const Graphics::Vulkan& vulkan,
+																	vk::CommandPool pool,
+																	uint32_t count )
+{
+	const vk::CommandBufferAllocateInfo allocInfo(
+		pool,
+		vk::CommandBufferLevel::ePrimary,
+		count
+	);
+
+	return vulkan.getDevice().allocateCommandBuffersUnique(allocInfo, vulkan.getDispatcher());
+}
+
+
+
+
+
+
+
 
 
 vk::PresentModeKHR Window::getPresentMode(const std::vector<vk::PresentModeKHR>& presentModes){
-	const std::vector<vk::PresentModeKHR> prefered = {
+	const std::array prefered = {
 		vk::PresentModeKHR::eMailbox,
 		vk::PresentModeKHR::eFifo //Required to be supported.
 	};

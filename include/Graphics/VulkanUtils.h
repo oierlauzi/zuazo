@@ -35,8 +35,17 @@ extern std::vector<vk::QueueFamilyProperties>	getUsedQueueFamilies(const std::ve
 extern size_t									getQueueFamilyIndex(const std::vector<vk::QueueFamilyProperties>& qf, vk::QueueFlags flags);
 extern bool										getQueueFamilyCompatibility(vk::QueueFlags required, vk::QueueFlags available);
 
-bool											hasSamplerSupport(vk::FormatProperties features);
-bool											hasFramebufferSupport(vk::FormatProperties features);
-bool											hasYCbCrSupport(vk::FormatProperties features);
+extern bool										hasSamplerSupport(vk::FormatProperties features);
+extern bool										hasFramebufferSupport(vk::FormatProperties features);
+extern bool										hasYCbCrSupport(vk::FormatProperties features);
+
+
+extern vk::FormatProperties						getFormatFeatures(const Vulkan& vulkan, vk::Format format);
+
+extern vk::UniqueShaderModule					createShader(const Vulkan& vulkan, const Utils::BufferView<uint32_t>& code);
+extern vk::UniqueSemaphore						createSemaphore(const Vulkan& vulkan);
+extern vk::UniqueFence							createFence(const Vulkan& vulkan);
+
+
 
 }

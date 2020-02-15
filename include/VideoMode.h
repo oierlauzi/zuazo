@@ -11,7 +11,7 @@
 namespace Zuazo {
 
 struct VideoMode {
-	Resolution		resoltion = Resolution(0, 0);
+	Resolution		resolution = Resolution(0, 0);
 	AspectRatio 	pixelAspectRatio = AspectRatio(1, 1);
 	Timing::Rate 	frameRate = Timing::Rate(0, 1);
 	ColorPrimaries	colorPrimaries = ColorPrimaries::NONE;

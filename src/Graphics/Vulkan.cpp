@@ -146,20 +146,7 @@ vk::Queue Vulkan::getPresentationQueue() const{
 	return m_queues[PRESENTATION_QUEUE];
 }
 
-vk::FormatProperties Vulkan::getFormatFeatures(vk::Format format) const {
-	return m_physicalDevice.getFormatProperties(format, m_dispatcher);
-}
 
-vk::UniqueShaderModule Vulkan::getShader(const Utils::BufferView<uint32_t>& code) const{
-	vk::ShaderModuleCreateInfo createInfo(
-		{},
-		code.size() * sizeof(uint32_t), code.data()
-	);
-
-	return m_device->createShaderModuleUnique(
-		createInfo, nullptr, m_dispatcher
-	);
-}
 
 
 vk::DispatchLoaderDynamic Vulkan::createDispatcher(const vk::DynamicLoader& loader){

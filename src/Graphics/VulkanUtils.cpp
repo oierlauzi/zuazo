@@ -167,4 +167,28 @@ bool hasYCbCrSupport(vk::FormatProperties features){
 }
 
 
+vk::FormatProperties getFormatFeatures(const Vulkan& vulkan, vk::Format format){
+	return vulkan.getPhysicalDevice().getFormatProperties(format, vulkan.getDispatcher());
+}
+
+
+vk::UniqueShaderModule createShader(const Vulkan& vulkan, const Utils::BufferView<uint32_t>& code){
+	const vk::ShaderModuleCreateInfo createInfo(
+		{},												//Flags
+		code.size() * sizeof(uint32_t), code.data()		//Code
+	);
+
+	return vulkan.getDevice().createShaderModuleUnique(createInfo, nullptr, vulkan.getDispatcher());
+}
+
+vk::UniqueSemaphore	createSemaphore(const Vulkan& vulkan){
+	const vk::SemaphoreCreateInfo createInfo;
+	return vulkan.getDevice().createSemaphoreUnique(createInfo, nullptr, vulkan.getDispatcher());
+}
+
+vk::UniqueFence createFence(const Vulkan& vulkan){
+	const vk::FenceCreateInfo createInfo;
+	return vulkan.getDevice().createFenceUnique(createInfo, nullptr, vulkan.getDispatcher());
+}
+
 }
