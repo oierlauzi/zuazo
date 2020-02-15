@@ -150,7 +150,7 @@ vk::FormatProperties Vulkan::getFormatFeatures(vk::Format format) const {
 	return m_physicalDevice.getFormatProperties(format, m_dispatcher);
 }
 
-vk::UniqueShaderModule Vulkan::getShader(const Utils::BufferView<uint32_t>& code){
+vk::UniqueShaderModule Vulkan::getShader(const Utils::BufferView<uint32_t>& code) const{
 	vk::ShaderModuleCreateInfo createInfo(
 		{},
 		code.size() * sizeof(uint32_t), code.data()

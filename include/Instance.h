@@ -30,7 +30,7 @@ public:
 							Timing::Rate(30, 1),
 							ColorPrimaries::BT709,
 							ColorModel::RGB,
-							ColorEncoding::UINT,
+							ColorEncoding::IEC61966_2_1,
 							ColorFormat::B8G8R8A8
 						};
 		LogFunc			logFunc = defaultLogFunc;

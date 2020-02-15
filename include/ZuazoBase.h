@@ -1,20 +1,37 @@
 #pragma once
 
+#include "Instance.h"
 #include "Signal/Layout.h"
+#include "VideoMode.h"
 
 namespace Zuazo {
 
 class ZuazoBase : public Signal::Layout {
 public:
-	using Signal::Layout::Layout;
+	ZuazoBase(const Instance& instance, std::string&& name);
+	ZuazoBase(const ZuazoBase& other) = delete;
+	ZuazoBase(ZuazoBase&& other) = default;
+	virtual ~ZuazoBase() = default;
 
-	virtual void open() = 0;
-	virtual void close() = 0;
-	bool isOpen() const;
+	ZuazoBase& 			operator=(const ZuazoBase& other) = delete;
+	ZuazoBase& 			operator=(ZuazoBase&& other) = default;
+
+	const Instance&		getInstance() const;
+
+	virtual void 		open() = 0;
+	virtual void 		close() = 0;
+	bool 				isOpen() const;
+
+	virtual void		setVideoMode(const VideoMode& videoMode) = 0;
+	const VideoMode&	getVideoMode() const;
+
 private:
-	bool    m_isOpen = false;
+	const Instance& 	m_instance;
+
+	bool    			m_isOpen;
+	VideoMode			m_videoMode;
+
+	
 };
 
 }
-
-#include "ZuazoBase.inl"

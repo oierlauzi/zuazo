@@ -135,8 +135,9 @@ public:
 	using RefreshCallback = std::function<void()>;
 	using FocusCallback = std::function<void(bool)>;
 
-	Window(	const Math::Vec2i& size = { 640, 480 }, 
-			const std::string_view& name = "" );
+	Window() = default;
+	Window(	const Math::Vec2i& size, 
+			const std::string_view& name );
 	Window(const Window& other) = delete;
 	Window(Window&& other);
 	~Window();
@@ -211,7 +212,7 @@ private:
 	};
 
 	Callbacks						m_callbacks;	
-	WindowGeometry 					m_windowedState;
+	WindowGeometry 					m_windowedState = {};
 
 	WindowHandle 					m_window = nullptr;
 

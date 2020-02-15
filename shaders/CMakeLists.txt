@@ -25,6 +25,8 @@ foreach(SHADER_PATH ${SHADERS})
 	list(APPEND SHADER_HEADERS ${HEADER_PATH})
 endforeach()
 
+#Exported stuff
+set(SHADER_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR} PARENT_SCOPE)
 add_custom_target(shaders
 	DEPENDS ${SHADER_HEADERS}
 )
