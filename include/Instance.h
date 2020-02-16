@@ -5,7 +5,6 @@
 #include "Verbosity.h"
 #include "ColorFormat.h"
 #include "VideoMode.h"
-#include "ColorEncoding.h"
 #include "Timing/MainLoop.h"
 #include "Graphics/GLFW.h"
 #include "Graphics/Vulkan.h"
@@ -30,7 +29,8 @@ public:
 							Timing::Rate(30, 1),
 							ColorPrimaries::BT709,
 							ColorModel::RGB,
-							ColorEncoding::IEC61966_2_1,
+							ColorTransferFunction::IEC61966_2_1,
+							ColorRange::FULL,
 							ColorFormat::B8G8R8A8
 						};
 		LogFunc			logFunc = defaultLogFunc;
@@ -55,9 +55,9 @@ public:
 	const Timing::MainLoop&		getMainLoop() const;
 	Timing::MainLoop&			getMainLoop();
 
-	const std::vector<std::tuple<ColorFormat, ColorEncoding>>& getSupportedInputFormats() const;
-	const std::vector<std::tuple<ColorFormat, ColorEncoding>>& getSupportedInputYcbcrFormats() const;
-	const std::vector<std::tuple<ColorFormat, ColorEncoding>>& getSupportedOutputFormats() const;
+	const std::vector<ColorFormat>& getSupportedInputFormats() const;
+	const std::vector<ColorFormat>& getSupportedInputYcbcrFormats() const;
+	const std::vector<ColorFormat>& getSupportedOutputFormats() const;
 
 	static void 				defaultLogFunc(	const Instance& inst, 
 												Verbosity severity, 
@@ -71,9 +71,9 @@ private:
 	Graphics::Vulkan			m_vulkan;
 	Timing::MainLoop			m_loop;
 
-	std::vector<std::tuple<ColorFormat, ColorEncoding>> m_inputFormats;
-	std::vector<std::tuple<ColorFormat, ColorEncoding>> m_inputYcbcrFormats;
-	std::vector<std::tuple<ColorFormat, ColorEncoding>> m_outputFormats;
+	std::vector<ColorFormat>	m_inputFormats;
+	std::vector<ColorFormat>	m_inputYcbcrFormats;
+	std::vector<ColorFormat>	m_outputFormats;
 
 	void 						setupSupportedFormats();
 	std::string					generateInitMessage() const;

@@ -14,11 +14,15 @@ class InputPad;
 template <typename T>
 class Input : public InputPad<T> {
 public:
-	using InputPad<T>::InputPad;
-	using PadBase::setName;
+	Input(std::string&& name, Layout* owner = nullptr);
+	Input(const Input& other) = default;
+	Input(Input&& other) = default;
+	virtual ~Input() = default;
 
-	Input&                              operator=(const Input& other) = default;
-	Input&                              operator=(Input&& other) = default;
+	Input& 								operator=(const Input& other) = default;
+	Input& 								operator=(Input&& other) = default;
+
+	using PadBase::setName;
 
 	void                                setHold(bool hold);
 	bool                                getHold() const;

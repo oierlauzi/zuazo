@@ -15,9 +15,6 @@ public:
 		OUTPUT
 	};
 
-	PadBase(const std::type_index& type, Direction dir, std::string&& name = ""); 
-	virtual ~PadBase();
-
 	const Layout*       getOwner() const;
 	Layout*             getOwner();
 
@@ -26,8 +23,13 @@ public:
 	const std::string&  getName() const;
 
 protected:
+	PadBase(	const std::type_index& type, 
+				Direction dir, 
+				std::string&& name, 
+				Layout* owner ); 
 	PadBase(const PadBase& other); 
-	PadBase(PadBase&& other); 
+	PadBase(PadBase&& other);
+	virtual ~PadBase();
 
 	PadBase&            operator=(const PadBase& other);
 	PadBase&            operator=(PadBase&& other);

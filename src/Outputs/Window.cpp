@@ -5,6 +5,9 @@
 #include <window_frag.h>
 #include <window_vert.h>
 
+#include <cmath>
+#include <algorithm>
+
 namespace Zuazo::Outputs {
 
 void Window::open(){
@@ -12,15 +15,20 @@ void Window::open(){
 
 	const auto& videoMode = getVideoMode();
 	const auto& vulkan = getInstance().getVulkan();
-	const auto extent = Graphics::toVulkan(videoMode.resolution);
-	const auto surfaceFormat = Graphics::toVulkan(	videoMode.colorFormat, 
-													videoMode.colorPrimaries, 
-													videoMode.colorEncoding );
+	const auto[requestedExtent, requestedSurfaceFormat] = getVulkanVideoMode();
 
-	//Create the window, its surface and swapchain. //TODO get surface format compatibility
+	//Create the window and its surface
 	impl.window = Graphics::GLFW::Window(videoMode.resolution, getName());
 	impl.surface = impl.window.getSurface(vulkan);
-	impl.swapchain = createSwapchain(vulkan, *impl.surface, extent, surfaceFormat);
+
+	//Evaluate the actual video mode
+	const auto surfaceCapabilities = vulkan.getPhysicalDevice().getSurfaceCapabilitiesKHR(*impl.surface, vulkan.getDispatcher());
+	const auto surfaceFormats = vulkan.getPhysicalDevice().getSurfaceFormatsKHR(*impl.surface, vulkan.getDispatcher());
+	const auto extent = getExtent(surfaceCapabilities, requestedExtent);
+	const auto surfaceFormat = getSurfaceFormat(surfaceFormats, requestedSurfaceFormat);
+
+	//Create the swapchain and retrieve images from it
+	impl.swapchain = createSwapchain(vulkan, *impl.surface, extent, surfaceFormat, surfaceCapabilities);
 	impl.swapchainImageViews = createImageViews(vulkan, *impl.swapchain, surfaceFormat.format);
 
 	//Create the renderpass and pipeline
@@ -33,36 +41,121 @@ void Window::open(){
 	impl.commandPool = createCommandPool(vulkan, vulkan.getGraphicsQueueIndex());
 	impl.commandBuffers = createCommandBuffers(vulkan, *impl.commandPool, impl.framebuffers.size());
 
-	//Create the semaphores
-	impl.imageAvailable = createSemaphore(vulkan);
-	impl.renderFinished = createSemaphore(vulkan);
+	//Create the semaphores and the fence
+	impl.imageAvailableSemaphore = Graphics::createSemaphore(vulkan);
+	impl.renderFinishedSemaphore = Graphics::createSemaphore(vulkan);
+	impl.renderFinishedFence = Graphics::createFence(vulkan, true);
+
+	//Write the data to the class
+	if((requestedExtent != extent) || (requestedSurfaceFormat != surfaceFormat)){
+		//Video mode has changed
+	}
 
 	m_implementation = std::make_unique<Implementation>(std::move(impl));
+
+	//Setup callbacks
+	m_implementation->window.setResolutionCallback([this] (Resolution res){
+		auto videoMode = this->getVideoMode();
+		videoMode.resolution = res;
+		this->ZuazoBase::setVideoMode(videoMode);
+
+		std::lock_guard<std::mutex> lock(this->m_resizeMutex);
+		this->recreate();
+	});
+
 	ZuazoBase::open();
 
 	while(true){
 		drawFrameProvisional();
+		std::this_thread::sleep_for(std::chrono::milliseconds(33));
 	}
 }
 
 void Window::close(){
+	auto& impl = *m_implementation;
+	const auto& vulkan = getInstance().getVulkan();
+
+	//Wait until the rendering has finished
+	vulkan.getDevice().waitForFences(*impl.renderFinishedFence, true, NO_TIMEOUT, vulkan.getDispatcher());
+
 	m_implementation.reset();
 	ZuazoBase::close();
 }
 
 void Window::setVideoMode(const VideoMode& videoMode) {
-	//TODO
+	auto& win = m_implementation->window;
+
+	//Calculate the aproximate size of the window for the desired resolution
+	const auto oldRes = static_cast<Math::Vec2i>(win.getResolution());
+	const auto oldSize = win.getSize();
+	const auto newRes = static_cast<Math::Vec2i>(videoMode.resolution);
+	const auto newSize = oldSize * newRes / oldRes;
+	win.setSize(newSize);
+
 	ZuazoBase::setVideoMode(videoMode);
+
+	std::lock_guard<std::mutex> lock(m_resizeMutex);
+	recreate();
 }
+
+std::tuple<vk::Extent2D, vk::SurfaceFormatKHR> Window::getVulkanVideoMode() const{
+	const auto& videoMode = getVideoMode();
+
+	const auto extent = Graphics::toVulkan(videoMode.resolution);
+	const auto [format, swizzle] = Graphics::optimizeFormat(Graphics::toVulkan(videoMode.colorFormat));
+	const auto colorSpace = Graphics::toVulkan(videoMode.colorPrimaries, videoMode.colorTransferFunction);
+	const auto surfaceFormat = vk::SurfaceFormatKHR(format, colorSpace);
+
+	return std::make_tuple(extent, surfaceFormat);
+}
+
+void Window::recreate(){
+	auto& impl = *m_implementation;
+	const auto& vulkan = getInstance().getVulkan();
+	const auto[requestedExtent, requestedSurfaceFormat] = getVulkanVideoMode();
+
+	//Wait until the rendering has finished
+	vulkan.getDevice().waitForFences(*impl.renderFinishedFence, true, NO_TIMEOUT, vulkan.getDispatcher());
+
+	//Reset all the needed elements
+	impl.commandBuffers.clear();
+	impl.framebuffers.clear();
+	impl.renderPass.reset();
+	impl.pipeline.reset();
+	impl.swapchainImageViews.clear();
+
+	//Evaluate the actual video mode
+	const auto surfaceCapabilities = vulkan.getPhysicalDevice().getSurfaceCapabilitiesKHR(*impl.surface, vulkan.getDispatcher());
+	const auto surfaceFormats = vulkan.getPhysicalDevice().getSurfaceFormatsKHR(*impl.surface, vulkan.getDispatcher());
+	const auto extent = getExtent(surfaceCapabilities, requestedExtent);
+	const auto surfaceFormat = getSurfaceFormat(surfaceFormats, requestedSurfaceFormat);
+
+	//Recreate stuff
+	impl.swapchain = createSwapchain(vulkan, *impl.surface, extent, surfaceFormat, surfaceCapabilities, *impl.swapchain);
+	impl.swapchainImageViews = createImageViews(vulkan, *impl.swapchain, surfaceFormat.format);
+	impl.renderPass = createRenderPass(vulkan, surfaceFormat.format);
+	impl.pipeline = createPipeline(vulkan, *impl.renderPass, *impl.pipelineLayout, extent);
+	impl.framebuffers = createFramebuffers(vulkan, *impl.renderPass, impl.swapchainImageViews, extent);
+	impl.commandBuffers = createCommandBuffers(vulkan, *impl.commandPool, impl.framebuffers.size());
+}
+
+
+
 
 void Window::drawFrameProvisional(){
 	const auto& vulkan = getInstance().getVulkan();
 	const auto& impl = *m_implementation;
 
+	std::lock_guard<std::mutex> lock(m_resizeMutex);
+
+	//Wait for the previous rendering to be completed
+	vulkan.getDevice().waitForFences(*impl.renderFinishedFence, true, NO_TIMEOUT, vulkan.getDispatcher());
+
+	//Acquire an image from the swapchain
 	const auto index = vulkan.getDevice().acquireNextImageKHR(
 		*impl.swapchain, 						
-		std::numeric_limits<uint64_t>::max(),
-		*impl.imageAvailable,
+		NO_TIMEOUT,
+		*impl.imageAvailableSemaphore,
 		nullptr,
 		vulkan.getDispatcher()
 	);
@@ -78,7 +171,7 @@ void Window::drawFrameProvisional(){
     cmdBuffer.begin(cmdBegin, vulkan.getDispatcher());
 
 	const std::array clearValue = {
-		vk::ClearValue(std::array{ 0.0f, 0.0f, 0.0f, 1.0f })
+		vk::ClearValue(std::array{ 0.0f, 0.0f, 0.0f, 0.0f })
 	};
 
 	vk::RenderPassBeginInfo rendBegin(
@@ -97,12 +190,12 @@ void Window::drawFrameProvisional(){
 	cmdBuffer.end(vulkan.getDispatcher());
 
 	//Send it to the queue
-	const std::array waitSemaphores = {
-		*impl.imageAvailable
+	const std::array imageAvailableSemaphores = {
+		*impl.imageAvailableSemaphore
 	};
 	
-	const std::array signalSemaphores = {
-		*impl.renderFinished
+	const std::array renderFinishedSemaphores = {
+		*impl.renderFinishedSemaphore
 	};
 
 	const std::array commandBuffers = {
@@ -114,13 +207,14 @@ void Window::drawFrameProvisional(){
 	};
 
 	const vk::SubmitInfo subInfo(
-		waitSemaphores.size(), waitSemaphores.data(),
-		pipelineStages.data(),
-		commandBuffers.size(), commandBuffers.data(),
-		signalSemaphores.size(), signalSemaphores.data()
+		imageAvailableSemaphores.size(), imageAvailableSemaphores.data(),	//Wait semaphores
+		pipelineStages.data(),												//Pipeline stages
+		commandBuffers.size(), commandBuffers.data(),						//Command buffers
+		renderFinishedSemaphores.size(), renderFinishedSemaphores.data()	//Signal semaphores
 	);
 
-	vulkan.getGraphicsQueue().submit(subInfo, nullptr, vulkan.getDispatcher());
+	vulkan.getDevice().resetFences(*impl.renderFinishedFence, vulkan.getDispatcher());
+	vulkan.getGraphicsQueue().submit(subInfo, *impl.renderFinishedFence, vulkan.getDispatcher());
 
 	//Present it
 	const std::array swapchains = {
@@ -132,13 +226,21 @@ void Window::drawFrameProvisional(){
 	};
 
 	const vk::PresentInfoKHR presentInfo(
-		signalSemaphores.size(), signalSemaphores.data(),
-		swapchains.size(), swapchains.data(), 
-		indices.data(), nullptr
+		renderFinishedSemaphores.size(), renderFinishedSemaphores.data(),	//Wait semaphores
+		swapchains.size(), swapchains.data(), 								//Swapchains
+		indices.data(),														//Image index
+		nullptr																//Results								
 	);
 
-	vulkan.getPresentationQueue().presentKHR(presentInfo, vulkan.getDispatcher());
-	vulkan.getPresentationQueue().waitIdle(vulkan.getDispatcher());
+	switch(vulkan.getPresentationQueue().presentKHR(&presentInfo, vulkan.getDispatcher())){
+	case vk::Result::eSuccess: 
+		break;
+	case vk::Result::eErrorOutOfDateKHR: 
+		recreate();
+		return;
+	default:
+		return;
+	}
 }
 
 
@@ -146,27 +248,14 @@ vk::UniqueSwapchainKHR Window::createSwapchain(	const Graphics::Vulkan& vulkan,
 												const vk::SurfaceKHR& surface, 
 												const vk::Extent2D& extent, 
 												const vk::SurfaceFormatKHR& surfaceFormat,
+												const vk::SurfaceCapabilitiesKHR& capabilities,
 												vk::SwapchainKHR old )
 {
 	const auto& physicalDevice = vulkan.getPhysicalDevice();
-	const auto formats = physicalDevice.getSurfaceFormatsKHR(surface, vulkan.getDispatcher());
-	const auto capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface, vulkan.getDispatcher());
 	const auto presentModes = physicalDevice.getSurfacePresentModesKHR(surface, vulkan.getDispatcher());
 
 	if(!physicalDevice.getSurfaceSupportKHR(0, surface, vulkan.getDispatcher())){
 		throw Exception("Window surface not suppoted by the physical device");
-	}
-
-	if(std::find(formats.cbegin(), formats.cend(), surfaceFormat) == formats.cend()){
-		throw Exception("Requested window surface format is not supported");
-	}
-
-	if(	extent.width < capabilities.minImageExtent.width || 
-		extent.height < capabilities.minImageExtent.height || 
-		extent.width > capabilities.maxImageExtent.width || 
-		extent.height > capabilities.maxImageExtent.height )
-	{
-		throw Exception("Requested surface extent is not supported");
 	}
 
 	const auto imageCount = getImageCount(capabilities);
@@ -384,7 +473,7 @@ vk::UniquePipeline Window::createPipeline(	const Graphics::Vulkan& vulkan,
 
 	const std::array colorBlendAttachments = {
 		vk::PipelineColorBlendAttachmentState(
-			false,											//Enabled
+			true,											//Enabled
 			//Cf' = Ai*Ci + (1.0-Ai)*Cf; Typical color mixing equation
 			vk::BlendFactor::eSrcAlpha,						//Source color weight
 			vk::BlendFactor::eOneMinusSrcAlpha,				//Destination color weight
@@ -497,6 +586,43 @@ std::vector<vk::UniqueCommandBuffer> Window::createCommandBuffers(	const Graphic
 
 
 
+vk::Extent2D Window::getExtent(	const vk::SurfaceCapabilitiesKHR& cap, 
+								const vk::Extent2D& windowExtent )
+{
+	constexpr auto INVALID_EXTENT = vk::Extent2D(
+		std::numeric_limits<uint32_t>::max(), 
+		std::numeric_limits<uint32_t>::max()
+	);
+
+	if(cap.currentExtent != INVALID_EXTENT){
+		return cap.currentExtent;
+	} else {
+		return vk::Extent2D(
+			std::max(cap.minImageExtent.width, std::min(windowExtent.width, cap.maxImageExtent.width)),
+			std::max(cap.minImageExtent.height, std::min(windowExtent.height, cap.maxImageExtent.height))
+		);
+	}
+}
+
+vk::SurfaceFormatKHR Window::getSurfaceFormat(	const std::vector<vk::SurfaceFormatKHR>& formats,
+												const vk::SurfaceFormatKHR& desired )
+{
+	if(std::find(formats.cbegin(), formats.cend(), desired) != formats.cend()){
+		return desired;
+	}
+
+	return formats[0]; //TODO fins closest match
+}
+
+uint32_t Window::getImageCount(const vk::SurfaceCapabilitiesKHR& cap){
+	const uint32_t desired = cap.minImageCount + 1;
+
+	if(cap.maxImageCount){
+		return std::min(desired, cap.maxImageCount);
+	} else {
+		return desired;
+	}
+}
 
 
 vk::PresentModeKHR Window::getPresentMode(const std::vector<vk::PresentModeKHR>& presentModes){
@@ -512,16 +638,6 @@ vk::PresentModeKHR Window::getPresentMode(const std::vector<vk::PresentModeKHR>&
 	}
 
 	throw Exception("No compatible presentation mode was found");
-}
-
-uint32_t Window::getImageCount(const vk::SurfaceCapabilitiesKHR& cap){
-	const uint32_t desired = cap.minImageCount + 1;
-
-	if(cap.maxImageCount){
-		return std::min(desired, cap.maxImageCount);
-	} else {
-		return desired;
-	}
 }
 
 std::vector<uint32_t> Window::getQueueFamilies(const Graphics::Vulkan& vulkan){

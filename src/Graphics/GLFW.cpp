@@ -90,6 +90,13 @@ std::vector<uint32_t> GLFW::getPresentationQueueFamilies(	const vk::Instance& in
 	return result;
 }
 
+void GLFW::setCallbacksEnabled(bool ena){
+	s_thread->setCallbacksEnabled(ena);
+}
+
+bool GLFW::getCallbacksEnabled(){
+	return s_thread->getCallbacksEnabled();
+}
 
 
 //Initialization / Termination
@@ -495,6 +502,27 @@ const GLFW::Window::RefreshCallback& GLFW::Window::getRefreshCallback() const{
 }
 
 
+
+void GLFW::Window::setDecorated(bool deco){
+	s_thread->execute<void>(setDecoratedImpl, m_window, deco);
+}
+
+bool GLFW::Window::getDecorated() const{
+	return s_thread->execute<bool>(getDecoratedImpl, m_window);
+}
+
+
+
+void GLFW::Window::setResizeable(bool resizeable){
+	s_thread->execute<void>(setResizeableImpl, m_window, resizeable);
+}
+
+bool GLFW::Window::getResizeable() const{
+	return s_thread->execute<bool>(getResizeableImpl, m_window);
+}
+
+
+
 //Create / Destroy
 GLFW::WindowHandle GLFW::Window::createWindow(	const Math::Vec2i& size, 
 												const std::string_view& name,
@@ -734,6 +762,27 @@ void GLFW::Window::focusImpl(WindowHandle win){
 }
 
 
+
+void GLFW::Window::setDecoratedImpl(WindowHandle win, bool deco){
+	glfwSetWindowAttrib(win, GLFW_DECORATED, deco);
+}
+
+bool GLFW::Window::getDecoratedImpl(WindowHandle win){
+	return glfwGetWindowAttrib(win, GLFW_DECORATED);
+}
+
+
+
+void GLFW::Window::setResizeableImpl(WindowHandle win, bool resizeable){
+	glfwSetWindowAttrib(win, GLFW_RESIZABLE, resizeable);
+}
+
+bool GLFW::Window::getResizeableImpl(WindowHandle win){
+	return glfwGetWindowAttrib(win, GLFW_RESIZABLE);
+}
+
+
+
 //Callbacks
 void GLFW::Window::positionCbk(WindowHandle win, int x, int y){
 	if(s_thread->getCallbacksEnabled()) {
@@ -858,11 +907,13 @@ void GLFW::Window::scaleCbk(WindowHandle win, float x, float y){
 GLFW::Thread::Thread()
 	: m_exit(false)
 	, m_windowCount(0)
-	, m_cbkEnabled(false)
+	, m_cbkEnabled(true)
+	, m_thread(&Thread::threadFunc, this)
 
 {
+	//Wait for completion
 	std::unique_lock<std::mutex> lock(m_mutex);
-	m_thread = std::thread(&Thread::threadFunc, this);
+	threadContinue();
 	m_completeCondition.wait(lock);
 }
 
@@ -898,6 +949,13 @@ Ret GLFW::Thread::execute(Func&& func, Args&&... args) {
 	}
 }
 
+void GLFW::Thread::setCallbacksEnabled(bool ena){
+	std::unique_lock<std::mutex> lock(m_mutex);
+	threadContinue();
+	m_cbkEnabled.store(ena); //Important to be after threadContinue()!
+	m_completeCondition.wait(lock); //Wait for any cbk to finish
+}
+
 bool GLFW::Thread::getCallbacksEnabled() const {
 	return m_cbkEnabled.load();
 }
@@ -914,13 +972,9 @@ void GLFW::Thread::threadFunc(){
 		m_completeCondition.notify_all();
 
 		//Wait until an event arises
-		if(m_windowCount.load() > 0){
+		if(m_windowCount.load() > 0 && m_cbkEnabled.load()){
 			lock.unlock();
-			m_cbkEnabled.store(true);
-
 			glfwWaitEvents();
-
-			m_cbkEnabled.store(false);
 			lock.lock();
 		} else {
 			m_continueCondition.wait(lock);
@@ -937,12 +991,11 @@ void GLFW::Thread::threadFunc(){
 }
 
 void GLFW::Thread::threadContinue(){
-	if(m_windowCount.load() > 0){
+	if(m_windowCount.load() > 0 && m_cbkEnabled.load()){
 		glfwPostEmptyEvent();
 	} else {
 		m_continueCondition.notify_all();
 	}
 }
-
 
 }

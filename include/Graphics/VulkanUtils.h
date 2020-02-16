@@ -44,7 +44,7 @@ extern vk::FormatProperties						getFormatFeatures(const Vulkan& vulkan, vk::For
 
 extern vk::UniqueShaderModule					createShader(const Vulkan& vulkan, const Utils::BufferView<uint32_t>& code);
 extern vk::UniqueSemaphore						createSemaphore(const Vulkan& vulkan);
-extern vk::UniqueFence							createFence(const Vulkan& vulkan);
+extern vk::UniqueFence							createFence(const Vulkan& vulkan, bool signaled = false);
 
 
 

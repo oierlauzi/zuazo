@@ -8,21 +8,14 @@
 namespace Zuazo::Signal {
 
 template <typename T>
-inline OutputPad<T>::OutputPad(std::string&& name) : 
-	PadBase(typeid(T), PadBase::Direction::OUTPUT, std::move(name))
-{
-}
-
-template <typename T>
-inline OutputPad<T>::~OutputPad(){
-	for(auto cons : m_consumers){
-		cons->m_source = nullptr;
-	}
-}
-
-template <typename T>
 inline const std::set<InputPad<T>*>& OutputPad<T>::getConsumers() const{
 	return m_consumers;
+}
+
+template <typename T>
+inline OutputPad<T>::OutputPad(std::string&& name, Layout* owner) 
+	: PadBase(typeid(T), PadBase::Direction::OUTPUT, std::move(name), owner)
+{
 }
 
 template <typename T>
@@ -35,6 +28,14 @@ OutputPad<T>::OutputPad(OutputPad&& other) :
 		cons->m_source = this;
 	}
 }
+
+template <typename T>
+inline OutputPad<T>::~OutputPad(){
+	for(auto cons : m_consumers){
+		cons->m_source = nullptr;
+	}
+}
+
 
 template <typename T>
 OutputPad<T>& OutputPad<T>::operator=(OutputPad&& other){

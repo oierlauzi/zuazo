@@ -6,7 +6,8 @@
 #include "../Resolution.h"
 
 #include "../ColorFormat.h"
-#include "../ColorEncoding.h"
+#include "../ColorRange.h"
+#include "../ColorTransferFunction.h"
 #include "../ColorModel.h"
 #include "../ColorPrimaries.h"
 
@@ -19,15 +20,15 @@ constexpr uint32_t toVulkan(Version version);
 constexpr vk::Extent2D toVulkan(const Resolution& res);
 constexpr Resolution fromVulkan(const vk::Extent2D& res);
 
-constexpr std::tuple<vk::Format, vk::ComponentMapping> toVulkan(ColorFormat fmt, ColorEncoding enc);
-constexpr std::tuple<vk::Format, vk::ComponentMapping> removeSwizzle(const std::tuple<vk::Format, vk::ComponentMapping>& fmt);
-constexpr std::tuple<ColorFormat, ColorEncoding> fromVulkan(vk::Format fmt);
+constexpr std::tuple<vk::Format, vk::ComponentMapping> toVulkan(ColorFormat fmt);
+constexpr std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format fmt);
 
-constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorEncoding enc);
-constexpr std::tuple<ColorPrimaries, ColorEncoding> fromVulkan(vk::ColorSpaceKHR space);
+constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction enc);
+constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::ColorSpaceKHR space);
 
-inline vk::SurfaceFormatKHR toVulkan(ColorFormat format, ColorPrimaries prim, ColorEncoding enc);
-constexpr std::tuple<ColorFormat, ColorPrimaries, ColorEncoding> fromVulkan(const vk::SurfaceFormatKHR& fmt);
+
+constexpr std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std::tuple<vk::Format, vk::ComponentMapping>& fmt);
+constexpr std::tuple<vk::Format, ColorTransferFunction> optimizeFormat(const std::tuple<vk::Format, ColorTransferFunction>& fmt);
 
 }
 

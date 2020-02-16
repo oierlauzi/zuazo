@@ -6,19 +6,6 @@
 
 namespace Zuazo::Signal {
 
-inline PadBase::PadBase(const std::type_index& type, Direction dir, std::string&& name) :
-	m_type(type),
-	m_direction(dir),
-	m_name(std::move(name))
-{
-}
-
-inline PadBase::~PadBase() {
-	if(m_owner) m_owner->removePad(*this);
-}
-
-
-
 inline const Layout* PadBase::getOwner() const{
 	return m_owner;
 }
@@ -43,6 +30,17 @@ inline PadBase::Direction PadBase::getDirection() const{
 
 
 
+inline PadBase::PadBase(const std::type_index& type, 
+						Direction dir, 
+						std::string&& name,
+						Layout* owner )
+	: m_type(type)
+	, m_direction(dir)
+	, m_name(std::move(name))
+{
+	if(owner) owner->addPad(*this);
+}
+
 inline PadBase::PadBase(const PadBase& other) :
 	m_type(other.m_type),
 	m_direction(other.m_direction),
@@ -62,6 +60,11 @@ inline PadBase::PadBase(PadBase&& other) :
 		other.m_owner->removePad(other);
 	}
 }
+
+inline PadBase::~PadBase() {
+	if(m_owner) m_owner->removePad(*this);
+}
+
 
 inline PadBase& PadBase::operator=(const PadBase& other){
 	m_type = other.m_type;

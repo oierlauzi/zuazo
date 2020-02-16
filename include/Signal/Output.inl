@@ -5,6 +5,12 @@
 namespace Zuazo::Signal {
 
 template <typename T>
+inline Output<T>::Output(std::string&& name, Layout* owner)
+	: OutputPad<T>(std::move(name), owner)
+{
+}
+
+template <typename T>
 inline void Output<T>::reset(){
 	m_lastElement.reset();
 }

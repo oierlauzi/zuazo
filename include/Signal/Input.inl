@@ -3,6 +3,12 @@
 namespace Zuazo::Signal {
 
 template <typename T>
+inline Input<T>::Input(std::string&& name, Layout* owner)
+	: InputPad<T>(std::move(name), owner)
+{
+}
+
+template <typename T>
 inline void Input<T>::setHold(bool hold){
 	m_hold = hold;
 }

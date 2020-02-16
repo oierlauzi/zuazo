@@ -10,19 +10,6 @@ template <typename T>
 inline const T InputPad<T>::NO_SIGNAL = T();
 
 template <typename T>
-inline InputPad<T>::InputPad(std::string&& name) : 
-	PadBase(typeid(T), PadBase::Direction::INPUT, std::move(name))
-{
-}
-
-template <typename T>
-inline InputPad<T>::~InputPad(){
-	setSource(nullptr);
-}
-
-
-
-template <typename T>
 inline void InputPad<T>::setSource(OutputPad<T>* src){
 	if(m_source) m_source->m_consumers.erase(this);
 	m_source = src;
@@ -35,6 +22,11 @@ inline OutputPad<T>* InputPad<T>::getSource() const{
 }
 
 
+template <typename T>
+inline InputPad<T>::InputPad(std::string&& name, Layout* owner ) 
+	: PadBase(typeid(T), PadBase::Direction::INPUT, std::move(name), owner)
+{
+}
 
 template <typename T>
 InputPad<T>::InputPad(const InputPad& other) :
@@ -50,6 +42,14 @@ InputPad<T>::InputPad(InputPad&& other) :
 	setSource(other.m_source);
 	other.setSource(nullptr);
 }
+
+template <typename T>
+inline InputPad<T>::~InputPad(){
+	setSource(nullptr);
+}
+
+
+
 
 template <typename T>
 InputPad<T>& InputPad<T>::operator=(const InputPad& other){

@@ -186,8 +186,10 @@ vk::UniqueSemaphore	createSemaphore(const Vulkan& vulkan){
 	return vulkan.getDevice().createSemaphoreUnique(createInfo, nullptr, vulkan.getDispatcher());
 }
 
-vk::UniqueFence createFence(const Vulkan& vulkan){
-	const vk::FenceCreateInfo createInfo;
+vk::UniqueFence createFence(const Vulkan& vulkan, bool signaled){
+	const vk::FenceCreateInfo createInfo(
+		signaled ? vk::FenceCreateFlags(vk::FenceCreateFlagBits::eSignaled) : vk::FenceCreateFlags()
+	);
 	return vulkan.getDevice().createFenceUnique(createInfo, nullptr, vulkan.getDispatcher());
 }
 

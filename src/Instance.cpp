@@ -48,15 +48,15 @@ Graphics::Vulkan& Instance::getVulkan(){
 	return m_vulkan;
 }
 
-const std::vector<std::tuple<ColorFormat, ColorEncoding>>& Instance::getSupportedInputFormats() const{
+const std::vector<ColorFormat>& Instance::getSupportedInputFormats() const{
 	return m_inputFormats;
 }
 
-const std::vector<std::tuple<ColorFormat, ColorEncoding>>& Instance::getSupportedInputYcbcrFormats() const{
+const std::vector<ColorFormat>& Instance::getSupportedInputYcbcrFormats() const{
 	return m_inputYcbcrFormats;
 }
 
-const std::vector<std::tuple<ColorFormat, ColorEncoding>>& Instance::getSupportedOutputFormats() const{
+const std::vector<ColorFormat>& Instance::getSupportedOutputFormats() const{
 	return m_outputFormats;
 }
 
@@ -78,30 +78,22 @@ void Instance::defaultLogFunc(const Instance& inst, Verbosity severity, const st
 
 void Instance::setupSupportedFormats(){
 	for(auto format = ColorFormat::NONE; format < ColorFormat::COUNT; format++){
-		for(auto encoding = ColorEncoding::NONE; encoding < ColorEncoding::COUNT; encoding++){
-			const auto [f, s] = Graphics::removeSwizzle(Graphics::toVulkan(format, encoding));
+		const auto [f, s] = Graphics::optimizeFormat(Graphics::toVulkan(format));
 
-			if(f == vk::Format::eUndefined) continue;
+		if(f == vk::Format::eUndefined) continue;
 
-			const auto features = getFormatFeatures(m_vulkan, f);
-			const auto pix = std::tuple<ColorFormat, ColorEncoding>(format, encoding);
+		const auto features = getFormatFeatures(m_vulkan, f);
 
-			if(Graphics::hasSamplerSupport(features)) {
-				m_inputFormats.emplace_back(pix);
+		if(Graphics::hasSamplerSupport(features)) {
+			m_inputFormats.emplace_back(format);
 
-				if(Graphics::hasYCbCrSupport(features)){
-					m_inputYcbcrFormats.emplace_back(pix);
-
-					if(encoding == ColorEncoding::UINT){
-						const auto pixNar = std::tuple<ColorFormat, ColorEncoding>(format, ColorEncoding::UINT_ITU_NARROW);
-						m_inputYcbcrFormats.emplace_back(pixNar);
-					}
-				}
+			if(Graphics::hasYCbCrSupport(features)){
+				m_inputYcbcrFormats.emplace_back(format);
 			}
+		}
 
-			if(Graphics::hasFramebufferSupport(features) && s == vk::ComponentMapping()) {
-				m_outputFormats.emplace_back(pix);
-			}
+		if(Graphics::hasFramebufferSupport(features) && s == vk::ComponentMapping()) {
+			m_outputFormats.emplace_back(format);
 		}
 	}
 }
@@ -122,20 +114,17 @@ std::string Instance::generateInitMessage() const {
 	//Show supported formats
 	message << "\t- Supported input pixel formats:\n";
 	for(const auto& fmt : m_inputFormats ){
-		message << "\t\t- " << toString(std::get<ColorFormat>(fmt)) << ", " 
-				<< toString(std::get<ColorEncoding>(fmt)) << "\n";
+		message << "\t\t- " << toString(fmt) << "\n";
 	}
 
 	message << "\t- Supported input YCbCr pixel formats:\n";
 	for(const auto& fmt : m_inputYcbcrFormats ){
-		message << "\t\t- " << toString(std::get<ColorFormat>(fmt)) << ", " 
-				<< toString(std::get<ColorEncoding>(fmt)) << "\n";
+		message << "\t\t- " << toString(fmt) << "\n";
 	}
 
 	message << "\t- Supported output pixel formats:\n";
 	for(const auto& fmt : m_outputFormats ){
-		message << "\t\t- " << toString(std::get<ColorFormat>(fmt)) << ", " 
-				<< toString(std::get<ColorEncoding>(fmt)) << "\n";
+		message << "\t\t- " << toString(fmt) << "\n";
 	}
 
 	return message.str();
@@ -177,23 +166,21 @@ uint32_t Instance::defaultDeviceScoreFunc(const vk::DispatchLoaderDynamic& disp,
 
 	//Give the score based on the supported formats
 	for(auto format = ColorFormat::NONE; format < ColorFormat::COUNT; format++){
-		for(auto encoding = ColorEncoding::NONE; encoding < ColorEncoding::COUNT; encoding++){
-			const auto [f, s] = Graphics::toVulkan(format, encoding);
-			if(f == vk::Format::eUndefined) continue;
+		const auto [f, s] = Graphics::toVulkan(format);
+		if(f == vk::Format::eUndefined) continue;
 
-			const auto features = device.getFormatProperties(f, disp);
+		const auto features = device.getFormatProperties(f, disp);
 
-			if(Graphics::hasSamplerSupport(features)) {
-				score += SAMPLER_FORMAT_SCORE;
-			}
+		if(Graphics::hasSamplerSupport(features)) {
+			score += SAMPLER_FORMAT_SCORE;
+		}
 
-			if(Graphics::hasFramebufferSupport(features) && s == vk::ComponentMapping()) {
-				score += FRAMEBUFFER_FORMAT_SCORE;
-			}
+		if(Graphics::hasFramebufferSupport(features) && s == vk::ComponentMapping()) {
+			score += FRAMEBUFFER_FORMAT_SCORE;
+		}
 
-			if(Graphics::hasYCbCrSupport(features)){
-				score += YCBCR_FORMAT_SCORE;
-			}
+		if(Graphics::hasYCbCrSupport(features)){
+			score += YCBCR_FORMAT_SCORE;
 		}
 	}
 

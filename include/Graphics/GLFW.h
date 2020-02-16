@@ -50,6 +50,9 @@ public:
 																				const vk::PhysicalDevice& device, 
 																				uint32_t queueCount);
 
+	static void									setCallbacksEnabled(bool ena);
+	static bool									getCallbacksEnabled();
+
 	static const Monitor NO_MONITOR;
 
 private:
@@ -194,6 +197,12 @@ public:
 	void						setRefreshCallback(RefreshCallback&& cbk);
 	const RefreshCallback&		getRefreshCallback() const;
 
+	void						setDecorated(bool deco);
+	bool						getDecorated() const;
+
+	void						setResizeable(bool resizeable);
+	bool						getResizeable() const;
+
 
 private:
 	struct WindowGeometry {
@@ -249,6 +258,12 @@ private:
 
 	static void						focusImpl(WindowHandle win);
 
+	static void						setDecoratedImpl(WindowHandle win, bool deco);
+	static bool						getDecoratedImpl(WindowHandle win);
+
+	static void						setResizeableImpl(WindowHandle win, bool resizeable);
+	static bool						getResizeableImpl(WindowHandle win);
+
 	static void						positionCbk(WindowHandle win, int x, int y);
 	static void						sizeCbk(WindowHandle win, int x, int y);
 	static void						closeCbk(WindowHandle win);
@@ -273,6 +288,7 @@ public:
 	template<typename Ret, typename Func, typename... Args>
 	Ret 							execute(Func&& func, Args&&... args);
 
+	void							setCallbacksEnabled(bool ena);
 	bool							getCallbacksEnabled() const;
 private:
 	using QueueFunc = std::function<void(void)>;
@@ -281,11 +297,11 @@ private:
 	std::atomic<size_t>				m_windowCount;
 	std::atomic<bool>				m_cbkEnabled;
 
-	std::thread						m_thread;
 	std::mutex						m_mutex;
 	std::condition_variable			m_continueCondition;
 	std::condition_variable			m_completeCondition;
 	std::queue<QueueFunc> 			m_executions;
+	std::thread						m_thread;
 
 	void							threadFunc();
 	void							threadContinue();

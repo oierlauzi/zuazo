@@ -8,10 +8,15 @@ namespace Zuazo::Signal {
 template <typename T>
 class Output : public OutputPad<T> {
 public:
-	using OutputPad<T>::OutputPad;
-	using PadBase::setName;
+	Output(std::string&& name, Layout* owner = nullptr);
+	Output(const Output& other) = delete;
+	Output(Output&& other) = default;
+	virtual ~Output() = default;
 
+	Output&									operator=(const Output& other) = delete;
 	Output&									operator=(Output&& other) = default;
+
+	using PadBase::setName;
 
 	void									reset();
 	void									push(T&& element);

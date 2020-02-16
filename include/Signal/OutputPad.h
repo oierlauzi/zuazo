@@ -13,18 +13,19 @@ template <typename T>
 class OutputPad : public PadBase {
 	friend InputPad<T>;
 public:
-	OutputPad(std::string&& name = "");
+	const std::set<InputPad<T>*>&		getConsumers() const;
+protected:
+	OutputPad(std::string&& name, Layout* owner);
+	OutputPad(OutputPad&& other);
 	OutputPad(const OutputPad& other) = delete;
 	virtual ~OutputPad();
 
-	const std::set<InputPad<T>*>&		getConsumers() const;
-protected:
+	OutputPad&							operator=(const OutputPad& other) = delete;
+	OutputPad&							operator=(OutputPad&& other);
+
 	virtual const T&					get() const = 0;
 	
 private:
-	OutputPad(OutputPad&& other);
-	OutputPad&							operator=(OutputPad&& other);
-
 	std::set<InputPad<T>*>				m_consumers;
 };
 
