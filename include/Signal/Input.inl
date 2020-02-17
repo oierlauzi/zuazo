@@ -4,7 +4,10 @@ namespace Zuazo::Signal {
 
 template <typename T>
 inline Input<T>::Input(std::string&& name, Layout* owner)
-	: InputPad<T>(std::move(name), owner)
+	: Layout::PadBase(
+		typeid(T), 
+		Layout::PadBase::Direction::INPUT, 
+		std::move(name), owner )
 {
 }
 
@@ -27,7 +30,7 @@ template <typename T>
 inline const T& Input<T>::get() const{
 	const auto& newElement = InputPad<T>::get();
 
-	if(newElement != InputPad<T>::NO_SIGNAL || !m_hold){
+	if(newElement != Layout::InputPad<T>::NO_SIGNAL || !m_hold){
 		m_lastElement = newElement;
 	}
 
@@ -38,7 +41,7 @@ template <typename T>
 inline bool Input<T>::hasChanged() const{
 	const auto& newElement = InputPad<T>::get();
 
-	if(newElement != InputPad<T>::NO_SIGNAL || !m_hold){
+	if(newElement != Layout::InputPad<T>::NO_SIGNAL || !m_hold){
 		return m_lastElement == newElement;
 	} else {
 		return true; 

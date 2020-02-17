@@ -1,6 +1,6 @@
 #pragma once
 
-#include "InputPad.h"
+#include "Layout.h"
 
 #include <memory>
 #include <limits>
@@ -12,9 +12,9 @@ template <typename T>
 class InputPad;
 
 template <typename T>
-class Input : public InputPad<T> {
+class Input : public Layout::InputPad<T> {
 public:
-	Input(std::string&& name, Layout* owner = nullptr);
+	Input(std::string&& name, Layout* owner);
 	Input(const Input& other) = default;
 	Input(Input&& other) = default;
 	virtual ~Input() = default;
@@ -22,7 +22,7 @@ public:
 	Input& 								operator=(const Input& other) = default;
 	Input& 								operator=(Input&& other) = default;
 
-	using PadBase::setName;
+	using Layout::PadBase::setName;
 
 	void                                setHold(bool hold);
 	bool                                getHold() const;

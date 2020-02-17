@@ -6,7 +6,11 @@ namespace Zuazo::Signal {
 
 template <typename T>
 inline Output<T>::Output(std::string&& name, Layout* owner)
-	: OutputPad<T>(std::move(name), owner)
+	: Layout::PadBase(
+		typeid(T), 
+		Layout::PadBase::Direction::OUTPUT,
+		std::move(name), 
+		owner )
 {
 }
 
