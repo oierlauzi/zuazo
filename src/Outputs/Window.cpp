@@ -42,9 +42,9 @@ void Window::open(){
 	impl.commandBuffers = createCommandBuffers(vulkan, *impl.commandPool, impl.framebuffers.size());
 
 	//Create the semaphores and the fence
-	impl.imageAvailableSemaphore = Graphics::createSemaphore(vulkan);
-	impl.renderFinishedSemaphore = Graphics::createSemaphore(vulkan);
-	impl.renderFinishedFence = Graphics::createFence(vulkan, true);
+	impl.imageAvailableSemaphore = vulkan.createSemaphore();
+	impl.renderFinishedSemaphore = vulkan.createSemaphore();
+	impl.renderFinishedFence = vulkan.createFence(true);
 
 	//Write the data to the class
 	if((requestedExtent != extent) || (requestedSurfaceFormat != surfaceFormat)){
@@ -283,7 +283,7 @@ vk::UniqueSwapchainKHR Window::createSwapchain(	const Graphics::Vulkan& vulkan,
 		old													//Old swapchain
 	);
 
-	return vulkan.getDevice().createSwapchainKHRUnique(createInfo, nullptr, vulkan.getDispatcher());
+	return vulkan.createSwapchain(createInfo);
 }
 
 std::vector<vk::UniqueImageView> Window::createImageViews(	const Graphics::Vulkan& vulkan,
@@ -306,7 +306,7 @@ std::vector<vk::UniqueImageView> Window::createImageViews(	const Graphics::Vulka
 			)
 		);
 
-		result[i] =  vulkan.getDevice().createImageViewUnique(createInfo, nullptr, vulkan.getDispatcher());
+		result[i] =  vulkan.createImageView(createInfo);
 	}
 
 	return result;
@@ -367,10 +367,7 @@ vk::UniqueRenderPass Window::createRenderPass(	const Graphics::Vulkan& vulkan,
 		subpassDependencies.size(), subpassDependencies.data()//Subpass dependencies
 	);
 
-	return vulkan.getDevice().createRenderPassUnique(
-		createInfo, nullptr,
-		vulkan.getDispatcher()
-	);
+	return vulkan.createRenderPass(createInfo);
 }
 
 vk::UniquePipelineLayout Window::createPipelineLayout(const Graphics::Vulkan& vulkan) {
@@ -380,10 +377,7 @@ vk::UniquePipelineLayout Window::createPipelineLayout(const Graphics::Vulkan& vu
 		0, nullptr											//Push constants
 	);
 
-	return vulkan.getDevice().createPipelineLayoutUnique(
-		createInfo, nullptr, 
-		vulkan.getDispatcher()
-	);
+	return vulkan.createPipelineLayout(createInfo);
 }
 
 vk::UniquePipeline Window::createPipeline(	const Graphics::Vulkan& vulkan,
@@ -391,8 +385,8 @@ vk::UniquePipeline Window::createPipeline(	const Graphics::Vulkan& vulkan,
 											vk::PipelineLayout layout,
 											const vk::Extent2D& extent )
 {
-	const auto vertexShader = createShader(vulkan, Utils::BufferView(window_vert, sizeof(window_vert) / 4));
-	const auto fragmentShader = createShader(vulkan, Utils::BufferView(window_frag, sizeof(window_frag) / 4));
+	const auto vertexShader = vulkan.createShader(Utils::BufferView(window_vert, sizeof(window_vert) / 4));
+	const auto fragmentShader = vulkan.createShader(Utils::BufferView(window_frag, sizeof(window_frag) / 4));
 
 	constexpr auto SHADER_ENTRY_POINT = "main";
 	const std::array shaderStages = {
@@ -519,10 +513,7 @@ vk::UniquePipeline Window::createPipeline(	const Graphics::Vulkan& vulkan,
 		nullptr, -1											//Inherit //TODO
 	);
 
-	return vulkan.getDevice().createGraphicsPipelineUnique(
-		nullptr, createInfo, nullptr,
-		vulkan.getDispatcher()
-	);
+	return vulkan.createGraphicsPipeline(nullptr, createInfo);
 }
 
 std::vector<vk::UniqueFramebuffer> Window::createFramebuffers(	const Graphics::Vulkan& vulkan,
@@ -546,7 +537,7 @@ std::vector<vk::UniqueFramebuffer> Window::createFramebuffers(	const Graphics::V
 			1
 		);
 
-		result[i] = vulkan.getDevice().createFramebufferUnique(createInfo, nullptr, vulkan.getDispatcher());
+		result[i] = vulkan.createFramebuffer(createInfo);
 	}
 
 	return result;
@@ -564,7 +555,7 @@ vk::UniqueCommandPool Window::createCommandPool(const Graphics::Vulkan& vulkan,
 		queueIndex											//Queue index
 	);
 
-	return vulkan.getDevice().createCommandPoolUnique(createInfo, nullptr, vulkan.getDispatcher());
+	return vulkan.createCommandPool(createInfo);
 }
 
 std::vector<vk::UniqueCommandBuffer> Window::createCommandBuffers(	const Graphics::Vulkan& vulkan,
@@ -577,7 +568,7 @@ std::vector<vk::UniqueCommandBuffer> Window::createCommandBuffers(	const Graphic
 		count
 	);
 
-	return vulkan.getDevice().allocateCommandBuffersUnique(allocInfo, vulkan.getDispatcher());
+	return vulkan.allocateCommnadBuffers(allocInfo);
 }
 
 

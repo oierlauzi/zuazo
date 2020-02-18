@@ -3,6 +3,7 @@
 #include "Vulkan.h"
 
 #include <vector>
+#include <array>
 
 
 #define ZUAZO_CONSTRUCT_SWIZZLE(r, g, b, a) vk::ComponentMapping( 	\
@@ -13,17 +14,6 @@
 )
 
 namespace Zuazo::Graphics {
-
-static constexpr vk::FormatFeatureFlags			SRC_FORMAT_FLAGS = 	vk::FormatFeatureFlagBits::eTransferDst |
-																	vk::FormatFeatureFlagBits::eSampledImage |
-																	vk::FormatFeatureFlagBits::eSampledImageFilterLinear;
-
-static constexpr vk::FormatFeatureFlags			DST_FORMAT_FLAGS = 	vk::FormatFeatureFlagBits::eTransferSrc |
-																	vk::FormatFeatureFlagBits::eColorAttachmentBlend;
-
-static constexpr vk::FormatFeatureFlags			YCBCR_FORMAT_FLAGS =vk::FormatFeatureFlagBits::eCositedChromaSamples |
-																	vk::FormatFeatureFlagBits::eMidpointChromaSamples;
-
 
 extern std::vector<vk::LayerProperties> 		getUsedLayers(const std::vector<vk::LayerProperties>& available, std::vector<vk::LayerProperties>& required);
 extern std::vector<const char*> 				getNames(const std::vector<vk::LayerProperties>& layer);
@@ -38,14 +28,5 @@ extern bool										getQueueFamilyCompatibility(vk::QueueFlags required, vk::Qu
 extern bool										hasSamplerSupport(vk::FormatProperties features);
 extern bool										hasFramebufferSupport(vk::FormatProperties features);
 extern bool										hasYCbCrSupport(vk::FormatProperties features);
-
-
-extern vk::FormatProperties						getFormatFeatures(const Vulkan& vulkan, vk::Format format);
-
-extern vk::UniqueShaderModule					createShader(const Vulkan& vulkan, const Utils::BufferView<uint32_t>& code);
-extern vk::UniqueSemaphore						createSemaphore(const Vulkan& vulkan);
-extern vk::UniqueFence							createFence(const Vulkan& vulkan, bool signaled = false);
-
-
 
 }

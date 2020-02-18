@@ -91,6 +91,9 @@ Vulkan::Vulkan(	const std::string_view& appName,
 	, m_queueIndices(getQueueIndices(m_dispatcher, *m_instance, m_physicalDevice))
 	, m_device(createDevice(m_dispatcher, m_physicalDevice, m_queueIndices))
 	, m_queues(getQueues(m_dispatcher, *m_device, m_queueIndices))
+	, m_formatSupport(getFormatSupport(m_dispatcher, m_physicalDevice))
+	, m_rgbSamplers(createRgbSamplers(m_dispatcher, *m_device))
+	, m_ycbcrSamplers(createYcbcrSamplers(m_dispatcher, m_physicalDevice, *m_device, m_formatSupport.ycbcrSampler))
 {
 }
 
@@ -144,6 +147,89 @@ uint32_t Vulkan::getPresentationQueueIndex() const{
 
 vk::Queue Vulkan::getPresentationQueue() const{
 	return m_queues[PRESENTATION_QUEUE];
+}
+
+const Vulkan::FormatSupport& Vulkan::getFormatSupport() const{
+	return m_formatSupport;
+}
+
+vk::Sampler Vulkan::getRgbSampler(vk::Filter filter) const{
+	return *(m_rgbSamplers[static_cast<size_t>(filter)]);
+}
+
+vk::Sampler Vulkan::getYcbcrSampler(vk::Filter filter,
+									vk::SamplerYcbcrRange range,
+									vk::SamplerYcbcrModelConversion model,
+									vk::Format format ) const
+{
+	return *(m_ycbcrSamplers
+			[static_cast<size_t>(format)]
+			[static_cast<size_t>(model)]
+			[static_cast<size_t>(range)]
+			[static_cast<size_t>(filter)] );
+}
+
+
+
+vk::FormatProperties Vulkan::getFormatFeatures(vk::Format format) const {
+	return m_physicalDevice.getFormatProperties(format, m_dispatcher);
+}
+
+
+
+
+vk::UniqueSwapchainKHR Vulkan::createSwapchain(const vk::SwapchainCreateInfoKHR& createInfo) const{
+	return m_device->createSwapchainKHRUnique(createInfo, nullptr, m_dispatcher);
+}
+vk::UniqueImageView Vulkan::createImageView(const vk::ImageViewCreateInfo& createInfo) const{
+	return m_device->createImageViewUnique(createInfo, nullptr, m_dispatcher);
+}
+
+vk::UniqueRenderPass Vulkan::createRenderPass(const vk::RenderPassCreateInfo& createInfo) const{
+	return m_device->createRenderPassUnique(createInfo, nullptr, m_dispatcher);
+}
+
+vk::UniqueShaderModule Vulkan::createShader(const Utils::BufferView<uint32_t>& code) const {
+	const vk::ShaderModuleCreateInfo createInfo(
+		{},												//Flags
+		code.size() * sizeof(uint32_t), code.data()		//Code
+	);
+
+	return m_device->createShaderModuleUnique(createInfo, nullptr, m_dispatcher);
+}
+
+vk::UniquePipelineLayout Vulkan::createPipelineLayout(const vk::PipelineLayoutCreateInfo& createInfo) const{
+	return m_device->createPipelineLayoutUnique(createInfo, nullptr, m_dispatcher);
+}
+
+vk::UniquePipeline Vulkan::createGraphicsPipeline(	vk::PipelineCache cache,
+													const vk::GraphicsPipelineCreateInfo& createInfo ) const 
+{
+	return m_device->createGraphicsPipelineUnique(cache, createInfo, nullptr, m_dispatcher);
+}
+
+vk::UniqueFramebuffer Vulkan::createFramebuffer(const vk::FramebufferCreateInfo& createInfo) const{
+	return m_device->createFramebufferUnique(createInfo, nullptr, m_dispatcher);
+}
+
+vk::UniqueCommandPool Vulkan::createCommandPool(const vk::CommandPoolCreateInfo& createInfo) const{
+	return m_device->createCommandPoolUnique(createInfo, nullptr, m_dispatcher);
+}
+
+std::vector<vk::UniqueCommandBuffer> Vulkan::allocateCommnadBuffers(const vk::CommandBufferAllocateInfo& allocInfo) const{
+	return m_device->allocateCommandBuffersUnique(allocInfo, m_dispatcher);
+}
+
+vk::UniqueSemaphore Vulkan::createSemaphore() const {
+	const vk::SemaphoreCreateInfo createInfo;
+	return m_device->createSemaphoreUnique(createInfo, nullptr, m_dispatcher);
+}
+
+vk::UniqueFence Vulkan::createFence(bool signaled) const {
+	const vk::FenceCreateInfo createInfo(
+		signaled ? vk::FenceCreateFlags(vk::FenceCreateFlagBits::eSignaled) : vk::FenceCreateFlags()
+	);
+	return m_device->createFenceUnique(createInfo, nullptr, m_dispatcher);
 }
 
 
@@ -213,10 +299,10 @@ vk::UniqueInstance Vulkan::createInstance(	vk::DispatchLoaderDynamic& disp,
 
 	//Create the vulkan instance
 	const vk::InstanceCreateInfo createInfo(
-		{},
-		&appInfo,
-		usedLayerNames.size(), usedLayerNames.data(),
-		usedExtensionNames.size(), usedExtensionNames.data()
+		{},														//Flags
+		&appInfo,												//Application info
+		usedLayerNames.size(), usedLayerNames.data(),			//Validation layers
+		usedExtensionNames.size(), usedExtensionNames.data()	//Extensions
 	);
 	auto instance = vk::createInstanceUnique(createInfo, nullptr, disp);
 
@@ -240,11 +326,11 @@ vk::UniqueDebugUtilsMessengerEXT Vulkan::createMessenger(	const vk::DispatchLoad
 			vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
 
 		const vk::DebugUtilsMessengerCreateInfoEXT createInfo(
-			{},
-			msgSeverity,
-			msgTypes,
-			validationLayerCallback,
-			nullptr
+			{},										//Flags
+			msgSeverity,							//Message severity flags
+			msgTypes,								//Message type flags
+			validationLayerCallback,				//Callback ptr
+			nullptr									//User ptr
 		);
 
 		return instance.createDebugUtilsMessengerEXTUnique(createInfo, nullptr, disp);
@@ -382,9 +468,9 @@ vk::UniqueDevice Vulkan::createDevice(	vk::DispatchLoaderDynamic& disp,
 	//Create it
 	vk::DeviceCreateInfo createInfo(
 		{},
-		queueCreateInfos.size(), queueCreateInfos.data(),
-		layerNames.size(), layerNames.data(),
-		extensionNames.size(), extensionNames.data()
+		queueCreateInfos.size(), queueCreateInfos.data(),			//Queue families
+		layerNames.size(), layerNames.data(),						//Validation layers
+		extensionNames.size(), extensionNames.data()				//Extensions
 	);
 	createInfo.pNext = static_cast<const void*>(&(enabledFeatures.get<vk::PhysicalDeviceFeatures2>()));
 
@@ -409,7 +495,142 @@ std::array<vk::Queue, Vulkan::QUEUE_NUM> Vulkan::getQueues(	const vk::DispatchLo
 	return queues;
 }
 
+Vulkan::FormatSupport Vulkan::getFormatSupport(	const vk::DispatchLoaderDynamic& disp, 
+												const vk::PhysicalDevice& physicalDevice )
+{
+	constexpr std::array FORMAT_RANGES = {
+		std::pair{VK_FORMAT_BEGIN_RANGE, VK_FORMAT_END_RANGE }, //Normal formats
+		std::pair{VK_FORMAT_G8B8G8R8_422_UNORM, VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM } //YCbCr formats
+	};
 
+	Vulkan::FormatSupport result;
+
+	for(const auto& range : FORMAT_RANGES){
+		for(size_t i = range.first; i <= range.second; i++){
+			const auto format = static_cast<vk::Format>(i);
+
+			const auto properties = physicalDevice.getFormatProperties(format, disp);
+
+			if(hasSamplerSupport(properties)){
+				result.sampler.emplace_back(format);
+				
+				if(hasYCbCrSupport(properties)){
+					result.ycbcrSampler.emplace_back(format);
+				}
+			}
+
+			if(hasFramebufferSupport(properties)){
+				result.framebuffer.emplace_back(format);
+			}
+		}
+	}
+
+	return result;
+}
+
+Vulkan::Samplers Vulkan::createRgbSamplers(	const vk::DispatchLoaderDynamic& disp, 
+											const vk::Device& device )
+{
+	Samplers result;
+
+	for(size_t i = 0; i < result.size(); i++){
+		const auto filter = static_cast<vk::Filter>(i);
+
+		const vk::SamplerCreateInfo createInfo(
+			{},														//Flags
+			filter, filter,											//Min/Mag filter
+			vk::SamplerMipmapMode::eNearest,						//Mipmap mode
+			vk::SamplerAddressMode::eClampToEdge,					//U address mode
+			vk::SamplerAddressMode::eClampToEdge,					//V address mode
+			vk::SamplerAddressMode::eClampToEdge,					//W address mode
+			0.0f,													//Mip LOD bias
+			false,													//Enable anisotropy
+			0.0f,													//Max anisotropy
+			false,													//Compare enable
+			vk::CompareOp::eNever,									//Compare operation
+			0.0f, 0.0f,												//Min/Max LOD
+			vk::BorderColor::eFloatTransparentBlack,				//Boreder color
+			false													//Unormalized coords
+		);
+
+		result[i] = device.createSamplerUnique(createInfo, nullptr, disp);
+	}
+
+	return result;
+}
+
+std::vector<Vulkan::YcbcrSamplers> Vulkan::createYcbcrSamplers(	const vk::DispatchLoaderDynamic& disp, 
+																const vk::PhysicalDevice& physicalDevice,
+																const vk::Device& device,
+																const std::vector<vk::Format>& formats )
+{
+	std::vector<Vulkan::YcbcrSamplers> result;
+	result.reserve(formats.size());
+
+	for(const auto format : formats){
+		const auto properties = physicalDevice.getFormatProperties(format, disp);
+
+		const auto chromaLocation = 
+			(properties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eMidpointChromaSamples) 
+			? vk::ChromaLocation::eMidpoint
+			: vk::ChromaLocation::eCositedEven;
+
+		YcbcrSamplers samplers;
+
+		//For each combination, create a sampler (20 samplers)
+		for(size_t i = 0; i < samplers.size(); i++){ //All color models (5)
+			const auto colorModel = static_cast<vk::SamplerYcbcrModelConversion>(i);
+
+			for(size_t j = 0; j < samplers[i].size(); j++){ //All color ranges (2)
+				const auto colorRange = static_cast<vk::SamplerYcbcrRange>(j);
+				
+				for(size_t h = 0; h < samplers[i][j].size(); h++){ //All filters (2)
+					const auto filter = static_cast<vk::Filter>(h);
+
+					const vk::SamplerYcbcrConversionCreateInfo ycbcrCreateInfo(
+						format,													//Pixel format
+						colorModel,												//Color model
+						colorRange,												//Color range
+						{},														//Swizzle
+						chromaLocation,											//X chroma location
+						chromaLocation,											//Y chroma location
+						filter,													//Reconstruction filter
+						false													//Force explicit reconstruction
+					);
+
+					const auto ycbcrConversion = device.createSamplerYcbcrConversionUnique(ycbcrCreateInfo, nullptr, disp);				
+					const vk::SamplerYcbcrConversionInfo ycbcrInfo(*ycbcrConversion);
+
+
+					vk::SamplerCreateInfo createInfo(
+						{},														//Flags
+						filter, filter,											//Min/Mag filter
+						vk::SamplerMipmapMode::eNearest,						//Mipmap mode
+						vk::SamplerAddressMode::eClampToEdge,					//U address mode
+						vk::SamplerAddressMode::eClampToEdge,					//V address mode
+						vk::SamplerAddressMode::eClampToEdge,					//W address mode
+						0.0f,													//Mip LOD bias
+						false,													//Enable anisotropy
+						0.0f,													//Max anisotropy
+						false,													//Compare enable
+						vk::CompareOp::eNever,									//Compare operation
+						0.0f, 0.0f,												//Min/Max LOD
+						vk::BorderColor::eFloatTransparentBlack,				//Boreder color
+						false													//Unormalized coords
+					);
+					createInfo.pNext = &ycbcrInfo;
+
+					samplers[i][j][h] = device.createSamplerUnique(createInfo, nullptr, disp);
+				}
+			}
+		}
+
+		result.emplace_back(std::move(samplers));
+	}
+
+	assert(result.size() == formats.size());
+	return result;
+}
 
 
 std::vector<vk::LayerProperties> Vulkan::getRequiredLayers(){

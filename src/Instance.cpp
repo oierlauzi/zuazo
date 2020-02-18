@@ -77,23 +77,40 @@ void Instance::defaultLogFunc(const Instance& inst, Verbosity severity, const st
 
 
 void Instance::setupSupportedFormats(){
+	const auto& supported = m_vulkan.getFormatSupport();
+
 	for(auto format = ColorFormat::NONE; format < ColorFormat::COUNT; format++){
-		const auto [f, s] = Graphics::optimizeFormat(Graphics::toVulkan(format));
+		const auto unoptimized = Graphics::toVulkan(format);
 
-		if(f == vk::Format::eUndefined) continue;
+		if(std::get<vk::Format>(unoptimized) == vk::Format::eUndefined) continue; //Not supported
 
-		const auto features = getFormatFeatures(m_vulkan, f);
+		const auto optimized = Graphics::optimizeFormat(unoptimized);
 
-		if(Graphics::hasSamplerSupport(features)) {
+
+		if(std::find(	supported.sampler.cbegin(), 
+						supported.sampler.cend(), 
+						std::get<vk::Format>(unoptimized)) 
+					!= supported.sampler.cend())
+		{
 			m_inputFormats.emplace_back(format);
-
-			if(Graphics::hasYCbCrSupport(features)){
-				m_inputYcbcrFormats.emplace_back(format);
-			}
 		}
 
-		if(Graphics::hasFramebufferSupport(features) && s == vk::ComponentMapping()) {
-			m_outputFormats.emplace_back(format);
+		if(std::find(	supported.ycbcrSampler.cbegin(), 
+						supported.ycbcrSampler.cend(), 
+						std::get<vk::Format>(unoptimized)) 
+					!= supported.ycbcrSampler.cend())
+		{
+			m_inputYcbcrFormats.emplace_back(format);
+		}
+
+		if(std::get<vk::ComponentMapping>(optimized) == vk::ComponentMapping()) {
+			if(std::find(	supported.framebuffer.cbegin(), 
+							supported.framebuffer.cend(), 
+							std::get<vk::Format>(optimized)) 
+						!= supported.framebuffer.cend())
+			{
+				m_outputFormats.emplace_back(format);
+			}
 		}
 	}
 }
@@ -142,6 +159,7 @@ uint32_t Instance::defaultDeviceScoreFunc(const vk::DispatchLoaderDynamic& disp,
 	constexpr uint32_t YCBCR_FORMAT_SCORE = 4;
 	constexpr uint32_t TEXTURE_RESOLUTION_REDUCTION = 1024;
 	constexpr uint32_t FRAMEBUFFER_RESOLUTION_REDUCTION = 1024;
+	constexpr uint32_t SIMULTANEOUS_ALLOCATION_REDUCTION = 64;
 
 	//Sum all the scores
 	int32_t score = MINIMUM_SCORE;
@@ -163,6 +181,7 @@ uint32_t Instance::defaultDeviceScoreFunc(const vk::DispatchLoaderDynamic& disp,
 	score += properties.limits.maxImageDimension2D / TEXTURE_RESOLUTION_REDUCTION;
 	score += properties.limits.maxFramebufferWidth / FRAMEBUFFER_RESOLUTION_REDUCTION;
 	score += properties.limits.maxFramebufferHeight / FRAMEBUFFER_RESOLUTION_REDUCTION;
+	score += properties.limits.maxMemoryAllocationCount / SIMULTANEOUS_ALLOCATION_REDUCTION;
 
 	//Give the score based on the supported formats
 	for(auto format = ColorFormat::NONE; format < ColorFormat::COUNT; format++){

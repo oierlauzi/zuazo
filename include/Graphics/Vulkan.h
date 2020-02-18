@@ -20,6 +20,13 @@ namespace Zuazo::Graphics {
 class Vulkan {
 public:
 	using DeviceScoreFunc = std::function<uint32_t(const vk::DispatchLoaderDynamic&, vk::PhysicalDevice)>;
+	using Samplers = std::array<vk::UniqueSampler, VK_FILTER_RANGE_SIZE>;
+	struct FormatSupport {
+		std::vector<vk::Format>	sampler;
+		std::vector<vk::Format>	ycbcrSampler;
+		std::vector<vk::Format>	framebuffer;
+	};
+
 
 	Vulkan(	const std::string_view& appName, 
 			Version appVersion,
@@ -40,7 +47,28 @@ public:
 	vk::Queue										getTransferQueue() const;
 	uint32_t										getPresentationQueueIndex() const;
 	vk::Queue										getPresentationQueue() const;
+	const FormatSupport&							getFormatSupport() const;
+	vk::Sampler										getRgbSampler(vk::Filter filter) const;
+	vk::Sampler										getYcbcrSampler(vk::Filter filter,
+																	vk::SamplerYcbcrRange range,
+																	vk::SamplerYcbcrModelConversion model,
+																	vk::Format format ) const;
 	
+	vk::FormatProperties							getFormatFeatures(vk::Format format) const;
+
+	vk::UniqueSwapchainKHR							createSwapchain(const vk::SwapchainCreateInfoKHR& createInfo) const;
+	vk::UniqueImageView								createImageView(const vk::ImageViewCreateInfo& createInfo) const;
+	vk::UniqueRenderPass							createRenderPass(const vk::RenderPassCreateInfo& createInfo) const;
+	vk::UniqueShaderModule							createShader(const Utils::BufferView<uint32_t>& code) const;
+	vk::UniquePipelineLayout						createPipelineLayout(const vk::PipelineLayoutCreateInfo& createInfo) const;
+	vk::UniquePipeline								createGraphicsPipeline(	vk::PipelineCache cache,
+																			const vk::GraphicsPipelineCreateInfo& createInfo ) const;
+	vk::UniqueFramebuffer							createFramebuffer(const vk::FramebufferCreateInfo& createInfo) const;
+	vk::UniqueCommandPool							createCommandPool(const vk::CommandPoolCreateInfo& createInfo) const;
+	std::vector<vk::UniqueCommandBuffer>			allocateCommnadBuffers(const vk::CommandBufferAllocateInfo& allocInfo) const;
+	vk::UniqueSemaphore								createSemaphore() const;
+	vk::UniqueFence									createFence(bool signaled = false) const;
+
 private:
 	enum QueueIndices {
 		GRAPHICS_QUEUE,
@@ -50,6 +78,12 @@ private:
 		QUEUE_NUM
 	};
 
+	using YcbcrSamplers = std::array<
+							std::array<
+								Samplers, 
+								VK_SAMPLER_YCBCR_RANGE_RANGE_SIZE >, 
+							VK_SAMPLER_YCBCR_MODEL_CONVERSION_RANGE_SIZE >;
+
 	vk::DynamicLoader								m_loader;
 	vk::DispatchLoaderDynamic						m_dispatcher;
 	vk::UniqueInstance								m_instance;
@@ -58,6 +92,9 @@ private:
 	std::array<uint32_t, QUEUE_NUM>					m_queueIndices;
 	vk::UniqueDevice								m_device;
 	std::array<vk::Queue, QUEUE_NUM>				m_queues;
+	FormatSupport									m_formatSupport;					
+	Samplers										m_rgbSamplers;
+	std::vector<YcbcrSamplers>						m_ycbcrSamplers;
 
 	static vk::DispatchLoaderDynamic				createDispatcher(const vk::DynamicLoader& loader);
 	static vk::UniqueInstance						createInstance(	vk::DispatchLoaderDynamic& disp, 
@@ -77,6 +114,14 @@ private:
 	static std::array<vk::Queue, QUEUE_NUM>			getQueues(	const vk::DispatchLoaderDynamic& disp, 
 																const vk::Device& device, 
 																const std::array<uint32_t, QUEUE_NUM>& queueIndices);
+	static FormatSupport							getFormatSupport(	const vk::DispatchLoaderDynamic& disp, 
+																		const vk::PhysicalDevice& physicalDevice );
+	static Samplers 								createRgbSamplers(	const vk::DispatchLoaderDynamic& disp, 
+																		const vk::Device& device );
+	static std::vector<YcbcrSamplers>				createYcbcrSamplers(const vk::DispatchLoaderDynamic& disp, 
+																		const vk::PhysicalDevice& physicalDevice,
+																		const vk::Device& device,
+																		const std::vector<vk::Format>& formats );
 																
 	static std::vector<vk::LayerProperties> 		getRequiredLayers();
 	static std::vector<vk::ExtensionProperties>		getRequiredInstanceExtensions();
