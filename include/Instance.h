@@ -30,6 +30,7 @@ public:
 							ColorPrimaries::BT709,
 							ColorModel::RGB,
 							ColorTransferFunction::IEC61966_2_1,
+							ColorSubsampling::NONE,
 							ColorRange::FULL,
 							ColorFormat::B8G8R8A8
 						};
@@ -56,7 +57,6 @@ public:
 	Timing::MainLoop&			getMainLoop();
 
 	const std::vector<ColorFormat>& getSupportedInputFormats() const;
-	const std::vector<ColorFormat>& getSupportedInputYcbcrFormats() const;
 	const std::vector<ColorFormat>& getSupportedOutputFormats() const;
 
 	static void 				defaultLogFunc(	const Instance& inst, 
@@ -72,7 +72,6 @@ private:
 	Timing::MainLoop			m_loop;
 
 	std::vector<ColorFormat>	m_inputFormats;
-	std::vector<ColorFormat>	m_inputYcbcrFormats;
 	std::vector<ColorFormat>	m_outputFormats;
 
 	void 						setupSupportedFormats();

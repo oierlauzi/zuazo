@@ -20,13 +20,13 @@ namespace Zuazo::Graphics {
 class Vulkan {
 public:
 	using DeviceScoreFunc = std::function<uint32_t(const vk::DispatchLoaderDynamic&, vk::PhysicalDevice)>;
-	using Samplers = std::array<vk::UniqueSampler, VK_FILTER_RANGE_SIZE>;
+
 	struct FormatSupport {
 		std::vector<vk::Format>	sampler;
-		std::vector<vk::Format>	ycbcrSampler;
 		std::vector<vk::Format>	framebuffer;
 	};
 
+	static constexpr size_t SAMPLER_COUNT = 4;
 
 	Vulkan(	const std::string_view& appName, 
 			Version appVersion,
@@ -48,11 +48,8 @@ public:
 	uint32_t										getPresentationQueueIndex() const;
 	vk::Queue										getPresentationQueue() const;
 	const FormatSupport&							getFormatSupport() const;
-	vk::Sampler										getRgbSampler(vk::Filter filter) const;
-	vk::Sampler										getYcbcrSampler(vk::Filter filter,
-																	vk::SamplerYcbcrRange range,
-																	vk::SamplerYcbcrModelConversion model,
-																	vk::Format format ) const;
+	vk::Sampler										getSampler(	size_t index, 
+																vk::Filter filter) const;
 	
 	vk::FormatProperties							getFormatFeatures(vk::Format format) const;
 
@@ -78,11 +75,7 @@ private:
 		QUEUE_NUM
 	};
 
-	using YcbcrSamplers = std::array<
-							std::array<
-								Samplers, 
-								VK_SAMPLER_YCBCR_RANGE_RANGE_SIZE >, 
-							VK_SAMPLER_YCBCR_MODEL_CONVERSION_RANGE_SIZE >;
+	using Samplers = std::array<std::array<vk::UniqueSampler, VK_FILTER_RANGE_SIZE>, SAMPLER_COUNT>;
 
 	vk::DynamicLoader								m_loader;
 	vk::DispatchLoaderDynamic						m_dispatcher;
@@ -92,9 +85,8 @@ private:
 	std::array<uint32_t, QUEUE_NUM>					m_queueIndices;
 	vk::UniqueDevice								m_device;
 	std::array<vk::Queue, QUEUE_NUM>				m_queues;
-	FormatSupport									m_formatSupport;					
-	Samplers										m_rgbSamplers;
-	std::vector<YcbcrSamplers>						m_ycbcrSamplers;
+	FormatSupport									m_formatSupport;
+	Samplers										m_samplers;					
 
 	static vk::DispatchLoaderDynamic				createDispatcher(const vk::DynamicLoader& loader);
 	static vk::UniqueInstance						createInstance(	vk::DispatchLoaderDynamic& disp, 
@@ -116,12 +108,8 @@ private:
 																const std::array<uint32_t, QUEUE_NUM>& queueIndices);
 	static FormatSupport							getFormatSupport(	const vk::DispatchLoaderDynamic& disp, 
 																		const vk::PhysicalDevice& physicalDevice );
-	static Samplers 								createRgbSamplers(	const vk::DispatchLoaderDynamic& disp, 
-																		const vk::Device& device );
-	static std::vector<YcbcrSamplers>				createYcbcrSamplers(const vk::DispatchLoaderDynamic& disp, 
-																		const vk::PhysicalDevice& physicalDevice,
-																		const vk::Device& device,
-																		const std::vector<vk::Format>& formats );
+	static Samplers 								createSamplers(	const vk::DispatchLoaderDynamic& disp, 
+																	const vk::Device& device );
 																
 	static std::vector<vk::LayerProperties> 		getRequiredLayers();
 	static std::vector<vk::ExtensionProperties>		getRequiredInstanceExtensions();

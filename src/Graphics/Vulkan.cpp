@@ -92,8 +92,7 @@ Vulkan::Vulkan(	const std::string_view& appName,
 	, m_device(createDevice(m_dispatcher, m_physicalDevice, m_queueIndices))
 	, m_queues(getQueues(m_dispatcher, *m_device, m_queueIndices))
 	, m_formatSupport(getFormatSupport(m_dispatcher, m_physicalDevice))
-	, m_rgbSamplers(createRgbSamplers(m_dispatcher, *m_device))
-	, m_ycbcrSamplers(createYcbcrSamplers(m_dispatcher, m_physicalDevice, *m_device, m_formatSupport.ycbcrSampler))
+	, m_samplers(createSamplers(m_dispatcher, *m_device))
 {
 }
 
@@ -153,21 +152,12 @@ const Vulkan::FormatSupport& Vulkan::getFormatSupport() const{
 	return m_formatSupport;
 }
 
-vk::Sampler Vulkan::getRgbSampler(vk::Filter filter) const{
-	return *(m_rgbSamplers[static_cast<size_t>(filter)]);
+vk::Sampler Vulkan::getSampler(	size_t index, 
+								vk::Filter filter) const
+{
+	return *(m_samplers[index][static_cast<size_t>(filter)]);
 }
 
-vk::Sampler Vulkan::getYcbcrSampler(vk::Filter filter,
-									vk::SamplerYcbcrRange range,
-									vk::SamplerYcbcrModelConversion model,
-									vk::Format format ) const
-{
-	return *(m_ycbcrSamplers
-			[static_cast<size_t>(format)]
-			[static_cast<size_t>(model)]
-			[static_cast<size_t>(range)]
-			[static_cast<size_t>(filter)] );
-}
 
 
 
@@ -254,7 +244,7 @@ vk::UniqueInstance Vulkan::createInstance(	vk::DispatchLoaderDynamic& disp,
 		appVersion,
 		"Zuazo",
 		toVulkan(runtimeVersion),
-		VK_API_VERSION_1_1
+		VK_API_VERSION_1_0
 	);
 
 	//Get the validation layers
@@ -455,24 +445,13 @@ vk::UniqueDevice Vulkan::createDevice(	vk::DispatchLoaderDynamic& disp,
 		);
 	}
 
-	//Select enabled features
-	auto availableFeatures = physicalDevice.getFeatures2<	vk::PhysicalDeviceFeatures2, 
-															vk::PhysicalDeviceSamplerYcbcrConversionFeatures>(disp);
-	decltype(availableFeatures) enabledFeatures;
-
-	if(availableFeatures.get<vk::PhysicalDeviceSamplerYcbcrConversionFeatures>().samplerYcbcrConversion){
-		//Enable YCbCr conversion
-		enabledFeatures.get<vk::PhysicalDeviceSamplerYcbcrConversionFeatures>().samplerYcbcrConversion = true;
-	}
-
 	//Create it
-	vk::DeviceCreateInfo createInfo(
+	const vk::DeviceCreateInfo createInfo(
 		{},
 		queueCreateInfos.size(), queueCreateInfos.data(),			//Queue families
 		layerNames.size(), layerNames.data(),						//Validation layers
 		extensionNames.size(), extensionNames.data()				//Extensions
 	);
-	createInfo.pNext = static_cast<const void*>(&(enabledFeatures.get<vk::PhysicalDeviceFeatures2>()));
 
 	auto dev = physicalDevice.createDeviceUnique(createInfo, nullptr, disp);
 
@@ -513,10 +492,6 @@ Vulkan::FormatSupport Vulkan::getFormatSupport(	const vk::DispatchLoaderDynamic&
 
 			if(hasSamplerSupport(properties)){
 				result.sampler.emplace_back(format);
-				
-				if(hasYCbCrSupport(properties)){
-					result.ycbcrSampler.emplace_back(format);
-				}
 			}
 
 			if(hasFramebufferSupport(properties)){
@@ -528,109 +503,40 @@ Vulkan::FormatSupport Vulkan::getFormatSupport(	const vk::DispatchLoaderDynamic&
 	return result;
 }
 
-Vulkan::Samplers Vulkan::createRgbSamplers(	const vk::DispatchLoaderDynamic& disp, 
+Vulkan::Samplers Vulkan::createSamplers(	const vk::DispatchLoaderDynamic& disp, 
 											const vk::Device& device )
 {
 	Samplers result;
 
 	for(size_t i = 0; i < result.size(); i++){
-		const auto filter = static_cast<vk::Filter>(i);
+		for(size_t j = 0; j < result[i].size(); j++){
+			const auto filter = static_cast<vk::Filter>(j);
 
-		const vk::SamplerCreateInfo createInfo(
-			{},														//Flags
-			filter, filter,											//Min/Mag filter
-			vk::SamplerMipmapMode::eNearest,						//Mipmap mode
-			vk::SamplerAddressMode::eClampToEdge,					//U address mode
-			vk::SamplerAddressMode::eClampToEdge,					//V address mode
-			vk::SamplerAddressMode::eClampToEdge,					//W address mode
-			0.0f,													//Mip LOD bias
-			false,													//Enable anisotropy
-			0.0f,													//Max anisotropy
-			false,													//Compare enable
-			vk::CompareOp::eNever,									//Compare operation
-			0.0f, 0.0f,												//Min/Max LOD
-			vk::BorderColor::eFloatTransparentBlack,				//Boreder color
-			false													//Unormalized coords
-		);
+			const vk::SamplerCreateInfo createInfo(
+				{},														//Flags
+				filter, filter,											//Min/Mag filter
+				vk::SamplerMipmapMode::eNearest,						//Mipmap mode
+				vk::SamplerAddressMode::eClampToEdge,					//U address mode
+				vk::SamplerAddressMode::eClampToEdge,					//V address mode
+				vk::SamplerAddressMode::eClampToEdge,					//W address mode
+				0.0f,													//Mip LOD bias
+				false,													//Enable anisotropy
+				0.0f,													//Max anisotropy
+				false,													//Compare enable
+				vk::CompareOp::eNever,									//Compare operation
+				0.0f, 0.0f,												//Min/Max LOD
+				vk::BorderColor::eFloatTransparentBlack,				//Boreder color
+				false													//Unormalized coords
+			);
 
-		result[i] = device.createSamplerUnique(createInfo, nullptr, disp);
-	}
-
-	return result;
-}
-
-std::vector<Vulkan::YcbcrSamplers> Vulkan::createYcbcrSamplers(	const vk::DispatchLoaderDynamic& disp, 
-																const vk::PhysicalDevice& physicalDevice,
-																const vk::Device& device,
-																const std::vector<vk::Format>& formats )
-{
-	std::vector<Vulkan::YcbcrSamplers> result;
-	result.reserve(formats.size());
-
-	for(const auto format : formats){
-		const auto properties = physicalDevice.getFormatProperties(format, disp);
-
-		const auto chromaLocation = 
-			(properties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eMidpointChromaSamples) 
-			? vk::ChromaLocation::eMidpoint
-			: vk::ChromaLocation::eCositedEven;
-
-		YcbcrSamplers samplers;
-
-		//For each combination, create a sampler (20 samplers)
-		for(size_t i = 0; i < samplers.size(); i++){ //All color models (5)
-			const auto colorModel = static_cast<vk::SamplerYcbcrModelConversion>(i);
-
-			for(size_t j = 0; j < samplers[i].size(); j++){ //All color ranges (2)
-				const auto colorRange = static_cast<vk::SamplerYcbcrRange>(j);
-				
-				for(size_t h = 0; h < samplers[i][j].size(); h++){ //All filters (2)
-					const auto filter = static_cast<vk::Filter>(h);
-
-					const vk::SamplerYcbcrConversionCreateInfo ycbcrCreateInfo(
-						format,													//Pixel format
-						colorModel,												//Color model
-						colorRange,												//Color range
-						{},														//Swizzle
-						chromaLocation,											//X chroma location
-						chromaLocation,											//Y chroma location
-						filter,													//Reconstruction filter
-						false													//Force explicit reconstruction
-					);
-
-					const auto ycbcrConversion = device.createSamplerYcbcrConversionUnique(ycbcrCreateInfo, nullptr, disp);				
-					const vk::SamplerYcbcrConversionInfo ycbcrInfo(*ycbcrConversion);
-
-
-					vk::SamplerCreateInfo createInfo(
-						{},														//Flags
-						filter, filter,											//Min/Mag filter
-						vk::SamplerMipmapMode::eNearest,						//Mipmap mode
-						vk::SamplerAddressMode::eClampToEdge,					//U address mode
-						vk::SamplerAddressMode::eClampToEdge,					//V address mode
-						vk::SamplerAddressMode::eClampToEdge,					//W address mode
-						0.0f,													//Mip LOD bias
-						false,													//Enable anisotropy
-						0.0f,													//Max anisotropy
-						false,													//Compare enable
-						vk::CompareOp::eNever,									//Compare operation
-						0.0f, 0.0f,												//Min/Max LOD
-						vk::BorderColor::eFloatTransparentBlack,				//Boreder color
-						false													//Unormalized coords
-					);
-					createInfo.pNext = &ycbcrInfo;
-
-					samplers[i][j][h] = device.createSamplerUnique(createInfo, nullptr, disp);
-				}
-			}
+			result[i][j] = device.createSamplerUnique(createInfo, nullptr, disp);
 		}
-
-		result.emplace_back(std::move(samplers));
 	}
 
-	assert(result.size() == formats.size());
 	return result;
 }
+
+
 
 
 std::vector<vk::LayerProperties> Vulkan::getRequiredLayers(){

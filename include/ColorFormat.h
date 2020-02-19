@@ -21,8 +21,6 @@ namespace Zuazo {
  * * Components separated by an underscore "_" means the begining of a new plane.
  * * A _## at the end (for istance _32) represents that it is packed in ## bit CPU word(s).
  * 		This means that it will be endianess dependant
- * * A _S422 at the end means that it will have a 4:2:2 chroma subsampling scheme. 
- * * A _S420 at the end means that it will have a 4:2:0 chroma subsampling scheme. 
  */
 enum class ColorFormat {
 	NONE = 0,
@@ -108,19 +106,14 @@ enum class ColorFormat {
 	R8G8B8X8_32,
 	B8G8R8X8_32,
 	
-	R8G8B8G8_S422,
-	B8G8R8G8_S422,
-	G8R8G8B8_S422,
-	G8B8G8R8_S422,
+	R8G8B8G8, ///<\note: This format must have 4:2:2 subsampling
+	B8G8R8G8, ///<\note: This format must have 4:2:2 subsampling
+	G8R8G8B8, ///<\note: This format must have 4:2:2 subsampling
+	G8B8G8R8, ///<\note: This format must have 4:2:2 subsampling
 
 	G8_B8_R8,
-	G8_B8_R8_S422,
-	G8_B8_R8_S420,
-
-	G8_R8B8_S422,
-	G8_B8R8_S422,
-	G8_R8B8_S420,
-	G8_B8R8_S420,
+	G8_R8B8,
+	G8_B8R8,
 
 
 	//10 BIT COMPONENTS
@@ -148,19 +141,14 @@ enum class ColorFormat {
 	A2G10R10B10_32, 
 	A2G10B10R10_32,
 
-	R10X6G10X6B10X6G10X6_S422_16,
-	B10X6G10X6R10X6G10X6_S422_16,
-	G10X6R10X6G10X6B10X6_S422_16,
-	G10X6B10X6G10X6R10X6_S422_16,
+	R10X6G10X6B10X6G10X6_16, ///<\note: This format must have 4:2:2 subsampling
+	B10X6G10X6R10X6G10X6_16, ///<\note: This format must have 4:2:2 subsampling
+	G10X6R10X6G10X6B10X6_16, ///<\note: This format must have 4:2:2 subsampling
+	G10X6B10X6G10X6R10X6_16, ///<\note: This format must have 4:2:2 subsampling
 
 	G10X6_B10X6_R10X6_16,
-	G10X6_B10X6_R10X6_S422_16,
-	G10X6_B10X6_R10X6_S420_16,
-
-	G10X6_R10X6B10X6_S422_16,
-	G10X6_B10X6R10X6_S422_16,
-	G10X6_R10X6B10X6_S420_16,
-	G10X6_B10X6R10X6_S420_16,
+	G10X6_R10X6B10X6_16,
+	G10X6_B10X6R10X6_16,
 
 
 	//12 BIT COMPONENTS
@@ -178,19 +166,14 @@ enum class ColorFormat {
 	G12X4R12X4B12X4A12X4_16,
 	G12X4B12X4R12X4A12X4_16,
 
-	R12X4G12X4B12X4G12X4_S422_16,
-	B12X4G12X4R12X4G12X4_S422_16,
-	G12X4R12X4G12X4B12X4_S422_16,
-	G12X4B12X4G12X4R12X4_S422_16,
+	R12X4G12X4B12X4G12X4_16, ///<\note: This format must have 4:2:2 subsampling
+	B12X4G12X4R12X4G12X4_16, ///<\note: This format must have 4:2:2 subsampling
+	G12X4R12X4G12X4B12X4_16, ///<\note: This format must have 4:2:2 subsampling
+	G12X4B12X4G12X4R12X4_16, ///<\note: This format must have 4:2:2 subsampling
 
 	G12X4_B12X4_R12X4_16,
-	G12X4_B12X4_R12X4_S422_16,
-	G12X4_B12X4_R12X4_S420_16,
-
-	G12X4_R12X4B12X4_S422_16,
-	G12X4_B12X4R12X4_S422_16,
-	G12X4_R12X4B12X4_S420_16,
-	G12X4_B12X4R12X4_S420_16,
+	G12X4_R12X4B12X4_16,
+	G12X4_B12X4R12X4_16,
 
 
 	//16 BIT COMPONENTS
@@ -232,19 +215,14 @@ enum class ColorFormat {
 	G16fR16fB16fA16f,
 	G16fB16fR16fA16f,
 
-	R16G16B16G16_S422,
-	B16G16R16G16_S422,
-	G16R16G16B16_S422,
-	G16B16G16R16_S422,
+	R16G16B16G16, ///<\note: This format must have 4:2:2 subsampling
+	B16G16R16G16, ///<\note: This format must have 4:2:2 subsampling
+	G16R16G16B16, ///<\note: This format must have 4:2:2 subsampling
+	G16B16G16R16, ///<\note: This format must have 4:2:2 subsampling
 
 	G16_B16_R16,
-	G16_B16_R16_S422,
-	G16_B16_R16_S420,
-
-	G16_R16B16_S422,
-	G16_B16R16_S422,
-	G16_R16B16_S420,
-	G16_B16R16_S420,
+	G16_R16B16,
+	G16_B16R16,
 
 
 	//32 BIT COMPONENTS

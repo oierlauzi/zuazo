@@ -2,7 +2,7 @@
 
 namespace Zuazo::Graphics {
 
-Frame::Frame(	const Vulkan& vulkan, 
+/*Frame::Frame(	const Vulkan& vulkan, 
 				const ImageProperties& properties,
 				vk::Image image )
 	: m_properties(properties)
@@ -64,7 +64,7 @@ Frame::Samplers Frame::getSamplers(	const Vulkan& vulkan,
 									properties.format )
 		};
 	}
-}
+}*/
 
 
 }

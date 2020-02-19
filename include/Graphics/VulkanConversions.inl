@@ -29,7 +29,7 @@ constexpr Resolution fromVulkan(const vk::Extent2D& res){
 	);
 }
 
-constexpr std::tuple<vk::Format, vk::ComponentMapping> toVulkan(ColorFormat fmt){
+constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, Vulkan::SAMPLER_COUNT> toVulkan(ColorFormat fmt){
 	constexpr vk::ComponentMapping IDENTITY;
 
 	constexpr auto R2Y 			= ZUAZO_CONSTRUCT_SWIZZLE( Identity, R, R, One );
@@ -67,268 +67,280 @@ constexpr std::tuple<vk::Format, vk::ComponentMapping> toVulkan(ColorFormat fmt)
 
 	switch(fmt){
 	//4 bit compoents
-	case ColorFormat::Y4X4_8: 			return { vk::Format::eR4G4UnormPack8, RG2YX };
-	case ColorFormat::X4Y4_8:			return { vk::Format::eR4G4UnormPack8, RG2XY };
-	case ColorFormat::Y4A4_8: 			return { vk::Format::eR4G4UnormPack8, RG2YA };
-	case ColorFormat::A4Y4_8:			return { vk::Format::eR4G4UnormPack8, RG2AY };
+	case ColorFormat::Y4X4_8: 			return { std::tuple{ vk::Format::eR4G4UnormPack8, RG2YX } };
+	case ColorFormat::X4Y4_8:			return { std::tuple{ vk::Format::eR4G4UnormPack8, RG2XY } };
+	case ColorFormat::Y4A4_8: 			return { std::tuple{ vk::Format::eR4G4UnormPack8, RG2YA } };
+	case ColorFormat::A4Y4_8:			return { std::tuple{ vk::Format::eR4G4UnormPack8, RG2AY } };
 
-	case ColorFormat::X4R4G4B4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2XRGB };
-	case ColorFormat::X4B4G4R4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2XBGR };
-	case ColorFormat::X4G4R4B4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2XGRB };
-	case ColorFormat::X4G4B4R4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2XGBR };
-	case ColorFormat::R4G4B4X4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2RGBX };
-	case ColorFormat::B4G4R4X4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2BGRX };
-	case ColorFormat::G4R4B4X4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2GRBX };
-	case ColorFormat::G4B4R4X4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2GBRX };
+	case ColorFormat::X4R4G4B4_16:		return { std::tuple{ vk::Format::eR4G4B4A4UnormPack16, RGBA2XRGB } };
+	case ColorFormat::X4B4G4R4_16:		return { std::tuple{ vk::Format::eR4G4B4A4UnormPack16, RGBA2XBGR } };
+	case ColorFormat::X4G4R4B4_16:		return { std::tuple{ vk::Format::eR4G4B4A4UnormPack16, RGBA2XGRB } };
+	case ColorFormat::X4G4B4R4_16:		return { std::tuple{ vk::Format::eR4G4B4A4UnormPack16, RGBA2XGBR } };
+	case ColorFormat::R4G4B4X4_16:		return { std::tuple{ vk::Format::eR4G4B4A4UnormPack16, RGBA2RGBX } };
+	case ColorFormat::B4G4R4X4_16:		return { std::tuple{ vk::Format::eR4G4B4A4UnormPack16, RGBA2BGRX } };
+	case ColorFormat::G4R4B4X4_16:		return { std::tuple{ vk::Format::eR4G4B4A4UnormPack16, RGBA2GRBX } };
+	case ColorFormat::G4B4R4X4_16:		return { std::tuple{ vk::Format::eR4G4B4A4UnormPack16, RGBA2GBRX } };
 
-	case ColorFormat::A4R4G4B4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2ARGB };
-	case ColorFormat::A4B4G4R4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2ABGR };
-	case ColorFormat::A4G4R4B4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2AGRB };
-	case ColorFormat::A4G4B4R4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2AGBR };
-	case ColorFormat::R4G4B4A4_16:		return { vk::Format::eR4G4B4A4UnormPack16, IDENTITY };
-	case ColorFormat::B4G4R4A4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2BGRA };
-	case ColorFormat::G4R4B4A4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2GRBA };
-	case ColorFormat::G4B4R4A4_16:		return { vk::Format::eR4G4B4A4UnormPack16, RGBA2GBRA };
+	case ColorFormat::A4R4G4B4_16:		return { std::tuple{ vk::Format::eR4G4B4A4UnormPack16, RGBA2ARGB } };
+	case ColorFormat::A4B4G4R4_16:		return { std::tuple{ vk::Format::eR4G4B4A4UnormPack16, RGBA2ABGR } };
+	case ColorFormat::A4G4R4B4_16:		return { std::tuple{ vk::Format::eR4G4B4A4UnormPack16, RGBA2AGRB } };
+	case ColorFormat::A4G4B4R4_16:		return { std::tuple{ vk::Format::eR4G4B4A4UnormPack16, RGBA2AGBR } };
+	case ColorFormat::R4G4B4A4_16:		return { std::tuple{ vk::Format::eR4G4B4A4UnormPack16, IDENTITY  } };
+	case ColorFormat::B4G4R4A4_16:		return { std::tuple{ vk::Format::eR4G4B4A4UnormPack16, RGBA2BGRA } };
+	case ColorFormat::G4R4B4A4_16:		return { std::tuple{ vk::Format::eR4G4B4A4UnormPack16, RGBA2GRBA } };
+	case ColorFormat::G4B4R4A4_16:		return { std::tuple{ vk::Format::eR4G4B4A4UnormPack16, RGBA2GBRA } };
 
 	//5 bit components
-	case ColorFormat::X1R5G5B5_16:		return { vk::Format::eA1R5G5B5UnormPack16, ARGB2XRGB };
-	case ColorFormat::X1B5G5R5_16:		return { vk::Format::eA1R5G5B5UnormPack16, ARGB2XBGR };
-	case ColorFormat::X1G5R5B5_16:		return { vk::Format::eA1R5G5B5UnormPack16, ARGB2XGRB };
-	case ColorFormat::X1G5B5R5_16:		return { vk::Format::eA1R5G5B5UnormPack16, ARGB2XGBR };
-	case ColorFormat::R5G5B5X1_16:		return { vk::Format::eR5G5B5A1UnormPack16, RGBA2RGBX };
-	case ColorFormat::B5G5R5X1_16:		return { vk::Format::eR5G5B5A1UnormPack16, RGBA2BGRX };
-	case ColorFormat::G5R5B5X1_16:		return { vk::Format::eR5G5B5A1UnormPack16, RGBA2GRBX };
-	case ColorFormat::G5B5R5X1_16:		return { vk::Format::eR5G5B5A1UnormPack16, RGBA2GBRX };
+	case ColorFormat::X1R5G5B5_16:		return { std::tuple{ vk::Format::eA1R5G5B5UnormPack16, ARGB2XRGB } };
+	case ColorFormat::X1B5G5R5_16:		return { std::tuple{ vk::Format::eA1R5G5B5UnormPack16, ARGB2XBGR } };
+	case ColorFormat::X1G5R5B5_16:		return { std::tuple{ vk::Format::eA1R5G5B5UnormPack16, ARGB2XGRB } };
+	case ColorFormat::X1G5B5R5_16:		return { std::tuple{ vk::Format::eA1R5G5B5UnormPack16, ARGB2XGBR } };
+	case ColorFormat::R5G5B5X1_16:		return { std::tuple{ vk::Format::eR5G5B5A1UnormPack16, RGBA2RGBX } };
+	case ColorFormat::B5G5R5X1_16:		return { std::tuple{ vk::Format::eR5G5B5A1UnormPack16, RGBA2BGRX } };
+	case ColorFormat::G5R5B5X1_16:		return { std::tuple{ vk::Format::eR5G5B5A1UnormPack16, RGBA2GRBX } };
+	case ColorFormat::G5B5R5X1_16:		return { std::tuple{ vk::Format::eR5G5B5A1UnormPack16, RGBA2GBRX } };
 
-	case ColorFormat::A1R5G5B5_16:		return { vk::Format::eA1R5G5B5UnormPack16, IDENTITY };
-	case ColorFormat::A1B5G5R5_16:		return { vk::Format::eA1R5G5B5UnormPack16, ARGB2ABGR };
-	case ColorFormat::A1G5R5B5_16:		return { vk::Format::eA1R5G5B5UnormPack16, ARGB2AGRB };
-	case ColorFormat::A1G5B5R5_16:		return { vk::Format::eA1R5G5B5UnormPack16, ARGB2AGBR };
-	case ColorFormat::R5G5B5A1_16:		return { vk::Format::eR5G5B5A1UnormPack16, IDENTITY };
-	case ColorFormat::B5G5R5A1_16:		return { vk::Format::eR5G5B5A1UnormPack16, RGBA2BGRA };
-	case ColorFormat::G5R5B5A1_16:		return { vk::Format::eR5G5B5A1UnormPack16, RGBA2GRBA };
-	case ColorFormat::G5B5R5A1_16:		return { vk::Format::eR5G5B5A1UnormPack16, RGBA2GBRA };
+	case ColorFormat::A1R5G5B5_16:		return { std::tuple{ vk::Format::eA1R5G5B5UnormPack16, IDENTITY  } };
+	case ColorFormat::A1B5G5R5_16:		return { std::tuple{ vk::Format::eA1R5G5B5UnormPack16, ARGB2ABGR } };
+	case ColorFormat::A1G5R5B5_16:		return { std::tuple{ vk::Format::eA1R5G5B5UnormPack16, ARGB2AGRB } };
+	case ColorFormat::A1G5B5R5_16:		return { std::tuple{ vk::Format::eA1R5G5B5UnormPack16, ARGB2AGBR } };
+	case ColorFormat::R5G5B5A1_16:		return { std::tuple{ vk::Format::eR5G5B5A1UnormPack16, IDENTITY  } };
+	case ColorFormat::B5G5R5A1_16:		return { std::tuple{ vk::Format::eR5G5B5A1UnormPack16, RGBA2BGRA } };
+	case ColorFormat::G5R5B5A1_16:		return { std::tuple{ vk::Format::eR5G5B5A1UnormPack16, RGBA2GRBA } };
+	case ColorFormat::G5B5R5A1_16:		return { std::tuple{ vk::Format::eR5G5B5A1UnormPack16, RGBA2GBRA } };
 
 	//6 bit components
-	case ColorFormat::R5G6B5_16:		return { vk::Format::eR5G6B5UnormPack16, IDENTITY };
-	case ColorFormat::B5G6R5_16:		return { vk::Format::eR5G6B5UnormPack16, RGBA2BGRA };
+	case ColorFormat::R5G6B5_16:		return { std::tuple{ vk::Format::eR5G6B5UnormPack16, IDENTITY  } };
+	case ColorFormat::B5G6R5_16:		return { std::tuple{ vk::Format::eR5G6B5UnormPack16, RGBA2BGRA } };
 
 	//8 bit components
-	case ColorFormat::Y8:				return { vk::Format::eR8Unorm, R2Y };
+	case ColorFormat::Y8:				return { std::tuple{ vk::Format::eR8Unorm, R2Y } };
 
-	case ColorFormat::Y8A8:				return { vk::Format::eR8G8Unorm, RG2YA };
-	case ColorFormat::A8Y8:				return { vk::Format::eR8G8Unorm, RG2AY };
+	case ColorFormat::Y8A8:				return { std::tuple{ vk::Format::eR8G8Unorm, RG2YA } };
+	case ColorFormat::A8Y8:				return { std::tuple{ vk::Format::eR8G8Unorm, RG2AY } };
 
-	case ColorFormat::R8G8B8:			return { vk::Format::eR8G8B8Unorm, IDENTITY };
-	case ColorFormat::B8G8R8:			return { vk::Format::eR8G8B8Unorm, RGBA2BGRA };
-	case ColorFormat::G8R8B8:			return { vk::Format::eR8G8B8Unorm, RGBA2GRBA };
-	case ColorFormat::G8B8R8:			return { vk::Format::eR8G8B8Unorm, RGBA2GBRA };
+	case ColorFormat::R8G8B8:			return { std::tuple{ vk::Format::eR8G8B8Unorm, IDENTITY  } };
+	case ColorFormat::B8G8R8:			return { std::tuple{ vk::Format::eR8G8B8Unorm, RGBA2BGRA } };
+	case ColorFormat::G8R8B8:			return { std::tuple{ vk::Format::eR8G8B8Unorm, RGBA2GRBA } };
+	case ColorFormat::G8B8R8:			return { std::tuple{ vk::Format::eR8G8B8Unorm, RGBA2GBRA } };
 
-	case ColorFormat::A8R8G8B8:			return { vk::Format::eR8G8B8A8Unorm, RGBA2ARGB };
-	case ColorFormat::A8B8G8R8:			return { vk::Format::eR8G8B8A8Unorm, RGBA2ABGR };
-	case ColorFormat::A8G8R8B8:			return { vk::Format::eR8G8B8A8Unorm, RGBA2AGRB };
-	case ColorFormat::A8G8B8R8:			return { vk::Format::eR8G8B8A8Unorm, RGBA2AGBR };
-	case ColorFormat::R8G8B8A8:			return { vk::Format::eR8G8B8A8Unorm, IDENTITY };
-	case ColorFormat::B8G8R8A8:			return { vk::Format::eR8G8B8A8Unorm, RGBA2BGRA };
-	case ColorFormat::G8R8B8A8:			return { vk::Format::eR8G8B8A8Unorm, RGBA2GRBA };
-	case ColorFormat::G8B8R8A8:			return { vk::Format::eR8G8B8A8Unorm, RGBA2GBRA };
+	case ColorFormat::A8R8G8B8:			return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2ARGB } };
+	case ColorFormat::A8B8G8R8:			return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2ABGR } };
+	case ColorFormat::A8G8R8B8:			return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2AGRB } };
+	case ColorFormat::A8G8B8R8:			return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2AGBR } };
+	case ColorFormat::R8G8B8A8:			return { std::tuple{ vk::Format::eR8G8B8A8Unorm, IDENTITY  } };
+	case ColorFormat::B8G8R8A8:			return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2BGRA } };
+	case ColorFormat::G8R8B8A8:			return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2GRBA } };
+	case ColorFormat::G8B8R8A8:			return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2GBRA } };
 
 	#if ZUAZO_IS_BIG_ENDIAN
-	case ColorFormat::X8R8G8B8_32:		return { vk::Format::eR8G8B8A8Unorm, RGBA2XRGB };
-	case ColorFormat::X8B8G8R8_32:		return { vk::Format::eR8G8B8A8Unorm, RGBA2XBGR };
-	case ColorFormat::R8G8B8X8_32:		return { vk::Format::eR8G8B8A8Unorm, RGBA2RGBX };
-	case ColorFormat::B8G8R8X8_32:		return { vk::Format::eR8G8B8A8Unorm, RGBA2BGRX };
+	case ColorFormat::X8R8G8B8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2XRGB } };
+	case ColorFormat::X8B8G8R8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2XBGR } };
+	case ColorFormat::R8G8B8X8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2RGBX } };
+	case ColorFormat::B8G8R8X8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2BGRX } };
 
-	case ColorFormat::A8R8G8B8_32:		return { vk::Format::eR8G8B8A8Unorm, RGBA2ARGB };
-	case ColorFormat::A8B8G8R8_32:		return { vk::Format::eR8G8B8A8Unorm, RGBA2ABGR };
-	case ColorFormat::R8G8B8A8_32:		return { vk::Format::eR8G8B8A8Unorm, IDENTITY };
-	case ColorFormat::B8G8R8A8_32:		return { vk::Format::eR8G8B8A8Unorm, RGBA2BGRA };
+	case ColorFormat::A8R8G8B8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2ARGB } };
+	case ColorFormat::A8B8G8R8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2ABGR } };
+	case ColorFormat::R8G8B8A8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, IDENTITY  } };
+	case ColorFormat::B8G8R8A8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2BGRA } };
 	#elif ZUAZO_IS_LITTLE_ENDIAN
-	case ColorFormat::X8R8G8B8_32:		return { vk::Format::eR8G8B8A8Unorm, RGBA2BGRX };
-	case ColorFormat::X8B8G8R8_32:		return { vk::Format::eR8G8B8A8Unorm, RGBA2RGBX };
-	case ColorFormat::R8G8B8X8_32:		return { vk::Format::eR8G8B8A8Unorm, RGBA2XBGR };
-	case ColorFormat::B8G8R8X8_32:		return { vk::Format::eR8G8B8A8Unorm, RGBA2XRGB };
+	case ColorFormat::X8R8G8B8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2BGRX } };
+	case ColorFormat::X8B8G8R8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2RGBX } };
+	case ColorFormat::R8G8B8X8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2XBGR } };
+	case ColorFormat::B8G8R8X8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2XRGB } };
 
-	case ColorFormat::A8R8G8B8_32:		return { vk::Format::eR8G8B8A8Unorm, RGBA2BGRA };
-	case ColorFormat::A8B8G8R8_32:		return { vk::Format::eR8G8B8A8Unorm, IDENTITY };
-	case ColorFormat::R8G8B8A8_32:		return { vk::Format::eR8G8B8A8Unorm, RGBA2ABGR };
-	case ColorFormat::B8G8R8A8_32:		return { vk::Format::eR8G8B8A8Unorm, RGBA2ARGB };
+	case ColorFormat::A8R8G8B8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2BGRA } };
+	case ColorFormat::A8B8G8R8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, IDENTITY  } };
+	case ColorFormat::R8G8B8A8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2ABGR } };
+	case ColorFormat::B8G8R8A8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, RGBA2ARGB } };
 	#endif
 
-	case ColorFormat::R8G8B8G8_S422:	return { vk::Format::eB8G8R8G8422Unorm, RGBA2BGRA };
-	case ColorFormat::B8G8R8G8_S422:	return { vk::Format::eB8G8R8G8422Unorm, IDENTITY };
-	case ColorFormat::G8R8G8B8_S422:	return { vk::Format::eG8B8G8R8422Unorm, RGBA2BGRA };
-	case ColorFormat::G8B8G8R8_S422:	return { vk::Format::eG8B8G8R8422Unorm, IDENTITY };
+	case ColorFormat::R8G8B8G8:			return { std::tuple{ vk::Format::eB8G8R8G8422Unorm, RGBA2BGRA } };
+	case ColorFormat::B8G8R8G8:			return { std::tuple{ vk::Format::eB8G8R8G8422Unorm, IDENTITY  } };
+	case ColorFormat::G8R8G8B8:			return { std::tuple{ vk::Format::eG8B8G8R8422Unorm, RGBA2BGRA } };
+	case ColorFormat::G8B8G8R8:			return { std::tuple{ vk::Format::eG8B8G8R8422Unorm, IDENTITY  } };
 
-	case ColorFormat::G8_B8_R8:			return { vk::Format::eG8B8R83Plane444Unorm, IDENTITY };
-	case ColorFormat::G8_B8_R8_S422:	return { vk::Format::eG8B8R83Plane422Unorm, IDENTITY };
-	case ColorFormat::G8_B8_R8_S420:	return { vk::Format::eG8B8R83Plane420Unorm, IDENTITY };
-
-	case ColorFormat::G8_R8B8_S422:		return { vk::Format::eG8B8R82Plane422Unorm, RGBA2BGRA };
-	case ColorFormat::G8_B8R8_S422:		return { vk::Format::eG8B8R82Plane422Unorm, IDENTITY };
-	case ColorFormat::G8_R8B8_S420:		return { vk::Format::eG8B8R82Plane420Unorm, RGBA2BGRA };
-	case ColorFormat::G8_B8R8_S420:		return { vk::Format::eG8B8R82Plane420Unorm, IDENTITY };
+	//TODO decide swizzle
+	case ColorFormat::G8_B8_R8:			return { 
+		std::tuple{ vk::Format::eR8Unorm, IDENTITY },
+		std::tuple{ vk::Format::eR8Unorm, IDENTITY },
+		std::tuple{ vk::Format::eR8Unorm, IDENTITY } };
+	case ColorFormat::G8_R8B8:			return {
+		std::tuple{ vk::Format::eR8Unorm, IDENTITY },
+		std::tuple{ vk::Format::eR8G8Unorm, IDENTITY } };
+	case ColorFormat::G8_B8R8:			return { 
+		std::tuple{ vk::Format::eR8Unorm, IDENTITY },
+		std::tuple{ vk::Format::eR8G8Unorm, IDENTITY } };
 
 	//10 bit components
-	case ColorFormat::Y10X6_16:			return { vk::Format::eR10X6UnormPack16, R2Y };
+	case ColorFormat::Y10X6_16:			return { std::tuple{ vk::Format::eR10X6UnormPack16, R2Y } };
 
-	case ColorFormat::Y10X6A10X6_16:	return { vk::Format::eR10X6G10X6Unorm2Pack16, RG2YA };
-	case ColorFormat::A10X6Y10X6_16:	return { vk::Format::eR10X6G10X6Unorm2Pack16, RG2AY };
+	case ColorFormat::Y10X6A10X6_16:	return { std::tuple{ vk::Format::eR10X6G10X6Unorm2Pack16, RG2YA } };
+	case ColorFormat::A10X6Y10X6_16:	return { std::tuple{ vk::Format::eR10X6G10X6Unorm2Pack16, RG2AY } };
 
-	case ColorFormat::A10X6R10X6G10X6B10X6_16:	return { vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16, RGBA2ARGB };
-	case ColorFormat::A10X6B10X6G10X6R10X6_16:	return { vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16, RGBA2ABGR };
-	case ColorFormat::A10X6G10X6R10X6B10X6_16:	return { vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16, RGBA2AGRB };
-	case ColorFormat::A10X6G10X6B10X6R10X6_16:	return { vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16, RGBA2AGBR };
-	case ColorFormat::R10X6G10X6B10X6A10X6_16:	return { vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16, IDENTITY };
-	case ColorFormat::B10X6G10X6R10X6A10X6_16:	return { vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16, RGBA2BGRA };
-	case ColorFormat::G10X6R10X6B10X6A10X6_16:	return { vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16, RGBA2GRBA };
-	case ColorFormat::G10X6B10X6R10X6A10X6_16:	return { vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16, RGBA2GBRA };
+	case ColorFormat::A10X6R10X6G10X6B10X6_16:	return { std::tuple{ vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16, RGBA2ARGB } };
+	case ColorFormat::A10X6B10X6G10X6R10X6_16:	return { std::tuple{ vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16, RGBA2ABGR } };
+	case ColorFormat::A10X6G10X6R10X6B10X6_16:	return { std::tuple{ vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16, RGBA2AGRB } };
+	case ColorFormat::A10X6G10X6B10X6R10X6_16:	return { std::tuple{ vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16, RGBA2AGBR } };
+	case ColorFormat::R10X6G10X6B10X6A10X6_16:	return { std::tuple{ vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16, IDENTITY  } };
+	case ColorFormat::B10X6G10X6R10X6A10X6_16:	return { std::tuple{ vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16, RGBA2BGRA } };
+	case ColorFormat::G10X6R10X6B10X6A10X6_16:	return { std::tuple{ vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16, RGBA2GRBA } };
+	case ColorFormat::G10X6B10X6R10X6A10X6_16:	return { std::tuple{ vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16, RGBA2GBRA } };
 
-	case ColorFormat::X2R10G10B10_32:	return { vk::Format::eA2R10G10B10UnormPack32, ARGB2XRGB };
-	case ColorFormat::X2B10G10R10_32:	return { vk::Format::eA2R10G10B10UnormPack32, ARGB2XBGR };
-	case ColorFormat::X2G10R10B10_32:	return { vk::Format::eA2R10G10B10UnormPack32, ARGB2XGRB };
-	case ColorFormat::X2G10B10R10_32:	return { vk::Format::eA2R10G10B10UnormPack32, ARGB2XGBR };
+	case ColorFormat::X2R10G10B10_32:	return { std::tuple{ vk::Format::eA2R10G10B10UnormPack32, ARGB2XRGB } };
+	case ColorFormat::X2B10G10R10_32:	return { std::tuple{ vk::Format::eA2R10G10B10UnormPack32, ARGB2XBGR } };
+	case ColorFormat::X2G10R10B10_32:	return { std::tuple{ vk::Format::eA2R10G10B10UnormPack32, ARGB2XGRB } };
+	case ColorFormat::X2G10B10R10_32:	return { std::tuple{ vk::Format::eA2R10G10B10UnormPack32, ARGB2XGBR } };
 
-	case ColorFormat::A2R10G10B10_32:	return { vk::Format::eA2R10G10B10UnormPack32, IDENTITY };
-	case ColorFormat::A2B10G10R10_32:	return { vk::Format::eA2R10G10B10UnormPack32, ARGB2ABGR };
-	case ColorFormat::A2G10R10B10_32:	return { vk::Format::eA2R10G10B10UnormPack32, ARGB2AGRB };
-	case ColorFormat::A2G10B10R10_32:	return { vk::Format::eA2R10G10B10UnormPack32, ARGB2AGBR };
+	case ColorFormat::A2R10G10B10_32:	return { std::tuple{ vk::Format::eA2R10G10B10UnormPack32, IDENTITY  } };
+	case ColorFormat::A2B10G10R10_32:	return { std::tuple{ vk::Format::eA2R10G10B10UnormPack32, ARGB2ABGR } };
+	case ColorFormat::A2G10R10B10_32:	return { std::tuple{ vk::Format::eA2R10G10B10UnormPack32, ARGB2AGRB } };
+	case ColorFormat::A2G10B10R10_32:	return { std::tuple{ vk::Format::eA2R10G10B10UnormPack32, ARGB2AGBR } };
 
-	case ColorFormat::R10X6G10X6B10X6G10X6_S422_16:	return { vk::Format::eB10X6G10X6R10X6G10X6422Unorm4Pack16, RGBA2BGRA };
-	case ColorFormat::B10X6G10X6R10X6G10X6_S422_16:	return { vk::Format::eB10X6G10X6R10X6G10X6422Unorm4Pack16, IDENTITY };
-	case ColorFormat::G10X6R10X6G10X6B10X6_S422_16:	return { vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16, RGBA2BGRA };
-	case ColorFormat::G10X6B10X6G10X6R10X6_S422_16:	return { vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16, IDENTITY };
+	case ColorFormat::R10X6G10X6B10X6G10X6_16:	return { std::tuple{ vk::Format::eB10X6G10X6R10X6G10X6422Unorm4Pack16, RGBA2BGRA } };
+	case ColorFormat::B10X6G10X6R10X6G10X6_16:	return { std::tuple{ vk::Format::eB10X6G10X6R10X6G10X6422Unorm4Pack16, IDENTITY  } };
+	case ColorFormat::G10X6R10X6G10X6B10X6_16:	return { std::tuple{ vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16, RGBA2BGRA } };
+	case ColorFormat::G10X6B10X6G10X6R10X6_16:	return { std::tuple{ vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16, IDENTITY  } };
 
-	case ColorFormat::G10X6_B10X6_R10X6_16:			return { vk::Format::eG10X6B10X6R10X63Plane444Unorm3Pack16, IDENTITY };
-	case ColorFormat::G10X6_B10X6_R10X6_S422_16:	return { vk::Format::eG10X6B10X6R10X63Plane422Unorm3Pack16, IDENTITY };
-	case ColorFormat::G10X6_B10X6_R10X6_S420_16:	return { vk::Format::eG10X6B10X6R10X63Plane420Unorm3Pack16, IDENTITY };
-
-	case ColorFormat::G10X6_R10X6B10X6_S422_16:		return { vk::Format::eG10X6B10X6R10X62Plane422Unorm3Pack16, RGBA2BGRA };
-	case ColorFormat::G10X6_B10X6R10X6_S422_16:		return { vk::Format::eG10X6B10X6R10X62Plane422Unorm3Pack16, IDENTITY };
-	case ColorFormat::G10X6_R10X6B10X6_S420_16:		return { vk::Format::eG10X6B10X6R10X62Plane420Unorm3Pack16, RGBA2BGRA };
-	case ColorFormat::G10X6_B10X6R10X6_S420_16:		return { vk::Format::eG10X6B10X6R10X62Plane420Unorm3Pack16, IDENTITY };
+	//TODO decide swizzle
+	case ColorFormat::G10X6_B10X6_R10X6_16:	return { 
+		std::tuple{ vk::Format::eR10X6UnormPack16, IDENTITY },
+		std::tuple{ vk::Format::eR10X6UnormPack16, IDENTITY },
+		std::tuple{ vk::Format::eR10X6UnormPack16, IDENTITY } };
+	case ColorFormat::G10X6_R10X6B10X6_16:	return {
+		std::tuple{ vk::Format::eR10X6UnormPack16, IDENTITY },
+		std::tuple{ vk::Format::eR10X6G10X6Unorm2Pack16, IDENTITY } };
+	case ColorFormat::G10X6_B10X6R10X6_16:	return { 
+		std::tuple{ vk::Format::eR10X6UnormPack16, IDENTITY },
+		std::tuple{ vk::Format::eR10X6G10X6Unorm2Pack16, IDENTITY } };
 
 	//12 bits per component
-	case ColorFormat::Y12X4_16:			return { vk::Format::eR12X4UnormPack16, R2Y };
+	case ColorFormat::Y12X4_16:			return { std::tuple{ vk::Format::eR12X4UnormPack16, R2Y } };
 
-	case ColorFormat::Y12X4A12X4_16:	return { vk::Format::eR12X4G12X4Unorm2Pack16, RG2YA };
-	case ColorFormat::A12X4Y12X4_16:	return { vk::Format::eR12X4G12X4Unorm2Pack16, RG2AY };
+	case ColorFormat::Y12X4A12X4_16:	return { std::tuple{ vk::Format::eR12X4G12X4Unorm2Pack16, RG2YA } };
+	case ColorFormat::A12X4Y12X4_16:	return { std::tuple{ vk::Format::eR12X4G12X4Unorm2Pack16, RG2AY } };
 
-	case ColorFormat::A12X4R12X4G12X4B12X4_16:	return { vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16, RGBA2ARGB };
-	case ColorFormat::A12X4B12X4G12X4R12X4_16:	return { vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16, RGBA2ABGR };
-	case ColorFormat::A12X4G12X4R12X4B12X4_16:	return { vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16, RGBA2AGRB };
-	case ColorFormat::A12X4G12X4B12X4R12X4_16:	return { vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16, RGBA2AGBR };
-	case ColorFormat::R12X4G12X4B12X4A12X4_16:	return { vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16, IDENTITY };
-	case ColorFormat::B12X4G12X4R12X4A12X4_16:	return { vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16, RGBA2BGRA };
-	case ColorFormat::G12X4R12X4B12X4A12X4_16:	return { vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16, RGBA2GRBA };
-	case ColorFormat::G12X4B12X4R12X4A12X4_16:	return { vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16, RGBA2GBRA };
+	case ColorFormat::A12X4R12X4G12X4B12X4_16:	return { std::tuple{ vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16, RGBA2ARGB } };
+	case ColorFormat::A12X4B12X4G12X4R12X4_16:	return { std::tuple{ vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16, RGBA2ABGR } };
+	case ColorFormat::A12X4G12X4R12X4B12X4_16:	return { std::tuple{ vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16, RGBA2AGRB } };
+	case ColorFormat::A12X4G12X4B12X4R12X4_16:	return { std::tuple{ vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16, RGBA2AGBR } };
+	case ColorFormat::R12X4G12X4B12X4A12X4_16:	return { std::tuple{ vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16, IDENTITY  } };
+	case ColorFormat::B12X4G12X4R12X4A12X4_16:	return { std::tuple{ vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16, RGBA2BGRA } };
+	case ColorFormat::G12X4R12X4B12X4A12X4_16:	return { std::tuple{ vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16, RGBA2GRBA } };
+	case ColorFormat::G12X4B12X4R12X4A12X4_16:	return { std::tuple{ vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16, RGBA2GBRA } };
 
-	case ColorFormat::R12X4G12X4B12X4G12X4_S422_16:	return { vk::Format::eB12X4G12X4R12X4G12X4422Unorm4Pack16, RGBA2BGRA };
-	case ColorFormat::B12X4G12X4R12X4G12X4_S422_16:	return { vk::Format::eB12X4G12X4R12X4G12X4422Unorm4Pack16, IDENTITY };
-	case ColorFormat::G12X4R12X4G12X4B12X4_S422_16:	return { vk::Format::eG12X4B12X4G12X4R12X4422Unorm4Pack16, RGBA2BGRA };
-	case ColorFormat::G12X4B12X4G12X4R12X4_S422_16:	return { vk::Format::eG12X4B12X4G12X4R12X4422Unorm4Pack16, IDENTITY };
+	case ColorFormat::R12X4G12X4B12X4G12X4_16:	return { std::tuple{ vk::Format::eB12X4G12X4R12X4G12X4422Unorm4Pack16, RGBA2BGRA } };
+	case ColorFormat::B12X4G12X4R12X4G12X4_16:	return { std::tuple{ vk::Format::eB12X4G12X4R12X4G12X4422Unorm4Pack16, IDENTITY  } };
+	case ColorFormat::G12X4R12X4G12X4B12X4_16:	return { std::tuple{ vk::Format::eG12X4B12X4G12X4R12X4422Unorm4Pack16, RGBA2BGRA } };
+	case ColorFormat::G12X4B12X4G12X4R12X4_16:	return { std::tuple{ vk::Format::eG12X4B12X4G12X4R12X4422Unorm4Pack16, IDENTITY  } };
 
-	case ColorFormat::G12X4_B12X4_R12X4_16:			return { vk::Format::eG12X4B12X4R12X43Plane444Unorm3Pack16, IDENTITY };
-	case ColorFormat::G12X4_B12X4_R12X4_S422_16:	return { vk::Format::eG12X4B12X4R12X43Plane422Unorm3Pack16, IDENTITY };
-	case ColorFormat::G12X4_B12X4_R12X4_S420_16:	return { vk::Format::eG12X4B12X4R12X43Plane420Unorm3Pack16, IDENTITY };
-
-	case ColorFormat::G12X4_R12X4B12X4_S422_16:		return { vk::Format::eG12X4B12X4R12X42Plane422Unorm3Pack16, RGBA2BGRA };
-	case ColorFormat::G12X4_B12X4R12X4_S422_16:		return { vk::Format::eG12X4B12X4R12X42Plane422Unorm3Pack16, IDENTITY };
-	case ColorFormat::G12X4_R12X4B12X4_S420_16:		return { vk::Format::eG12X4B12X4R12X42Plane420Unorm3Pack16, RGBA2BGRA };
-	case ColorFormat::G12X4_B12X4R12X4_S420_16:		return { vk::Format::eG12X4B12X4R12X42Plane420Unorm3Pack16, IDENTITY };
+	//TODO decide swizzle
+	case ColorFormat::G12X4_B12X4_R12X4_16:	return { 
+		std::tuple{ vk::Format::eR12X4UnormPack16, IDENTITY },
+		std::tuple{ vk::Format::eR12X4UnormPack16, IDENTITY },
+		std::tuple{ vk::Format::eR12X4UnormPack16, IDENTITY } };
+	case ColorFormat::G12X4_R12X4B12X4_16:	return {
+		std::tuple{ vk::Format::eR12X4UnormPack16, IDENTITY },
+		std::tuple{ vk::Format::eR12X4G12X4Unorm2Pack16, IDENTITY } };
+	case ColorFormat::G12X4_B12X4R12X4_16:	return { 
+		std::tuple{ vk::Format::eR12X4UnormPack16, IDENTITY },
+		std::tuple{ vk::Format::eR12X4G12X4Unorm2Pack16, IDENTITY } };
 
 	//16 bits per component
-	case ColorFormat::Y16:				return { vk::Format::eR16Unorm, R2Y };
+	case ColorFormat::Y16:				return { std::tuple{ vk::Format::eR16Unorm, R2Y } };
 
-	case ColorFormat::Y16f:				return { vk::Format::eR16Sfloat, R2Y };
+	case ColorFormat::Y16f:				return { std::tuple{ vk::Format::eR16Sfloat, R2Y } };
 
-	case ColorFormat::Y16A16:			return { vk::Format::eR16G16Unorm, RG2YA };
-	case ColorFormat::A16Y16:			return { vk::Format::eR16G16Unorm, RG2AY };
+	case ColorFormat::Y16A16:			return { std::tuple{ vk::Format::eR16G16Unorm, RG2YA } };
+	case ColorFormat::A16Y16:			return { std::tuple{ vk::Format::eR16G16Unorm, RG2AY } };
 
-	case ColorFormat::Y16fA16f:			return { vk::Format::eR16G16Sfloat, RG2YA };
-	case ColorFormat::A16fY16f:			return { vk::Format::eR16G16Sfloat, RG2AY };
+	case ColorFormat::Y16fA16f:			return { std::tuple{ vk::Format::eR16G16Sfloat, RG2YA } };
+	case ColorFormat::A16fY16f:			return { std::tuple{ vk::Format::eR16G16Sfloat, RG2AY } };
 		
-	case ColorFormat::R16G16B16:		return { vk::Format::eR16G16B16Unorm, IDENTITY };
-	case ColorFormat::B16G16R16:		return { vk::Format::eR16G16B16Unorm, RGBA2BGRA };
-	case ColorFormat::G16R16B16:		return { vk::Format::eR16G16B16Unorm, RGBA2GRBA };
-	case ColorFormat::G16B16R16:		return { vk::Format::eR16G16B16Unorm, RGBA2GBRA };
+	case ColorFormat::R16G16B16:		return { std::tuple{ vk::Format::eR16G16B16Unorm, IDENTITY  } };
+	case ColorFormat::B16G16R16:		return { std::tuple{ vk::Format::eR16G16B16Unorm, RGBA2BGRA } };
+	case ColorFormat::G16R16B16:		return { std::tuple{ vk::Format::eR16G16B16Unorm, RGBA2GRBA } };
+	case ColorFormat::G16B16R16:		return { std::tuple{ vk::Format::eR16G16B16Unorm, RGBA2GBRA } };
 
-	case ColorFormat::R16fG16fB16f:		return { vk::Format::eR16G16B16Sfloat, IDENTITY };
-	case ColorFormat::B16fG16fR16f:		return { vk::Format::eR16G16B16Sfloat, RGBA2BGRA };
-	case ColorFormat::G16fR16fB16f:		return { vk::Format::eR16G16B16Sfloat, RGBA2GRBA };
-	case ColorFormat::G16fB16fR16f:		return { vk::Format::eR16G16B16Sfloat, RGBA2GBRA };
+	case ColorFormat::R16fG16fB16f:		return { std::tuple{ vk::Format::eR16G16B16Sfloat, IDENTITY  } };
+	case ColorFormat::B16fG16fR16f:		return { std::tuple{ vk::Format::eR16G16B16Sfloat, RGBA2BGRA } };
+	case ColorFormat::G16fR16fB16f:		return { std::tuple{ vk::Format::eR16G16B16Sfloat, RGBA2GRBA } };
+	case ColorFormat::G16fB16fR16f:		return { std::tuple{ vk::Format::eR16G16B16Sfloat, RGBA2GBRA } };
 
-	case ColorFormat::A16R16G16B16:		return { vk::Format::eR16G16B16A16Unorm, RGBA2ARGB };
-	case ColorFormat::A16B16G16R16:		return { vk::Format::eR16G16B16A16Unorm, RGBA2ABGR };
-	case ColorFormat::A16G16R16B16:		return { vk::Format::eR16G16B16A16Unorm, RGBA2AGRB };
-	case ColorFormat::A16G16B16R16:		return { vk::Format::eR16G16B16A16Unorm, RGBA2AGBR };
-	case ColorFormat::R16G16B16A16:		return { vk::Format::eR16G16B16A16Unorm, IDENTITY };
-	case ColorFormat::B16G16R16A16:		return { vk::Format::eR16G16B16A16Unorm, RGBA2BGRA };
-	case ColorFormat::G16R16B16A16:		return { vk::Format::eR16G16B16A16Unorm, RGBA2GRBA };
-	case ColorFormat::G16B16R16A16:		return { vk::Format::eR16G16B16A16Unorm, RGBA2GBRA };
+	case ColorFormat::A16R16G16B16:		return { std::tuple{ vk::Format::eR16G16B16A16Unorm, RGBA2ARGB } };
+	case ColorFormat::A16B16G16R16:		return { std::tuple{ vk::Format::eR16G16B16A16Unorm, RGBA2ABGR } };
+	case ColorFormat::A16G16R16B16:		return { std::tuple{ vk::Format::eR16G16B16A16Unorm, RGBA2AGRB } };
+	case ColorFormat::A16G16B16R16:		return { std::tuple{ vk::Format::eR16G16B16A16Unorm, RGBA2AGBR } };
+	case ColorFormat::R16G16B16A16:		return { std::tuple{ vk::Format::eR16G16B16A16Unorm, IDENTITY  } };
+	case ColorFormat::B16G16R16A16:		return { std::tuple{ vk::Format::eR16G16B16A16Unorm, RGBA2BGRA } };
+	case ColorFormat::G16R16B16A16:		return { std::tuple{ vk::Format::eR16G16B16A16Unorm, RGBA2GRBA } };
+	case ColorFormat::G16B16R16A16:		return { std::tuple{ vk::Format::eR16G16B16A16Unorm, RGBA2GBRA } };
 
-	case ColorFormat::A16fR16fG16fB16f:	return { vk::Format::eR16G16B16A16Sfloat, RGBA2ARGB };
-	case ColorFormat::A16fB16fG16fR16f:	return { vk::Format::eR16G16B16A16Sfloat, RGBA2ABGR };
-	case ColorFormat::A16fG16fR16fB16f:	return { vk::Format::eR16G16B16A16Sfloat, RGBA2AGRB };
-	case ColorFormat::A16fG16fB16fR16f:	return { vk::Format::eR16G16B16A16Sfloat, RGBA2AGBR };
-	case ColorFormat::R16fG16fB16fA16f:	return { vk::Format::eR16G16B16A16Sfloat, IDENTITY };
-	case ColorFormat::B16fG16fR16fA16f:	return { vk::Format::eR16G16B16A16Sfloat, RGBA2BGRA };
-	case ColorFormat::G16fR16fB16fA16f:	return { vk::Format::eR16G16B16A16Sfloat, RGBA2GRBA };
-	case ColorFormat::G16fB16fR16fA16f:	return { vk::Format::eR16G16B16A16Sfloat, RGBA2GBRA };
+	case ColorFormat::A16fR16fG16fB16f:	return { std::tuple{ vk::Format::eR16G16B16A16Sfloat, RGBA2ARGB } };
+	case ColorFormat::A16fB16fG16fR16f:	return { std::tuple{ vk::Format::eR16G16B16A16Sfloat, RGBA2ABGR } };
+	case ColorFormat::A16fG16fR16fB16f:	return { std::tuple{ vk::Format::eR16G16B16A16Sfloat, RGBA2AGRB } };
+	case ColorFormat::A16fG16fB16fR16f:	return { std::tuple{ vk::Format::eR16G16B16A16Sfloat, RGBA2AGBR } };
+	case ColorFormat::R16fG16fB16fA16f:	return { std::tuple{ vk::Format::eR16G16B16A16Sfloat, IDENTITY  } };
+	case ColorFormat::B16fG16fR16fA16f:	return { std::tuple{ vk::Format::eR16G16B16A16Sfloat, RGBA2BGRA } };
+	case ColorFormat::G16fR16fB16fA16f:	return { std::tuple{ vk::Format::eR16G16B16A16Sfloat, RGBA2GRBA } };
+	case ColorFormat::G16fB16fR16fA16f:	return { std::tuple{ vk::Format::eR16G16B16A16Sfloat, RGBA2GBRA } };
 
-	case ColorFormat::R16G16B16G16_S422:	return { vk::Format::eB16G16R16G16422Unorm, RGBA2BGRA };
-	case ColorFormat::B16G16R16G16_S422:	return { vk::Format::eB16G16R16G16422Unorm, IDENTITY };
-	case ColorFormat::G16R16G16B16_S422:	return { vk::Format::eG16B16G16R16422Unorm, RGBA2BGRA };
-	case ColorFormat::G16B16G16R16_S422:	return { vk::Format::eG16B16G16R16422Unorm, IDENTITY };
+	case ColorFormat::R16G16B16G16:		return { std::tuple{ vk::Format::eB16G16R16G16422Unorm, RGBA2BGRA } };
+	case ColorFormat::B16G16R16G16:		return { std::tuple{ vk::Format::eB16G16R16G16422Unorm, IDENTITY  } };
+	case ColorFormat::G16R16G16B16:		return { std::tuple{ vk::Format::eG16B16G16R16422Unorm, RGBA2BGRA } };
+	case ColorFormat::G16B16G16R16:		return { std::tuple{ vk::Format::eG16B16G16R16422Unorm, IDENTITY  } };
 
-	case ColorFormat::G16_B16_R16:		return { vk::Format::eG16B16R163Plane444Unorm, IDENTITY };
-	case ColorFormat::G16_B16_R16_S422:	return { vk::Format::eG16B16R163Plane422Unorm, IDENTITY };
-	case ColorFormat::G16_B16_R16_S420:	return { vk::Format::eG16B16R163Plane420Unorm, IDENTITY };
-
-	case ColorFormat::G16_R16B16_S422:	return { vk::Format::eG16B16R162Plane422Unorm, RGBA2BGRA };
-	case ColorFormat::G16_B16R16_S422:	return { vk::Format::eG16B16R162Plane422Unorm, IDENTITY };
-	case ColorFormat::G16_R16B16_S420:	return { vk::Format::eG16B16R162Plane420Unorm, RGBA2BGRA };
-	case ColorFormat::G16_B16R16_S420:	return { vk::Format::eG16B16R162Plane420Unorm, IDENTITY };
+	//TODO decide swizzle
+	case ColorFormat::G16_B16_R16:		return { 
+		std::tuple{ vk::Format::eR16Unorm, IDENTITY },
+		std::tuple{ vk::Format::eR16Unorm, IDENTITY },
+		std::tuple{ vk::Format::eR16Unorm, IDENTITY } };
+	case ColorFormat::G16_R16B16:		return {
+		std::tuple{ vk::Format::eR16Unorm, IDENTITY },
+		std::tuple{ vk::Format::eR16G16Unorm, IDENTITY } };
+	case ColorFormat::G16_B16R16:		return { 
+		std::tuple{ vk::Format::eR16Unorm, IDENTITY },
+		std::tuple{ vk::Format::eR16G16Unorm, IDENTITY } };
 
 	//32 bits per component
-	case ColorFormat::Y32f:				return { vk::Format::eR32Sfloat, R2Y };
+	case ColorFormat::Y32f:				return { std::tuple{ vk::Format::eR32Sfloat, R2Y } };
 
-	case ColorFormat::Y32fA32f:			return { vk::Format::eR32G32Sfloat, RG2YA };
-	case ColorFormat::A32fY32f:			return { vk::Format::eR32G32Sfloat, RG2AY };
+	case ColorFormat::Y32fA32f:			return { std::tuple{ vk::Format::eR32G32Sfloat, RG2YA } };
+	case ColorFormat::A32fY32f:			return { std::tuple{ vk::Format::eR32G32Sfloat, RG2AY } };
 		
-	case ColorFormat::R32fG32fB32f:		return { vk::Format::eR32G32B32Sfloat, IDENTITY };
-	case ColorFormat::B32fG32fR32f:		return { vk::Format::eR32G32B32Sfloat, RGBA2BGRA };
-	case ColorFormat::G32fR32fB32f:		return { vk::Format::eR32G32B32Sfloat, RGBA2GRBA };
-	case ColorFormat::G32fB32fR32f:		return { vk::Format::eR32G32B32Sfloat, RGBA2GBRA };
+	case ColorFormat::R32fG32fB32f:		return { std::tuple{ vk::Format::eR32G32B32Sfloat, IDENTITY  } };
+	case ColorFormat::B32fG32fR32f:		return { std::tuple{ vk::Format::eR32G32B32Sfloat, RGBA2BGRA } };
+	case ColorFormat::G32fR32fB32f:		return { std::tuple{ vk::Format::eR32G32B32Sfloat, RGBA2GRBA } };
+	case ColorFormat::G32fB32fR32f:		return { std::tuple{ vk::Format::eR32G32B32Sfloat, RGBA2GBRA } };
 
-	case ColorFormat::A32fR32fG32fB32f:	return { vk::Format::eR32G32B32A32Sfloat, RGBA2ARGB };
-	case ColorFormat::A32fB32fG32fR32f:	return { vk::Format::eR32G32B32A32Sfloat, RGBA2ABGR };
-	case ColorFormat::A32fG32fR32fB32f:	return { vk::Format::eR32G32B32A32Sfloat, RGBA2AGRB };
-	case ColorFormat::A32fG32fB32fR32f:	return { vk::Format::eR32G32B32A32Sfloat, RGBA2AGBR };
-	case ColorFormat::R32fG32fB32fA32f:	return { vk::Format::eR32G32B32A32Sfloat, IDENTITY };
-	case ColorFormat::B32fG32fR32fA32f:	return { vk::Format::eR32G32B32A32Sfloat, RGBA2BGRA };
-	case ColorFormat::G32fR32fB32fA32f:	return { vk::Format::eR32G32B32A32Sfloat, RGBA2GRBA };
-	case ColorFormat::G32fB32fR32fA32f:	return { vk::Format::eR32G32B32A32Sfloat, RGBA2GBRA };
+	case ColorFormat::A32fR32fG32fB32f:	return { std::tuple{ vk::Format::eR32G32B32A32Sfloat, RGBA2ARGB } };
+	case ColorFormat::A32fB32fG32fR32f:	return { std::tuple{ vk::Format::eR32G32B32A32Sfloat, RGBA2ABGR } };
+	case ColorFormat::A32fG32fR32fB32f:	return { std::tuple{ vk::Format::eR32G32B32A32Sfloat, RGBA2AGRB } };
+	case ColorFormat::A32fG32fB32fR32f:	return { std::tuple{ vk::Format::eR32G32B32A32Sfloat, RGBA2AGBR } };
+	case ColorFormat::R32fG32fB32fA32f:	return { std::tuple{ vk::Format::eR32G32B32A32Sfloat, IDENTITY  } };
+	case ColorFormat::B32fG32fR32fA32f:	return { std::tuple{ vk::Format::eR32G32B32A32Sfloat, RGBA2BGRA } };
+	case ColorFormat::G32fR32fB32fA32f:	return { std::tuple{ vk::Format::eR32G32B32A32Sfloat, RGBA2GRBA } };
+	case ColorFormat::G32fB32fR32fA32f:	return { std::tuple{ vk::Format::eR32G32B32A32Sfloat, RGBA2GBRA } };
 
 	//64 bits per component
-	case ColorFormat::Y64f:				return { vk::Format::eR64Sfloat, R2Y };
+	case ColorFormat::Y64f:				return { std::tuple{ vk::Format::eR64Sfloat, R2Y } };
 
-	case ColorFormat::Y64fA64f:			return { vk::Format::eR64G64Sfloat, RG2YA };
-	case ColorFormat::A64fY64f:			return { vk::Format::eR64G64Sfloat, RG2AY };
+	case ColorFormat::Y64fA64f:			return { std::tuple{ vk::Format::eR64G64Sfloat, RG2YA } };
+	case ColorFormat::A64fY64f:			return { std::tuple{ vk::Format::eR64G64Sfloat, RG2AY } };
 		
-	case ColorFormat::R64fG64fB64f:		return { vk::Format::eR64G64B64Sfloat, IDENTITY };
-	case ColorFormat::B64fG64fR64f:		return { vk::Format::eR64G64B64Sfloat, RGBA2BGRA };
-	case ColorFormat::G64fR64fB64f:		return { vk::Format::eR64G64B64Sfloat, RGBA2GRBA };
-	case ColorFormat::G64fB64fR64f:		return { vk::Format::eR64G64B64Sfloat, RGBA2GBRA };
+	case ColorFormat::R64fG64fB64f:		return { std::tuple{ vk::Format::eR64G64B64Sfloat, IDENTITY  } };
+	case ColorFormat::B64fG64fR64f:		return { std::tuple{ vk::Format::eR64G64B64Sfloat, RGBA2BGRA } };
+	case ColorFormat::G64fR64fB64f:		return { std::tuple{ vk::Format::eR64G64B64Sfloat, RGBA2GRBA } };
+	case ColorFormat::G64fB64fR64f:		return { std::tuple{ vk::Format::eR64G64B64Sfloat, RGBA2GBRA } };
 
-	case ColorFormat::A64fR64fG64fB64f:	return { vk::Format::eR64G64B64A64Sfloat, RGBA2ARGB };
-	case ColorFormat::A64fB64fG64fR64f:	return { vk::Format::eR64G64B64A64Sfloat, RGBA2ABGR };
-	case ColorFormat::A64fG64fR64fB64f:	return { vk::Format::eR64G64B64A64Sfloat, RGBA2AGRB };
-	case ColorFormat::A64fG64fB64fR64f:	return { vk::Format::eR64G64B64A64Sfloat, RGBA2AGBR };
-	case ColorFormat::R64fG64fB64fA64f:	return { vk::Format::eR64G64B64A64Sfloat, IDENTITY };
-	case ColorFormat::B64fG64fR64fA64f:	return { vk::Format::eR64G64B64A64Sfloat, RGBA2BGRA };
-	case ColorFormat::G64fR64fB64fA64f:	return { vk::Format::eR64G64B64A64Sfloat, RGBA2GRBA };
-	case ColorFormat::G64fB64fR64fA64f:	return { vk::Format::eR64G64B64A64Sfloat, RGBA2GBRA };
+	case ColorFormat::A64fR64fG64fB64f:	return { std::tuple{ vk::Format::eR64G64B64A64Sfloat, RGBA2ARGB } };
+	case ColorFormat::A64fB64fG64fR64f:	return { std::tuple{ vk::Format::eR64G64B64A64Sfloat, RGBA2ABGR } };
+	case ColorFormat::A64fG64fR64fB64f:	return { std::tuple{ vk::Format::eR64G64B64A64Sfloat, RGBA2AGRB } };
+	case ColorFormat::A64fG64fB64fR64f:	return { std::tuple{ vk::Format::eR64G64B64A64Sfloat, RGBA2AGBR } };
+	case ColorFormat::R64fG64fB64fA64f:	return { std::tuple{ vk::Format::eR64G64B64A64Sfloat, IDENTITY  } };
+	case ColorFormat::B64fG64fR64fA64f:	return { std::tuple{ vk::Format::eR64G64B64A64Sfloat, RGBA2BGRA } };
+	case ColorFormat::G64fR64fB64fA64f:	return { std::tuple{ vk::Format::eR64G64B64A64Sfloat, RGBA2GRBA } };
+	case ColorFormat::G64fB64fR64fA64f:	return { std::tuple{ vk::Format::eR64G64B64A64Sfloat, RGBA2GBRA } };
 
 	default: return {};
 	}
@@ -358,48 +370,28 @@ constexpr std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format f
 	case vk::Format::eR8G8B8A8Srgb:			return { ColorFormat::R8G8B8A8, ColorTransferFunction::IEC61966_2_1 };
 	case vk::Format::eB8G8R8A8Unorm:		return { ColorFormat::B8G8R8A8, ColorTransferFunction::LINEAR };
 	case vk::Format::eB8G8R8A8Srgb:			return { ColorFormat::B8G8R8A8, ColorTransferFunction::IEC61966_2_1 };
-	case vk::Format::eG8B8G8R8422Unorm:		return { ColorFormat::G8B8G8R8_S422, ColorTransferFunction::LINEAR };
-	case vk::Format::eB8G8R8G8422Unorm:		return { ColorFormat::B8G8R8G8_S422, ColorTransferFunction::LINEAR };
-	case vk::Format::eG8B8R83Plane420Unorm:	return { ColorFormat::G8_B8_R8_S420, ColorTransferFunction::LINEAR };
-	case vk::Format::eG8B8R83Plane422Unorm:	return { ColorFormat::G8_B8_R8_S422, ColorTransferFunction::LINEAR };
-	case vk::Format::eG8B8R83Plane444Unorm:	return { ColorFormat::G8_B8_R8, ColorTransferFunction::LINEAR };
-	case vk::Format::eG8B8R82Plane420Unorm:	return { ColorFormat::G8_B8R8_S420, ColorTransferFunction::LINEAR };
-	case vk::Format::eG8B8R82Plane422Unorm:	return { ColorFormat::G8_B8R8_S422, ColorTransferFunction::LINEAR };
+	case vk::Format::eG8B8G8R8422Unorm:		return { ColorFormat::G8B8G8R8, ColorTransferFunction::LINEAR };
+	case vk::Format::eB8G8R8G8422Unorm:		return { ColorFormat::B8G8R8G8, ColorTransferFunction::LINEAR };
 
 	//10 bit formats
 	case vk::Format::eA2R10G10B10UnormPack32:	return { ColorFormat::A2R10G10B10_32, ColorTransferFunction::LINEAR };
 	case vk::Format::eA2B10G10R10UnormPack32:	return { ColorFormat::A2B10G10R10_32, ColorTransferFunction::LINEAR };
 	case vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16:		return { ColorFormat::R10X6G10X6B10X6A10X6_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16:	return { ColorFormat::G10X6B10X6G10X6R10X6_S422_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eB10X6G10X6R10X6G10X6422Unorm4Pack16:	return { ColorFormat::B10X6G10X6R10X6G10X6_S422_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eG10X6B10X6R10X63Plane420Unorm3Pack16:	return { ColorFormat::G10X6_B10X6_R10X6_S420_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eG10X6B10X6R10X63Plane422Unorm3Pack16:	return { ColorFormat::G10X6_B10X6_R10X6_S422_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eG10X6B10X6R10X63Plane444Unorm3Pack16:	return { ColorFormat::G10X6_B10X6_R10X6_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eG10X6B10X6R10X62Plane420Unorm3Pack16:	return { ColorFormat::G10X6_B10X6R10X6_S420_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eG10X6B10X6R10X62Plane422Unorm3Pack16:	return { ColorFormat::G10X6_B10X6R10X6_S422_16, ColorTransferFunction::LINEAR };
+	case vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16:	return { ColorFormat::G10X6B10X6G10X6R10X6_16, ColorTransferFunction::LINEAR };
+	case vk::Format::eB10X6G10X6R10X6G10X6422Unorm4Pack16:	return { ColorFormat::B10X6G10X6R10X6G10X6_16, ColorTransferFunction::LINEAR };
 
 	//12 bit formats
 	case vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16:		return { ColorFormat::R12X4G12X4B12X4A12X4_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eG12X4B12X4G12X4R12X4422Unorm4Pack16:	return { ColorFormat::G12X4B12X4G12X4R12X4_S422_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eB12X4G12X4R12X4G12X4422Unorm4Pack16:	return { ColorFormat::B12X4G12X4R12X4G12X4_S422_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eG12X4B12X4R12X43Plane420Unorm3Pack16:	return { ColorFormat::G12X4_B12X4_R12X4_S420_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eG12X4B12X4R12X43Plane422Unorm3Pack16:	return { ColorFormat::G12X4_B12X4_R12X4_S422_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eG12X4B12X4R12X43Plane444Unorm3Pack16:	return { ColorFormat::G12X4_B12X4_R12X4_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eG12X4B12X4R12X42Plane420Unorm3Pack16:	return { ColorFormat::G12X4_B12X4R12X4_S420_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eG12X4B12X4R12X42Plane422Unorm3Pack16:	return { ColorFormat::G12X4_B12X4R12X4_S422_16, ColorTransferFunction::LINEAR };
+	case vk::Format::eG12X4B12X4G12X4R12X4422Unorm4Pack16:	return { ColorFormat::G12X4B12X4G12X4R12X4_16, ColorTransferFunction::LINEAR };
+	case vk::Format::eB12X4G12X4R12X4G12X4422Unorm4Pack16:	return { ColorFormat::B12X4G12X4R12X4G12X4_16, ColorTransferFunction::LINEAR };
 
 	//16 bit formats
 	case vk::Format::eR16G16B16Unorm:			return { ColorFormat::R16G16B16, ColorTransferFunction::LINEAR };
 	case vk::Format::eR16G16B16Sfloat:			return { ColorFormat::R16fG16fB16f, ColorTransferFunction::LINEAR };
 	case vk::Format::eR16G16B16A16Unorm:		return { ColorFormat::R16G16B16A16, ColorTransferFunction::LINEAR };
 	case vk::Format::eR16G16B16A16Sfloat:		return { ColorFormat::R16fG16fB16fA16f, ColorTransferFunction::LINEAR };
-	case vk::Format::eG16B16G16R16422Unorm:		return { ColorFormat::G16B16G16R16_S422, ColorTransferFunction::LINEAR };
-	case vk::Format::eB16G16R16G16422Unorm:		return { ColorFormat::B16G16R16G16_S422, ColorTransferFunction::LINEAR };
-	case vk::Format::eG16B16R163Plane420Unorm:	return { ColorFormat::G16_B16_R16_S420, ColorTransferFunction::LINEAR };
-	case vk::Format::eG16B16R163Plane422Unorm:	return { ColorFormat::G16_B16_R16_S422, ColorTransferFunction::LINEAR };
-	case vk::Format::eG16B16R163Plane444Unorm:	return { ColorFormat::G16_B16_R16, ColorTransferFunction::LINEAR };
-	case vk::Format::eG16B16R162Plane420Unorm:	return { ColorFormat::G16_B16R16_S420, ColorTransferFunction::LINEAR };
-	case vk::Format::eG16B16R162Plane422Unorm:	return { ColorFormat::G16_B16R16_S422, ColorTransferFunction::LINEAR };
+	case vk::Format::eG16B16G16R16422Unorm:		return { ColorFormat::G16B16G16R16, ColorTransferFunction::LINEAR };
+	case vk::Format::eB16G16R16G16422Unorm:		return { ColorFormat::B16G16R16G16, ColorTransferFunction::LINEAR };
 
 	//32 bit formats
 	case vk::Format::eR32G32B32Sfloat:		return { ColorFormat::R32fG32fB32f, ColorTransferFunction::LINEAR };

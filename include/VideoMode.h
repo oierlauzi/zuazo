@@ -3,6 +3,7 @@
 #include "ColorPrimaries.h"
 #include "ColorModel.h"
 #include "ColorTransferFunction.h"
+#include "ColorSubsampling.h"
 #include "ColorRange.h"
 #include "ColorFormat.h"
 #include "Resolution.h"
@@ -18,6 +19,7 @@ struct VideoMode {
 	ColorPrimaries			colorPrimaries = ColorPrimaries::NONE;
 	ColorModel				colorModel = ColorModel::NONE;
 	ColorTransferFunction	colorTransferFunction = ColorTransferFunction::NONE;
+	ColorSubsampling		colorSubsampling = ColorSubsampling::NONE;
 	ColorRange				colorRange = ColorRange::NONE;
 	ColorFormat				colorFormat = ColorFormat::NONE;
 };

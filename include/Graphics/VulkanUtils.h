@@ -27,6 +27,4 @@ extern bool										getQueueFamilyCompatibility(vk::QueueFlags required, vk::Qu
 
 extern bool										hasSamplerSupport(vk::FormatProperties features);
 extern bool										hasFramebufferSupport(vk::FormatProperties features);
-extern bool										hasYCbCrSupport(vk::FormatProperties features);
-
 }

@@ -2,8 +2,8 @@
 #include <Graphics/VulkanConversions.h>
 #include <Graphics/VulkanUtils.h>
 
-#include <window_frag.h>
-#include <window_vert.h>
+#include <Window_frag.h>
+#include <Window_vert.h>
 
 #include <cmath>
 #include <algorithm>
@@ -102,7 +102,7 @@ std::tuple<vk::Extent2D, vk::SurfaceFormatKHR> Window::getVulkanVideoMode() cons
 	const auto& videoMode = getVideoMode();
 
 	const auto extent = Graphics::toVulkan(videoMode.resolution);
-	const auto [format, swizzle] = Graphics::optimizeFormat(Graphics::toVulkan(videoMode.colorFormat));
+	const auto [format, swizzle] = Graphics::optimizeFormat(Graphics::toVulkan(videoMode.colorFormat)[0]);
 	const auto colorSpace = Graphics::toVulkan(videoMode.colorPrimaries, videoMode.colorTransferFunction);
 	const auto surfaceFormat = vk::SurfaceFormatKHR(format, colorSpace);
 
@@ -385,8 +385,8 @@ vk::UniquePipeline Window::createPipeline(	const Graphics::Vulkan& vulkan,
 											vk::PipelineLayout layout,
 											const vk::Extent2D& extent )
 {
-	const auto vertexShader = vulkan.createShader(Utils::BufferView(window_vert, sizeof(window_vert) / 4));
-	const auto fragmentShader = vulkan.createShader(Utils::BufferView(window_frag, sizeof(window_frag) / 4));
+	const auto vertexShader = vulkan.createShader(Utils::BufferView(Window_vert, sizeof(Window_vert) / 4));
+	const auto fragmentShader = vulkan.createShader(Utils::BufferView(Window_frag, sizeof(Window_frag) / 4));
 
 	constexpr auto SHADER_ENTRY_POINT = "main";
 	const std::array shaderStages = {

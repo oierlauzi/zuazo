@@ -165,11 +165,4 @@ bool hasFramebufferSupport(vk::FormatProperties features){
 	return (features.optimalTilingFeatures & FLAGS) == FLAGS;
 }
 
-bool hasYCbCrSupport(vk::FormatProperties features){
-	constexpr auto FLAGS = 	vk::FormatFeatureFlagBits::eCositedChromaSamples |
-							vk::FormatFeatureFlagBits::eMidpointChromaSamples;
-
-	return (features.optimalTilingFeatures & FLAGS) != vk::FormatFeatureFlags();
-}
-
 }

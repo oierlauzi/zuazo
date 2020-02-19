@@ -52,10 +52,6 @@ const std::vector<ColorFormat>& Instance::getSupportedInputFormats() const{
 	return m_inputFormats;
 }
 
-const std::vector<ColorFormat>& Instance::getSupportedInputYcbcrFormats() const{
-	return m_inputYcbcrFormats;
-}
-
 const std::vector<ColorFormat>& Instance::getSupportedOutputFormats() const{
 	return m_outputFormats;
 }
@@ -82,34 +78,45 @@ void Instance::setupSupportedFormats(){
 	for(auto format = ColorFormat::NONE; format < ColorFormat::COUNT; format++){
 		const auto unoptimized = Graphics::toVulkan(format);
 
-		if(std::get<vk::Format>(unoptimized) == vk::Format::eUndefined) continue; //Not supported
+		//It needs to have at least one valid format
+		if(std::get<vk::Format>(unoptimized[0]) == vk::Format::eUndefined){
+			 continue; //Not supported
+		}
 
-		const auto optimized = Graphics::optimizeFormat(unoptimized);
+		//Check if all members are supported by the sampler
+		bool samplerSupport = true;
+		for(size_t i = 0; i < unoptimized.size(); i++){
+			if(std::get<vk::Format>(unoptimized[i]) == vk::Format::eUndefined){
+				break; //End
+			}
 
+			if(std::find(	supported.sampler.cbegin(), 
+							supported.sampler.cend(), 
+							std::get<vk::Format>(unoptimized[i]) )
+						== supported.sampler.cend() )
+			{
+				samplerSupport = false;
+				break;
+			}
+		}
 
-		if(std::find(	supported.sampler.cbegin(), 
-						supported.sampler.cend(), 
-						std::get<vk::Format>(unoptimized)) 
-					!= supported.sampler.cend())
-		{
+		if(samplerSupport){
 			m_inputFormats.emplace_back(format);
 		}
 
-		if(std::find(	supported.ycbcrSampler.cbegin(), 
-						supported.ycbcrSampler.cend(), 
-						std::get<vk::Format>(unoptimized)) 
-					!= supported.ycbcrSampler.cend())
-		{
-			m_inputYcbcrFormats.emplace_back(format);
-		}
+		//To be able to render to it it needs to have only one plane
+		if(std::get<vk::Format>(unoptimized[1]) == vk::Format::eUndefined){
+			const auto optimized = Graphics::optimizeFormat(unoptimized[0]);
 
-		if(std::get<vk::ComponentMapping>(optimized) == vk::ComponentMapping()) {
-			if(std::find(	supported.framebuffer.cbegin(), 
-							supported.framebuffer.cend(), 
-							std::get<vk::Format>(optimized)) 
-						!= supported.framebuffer.cend())
-			{
-				m_outputFormats.emplace_back(format);
+			//To be able to render to it, it must not have any swizzle
+			if(std::get<vk::ComponentMapping>(optimized) == vk::ComponentMapping()) {
+				if(std::find(	supported.framebuffer.cbegin(), 
+								supported.framebuffer.cend(), 
+								std::get<vk::Format>(optimized)) 
+							!= supported.framebuffer.cend())
+				{
+					m_outputFormats.emplace_back(format);
+				}
 			}
 		}
 	}
@@ -134,11 +141,6 @@ std::string Instance::generateInitMessage() const {
 		message << "\t\t- " << toString(fmt) << "\n";
 	}
 
-	message << "\t- Supported input YCbCr pixel formats:\n";
-	for(const auto& fmt : m_inputYcbcrFormats ){
-		message << "\t\t- " << toString(fmt) << "\n";
-	}
-
 	message << "\t- Supported output pixel formats:\n";
 	for(const auto& fmt : m_outputFormats ){
 		message << "\t\t- " << toString(fmt) << "\n";
@@ -147,16 +149,14 @@ std::string Instance::generateInitMessage() const {
 	return message.str();
 }
 
-uint32_t Instance::defaultDeviceScoreFunc(const vk::DispatchLoaderDynamic& disp,
-										vk::PhysicalDevice device )
+uint32_t Instance::defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp,
+											vk::PhysicalDevice device )
 {
 	//Scores
 	constexpr uint32_t MINIMUM_SCORE = 1;
 	constexpr uint32_t DISCRETE_GPU_SCORE = 128;
-	constexpr uint32_t YCBCR_SAMPLER_SCORE = 64;
 	constexpr uint32_t SAMPLER_FORMAT_SCORE = 4;
 	constexpr uint32_t FRAMEBUFFER_FORMAT_SCORE = 8;
-	constexpr uint32_t YCBCR_FORMAT_SCORE = 4;
 	constexpr uint32_t TEXTURE_RESOLUTION_REDUCTION = 1024;
 	constexpr uint32_t FRAMEBUFFER_RESOLUTION_REDUCTION = 1024;
 	constexpr uint32_t SIMULTANEOUS_ALLOCATION_REDUCTION = 64;
@@ -165,17 +165,11 @@ uint32_t Instance::defaultDeviceScoreFunc(const vk::DispatchLoaderDynamic& disp,
 	int32_t score = MINIMUM_SCORE;
 
 	//Retrieve data about the device	
-	auto features = device.getFeatures2<vk::PhysicalDeviceFeatures2, 
-										vk::PhysicalDeviceSamplerYcbcrConversionFeatures>(disp);
 	const auto properties = device.getProperties(disp);
 
 	//Give the score based on the properties and features
 	if(properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu){
 		score += DISCRETE_GPU_SCORE;
-	}
-
-	if(features.get<vk::PhysicalDeviceSamplerYcbcrConversionFeatures>().samplerYcbcrConversion){
-		score += YCBCR_SAMPLER_SCORE;
 	}
 
 	score += properties.limits.maxImageDimension2D / TEXTURE_RESOLUTION_REDUCTION;
@@ -184,22 +178,16 @@ uint32_t Instance::defaultDeviceScoreFunc(const vk::DispatchLoaderDynamic& disp,
 	score += properties.limits.maxMemoryAllocationCount / SIMULTANEOUS_ALLOCATION_REDUCTION;
 
 	//Give the score based on the supported formats
-	for(auto format = ColorFormat::NONE; format < ColorFormat::COUNT; format++){
-		const auto [f, s] = Graphics::toVulkan(format);
-		if(f == vk::Format::eUndefined) continue;
+	for(size_t i = VK_FORMAT_BEGIN_RANGE; i < VK_FORMAT_END_RANGE; i++){
+		const auto format = static_cast<vk::Format>(i);
+		const auto formatProperties = device.getFormatProperties(format, disp);
 
-		const auto features = device.getFormatProperties(f, disp);
-
-		if(Graphics::hasSamplerSupport(features)) {
+		if(Graphics::hasSamplerSupport(formatProperties)) {
 			score += SAMPLER_FORMAT_SCORE;
 		}
 
-		if(Graphics::hasFramebufferSupport(features) && s == vk::ComponentMapping()) {
+		if(Graphics::hasFramebufferSupport(formatProperties)) {
 			score += FRAMEBUFFER_FORMAT_SCORE;
-		}
-
-		if(Graphics::hasYCbCrSupport(features)){
-			score += YCBCR_FORMAT_SCORE;
 		}
 	}
 

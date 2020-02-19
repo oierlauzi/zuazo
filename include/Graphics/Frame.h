@@ -1,11 +1,10 @@
 #pragma once
 
 #include "Vulkan.h"
-#include "ImageProperties.h"
 
 namespace Zuazo::Graphics {
 
-class Frame {
+/*class Frame {
 public:
 	Frame() = default;
 	Frame(	const Vulkan& vulkan, 
@@ -36,7 +35,7 @@ private:
 											const ImageProperties& properties );
 
 
-};
+};*/
 
 
 }
