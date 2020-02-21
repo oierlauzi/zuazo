@@ -1,6 +1,4 @@
-#include "StringConversions.h"
-
-#include "Macros.h"
+#include "ColorFormat.h"
 
 namespace Zuazo {
 
@@ -193,16 +191,6 @@ constexpr  std::string_view toString(ColorFormat format){
 	ZUAZO_ENUM2STR_CASE( ColorFormat, B64fG64fR64fA64f )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G64fR64fB64fA64f )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G64fB64fR64fA64f )
-
-	default: return "";
-	}
-}
-
-constexpr std::string_view toString(ColorTransferFunction format){
-	switch(format){
-
-	ZUAZO_ENUM2STR_CASE( ColorTransferFunction, LINEAR )
-	ZUAZO_ENUM2STR_CASE( ColorTransferFunction, IEC61966_2_1 )
 
 	default: return "";
 	}

@@ -1,7 +1,6 @@
 #include <Instance.h>
 
 #include <Zuazo.h>
-#include <StringConversions.h>
 #include <Graphics/VulkanConversions.h>
 
 #include <iostream>

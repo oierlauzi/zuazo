@@ -1,6 +1,10 @@
 #pragma once
 
 #include "Macros.h"
+#include "Math/Matrix.h"
+
+#include <type_traits>
+#include <string_view>
 
 namespace Zuazo {
 
@@ -24,4 +28,9 @@ enum class ColorPrimaries {
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorPrimaries)
 ZUAZO_ENUM_COMP_OPERATORS(ColorPrimaries)	
 
+constexpr std::string_view toString(ColorPrimaries colorPrim);
+constexpr Math::Mat4x4f getConversionMatrix(ColorPrimaries colorPrim);
+
 }
+
+#include "ColorPrimaries.inl"

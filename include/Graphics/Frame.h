@@ -1,41 +1,40 @@
 #pragma once
 
 #include "Vulkan.h"
+#include "ColorTransfer.h"
 
 namespace Zuazo::Graphics {
 
-/*class Frame {
+class Frame {
 public:
+	using Formats = std::array<std::tuple<vk::Format, vk::ComponentMapping>, Vulkan::SAMPLER_COUNT>;
+	using Images = std::array<vk::Image, Vulkan::SAMPLER_COUNT>;
+
 	Frame() = default;
 	Frame(	const Vulkan& vulkan, 
-			const ImageProperties& properties,
-			vk::Image image );
+			const Formats& formats,
+			const ColorTransfer& colorTransfer,
+			const Images& images );
 	Frame(const Frame& other) = delete;
 	Frame(Frame&& other) = default;
-	~Frame() = default;
+	~Frame();
 
 	Frame& 						operator=(const Frame& other) = delete;
 	Frame& 						operator=(Frame&& other) = default;
 
 private:
-	using Samplers = std::array<vk::Sampler, VK_FILTER_RANGE_SIZE>;
+	using ImageViews = std::array<vk::UniqueImageView, Vulkan::SAMPLER_COUNT>; 
 
-	ImageProperties				m_properties;
+	const Vulkan&				m_vulkan;
 
-	vk::Image					m_image;
-	vk::UniqueImageView			m_imageView;
+	Images						m_images;
+	ImageViews					m_imageViews;
 
-	Samplers					m_samplers;
+	static ImageViews			createImageViews(	const Vulkan& vulkan,
+													const Formats& formats,
+													const Images& images );
 
-	static vk::UniqueImageView	createImageView(	const Vulkan& vulkan,
-													vk::Format format,
-													const vk::ComponentMapping& swizzle,
-													vk::Image image );
-	static Samplers				getSamplers(const Vulkan& vulkan,
-											const ImageProperties& properties );
-
-
-};*/
+};
 
 
 }

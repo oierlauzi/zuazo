@@ -1,10 +1,8 @@
 #pragma once
 
-#include <glm/detail/qualifier.hpp>
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
-#include <sys/types.h>
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#include <glm/glm.hpp>
 
 namespace Zuazo::Math {
 

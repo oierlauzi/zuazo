@@ -2,6 +2,9 @@
 
 #include "Macros.h"
 
+#include <type_traits>
+#include <string_view>
+
 namespace Zuazo {
 
 /**
@@ -25,4 +28,8 @@ enum class ColorSubsampling {
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorSubsampling)
 ZUAZO_ENUM_COMP_OPERATORS(ColorSubsampling)	
 
+constexpr std::string_view toString(ColorSubsampling colorSubsampling);
+
 }
+
+#include "ColorSubsampling.inl"

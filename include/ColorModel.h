@@ -1,6 +1,10 @@
 #pragma once
 
 #include "Macros.h"
+#include "Math/Matrix.h"
+
+#include <type_traits>
+#include <string_view>
 
 namespace Zuazo {
 
@@ -10,7 +14,6 @@ namespace Zuazo {
 enum class ColorModel {
 	NONE = 0,					///<Not supported
 
-	MONOCHROME,					///<No color.
 	RGB,						///<RGB color model
 	BT601,						///<YCbCr color model used in SDTV \see https://www.itu.int/rec/R-REC-BT.601/en
 	BT709,						///<YCbCr color model used in HDTV \see https://www.itu.int/rec/R-REC-BT.709/en
@@ -24,4 +27,9 @@ enum class ColorModel {
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorModel)
 ZUAZO_ENUM_COMP_OPERATORS(ColorModel)
 
+constexpr std::string_view toString(ColorModel colorModel);
+constexpr Math::Mat4x4f getConversionMatrix(ColorModel colorModel);
+
 }
+
+#include "ColorModel.inl"

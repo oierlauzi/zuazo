@@ -2,69 +2,53 @@
 
 namespace Zuazo::Graphics {
 
-/*Frame::Frame(	const Vulkan& vulkan, 
-				const ImageProperties& properties,
-				vk::Image image )
-	: m_properties(properties)
-	, m_image(image)
-	, m_imageView(createImageView(
-		vulkan,
-		m_properties.format,
-		m_properties.swizzle,
-		m_image ))
-	, m_samplers(getSamplers(
-		vulkan,
-		m_properties ))
+Frame::Frame(	const Vulkan& vulkan,
+				const Formats& formats,
+				const ColorTransfer& colorTransfer,
+				const Images& images )
+	: m_vulkan(vulkan)
+	, m_images(images)
+	, m_imageViews(createImageViews(
+		m_vulkan,
+		formats,
+		m_images ))
 {
 }
 
-
-
-
-
-vk::UniqueImageView	Frame::createImageView(	const Vulkan& vulkan,
-											vk::Format format,
-											const vk::ComponentMapping& swizzle,
-											vk::Image image )
-{
-	const vk::ImageViewCreateInfo createInfo(
-		{},												//Flags
-		image,											//Image
-		vk::ImageViewType::e2D,							//ImageView type
-		format,											//Image format
-		swizzle,										//Swizzle
-		vk::ImageSubresourceRange(						//Image subresources
-			vk::ImageAspectFlagBits::eColor,				//Aspect mask
-			0, 1, 0, 1										//Base mipmap level, mipmap levels, base array layer, layers
-		)
-	);
-
-	return vulkan.getDevice().createImageViewUnique(createInfo, nullptr, vulkan.getDispatcher());
+Frame::~Frame(){
+	m_vulkan.getGraphicsQueue().waitIdle(m_vulkan.getDispatcher());
 }
 
-Frame::Samplers Frame::getSamplers(	const Vulkan& vulkan,
-									const ImageProperties& properties )
+
+Frame::ImageViews Frame::createImageViews(	const Vulkan& vulkan,
+											const Formats& formats,
+											const Images& images )
 {
-	if(properties.nativeColorModel == vk::SamplerYcbcrModelConversion::eRgbIdentity){
-		//None of the attributes of the YCbCr sampler would make a difference
-		return {
-			vulkan.getRgbSampler(vk::Filter::eNearest),
-			vulkan.getRgbSampler(vk::Filter::eLinear),
-		};
-	} else {
-		//YCbCr sampler is required
-		return {
-			vulkan.getYcbcrSampler(	vk::Filter::eNearest, 
-									properties.nativeRange,
-									properties.nativeColorModel,
-									properties.format ),
-			vulkan.getYcbcrSampler(	vk::Filter::eLinear, 
-									properties.nativeRange,
-									properties.nativeColorModel,
-									properties.format )
-		};
+	Frame::ImageViews result;
+
+	for(size_t i = 0; i < result.size(); i++){
+		if(images[i]) {
+			const vk::ImageViewCreateInfo createInfo(
+				{},												//Flags
+				images[i],										//Image
+				vk::ImageViewType::e2D,							//ImageView type
+				std::get<vk::Format>(formats[i]),				//Image format
+				std::get<vk::ComponentMapping>(formats[i]),		//Swizzle
+				vk::ImageSubresourceRange(						//Image subresources
+					vk::ImageAspectFlagBits::eColor,				//Aspect mask
+					0, 1, 0, 1										//Base mipmap level, mipmap levels, base array layer, layers
+				)
+			);
+
+			result[i] = vulkan.createImageView(createInfo);
+		} else {
+			break;
+		}
 	}
-}*/
+
+
+	return result;
+}
 
 
 }
