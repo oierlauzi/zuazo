@@ -7,7 +7,7 @@
 namespace Zuazo::Math {
 
 template <typename T, int dim>
-using Vec = glm::vec<dim, T, glm::qualifier::defaultp>;
+using Vec = glm::vec<dim, T>;
 
 template <typename T>
 using Vec2 = Vec<T, 2>;

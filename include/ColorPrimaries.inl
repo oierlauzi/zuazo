@@ -16,39 +16,41 @@ constexpr std::string_view toString(ColorPrimaries colorPrim){
 
 constexpr Math::Mat4x4f getConversionMatrix(ColorPrimaries colorPrim){
 	switch(colorPrim){
-	
+		
+	//This matrices are defined in column major order.
 	case ColorPrimaries::BT709: 
-		return {
-			41.2391,	21.2639f,	1.9331f,	0.0f,
-			35.7584f,	71.5169f,	11.9195f,	0.0f,
-			18.0481f,	7.2192f,	95.0532f,	0.0f,
+		return Math::Mat4x4f(
+			0.412391,	0.212639f,	0.019331f,	0.0f,
+			0.357584f,	0.715169f,	0.119195f,	0.0f,
+			0.180481f,	0.072192f,	0.950532f,	0.0f,
 			0.0f, 		0.0f,		0.0f,		1.0f
-		};
+		);
 	case ColorPrimaries::BT2020: 
-		return {
-			63.6958f,	26.2700f,	0.0f,		0.0f,
-			14.4617f,	67.7998f,	2.8073f,	0.0f,
-			16.8881f,	5.9302f,	106.0985f,	0.0f,
+		return Math::Mat4x4f(
+			0.636958f,	0.262700f,	0.0f,		0.0f,
+			0.144617f,	0.677998f,	0.028073f,	0.0f,
+			0.168881f,	0.059302f,	1.060985f,	0.0f,
 			0.0f,		0.0f,		0.0f,		1.0f
-		};
+		);
 	case ColorPrimaries::SMPTE432: 
-		return {
-			48.6571f,	22.8975f,	0.0f,		0.0f,
-			26.5668f,	69.1738f,	4.5113f,	0.0f,
-			19.8217f,	7.9287f,	104.3945f,	0.0f,
+		return Math::Mat4x4f(
+			0.486571f,	0.228975f,	0.0f,		0.0f,
+			0.265668f,	0.691738f,	0.045113f,	0.0f,
+			0.198217f,	0.079287f,	1.043945f,	0.0f,
 			0.0f,		0.0f,		0.0f,		1.0f
-		};
+		);
 	case ColorPrimaries::ADOBE_RGB: 
-		return {
-			57.6669f,	29.7345f,	2.7031f,	0.0f,
-			18.5558f,	62.7364f,	7.0689f,	0.0f,
-			18.8229f,	7.5291f,	99.1338f,	0.0f,
+		return Math::Mat4x4f(
+			0.576669f,	0.297345f,	0.027031f,	0.0f,
+			0.185558f,	0.627364f,	0.070689f,	0.0f,
+			0.188229f,	0.075291f,	0.991338f,	0.0f,
 			0.0f,		0.0f,		0.0f,		1.0f
-		};
+		);
 
 	default: return {};
 	}
 }
 
+constexpr size_t a = alignof(Math::Mat4x4f);
 	
 }
