@@ -444,6 +444,42 @@ constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::Color
 }
 
 
+constexpr int32_t toVulkan(ColorRange range, ColorModel model){
+	switch(model){
+	case ColorModel::RGB:
+		switch(range){
+		case ColorRange::FULL: return COLOR_RANGE_FULL_RGB;
+		case ColorRange::ITU_NARROW: return COLOR_RANGE_ITU_NARROW_RGB;
+		default: break;
+		}
+		break;
+	case ColorModel::BT601:
+	case ColorModel::BT709:
+	case ColorModel::BT2020:
+		switch(range){
+		case ColorRange::FULL: return COLOR_RANGE_FULL_YCBCR;
+		case ColorRange::ITU_NARROW: return COLOR_RANGE_ITU_NARROW_YCBCR;
+		default: break;
+		}
+		break;
+	default: break;
+	}
+
+	return -1;
+}
+
+constexpr int32_t toVulkan(ColorTransferFunction transferFunction){
+	switch(transferFunction){
+	case ColorTransferFunction::LINEAR: return COLOR_TRANSFER_FUNCTION_LINEAR;
+	case ColorTransferFunction::IEC61966_2_1: return COLOR_TRANSFER_FUNCTION_IEC61966_2_1;
+	default: break;
+	}
+
+	return -1;
+}
+
+
+
 constexpr std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std::tuple<vk::Format, vk::ComponentMapping>& fmt){
 	const auto& format = std::get<vk::Format>(fmt);
 	const auto& swizzle = std::get<vk::ComponentMapping>(fmt);
@@ -528,23 +564,20 @@ constexpr std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std:
 	return fmt; //No conversion was found
 }
 
-constexpr std::tuple<vk::Format, ColorTransferFunction> optimizeFormat(const std::tuple<vk::Format, ColorTransferFunction>& fmt){
-	const auto& format = std::get<vk::Format>(fmt);
-	const auto& trf = std::get<ColorTransferFunction>(fmt);
-
-	if(trf == ColorTransferFunction::IEC61966_2_1){
-		switch(format){
-		case vk::Format::eR8Unorm:					return { vk::Format::eR8Srgb, ColorTransferFunction::NONE };
-		case vk::Format::eR8G8B8Unorm:				return { vk::Format::eR8G8B8Srgb, ColorTransferFunction::NONE }; 
-		case vk::Format::eB8G8R8Unorm:				return { vk::Format::eB8G8R8Srgb, ColorTransferFunction::NONE }; 
-		case vk::Format::eR8G8B8A8Unorm:			return { vk::Format::eR8G8B8A8Srgb, ColorTransferFunction::NONE }; 
-		case vk::Format::eB8G8R8A8Unorm:			return { vk::Format::eB8G8R8A8Srgb, ColorTransferFunction::NONE }; 
-
-		default: return fmt;
+constexpr std::tuple<vk::Format, int32_t> optimizeFormat(vk::Format fmt, int32_t trf, int32_t range){
+	if(trf == COLOR_TRANSFER_FUNCTION_IEC61966_2_1 && range == COLOR_RANGE_FULL_RGB){
+		switch(fmt){
+		case vk::Format::eR8Unorm:					return { vk::Format::eR8Srgb, COLOR_TRANSFER_FUNCTION_LINEAR };
+		case vk::Format::eR8G8Unorm:				return { vk::Format::eR8G8Srgb, COLOR_TRANSFER_FUNCTION_LINEAR };
+		case vk::Format::eR8G8B8Unorm:				return { vk::Format::eR8G8B8Srgb, COLOR_TRANSFER_FUNCTION_LINEAR }; 
+		case vk::Format::eB8G8R8Unorm:				return { vk::Format::eB8G8R8Srgb, COLOR_TRANSFER_FUNCTION_LINEAR }; 
+		case vk::Format::eR8G8B8A8Unorm:			return { vk::Format::eR8G8B8A8Srgb, COLOR_TRANSFER_FUNCTION_LINEAR}; 
+		case vk::Format::eB8G8R8A8Unorm:			return { vk::Format::eB8G8R8A8Srgb, COLOR_TRANSFER_FUNCTION_LINEAR }; 
+		default: break;
 		}
-	} else {
-		return fmt;
 	}
+	
+	return std::make_tuple(fmt, trf);
 }
 
 }

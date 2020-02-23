@@ -16,4 +16,24 @@ constexpr std::string_view toString(ColorSubsampling colorSubsampling){
 	}
 }
 
+constexpr Resolution getChromaResolution(ColorSubsampling subs, const Resolution& res){
+	switch(subs){
+
+	case ColorSubsampling::CHROMA_444: 
+		return res;
+	case ColorSubsampling::CHROMA_422: 
+		return Resolution(res.width / 2, res.height);
+	case ColorSubsampling::CHROMA_420:
+		return Resolution(res.width / 2, res.height / 2);
+	case ColorSubsampling::CHROMA_411:
+		return Resolution(res.width / 4, res.height);
+	case ColorSubsampling::CHROMA_410:
+		return Resolution(res.width / 4, res.height / 2);
+	case ColorSubsampling::CHROMA_311: 
+		return Resolution(res.width / 3, res.height);
+
+	default: return Resolution(0, 0);
+	}
+}
+
 }

@@ -1,6 +1,7 @@
 #include <Outputs/Window.h>
 #include <Graphics/VulkanConversions.h>
 #include <Graphics/VulkanUtils.h>
+#include <Graphics/ColorTransfer.h>
 
 #include <Window_frag.h>
 #include <Window_vert.h>
@@ -65,10 +66,8 @@ void Window::open(){
 
 	ZuazoBase::open();
 
-	while(true){
-		drawFrameProvisional();
-		std::this_thread::sleep_for(std::chrono::milliseconds(33));
-	}
+	drawFrameProvisional();
+	vulkan.getDevice().waitIdle(vulkan.getDispatcher());
 }
 
 void Window::close(){
@@ -371,9 +370,15 @@ vk::UniqueRenderPass Window::createRenderPass(	const Graphics::Vulkan& vulkan,
 }
 
 vk::UniquePipelineLayout Window::createPipelineLayout(const Graphics::Vulkan& vulkan) {
+	constexpr vk::Filter filter = vk::Filter::eLinear; //TODO
+
+	std::array descriptors = {
+		vulkan.getColorTransferDescriptor(filter)
+	};
+
 	const vk::PipelineLayoutCreateInfo createInfo(
 		{},													//Flags
-		0, nullptr,											//Set layout
+		descriptors.size(), descriptors.data(),				//Descriptor set layouts
 		0, nullptr											//Push constants
 	);
 

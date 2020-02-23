@@ -15,10 +15,12 @@
 #endif
 
 ZUAZO_IF_CPP(constexpr uint32_t, const uint) SAMPLER_COUNT = 4;
+ZUAZO_IF_CPP(constexpr uint32_t, const uint) SAMPLER_BINDING = 0;
+ZUAZO_IF_CPP(constexpr uint32_t, const uint) COLOR_TRANSFER_BINDING = 1;
 
-ZUAZO_IF_CPP(constexpr int32_t, const int) PLANAR_FORMAT_RGBA = 0;
-ZUAZO_IF_CPP(constexpr int32_t, const int) PLANAR_FORMAT_G_BR = 1;
-ZUAZO_IF_CPP(constexpr int32_t, const int) PLANAR_FORMAT_G_B_R = 2;
+ZUAZO_IF_CPP(constexpr int32_t, const int) PLANE_FORMAT_RGBA = 0;
+ZUAZO_IF_CPP(constexpr int32_t, const int) PLANE_FORMAT_G_BR = 1;
+ZUAZO_IF_CPP(constexpr int32_t, const int) PLANE_FORMAT_G_B_R = 2;
 
 ZUAZO_IF_CPP(constexpr int32_t, const int) COLOR_RANGE_FULL_RGB = 0;
 ZUAZO_IF_CPP(constexpr int32_t, const int) COLOR_RANGE_FULL_YCBCR = 1;
@@ -30,11 +32,12 @@ ZUAZO_IF_CPP(constexpr int32_t, const int) COLOR_TRANSFER_FUNCTION_IEC61966_2_1 
 
 
 
-struct ZUAZO_IF_CPP(alignas(4), ) ColorTransfer {
-	ZUAZO_IF_CPP(Math::Mat4x4f, mat4) 	colorSpace;
+struct ColorTransfer {
+	ZUAZO_IF_CPP(glm::mat4, mat4) 		colorPrimaries;
+	ZUAZO_IF_CPP(glm::mat4, mat4) 		colorModel;
 	ZUAZO_IF_CPP(int32_t, int) 			colorTransferFunction;
 	ZUAZO_IF_CPP(int32_t, int) 			colorRange;
-	ZUAZO_IF_CPP(int32_t, int) 			planarFormat;
+	ZUAZO_IF_CPP(int32_t, int) 			planeFormat;
 };
 
 #ifdef __cplusplus

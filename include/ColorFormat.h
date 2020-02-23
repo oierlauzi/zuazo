@@ -278,6 +278,7 @@ ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorFormat)
 ZUAZO_ENUM_COMP_OPERATORS(ColorFormat)	
 
 constexpr std::string_view toString(ColorFormat format);
+constexpr size_t getPlaneCount(ColorFormat format);
 	
 }
 

@@ -1,6 +1,7 @@
 #include <Graphics/Vulkan.h>
 
 #include <Graphics/VulkanConversions.h>
+#include <Graphics/ColorTransfer.h>
 
 #include <Zuazo.h>
 #include <Exception.h>
@@ -93,6 +94,7 @@ Vulkan::Vulkan(	const std::string_view& appName,
 	, m_queues(getQueues(m_dispatcher, *m_device, m_queueIndices))
 	, m_formatSupport(getFormatSupport(m_dispatcher, m_physicalDevice))
 	, m_samplers(createSamplers(m_dispatcher, *m_device))
+	, m_colorTransferDescriptors(createColorTransferDescriptors(m_dispatcher, *m_device, m_samplers))
 {
 }
 
@@ -155,9 +157,12 @@ const Vulkan::FormatSupport& Vulkan::getFormatSupport() const{
 vk::Sampler Vulkan::getSampler(	size_t index, 
 								vk::Filter filter) const
 {
-	return *(m_samplers[index][static_cast<size_t>(filter)]);
+	return *(m_samplers[static_cast<size_t>(filter)][index]);
 }
 
+vk::DescriptorSetLayout Vulkan::getColorTransferDescriptor(vk::Filter filter) const{
+	return *(m_colorTransferDescriptors[static_cast<size_t>(filter)]);
+}
 
 
 
@@ -208,6 +213,18 @@ vk::UniqueCommandPool Vulkan::createCommandPool(const vk::CommandPoolCreateInfo&
 
 std::vector<vk::UniqueCommandBuffer> Vulkan::allocateCommnadBuffers(const vk::CommandBufferAllocateInfo& allocInfo) const{
 	return m_device->allocateCommandBuffersUnique(allocInfo, m_dispatcher);
+}
+
+vk::UniqueBuffer Vulkan::createBuffer(const vk::BufferCreateInfo& createInfo) const{
+	return m_device->createBufferUnique(createInfo, nullptr, m_dispatcher);
+}
+
+vk::UniqueDeviceMemory Vulkan::allocateMemory(const vk::MemoryAllocateInfo& allocInfo) const{
+	return m_device->allocateMemoryUnique(allocInfo, nullptr, m_dispatcher);
+}
+
+vk::UniqueDescriptorPool Vulkan::createDescriptorPool(const vk::DescriptorPoolCreateInfo& createInfo) const{
+	return m_device->createDescriptorPoolUnique(createInfo, nullptr, m_dispatcher);
 }
 
 vk::UniqueSemaphore Vulkan::createSemaphore() const {
@@ -509,8 +526,9 @@ Vulkan::Samplers Vulkan::createSamplers(	const vk::DispatchLoaderDynamic& disp,
 	Samplers result;
 
 	for(size_t i = 0; i < result.size(); i++){
+		const auto filter = static_cast<vk::Filter>(i);
+
 		for(size_t j = 0; j < result[i].size(); j++){
-			const auto filter = static_cast<vk::Filter>(j);
 
 			const vk::SamplerCreateInfo createInfo(
 				{},														//Flags
@@ -536,6 +554,49 @@ Vulkan::Samplers Vulkan::createSamplers(	const vk::DispatchLoaderDynamic& disp,
 	return result;
 }
 
+Vulkan::FrameDescriptors Vulkan::createColorTransferDescriptors(const vk::DispatchLoaderDynamic& disp, 
+																const vk::Device& device,
+																const Samplers& samplers )
+{
+	static_assert(Vulkan::SAMPLER_COUNT >= Graphics::SAMPLER_COUNT);
+	Vulkan::FrameDescriptors result;
+
+	for(size_t i = 0; i < result.size(); i++){
+
+		//Obtain the handles of the samplers
+		std::array<vk::Sampler, Graphics::SAMPLER_COUNT> samplerHandles;
+		for(size_t j = 0; j < samplerHandles.size(); j++){
+			samplerHandles[j] = *(samplers[i][j]);
+		}
+
+		//Create the bindings
+		const std::array bindings = {
+			vk::DescriptorSetLayoutBinding( //Sampler binding
+				SAMPLER_BINDING,								//Binding
+				vk::DescriptorType::eCombinedImageSampler,		//Type
+				samplerHandles.size(),							//Count
+				vk::ShaderStageFlagBits::eAll,					//Shader stage
+				samplerHandles.data()							//Inmutable samplers
+			), 
+			vk::DescriptorSetLayoutBinding(	//Color transfer binding
+				COLOR_TRANSFER_BINDING,							//Binding
+				vk::DescriptorType::eUniformBuffer,				//Type
+				1,												//Count
+				vk::ShaderStageFlagBits::eAll,					//Shader stage
+				nullptr											//Inmutable samplers
+			), 
+		};
+
+		const vk::DescriptorSetLayoutCreateInfo createInfo(
+			{},
+			bindings.size(), bindings.data()
+		);
+
+		result[i] = device.createDescriptorSetLayoutUnique(createInfo, nullptr, disp);
+	}
+
+	return result;
+}
 
 
 

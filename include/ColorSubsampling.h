@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Macros.h"
+#include "Resolution.h"
 
 #include <type_traits>
 #include <string_view>
@@ -29,6 +30,7 @@ ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorSubsampling)
 ZUAZO_ENUM_COMP_OPERATORS(ColorSubsampling)	
 
 constexpr std::string_view toString(ColorSubsampling colorSubsampling);
+constexpr Resolution getChromaResolution(ColorSubsampling subs, const Resolution& res);
 
 }
 

@@ -4,18 +4,18 @@ vec4 ct_sample(in int planeFormat, in sampler2D samplers[SAMPLER_COUNT], in vec2
 	vec4 result;
 
 	switch(planeFormat){
-	case PLANAR_FORMAT_G_BR:
+	case PLANE_FORMAT_G_BR:
 		result.r = texture(samplers[0], texCoords).r;
 		result.br = texture(samplers[1], texCoords).rg;
 		result.a = 1.0f;
 		break;
-	case PLANAR_FORMAT_G_B_R:
+	case PLANE_FORMAT_G_B_R:
 		result.g = texture(samplers[0], texCoords).r;
 		result.b = texture(samplers[1], texCoords).r;
 		result.r = texture(samplers[2], texCoords).r;
 		result.a = 1.0f;
 		break;
-	default: //PLANAR_FORMAT_RGBA
+	default: //PLANE_FORMAT_RGBA
 		result = texture(samplers[0], texCoords);
 		break;
 	}
@@ -131,19 +131,35 @@ vec4 ct_linearize(in int encoding, in vec4 color){
 	return result;
 }
 
-vec4 ct_transferColor(in ColorTransfer inputProp, in ColorTransfer outputProp, in vec4 inColor){
-	vec4 result = inColor;
+vec4 ct_readColor(in ColorTransfer inputProp, in ColorTransfer outputProp, in vec4 color){
+	vec4 result = color;
 
 	result = ct_expand(inputProp.colorRange, result);
-	result = inputProp.colorSpace * result;
+	result = inverse(inputProp.colorModel) * result;
 	result = ct_linearize(inputProp.colorTransferFunction, result);
+	result = outputProp.colorPrimaries * inverse(inputProp.colorPrimaries) * result;
+
+	return result;
+}
+
+vec4 ct_writeColor(in ColorTransfer outputProp, in vec4 color){
+	vec4 result = color;
+
 	result = ct_unlinearize(outputProp.colorTransferFunction, result);
-	result = outputProp.colorSpace * result;
+	result = outputProp.colorModel * result;
 	result = ct_contract(outputProp.colorRange, result);
 
 	return result;
 }
 
+vec4 ct_transferColor(in ColorTransfer inputProp, in ColorTransfer outputProp, in vec4 color){
+	vec4 result = ct_readColor(inputProp, outputProp, color);
+	result = ct_writeColor(outputProp, result);
+	return result;
+}
+
 vec4 ct_getColor(in ColorTransfer inputProp, in ColorTransfer outputProp, in sampler2D samplers[SAMPLER_COUNT], in vec2 texCoords){
-	return ct_transferColor(inputProp, outputProp, ct_sample(inputProp.planarFormat, samplers, texCoords));
+	vec4 result = ct_sample(inputProp.planeFormat, samplers, texCoords);
+	result = ct_readColor(inputProp, outputProp, result);
+	return result;
 }

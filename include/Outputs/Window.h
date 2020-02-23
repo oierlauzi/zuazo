@@ -35,6 +35,8 @@ private:
 		vk::UniqueSemaphore 						imageAvailableSemaphore;
 		vk::UniqueSemaphore							renderFinishedSemaphore;
 		vk::UniqueFence								renderFinishedFence;
+
+		static constexpr uint32_t SHADER_SAMPLER_BINDING = 0;
 	};
 		
 	static constexpr auto NO_TIMEOUT = std::numeric_limits<uint64_t>::max();

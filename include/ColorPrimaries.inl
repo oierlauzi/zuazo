@@ -50,7 +50,5 @@ constexpr Math::Mat4x4f getConversionMatrix(ColorPrimaries colorPrim){
 	default: return {};
 	}
 }
-
-constexpr size_t a = alignof(Math::Mat4x4f);
 	
 }

@@ -50,6 +50,7 @@ public:
 	const FormatSupport&							getFormatSupport() const;
 	vk::Sampler										getSampler(	size_t index, 
 																vk::Filter filter) const;
+	vk::DescriptorSetLayout							getColorTransferDescriptor(vk::Filter filter) const;
 	
 	vk::FormatProperties							getFormatFeatures(vk::Format format) const;
 
@@ -63,6 +64,10 @@ public:
 	vk::UniqueFramebuffer							createFramebuffer(const vk::FramebufferCreateInfo& createInfo) const;
 	vk::UniqueCommandPool							createCommandPool(const vk::CommandPoolCreateInfo& createInfo) const;
 	std::vector<vk::UniqueCommandBuffer>			allocateCommnadBuffers(const vk::CommandBufferAllocateInfo& allocInfo) const;
+	vk::UniqueBuffer								createBuffer(const vk::BufferCreateInfo& createInfo) const;
+	vk::UniqueDeviceMemory							allocateMemory(const vk::MemoryAllocateInfo& allocInfo) const;
+	vk::UniqueDescriptorPool						createDescriptorPool(const vk::DescriptorPoolCreateInfo& createInfo) const;
+
 	vk::UniqueSemaphore								createSemaphore() const;
 	vk::UniqueFence									createFence(bool signaled = false) const;
 
@@ -75,7 +80,8 @@ private:
 		QUEUE_NUM
 	};
 
-	using Samplers = std::array<std::array<vk::UniqueSampler, VK_FILTER_RANGE_SIZE>, SAMPLER_COUNT>;
+	using Samplers = std::array<std::array<vk::UniqueSampler, SAMPLER_COUNT>, VK_FILTER_RANGE_SIZE>;
+	using FrameDescriptors = std::array<vk::UniqueDescriptorSetLayout, VK_FILTER_RANGE_SIZE>;
 
 	vk::DynamicLoader								m_loader;
 	vk::DispatchLoaderDynamic						m_dispatcher;
@@ -86,7 +92,8 @@ private:
 	vk::UniqueDevice								m_device;
 	std::array<vk::Queue, QUEUE_NUM>				m_queues;
 	FormatSupport									m_formatSupport;
-	Samplers										m_samplers;					
+	Samplers										m_samplers;			
+	FrameDescriptors								m_colorTransferDescriptors;
 
 	static vk::DispatchLoaderDynamic				createDispatcher(const vk::DynamicLoader& loader);
 	static vk::UniqueInstance						createInstance(	vk::DispatchLoaderDynamic& disp, 
@@ -110,6 +117,9 @@ private:
 																		const vk::PhysicalDevice& physicalDevice );
 	static Samplers 								createSamplers(	const vk::DispatchLoaderDynamic& disp, 
 																	const vk::Device& device );
+	static FrameDescriptors							createColorTransferDescriptors(	const vk::DispatchLoaderDynamic& disp, 
+																					const vk::Device& device,
+																					const Samplers& samplers );
 																
 	static std::vector<vk::LayerProperties> 		getRequiredLayers();
 	static std::vector<vk::ExtensionProperties>		getRequiredInstanceExtensions();
