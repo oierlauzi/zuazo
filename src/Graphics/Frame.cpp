@@ -6,35 +6,21 @@
 namespace Zuazo::Graphics {
 
 Frame::Frame(	const Vulkan& vulkan,
-				const Descriptor& desc,
-				std::shared_ptr<Images>&& images )
+				Image&& image,
+				std::shared_ptr<Buffer>&& colorTransfer )
 	: m_vulkan(vulkan)
-	, m_colorTransfer(desc.colorTransfer)
-	, m_images(std::move(images))
-	, m_imageViews(createImageViews(
-		m_vulkan,
-		desc.colorFormat,
-		*m_images ))
+	, m_image(std::move(image))
+	, m_colorTransfer(std::move(colorTransfer))
 	, m_descriptorPool(createDescriptorPool(m_vulkan))
-	, m_descriptorSets(allocateDescriptorSets(m_vulkan, *m_descriptorPool))
+	, m_descriptorSet(allocateDescriptorSet(m_vulkan, *m_descriptorPool))
 {
 }
 
 Frame::~Frame(){
-	m_vulkan.getGraphicsQueue().waitIdle(m_vulkan.getDispatcher());
+	m_vulkan.getDevice().waitIdle(m_vulkan.getDispatcher());
 }
 
-const ColorTransfer& Frame::getColorTransfer() const{
-	return m_colorTransfer;
-}
 
-const Frame::Images& Frame::getImages() const{
-	return *m_images;
-}
-
-const Frame::ImageViews& Frame::getImageViews() const{
-	return m_imageViews;
-}
 
 
 Frame::Descriptor Frame::getDescriptorForUpload(const Vulkan& vulkan,
@@ -150,78 +136,48 @@ Frame::Descriptor Frame::getDescriptorForUpload(const Vulkan& vulkan,
 
 
 
-
-Frame::ImageViews Frame::createImageViews(	const Vulkan& vulkan,
-											const Descriptor::Formats& formats,
-											const Images& images )
-{
-	Frame::ImageViews result;
-
-	for(size_t i = 0; i < result.size(); i++){
-		const auto& image = std::get<vk::UniqueImage>(images[i]);
-
-		if(image) {
-			const vk::ImageViewCreateInfo createInfo(
-				{},												//Flags
-				*image,											//Image
-				vk::ImageViewType::e2D,							//ImageView type
-				std::get<vk::Format>(formats[i]),				//Image format
-				std::get<vk::ComponentMapping>(formats[i]),		//Swizzle
-				vk::ImageSubresourceRange(						//Image subresources
-					vk::ImageAspectFlagBits::eColor,				//Aspect mask
-					0, 1, 0, 1										//Base mipmap level, mipmap levels, base array layer, layers
-				)
-			);
-
-			result[i] = vulkan.createImageView(createInfo);
-		} else {
-			break;
-		}
-	}
-
-
-	return result;
-}
-
 vk::UniqueDescriptorPool Frame::createDescriptorPool(const Vulkan& vulkan){
+	//A descriptor pool is created, from which 2 descriptor sets, each one with 
+	//one combined image sampler and one uniform buffer. Threrefore, 2 descriptors
+	//of each type will be required.
 	const std::array poolSizes = {
 		vk::DescriptorPoolSize(
-			vk::DescriptorType::eCombinedImageSampler,
-			DESCRIPTOR_SET_COUNT
+			vk::DescriptorType::eSampledImage,					//Descriptor type
+			1													//Descriptor count //TODO maybe IMAGE_COUNT?
 		),
 		vk::DescriptorPoolSize(
-			vk::DescriptorType::eUniformBuffer,
-			DESCRIPTOR_SET_COUNT
+			vk::DescriptorType::eUniformBuffer,					//Descriptor type
+			1													//Descriptor count
 		)
 	};
 
 	const vk::DescriptorPoolCreateInfo createInfo(
 		{},														//Flags
-		DESCRIPTOR_SET_COUNT,									//Descriptor set count
+		1,														//Descriptor set count
 		poolSizes.size(), poolSizes.data()						//Pool sizes
 	);
 
 	return vulkan.createDescriptorPool(createInfo);
 }
 
-Frame::DescriptorSets Frame::allocateDescriptorSets(const Vulkan& vulkan,
-													vk::DescriptorPool pool )
+vk::DescriptorSet Frame::allocateDescriptorSet(	const Vulkan& vulkan,
+												vk::DescriptorPool pool )
 {
-	const std::array layouts = {
-		vulkan.getColorTransferDescriptor(vk::Filter::eNearest),
-		vulkan.getColorTransferDescriptor(vk::Filter::eLinear),
-	};
-	static_assert(layouts.size() == DESCRIPTOR_SET_COUNT);
+	auto layout = vulkan.getColorTransferDescriptorSetLayout();
 
 	const vk::DescriptorSetAllocateInfo allocInfo(
 		pool,													//Pool
-		DESCRIPTOR_SET_COUNT,									//Descriptor set count
-		layouts.data()											//Layouts
+		1, &layout												//Layouts
 	);
 
-	DescriptorSets result;
-	vulkan.getDevice().allocateDescriptorSets(&allocInfo, result.data(), vulkan.getDispatcher());
-	return result;
+	vk::DescriptorSet descriptorSet;
+	const auto result = vulkan.getDevice().allocateDescriptorSets(&allocInfo, &descriptorSet, vulkan.getDispatcher());
+
+	if(result != vk::Result::eSuccess){
+		throw Exception("Error allocating descriptor sets");
+	}
+
+	return descriptorSet;
 }
 
 }

@@ -14,8 +14,8 @@
 	#define ZUAZO_IF_CPP(x, y) y
 #endif
 
-ZUAZO_IF_CPP(constexpr uint32_t, const uint) SAMPLER_COUNT = 4;
-ZUAZO_IF_CPP(constexpr uint32_t, const uint) SAMPLER_BINDING = 0;
+ZUAZO_IF_CPP(constexpr uint32_t, const uint) IMAGE_COUNT = 4;
+ZUAZO_IF_CPP(constexpr uint32_t, const uint) IMAGE_BINDING = 0;
 ZUAZO_IF_CPP(constexpr uint32_t, const uint) COLOR_TRANSFER_BINDING = 1;
 
 ZUAZO_IF_CPP(constexpr int32_t, const int) PLANE_FORMAT_RGBA = 0;

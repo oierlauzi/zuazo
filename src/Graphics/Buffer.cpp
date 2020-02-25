@@ -9,7 +9,7 @@ Buffer::Buffer(	const Vulkan& vulkan,
 				vk::BufferUsageFlags usage,
 				vk::MemoryPropertyFlags properties )
 	: m_buffer(createBuffer(vulkan, size, usage))
-	, m_allocation(allocateMemory(vulkan, *m_buffer, properties))
+	, m_memory(allocateMemory(vulkan, *m_buffer, properties))
 {
 }
 
@@ -35,27 +35,8 @@ vk::UniqueDeviceMemory Buffer::allocateMemory(	const Vulkan& vulkan,
 {
 
 	const auto requirements = vulkan.getDevice().getBufferMemoryRequirements(buffer, vulkan.getDispatcher());
-	const auto memoryProperties = vulkan.getPhysicalDevice().getMemoryProperties(vulkan.getDispatcher());
 
-	//Find an apropiate index for the type
-	uint32_t i;
-	for (i = 0; i < memoryProperties.memoryTypeCount; i++) {
-		if(	(requirements.memoryTypeBits & (1 << i)) && 
-			(memoryProperties.memoryTypes[i].propertyFlags & properties) == properties) 
-		{
-			break; //Found one!
-		}
-	}
-	if(i == memoryProperties.memoryTypeCount){
-		throw Exception("Unable to find desired memory type");
-	}
-
-	const vk::MemoryAllocateInfo allocInfo(
-		requirements.size,						//Size
-		i										//Memory type index
-	);
-
-	auto deviceMemory = vulkan.allocateMemory(allocInfo);
+	auto deviceMemory = vulkan.allocateMemory(requirements, properties);
 	vulkan.getDevice().bindBufferMemory(buffer, *deviceMemory, 0, vulkan.getDispatcher());
 	return deviceMemory;
 }

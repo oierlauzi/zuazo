@@ -10,6 +10,7 @@ template <typename T>
 class BufferView {
 public:
 	constexpr BufferView() = default;
+	constexpr BufferView(const T& element);
 	constexpr BufferView(const T* data, size_t size);
 	template<size_t L>
 	constexpr BufferView(const std::array<T, L>& array);

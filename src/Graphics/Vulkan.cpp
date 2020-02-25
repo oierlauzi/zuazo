@@ -94,7 +94,8 @@ Vulkan::Vulkan(	const std::string_view& appName,
 	, m_queues(getQueues(m_dispatcher, *m_device, m_queueIndices))
 	, m_formatSupport(getFormatSupport(m_dispatcher, m_physicalDevice))
 	, m_samplers(createSamplers(m_dispatcher, *m_device))
-	, m_colorTransferDescriptors(createColorTransferDescriptors(m_dispatcher, *m_device, m_samplers))
+	, m_samplerDescriptorSetLayouts(createSamplerDescriptorSetLayouts(m_dispatcher, *m_device, m_samplers))
+	, m_colorTransferDescriptorSetLayout(createColorTransferDescriptorSetLayout(m_dispatcher, *m_device))
 {
 }
 
@@ -154,14 +155,17 @@ const Vulkan::FormatSupport& Vulkan::getFormatSupport() const{
 	return m_formatSupport;
 }
 
-vk::Sampler Vulkan::getSampler(	size_t index, 
-								vk::Filter filter) const
+vk::Sampler Vulkan::getSampler(vk::Filter filter) const
 {
-	return *(m_samplers[static_cast<size_t>(filter)][index]);
+	return *(m_samplers[static_cast<size_t>(filter)]);
 }
 
-vk::DescriptorSetLayout Vulkan::getColorTransferDescriptor(vk::Filter filter) const{
-	return *(m_colorTransferDescriptors[static_cast<size_t>(filter)]);
+vk::DescriptorSetLayout Vulkan::getSamplerDescriptorSetLayout(vk::Filter filter) const{
+	return *(m_samplerDescriptorSetLayouts[static_cast<size_t>(filter)]);
+}
+
+vk::DescriptorSetLayout Vulkan::getColorTransferDescriptorSetLayout() const {
+	return *m_colorTransferDescriptorSetLayout;
 }
 
 
@@ -176,6 +180,11 @@ vk::FormatProperties Vulkan::getFormatFeatures(vk::Format format) const {
 vk::UniqueSwapchainKHR Vulkan::createSwapchain(const vk::SwapchainCreateInfoKHR& createInfo) const{
 	return m_device->createSwapchainKHRUnique(createInfo, nullptr, m_dispatcher);
 }
+
+vk::UniqueImage Vulkan::createImage(const vk::ImageCreateInfo& createInfo) const{
+	return m_device->createImageUnique(createInfo, nullptr, m_dispatcher);
+}
+
 vk::UniqueImageView Vulkan::createImageView(const vk::ImageViewCreateInfo& createInfo) const{
 	return m_device->createImageViewUnique(createInfo, nullptr, m_dispatcher);
 }
@@ -223,9 +232,39 @@ vk::UniqueDeviceMemory Vulkan::allocateMemory(const vk::MemoryAllocateInfo& allo
 	return m_device->allocateMemoryUnique(allocInfo, nullptr, m_dispatcher);
 }
 
+vk::UniqueDeviceMemory Vulkan::allocateMemory(	const vk::MemoryRequirements& requirements,
+												vk::MemoryPropertyFlags properties ) const
+{
+	const auto memoryProperties = m_physicalDevice.getMemoryProperties(m_dispatcher);
+
+	//Find an apropiate index for the type
+	uint32_t i;
+	for (i = 0; i < memoryProperties.memoryTypeCount; i++) {
+		const uint32_t indexFlag = 1 << i;
+
+		if(	(requirements.memoryTypeBits & indexFlag) && 
+			(memoryProperties.memoryTypes[i].propertyFlags & properties) == properties) 
+		{
+			break; //Found one!
+		}
+	}
+	if(i == memoryProperties.memoryTypeCount){
+		return {};
+	}
+
+	const vk::MemoryAllocateInfo allocInfo(
+		requirements.size,						//Size
+		i										//Memory type index
+	);
+
+	return allocateMemory(allocInfo);
+}
+
 vk::UniqueDescriptorPool Vulkan::createDescriptorPool(const vk::DescriptorPoolCreateInfo& createInfo) const{
 	return m_device->createDescriptorPoolUnique(createInfo, nullptr, m_dispatcher);
 }
+
+
 
 vk::UniqueSemaphore Vulkan::createSemaphore() const {
 	const vk::SemaphoreCreateInfo createInfo;
@@ -320,7 +359,7 @@ vk::UniqueInstance Vulkan::createInstance(	vk::DispatchLoaderDynamic& disp,
 }
 
 vk::UniqueDebugUtilsMessengerEXT Vulkan::createMessenger(	const vk::DispatchLoaderDynamic& disp,
-															const vk::Instance& instance ) 
+															vk::Instance instance ) 
 {
 	#ifdef ZUAZO_ENABLE_VALIDATION_LAYERS
 		constexpr auto msgSeverity =
@@ -347,7 +386,7 @@ vk::UniqueDebugUtilsMessengerEXT Vulkan::createMessenger(	const vk::DispatchLoad
 }
 
 vk::PhysicalDevice Vulkan::getBestPhysicalDevice(	const vk::DispatchLoaderDynamic& disp,
-													const vk::Instance& instance, 
+													vk::Instance instance, 
 													const DeviceScoreFunc& scoreFunc )
 {
 	const auto devices = instance.enumeratePhysicalDevices(disp);
@@ -404,8 +443,8 @@ vk::PhysicalDevice Vulkan::getBestPhysicalDevice(	const vk::DispatchLoaderDynami
 }
 
 std::array<uint32_t, Vulkan::QUEUE_NUM>	Vulkan::getQueueIndices(const vk::DispatchLoaderDynamic& disp,
-																const vk::Instance& inst, 
-																const vk::PhysicalDevice& dev )
+																vk::Instance inst, 
+																vk::PhysicalDevice dev )
 {
 	std::array<uint32_t, Vulkan::QUEUE_NUM>	queues;
 
@@ -435,7 +474,7 @@ std::array<uint32_t, Vulkan::QUEUE_NUM>	Vulkan::getQueueIndices(const vk::Dispat
 
 
 vk::UniqueDevice Vulkan::createDevice(	vk::DispatchLoaderDynamic& disp,
-										const vk::PhysicalDevice& physicalDevice,
+										vk::PhysicalDevice physicalDevice,
 										const std::array<uint32_t, QUEUE_NUM>& queueIndices )
 {
 
@@ -479,7 +518,7 @@ vk::UniqueDevice Vulkan::createDevice(	vk::DispatchLoaderDynamic& disp,
 }
 
 std::array<vk::Queue, Vulkan::QUEUE_NUM> Vulkan::getQueues(	const vk::DispatchLoaderDynamic& disp,
-															const vk::Device& device, 
+															vk::Device device, 
 															const std::array<uint32_t, QUEUE_NUM>& queueIndices )
 {
 	std::array<vk::Queue, Vulkan::QUEUE_NUM> queues;
@@ -492,7 +531,7 @@ std::array<vk::Queue, Vulkan::QUEUE_NUM> Vulkan::getQueues(	const vk::DispatchLo
 }
 
 Vulkan::FormatSupport Vulkan::getFormatSupport(	const vk::DispatchLoaderDynamic& disp, 
-												const vk::PhysicalDevice& physicalDevice )
+												vk::PhysicalDevice physicalDevice )
 {
 	constexpr std::array FORMAT_RANGES = {
 		std::pair{VK_FORMAT_BEGIN_RANGE, VK_FORMAT_END_RANGE }, //Normal formats
@@ -521,70 +560,54 @@ Vulkan::FormatSupport Vulkan::getFormatSupport(	const vk::DispatchLoaderDynamic&
 }
 
 Vulkan::Samplers Vulkan::createSamplers(	const vk::DispatchLoaderDynamic& disp, 
-											const vk::Device& device )
+											vk::Device device )
 {
 	Samplers result;
 
 	for(size_t i = 0; i < result.size(); i++){
 		const auto filter = static_cast<vk::Filter>(i);
 
-		for(size_t j = 0; j < result[i].size(); j++){
+		const vk::SamplerCreateInfo createInfo(
+			{},														//Flags
+			filter, filter,											//Min/Mag filter
+			vk::SamplerMipmapMode::eNearest,						//Mipmap mode
+			vk::SamplerAddressMode::eClampToEdge,					//U address mode
+			vk::SamplerAddressMode::eClampToEdge,					//V address mode
+			vk::SamplerAddressMode::eClampToEdge,					//W address mode
+			0.0f,													//Mip LOD bias
+			false,													//Enable anisotropy
+			0.0f,													//Max anisotropy
+			false,													//Compare enable
+			vk::CompareOp::eNever,									//Compare operation
+			0.0f, 0.0f,												//Min/Max LOD
+			vk::BorderColor::eFloatTransparentBlack,				//Boreder color
+			false													//Unormalized coords
+		);
 
-			const vk::SamplerCreateInfo createInfo(
-				{},														//Flags
-				filter, filter,											//Min/Mag filter
-				vk::SamplerMipmapMode::eNearest,						//Mipmap mode
-				vk::SamplerAddressMode::eClampToEdge,					//U address mode
-				vk::SamplerAddressMode::eClampToEdge,					//V address mode
-				vk::SamplerAddressMode::eClampToEdge,					//W address mode
-				0.0f,													//Mip LOD bias
-				false,													//Enable anisotropy
-				0.0f,													//Max anisotropy
-				false,													//Compare enable
-				vk::CompareOp::eNever,									//Compare operation
-				0.0f, 0.0f,												//Min/Max LOD
-				vk::BorderColor::eFloatTransparentBlack,				//Boreder color
-				false													//Unormalized coords
-			);
-
-			result[i][j] = device.createSamplerUnique(createInfo, nullptr, disp);
-		}
+		result[i] = device.createSamplerUnique(createInfo, nullptr, disp);
 	}
 
 	return result;
 }
 
-Vulkan::FrameDescriptors Vulkan::createColorTransferDescriptors(const vk::DispatchLoaderDynamic& disp, 
-																const vk::Device& device,
-																const Samplers& samplers )
+Vulkan::SamplerDescriporSetLayouts Vulkan::createSamplerDescriptorSetLayouts(	const vk::DispatchLoaderDynamic& disp, 
+																				vk::Device device,
+																				const Samplers& samplers )
 {
-	static_assert(Vulkan::SAMPLER_COUNT >= Graphics::SAMPLER_COUNT);
-	Vulkan::FrameDescriptors result;
+	SamplerDescriporSetLayouts result;
 
-	for(size_t i = 0; i < result.size(); i++){
-
-		//Obtain the handles of the samplers
-		std::array<vk::Sampler, Graphics::SAMPLER_COUNT> samplerHandles;
-		for(size_t j = 0; j < samplerHandles.size(); j++){
-			samplerHandles[j] = *(samplers[i][j]);
-		}
+	for(size_t i = 0; i < result.size(); i++) {
+		const auto sampler = *(samplers[i]);
 
 		//Create the bindings
 		const std::array bindings = {
-			vk::DescriptorSetLayoutBinding( //Sampler binding
-				SAMPLER_BINDING,								//Binding
-				vk::DescriptorType::eCombinedImageSampler,		//Type
-				samplerHandles.size(),							//Count
-				vk::ShaderStageFlagBits::eAll,					//Shader stage
-				samplerHandles.data()							//Inmutable samplers
-			), 
-			vk::DescriptorSetLayoutBinding(	//Color transfer binding
-				COLOR_TRANSFER_BINDING,							//Binding
-				vk::DescriptorType::eUniformBuffer,				//Type
+			vk::DescriptorSetLayoutBinding( //Sampled image binding
+				IMAGE_BINDING,									//Binding
+				vk::DescriptorType::eSampler,					//Type
 				1,												//Count
 				vk::ShaderStageFlagBits::eAll,					//Shader stage
-				nullptr											//Inmutable samplers
-			), 
+				&sampler										//Inmutable samplers
+			),
 		};
 
 		const vk::DescriptorSetLayoutCreateInfo createInfo(
@@ -596,6 +619,35 @@ Vulkan::FrameDescriptors Vulkan::createColorTransferDescriptors(const vk::Dispat
 	}
 
 	return result;
+}
+
+vk::UniqueDescriptorSetLayout Vulkan::createColorTransferDescriptorSetLayout(	const vk::DispatchLoaderDynamic& disp, 
+																				vk::Device device )
+{
+	//Create the bindings
+	const std::array bindings = {
+		vk::DescriptorSetLayoutBinding( //Sampled image binding
+			IMAGE_BINDING,									//Binding
+			vk::DescriptorType::eSampledImage,				//Type
+			IMAGE_COUNT,									//Count
+			vk::ShaderStageFlagBits::eAll,					//Shader stage
+			nullptr											//Inmutable samplers
+		), 
+		vk::DescriptorSetLayoutBinding(	//Color transfer binding
+			COLOR_TRANSFER_BINDING,							//Binding
+			vk::DescriptorType::eUniformBuffer,				//Type
+			1,												//Count
+			vk::ShaderStageFlagBits::eAll,					//Shader stage
+			nullptr											//Inmutable samplers
+		), 
+	};
+
+	const vk::DescriptorSetLayoutCreateInfo createInfo(
+		{},
+		bindings.size(), bindings.data()
+	);
+
+	return device.createDescriptorSetLayoutUnique(createInfo, nullptr, disp);
 }
 
 

@@ -20,7 +20,7 @@ public:
 
 private:
 	vk::UniqueBuffer				m_buffer;
-	vk::UniqueDeviceMemory			m_allocation;
+	vk::UniqueDeviceMemory			m_memory;
 
 	static vk::UniqueBuffer			createBuffer(	const Vulkan& vulkan,
 													size_t size,

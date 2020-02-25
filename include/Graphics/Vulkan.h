@@ -26,8 +26,6 @@ public:
 		std::vector<vk::Format>	framebuffer;
 	};
 
-	static constexpr size_t SAMPLER_COUNT = 4;
-
 	Vulkan(	const std::string_view& appName, 
 			Version appVersion,
 			const DeviceScoreFunc& scoreFunc );
@@ -48,13 +46,14 @@ public:
 	uint32_t										getPresentationQueueIndex() const;
 	vk::Queue										getPresentationQueue() const;
 	const FormatSupport&							getFormatSupport() const;
-	vk::Sampler										getSampler(	size_t index, 
-																vk::Filter filter) const;
-	vk::DescriptorSetLayout							getColorTransferDescriptor(vk::Filter filter) const;
+	vk::Sampler										getSampler(vk::Filter filter) const;
+	vk::DescriptorSetLayout							getSamplerDescriptorSetLayout(vk::Filter filter) const;
+	vk::DescriptorSetLayout							getColorTransferDescriptorSetLayout() const;
 	
 	vk::FormatProperties							getFormatFeatures(vk::Format format) const;
 
 	vk::UniqueSwapchainKHR							createSwapchain(const vk::SwapchainCreateInfoKHR& createInfo) const;
+	vk::UniqueImage									createImage(const vk::ImageCreateInfo& createInfo) const;
 	vk::UniqueImageView								createImageView(const vk::ImageViewCreateInfo& createInfo) const;
 	vk::UniqueRenderPass							createRenderPass(const vk::RenderPassCreateInfo& createInfo) const;
 	vk::UniqueShaderModule							createShader(const Utils::BufferView<uint32_t>& code) const;
@@ -66,6 +65,8 @@ public:
 	std::vector<vk::UniqueCommandBuffer>			allocateCommnadBuffers(const vk::CommandBufferAllocateInfo& allocInfo) const;
 	vk::UniqueBuffer								createBuffer(const vk::BufferCreateInfo& createInfo) const;
 	vk::UniqueDeviceMemory							allocateMemory(const vk::MemoryAllocateInfo& allocInfo) const;
+	vk::UniqueDeviceMemory							allocateMemory(	const vk::MemoryRequirements& requirements,
+																	vk::MemoryPropertyFlags properties ) const;
 	vk::UniqueDescriptorPool						createDescriptorPool(const vk::DescriptorPoolCreateInfo& createInfo) const;
 
 	vk::UniqueSemaphore								createSemaphore() const;
@@ -80,8 +81,8 @@ private:
 		QUEUE_NUM
 	};
 
-	using Samplers = std::array<std::array<vk::UniqueSampler, SAMPLER_COUNT>, VK_FILTER_RANGE_SIZE>;
-	using FrameDescriptors = std::array<vk::UniqueDescriptorSetLayout, VK_FILTER_RANGE_SIZE>;
+	using Samplers = std::array<vk::UniqueSampler, VK_FILTER_RANGE_SIZE>;
+	using SamplerDescriporSetLayouts = std::array<vk::UniqueDescriptorSetLayout, VK_FILTER_RANGE_SIZE>;
 
 	vk::DynamicLoader								m_loader;
 	vk::DispatchLoaderDynamic						m_dispatcher;
@@ -92,34 +93,37 @@ private:
 	vk::UniqueDevice								m_device;
 	std::array<vk::Queue, QUEUE_NUM>				m_queues;
 	FormatSupport									m_formatSupport;
-	Samplers										m_samplers;			
-	FrameDescriptors								m_colorTransferDescriptors;
+	Samplers										m_samplers;
+	SamplerDescriporSetLayouts						m_samplerDescriptorSetLayouts;
+	vk::UniqueDescriptorSetLayout					m_colorTransferDescriptorSetLayout;
 
 	static vk::DispatchLoaderDynamic				createDispatcher(const vk::DynamicLoader& loader);
 	static vk::UniqueInstance						createInstance(	vk::DispatchLoaderDynamic& disp, 
 																	const char* appName, 
 																	uint32_t appVersion );
 	static vk::UniqueDebugUtilsMessengerEXT			createMessenger(const vk::DispatchLoaderDynamic& disp, 
-																	const vk::Instance& instance );
+																	vk::Instance instance );
 	static vk::PhysicalDevice						getBestPhysicalDevice(	const vk::DispatchLoaderDynamic& disp, 
-																			const vk::Instance& instance, 
+																			vk::Instance instance, 
 																			const DeviceScoreFunc& scoreFunc );
 	static std::array<uint32_t, QUEUE_NUM>			getQueueIndices(const vk::DispatchLoaderDynamic& disp, 
-																	const vk::Instance& inst, 
-																	const vk::PhysicalDevice& dev );
+																	vk::Instance inst, 
+																	vk::PhysicalDevice dev );
 	static vk::UniqueDevice							createDevice(	vk::DispatchLoaderDynamic& disp, 
-																	const vk::PhysicalDevice& physicalDevice, 
+																	vk::PhysicalDevice physicalDevice, 
 																	const std::array<uint32_t, QUEUE_NUM>& queueIndices );
 	static std::array<vk::Queue, QUEUE_NUM>			getQueues(	const vk::DispatchLoaderDynamic& disp, 
-																const vk::Device& device, 
+																vk::Device device, 
 																const std::array<uint32_t, QUEUE_NUM>& queueIndices);
 	static FormatSupport							getFormatSupport(	const vk::DispatchLoaderDynamic& disp, 
-																		const vk::PhysicalDevice& physicalDevice );
+																		vk::PhysicalDevice physicalDevice );
 	static Samplers 								createSamplers(	const vk::DispatchLoaderDynamic& disp, 
-																	const vk::Device& device );
-	static FrameDescriptors							createColorTransferDescriptors(	const vk::DispatchLoaderDynamic& disp, 
-																					const vk::Device& device,
-																					const Samplers& samplers );
+																	vk::Device device );
+	static SamplerDescriporSetLayouts				createSamplerDescriptorSetLayouts(	const vk::DispatchLoaderDynamic& disp, 
+																						vk::Device device,
+																						const Samplers& samplers );
+	static vk::UniqueDescriptorSetLayout			createColorTransferDescriptorSetLayout(	const vk::DispatchLoaderDynamic& disp, 
+																							vk::Device device );
 																
 	static std::vector<vk::LayerProperties> 		getRequiredLayers();
 	static std::vector<vk::ExtensionProperties>		getRequiredInstanceExtensions();

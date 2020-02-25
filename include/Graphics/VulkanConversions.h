@@ -22,7 +22,7 @@ constexpr uint32_t toVulkan(Version version);
 constexpr vk::Extent2D toVulkan(const Resolution& res);
 constexpr Resolution fromVulkan(const vk::Extent2D& res);
 
-constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, SAMPLER_COUNT> toVulkan(ColorFormat fmt);
+constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, IMAGE_COUNT> toVulkan(ColorFormat fmt);
 constexpr std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format fmt);
 
 constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction enc);

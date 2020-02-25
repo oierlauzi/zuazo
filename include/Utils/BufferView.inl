@@ -3,6 +3,13 @@
 namespace Zuazo::Utils {
 
 template <typename T>
+constexpr BufferView<T>::BufferView(const T& element)
+	: m_data(&element)
+	, m_size(1)
+{
+}
+
+template <typename T>
 constexpr BufferView<T>::BufferView(const T* data, size_t size)
 	: m_data(data)
 	, m_size(size)

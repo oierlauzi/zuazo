@@ -373,7 +373,8 @@ vk::UniquePipelineLayout Window::createPipelineLayout(const Graphics::Vulkan& vu
 	constexpr vk::Filter filter = vk::Filter::eLinear; //TODO
 
 	std::array descriptors = {
-		vulkan.getColorTransferDescriptor(filter)
+		vulkan.getColorTransferDescriptorSetLayout(),
+		vulkan.getSamplerDescriptorSetLayout(filter)
 	};
 
 	const vk::PipelineLayoutCreateInfo createInfo(

@@ -29,7 +29,7 @@ constexpr Resolution fromVulkan(const vk::Extent2D& res){
 	);
 }
 
-constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, Vulkan::SAMPLER_COUNT> toVulkan(ColorFormat fmt){
+constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, IMAGE_COUNT> toVulkan(ColorFormat fmt){
 	constexpr vk::ComponentMapping IDENTITY;
 
 	constexpr auto R2Y 			= ZUAZO_CONSTRUCT_SWIZZLE( Identity, R, R, One );
