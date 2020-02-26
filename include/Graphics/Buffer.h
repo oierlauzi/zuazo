@@ -18,6 +18,8 @@ public:
 	Buffer& 						operator=(const Buffer& other) = delete;
 	Buffer& 						operator=(Buffer&& other) = default;
 
+	vk::Buffer						getBuffer() const;
+
 private:
 	vk::UniqueBuffer				m_buffer;
 	vk::UniqueDeviceMemory			m_memory;

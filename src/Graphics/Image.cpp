@@ -1,6 +1,7 @@
 #include <Graphics/Image.h>
 
 #include <cassert>
+#include <iostream>
 
 namespace Zuazo::Graphics {
 
@@ -11,9 +12,13 @@ Image::Image(	const Vulkan& vulkan,
 				const Utils::BufferView<vk::Extent2D>&  extents,
 				const Utils::BufferView<vk::ComponentMapping>&  swizzles )
 	: m_images(createImages(vulkan, usage, formats, extents))
-	, m_imageViews(createImageViews(vulkan, formats, swizzles, m_images))
 	, m_memory(allocateMemory(vulkan, memoryProperties, m_images))
+	, m_imageViews(createImageViews(vulkan, formats, swizzles, m_images))
 {
+}
+
+const std::vector<vk::UniqueImageView>&	Image::getImageViews() const{
+	return m_imageViews;
 }
 
 
@@ -49,40 +54,12 @@ std::vector<vk::UniqueImage> Image::createImages(	const Vulkan& vulkan,
 	return result;
 }
 
-std::vector<vk::UniqueImageView> Image::createImageViews(	const Vulkan& vulkan,
-															const Utils::BufferView<vk::Format>& formats,
-															const Utils::BufferView<vk::ComponentMapping>&  swizzles,
-															const std::vector<vk::UniqueImage>& images )
-{
-	assert(formats.size() == images.size() && swizzles.size() == images.size());
-	std::vector<vk::UniqueImageView> result;
-	result.reserve(images.size());
-
-	for(size_t i = 0; i < images.size(); i++){
-		const vk::ImageViewCreateInfo createInfo(
-			{},												//Flags
-			*(images[i]),									//Image
-			vk::ImageViewType::e2D,							//ImageView type
-			formats.data()[i],								//Image format
-			swizzles.data()[i],								//Swizzle
-			vk::ImageSubresourceRange(						//Image subresources
-				vk::ImageAspectFlagBits::eColor,				//Aspect mask
-				0, 1, 0, 1										//Base mipmap level, mipmap levels, base array layer, layers
-			)
-		);
-
-		result.emplace_back(vulkan.createImageView(createInfo));
-	}
-
-	return result;
-}
-
 Image::Memory Image::allocateMemory(const Vulkan& vulkan,
 									vk::MemoryPropertyFlags memoryProperties,
 									const std::vector<vk::UniqueImage>& images )
 {
 	Memory result;
-	vk::MemoryRequirements requirements(0, 0, ~0);
+	vk::MemoryRequirements requirements(0, 1, ~(0U));
 
 	result.offsets.reserve(images.size());
 
@@ -111,6 +88,32 @@ Image::Memory Image::allocateMemory(const Vulkan& vulkan,
 	return result;
 }
 
+std::vector<vk::UniqueImageView> Image::createImageViews(	const Vulkan& vulkan,
+															const Utils::BufferView<vk::Format>& formats,
+															const Utils::BufferView<vk::ComponentMapping>&  swizzles,
+															const std::vector<vk::UniqueImage>& images )
+{
+	assert(formats.size() == images.size() && swizzles.size() == images.size());
+	std::vector<vk::UniqueImageView> result;
+	result.reserve(images.size());
 
+	for(size_t i = 0; i < images.size(); i++){
+		const vk::ImageViewCreateInfo createInfo(
+			{},												//Flags
+			*(images[i]),									//Image
+			vk::ImageViewType::e2D,							//ImageView type
+			formats.data()[i],								//Image format
+			swizzles.data()[i],								//Swizzle
+			vk::ImageSubresourceRange(						//Image subresources
+				vk::ImageAspectFlagBits::eColor,				//Aspect mask
+				0, 1, 0, 1										//Base mipmap level, mipmap levels, base array layer, layers
+			)
+		);
+
+		result.emplace_back(vulkan.createImageView(createInfo));
+	}
+
+	return result;
+}
 
 }

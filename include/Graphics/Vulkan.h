@@ -47,8 +47,7 @@ public:
 	vk::Queue										getPresentationQueue() const;
 	const FormatSupport&							getFormatSupport() const;
 	vk::Sampler										getSampler(vk::Filter filter) const;
-	vk::DescriptorSetLayout							getSamplerDescriptorSetLayout(vk::Filter filter) const;
-	vk::DescriptorSetLayout							getColorTransferDescriptorSetLayout() const;
+	vk::DescriptorSetLayout							getColorTransferDescriptorSetLayout(vk::Filter filter) const;
 	
 	vk::FormatProperties							getFormatFeatures(vk::Format format) const;
 
@@ -82,7 +81,7 @@ private:
 	};
 
 	using Samplers = std::array<vk::UniqueSampler, VK_FILTER_RANGE_SIZE>;
-	using SamplerDescriporSetLayouts = std::array<vk::UniqueDescriptorSetLayout, VK_FILTER_RANGE_SIZE>;
+	using ColorTransferDescriporSetLayouts = std::array<vk::UniqueDescriptorSetLayout, VK_FILTER_RANGE_SIZE>;
 
 	vk::DynamicLoader								m_loader;
 	vk::DispatchLoaderDynamic						m_dispatcher;
@@ -94,8 +93,7 @@ private:
 	std::array<vk::Queue, QUEUE_NUM>				m_queues;
 	FormatSupport									m_formatSupport;
 	Samplers										m_samplers;
-	SamplerDescriporSetLayouts						m_samplerDescriptorSetLayouts;
-	vk::UniqueDescriptorSetLayout					m_colorTransferDescriptorSetLayout;
+	ColorTransferDescriporSetLayouts				m_colorTransferDescriptorSetLayouts;
 
 	static vk::DispatchLoaderDynamic				createDispatcher(const vk::DynamicLoader& loader);
 	static vk::UniqueInstance						createInstance(	vk::DispatchLoaderDynamic& disp, 
@@ -119,11 +117,9 @@ private:
 																		vk::PhysicalDevice physicalDevice );
 	static Samplers 								createSamplers(	const vk::DispatchLoaderDynamic& disp, 
 																	vk::Device device );
-	static SamplerDescriporSetLayouts				createSamplerDescriptorSetLayouts(	const vk::DispatchLoaderDynamic& disp, 
-																						vk::Device device,
-																						const Samplers& samplers );
-	static vk::UniqueDescriptorSetLayout			createColorTransferDescriptorSetLayout(	const vk::DispatchLoaderDynamic& disp, 
-																							vk::Device device );
+	static ColorTransferDescriporSetLayouts			createColorTransferDescriptorSetLayouts(const vk::DispatchLoaderDynamic& disp, 
+																							vk::Device device,
+																							const Samplers& samplers );
 																
 	static std::vector<vk::LayerProperties> 		getRequiredLayers();
 	static std::vector<vk::ExtensionProperties>		getRequiredInstanceExtensions();

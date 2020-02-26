@@ -12,8 +12,55 @@ Frame::Frame(	const Vulkan& vulkan,
 	, m_image(std::move(image))
 	, m_colorTransfer(std::move(colorTransfer))
 	, m_descriptorPool(createDescriptorPool(m_vulkan))
-	, m_descriptorSet(allocateDescriptorSet(m_vulkan, *m_descriptorPool))
+	, m_descriptorSets(allocateDescriptorSets(m_vulkan, *m_descriptorPool))
 {
+	//Update the descriptors
+	for(size_t i = 0; i < m_descriptorSets.size(); i++){
+		//Update all images. As nullptr images can't be passed, repeat available images		
+		const auto& imageViews = m_image.getImageViews();
+		std::array<vk::DescriptorImageInfo, IMAGE_COUNT> images;
+		for(size_t j = 0; j < images.size(); j++){
+			images[j] = vk::DescriptorImageInfo(
+				nullptr,												//Sampler
+				*(imageViews[j % imageViews.size()]),					//Image views
+				vk::ImageLayout::eShaderReadOnlyOptimal					//Layout
+			);
+		}
+
+		const std::array buffers = {
+			vk::DescriptorBufferInfo(
+				m_colorTransfer->getBuffer(),							//Buffer 
+				0,														//Offset
+				sizeof(ColorTransfer)									//Size
+			)
+		};
+
+		const std::array writeDescriptorSets ={
+			vk::WriteDescriptorSet( //Image descriptor
+				m_descriptorSets[i],									//Descriptor set
+				IMAGE_BINDING,											//Binding
+				0, 														//Index
+				images.size(), 											//Descriptor count
+				vk::DescriptorType::eCombinedImageSampler,				//Descriptor type
+				images.data(), 											//Images
+				nullptr, 												//Buffers
+				nullptr													//Texel buffers
+			),
+			vk::WriteDescriptorSet( //Ubo descriptor set
+				m_descriptorSets[i],									//Descriptor set
+				COLOR_TRANSFER_BINDING,									//Binding
+				0, 														//Index
+				buffers.size(),											//Descriptor count		
+				vk::DescriptorType::eUniformBuffer,						//Descriptor type
+				nullptr, 												//Images 
+				buffers.data(), 										//Buffers
+				nullptr													//Texel buffers
+			)
+		};
+
+		m_vulkan.getDevice().updateDescriptorSets(writeDescriptorSets, {}, m_vulkan.getDispatcher());
+	}
+
 }
 
 Frame::~Frame(){
@@ -142,42 +189,47 @@ vk::UniqueDescriptorPool Frame::createDescriptorPool(const Vulkan& vulkan){
 	//of each type will be required.
 	const std::array poolSizes = {
 		vk::DescriptorPoolSize(
-			vk::DescriptorType::eSampledImage,					//Descriptor type
-			1													//Descriptor count //TODO maybe IMAGE_COUNT?
+			vk::DescriptorType::eCombinedImageSampler,			//Descriptor type
+			DESCRIPTOR_COUNT * IMAGE_COUNT						//Descriptor count
 		),
 		vk::DescriptorPoolSize(
 			vk::DescriptorType::eUniformBuffer,					//Descriptor type
-			1													//Descriptor count
+			DESCRIPTOR_COUNT									//Descriptor count
 		)
 	};
 
 	const vk::DescriptorPoolCreateInfo createInfo(
 		{},														//Flags
-		1,														//Descriptor set count
+		DESCRIPTOR_COUNT,										//Descriptor set count
 		poolSizes.size(), poolSizes.data()						//Pool sizes
 	);
 
 	return vulkan.createDescriptorPool(createInfo);
 }
 
-vk::DescriptorSet Frame::allocateDescriptorSet(	const Vulkan& vulkan,
-												vk::DescriptorPool pool )
+Frame::DescriptorSets Frame::allocateDescriptorSets(const Vulkan& vulkan,
+													vk::DescriptorPool pool )
 {
-	auto layout = vulkan.getColorTransferDescriptorSetLayout();
+	std::array<vk::DescriptorSetLayout, DESCRIPTOR_COUNT> layouts;
+	for(size_t i = 0; i < layouts.size(); i++){
+		const auto filter = static_cast<vk::Filter>(i);
+		layouts[i] = vulkan.getColorTransferDescriptorSetLayout(filter);
+	}
 
 	const vk::DescriptorSetAllocateInfo allocInfo(
 		pool,													//Pool
-		1, &layout												//Layouts
+		layouts.size(), layouts.data()							//Layouts
 	);
 
-	vk::DescriptorSet descriptorSet;
-	const auto result = vulkan.getDevice().allocateDescriptorSets(&allocInfo, &descriptorSet, vulkan.getDispatcher());
+	DescriptorSets descriptorSets;
+	static_assert(descriptorSets.size() == layouts.size());
+	const auto result = vulkan.getDevice().allocateDescriptorSets(&allocInfo, descriptorSets.data(), vulkan.getDispatcher());
 
 	if(result != vk::Result::eSuccess){
 		throw Exception("Error allocating descriptor sets");
 	}
 
-	return descriptorSet;
+	return descriptorSets;
 }
 
 }

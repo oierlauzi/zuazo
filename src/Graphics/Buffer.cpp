@@ -13,6 +13,11 @@ Buffer::Buffer(	const Vulkan& vulkan,
 {
 }
 
+vk::Buffer Buffer::getBuffer() const{
+	return *m_buffer;
+}
+
+
 
 vk::UniqueBuffer Buffer::createBuffer(	const Vulkan& vulkan,
 										size_t size,

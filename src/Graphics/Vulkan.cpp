@@ -94,8 +94,7 @@ Vulkan::Vulkan(	const std::string_view& appName,
 	, m_queues(getQueues(m_dispatcher, *m_device, m_queueIndices))
 	, m_formatSupport(getFormatSupport(m_dispatcher, m_physicalDevice))
 	, m_samplers(createSamplers(m_dispatcher, *m_device))
-	, m_samplerDescriptorSetLayouts(createSamplerDescriptorSetLayouts(m_dispatcher, *m_device, m_samplers))
-	, m_colorTransferDescriptorSetLayout(createColorTransferDescriptorSetLayout(m_dispatcher, *m_device))
+	, m_colorTransferDescriptorSetLayouts(createColorTransferDescriptorSetLayouts(m_dispatcher, *m_device, m_samplers))
 {
 }
 
@@ -160,12 +159,8 @@ vk::Sampler Vulkan::getSampler(vk::Filter filter) const
 	return *(m_samplers[static_cast<size_t>(filter)]);
 }
 
-vk::DescriptorSetLayout Vulkan::getSamplerDescriptorSetLayout(vk::Filter filter) const{
-	return *(m_samplerDescriptorSetLayouts[static_cast<size_t>(filter)]);
-}
-
-vk::DescriptorSetLayout Vulkan::getColorTransferDescriptorSetLayout() const {
-	return *m_colorTransferDescriptorSetLayout;
+vk::DescriptorSetLayout Vulkan::getColorTransferDescriptorSetLayout(vk::Filter filter) const {
+	return *(m_colorTransferDescriptorSetLayouts[static_cast<size_t>(filter)]);
 }
 
 
@@ -249,7 +244,7 @@ vk::UniqueDeviceMemory Vulkan::allocateMemory(	const vk::MemoryRequirements& req
 		}
 	}
 	if(i == memoryProperties.memoryTypeCount){
-		return {};
+		throw Exception("Error allocating device memory");
 	}
 
 	const vk::MemoryAllocateInfo allocInfo(
@@ -590,24 +585,34 @@ Vulkan::Samplers Vulkan::createSamplers(	const vk::DispatchLoaderDynamic& disp,
 	return result;
 }
 
-Vulkan::SamplerDescriporSetLayouts Vulkan::createSamplerDescriptorSetLayouts(	const vk::DispatchLoaderDynamic& disp, 
-																				vk::Device device,
-																				const Samplers& samplers )
+Vulkan::ColorTransferDescriporSetLayouts Vulkan::createColorTransferDescriptorSetLayouts(	const vk::DispatchLoaderDynamic& disp, 
+																							vk::Device device,
+																							const Samplers& samplers )
 {
-	SamplerDescriporSetLayouts result;
+	ColorTransferDescriporSetLayouts result;
 
 	for(size_t i = 0; i < result.size(); i++) {
-		const auto sampler = *(samplers[i]);
+		std::array<vk::Sampler, IMAGE_COUNT> inmutableSamplers;
+		for(size_t j = 0; j < inmutableSamplers.size(); j++){
+			inmutableSamplers[j] = *(samplers[i]);
+		}
 
 		//Create the bindings
 		const std::array bindings = {
 			vk::DescriptorSetLayoutBinding( //Sampled image binding
 				IMAGE_BINDING,									//Binding
-				vk::DescriptorType::eSampler,					//Type
+				vk::DescriptorType::eCombinedImageSampler,		//Type
+				IMAGE_COUNT,									//Count
+				vk::ShaderStageFlagBits::eAll,					//Shader stage
+				inmutableSamplers.data()						//Inmutable samplers
+			), 
+			vk::DescriptorSetLayoutBinding(	//Color transfer binding
+				COLOR_TRANSFER_BINDING,							//Binding
+				vk::DescriptorType::eUniformBuffer,				//Type
 				1,												//Count
 				vk::ShaderStageFlagBits::eAll,					//Shader stage
-				&sampler										//Inmutable samplers
-			),
+				nullptr											//Inmutable samplers
+			), 
 		};
 
 		const vk::DescriptorSetLayoutCreateInfo createInfo(
@@ -621,34 +626,6 @@ Vulkan::SamplerDescriporSetLayouts Vulkan::createSamplerDescriptorSetLayouts(	co
 	return result;
 }
 
-vk::UniqueDescriptorSetLayout Vulkan::createColorTransferDescriptorSetLayout(	const vk::DispatchLoaderDynamic& disp, 
-																				vk::Device device )
-{
-	//Create the bindings
-	const std::array bindings = {
-		vk::DescriptorSetLayoutBinding( //Sampled image binding
-			IMAGE_BINDING,									//Binding
-			vk::DescriptorType::eSampledImage,				//Type
-			IMAGE_COUNT,									//Count
-			vk::ShaderStageFlagBits::eAll,					//Shader stage
-			nullptr											//Inmutable samplers
-		), 
-		vk::DescriptorSetLayoutBinding(	//Color transfer binding
-			COLOR_TRANSFER_BINDING,							//Binding
-			vk::DescriptorType::eUniformBuffer,				//Type
-			1,												//Count
-			vk::ShaderStageFlagBits::eAll,					//Shader stage
-			nullptr											//Inmutable samplers
-		), 
-	};
-
-	const vk::DescriptorSetLayoutCreateInfo createInfo(
-		{},
-		bindings.size(), bindings.data()
-	);
-
-	return device.createDescriptorSetLayoutUnique(createInfo, nullptr, disp);
-}
 
 
 

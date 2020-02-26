@@ -50,16 +50,19 @@ public:
 															ColorModel model,
 															ColorPrimaries primaries );
 private:
+	static constexpr size_t DESCRIPTOR_COUNT = VK_FILTER_RANGE_SIZE;
+	using DescriptorSets = std::array<vk::DescriptorSet, DESCRIPTOR_COUNT>;
+
 	const Vulkan&					m_vulkan;
 
 	Image 							m_image;
 
 	std::shared_ptr<Buffer> 		m_colorTransfer;	
 	vk::UniqueDescriptorPool		m_descriptorPool;
-	vk::DescriptorSet				m_descriptorSet;
+	DescriptorSets					m_descriptorSets;
 
 	vk::UniqueDescriptorPool		createDescriptorPool(const Vulkan& vulkan);
-	vk::DescriptorSet				allocateDescriptorSet(	const Vulkan& vulkan,
+	DescriptorSets					allocateDescriptorSets(	const Vulkan& vulkan,
 															vk::DescriptorPool pool );
 };
 

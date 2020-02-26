@@ -1,22 +1,22 @@
 #include "../include/Graphics/ColorTransfer.h"
 
-vec4 ct_sample(in int planeFormat, in texture2D images[IMAGE_COUNT], in sampler samp, in vec2 texCoords){
+vec4 ct_sample(in int planeFormat, in sampler2D images[IMAGE_COUNT], in vec2 texCoords){
 	vec4 result;
 
 	switch(planeFormat){
 	case PLANE_FORMAT_G_BR:
-		result.r = texture(sampler2D(images[0], samp), texCoords).r;
-		result.br = texture(sampler2D(images[1], samp), texCoords).rg;
+		result.r = texture(images[0], texCoords).r;
+		result.br = texture(images[1], texCoords).rg;
 		result.a = 1.0f;
 		break;
 	case PLANE_FORMAT_G_B_R:
-		result.g = texture(sampler2D(images[0], samp), texCoords).r;
-		result.b = texture(sampler2D(images[1], samp), texCoords).r;
-		result.r = texture(sampler2D(images[2], samp), texCoords).r;
+		result.g = texture(images[0], texCoords).r;
+		result.b = texture(images[1], texCoords).r;
+		result.r = texture(images[2], texCoords).r;
 		result.a = 1.0f;
 		break;
 	default: //PLANE_FORMAT_RGBA
-		result = texture(sampler2D(images[0], samp), texCoords);
+		result = texture(images[0], texCoords);
 		break;
 	}
 
@@ -158,8 +158,8 @@ vec4 ct_transferColor(in ColorTransfer inputProp, in ColorTransfer outputProp, i
 	return result;
 }
 
-vec4 ct_getColor(in ColorTransfer inputProp, in ColorTransfer outputProp, in texture2D images[IMAGE_COUNT], in sampler samp, in vec2 texCoords){
-	vec4 result = ct_sample(inputProp.planeFormat, images, samp, texCoords);
+vec4 ct_getColor(in ColorTransfer inputProp, in ColorTransfer outputProp, in sampler2D images[IMAGE_COUNT], in vec2 texCoords){
+	vec4 result = ct_sample(inputProp.planeFormat, images, texCoords);
 	result = ct_readColor(inputProp, outputProp, result);
 	return result;
 }

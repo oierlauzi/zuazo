@@ -372,14 +372,13 @@ vk::UniqueRenderPass Window::createRenderPass(	const Graphics::Vulkan& vulkan,
 vk::UniquePipelineLayout Window::createPipelineLayout(const Graphics::Vulkan& vulkan) {
 	constexpr vk::Filter filter = vk::Filter::eLinear; //TODO
 
-	std::array descriptors = {
-		vulkan.getColorTransferDescriptorSetLayout(),
-		vulkan.getSamplerDescriptorSetLayout(filter)
+	std::array layouts = {
+		vulkan.getColorTransferDescriptorSetLayout(filter)
 	};
 
 	const vk::PipelineLayoutCreateInfo createInfo(
 		{},													//Flags
-		descriptors.size(), descriptors.data(),				//Descriptor set layouts
+		layouts.size(), layouts.data(),						//Descriptor set layouts
 		0, nullptr											//Push constants
 	);
 
