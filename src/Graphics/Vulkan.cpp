@@ -603,14 +603,14 @@ Vulkan::ColorTransferDescriporSetLayouts Vulkan::createColorTransferDescriptorSe
 				IMAGE_BINDING,									//Binding
 				vk::DescriptorType::eCombinedImageSampler,		//Type
 				IMAGE_COUNT,									//Count
-				vk::ShaderStageFlagBits::eAll,					//Shader stage
+				vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
 				inmutableSamplers.data()						//Inmutable samplers
 			), 
 			vk::DescriptorSetLayoutBinding(	//Color transfer binding
 				COLOR_TRANSFER_BINDING,							//Binding
 				vk::DescriptorType::eUniformBuffer,				//Type
 				1,												//Count
-				vk::ShaderStageFlagBits::eAll,					//Shader stage
+				vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
 				nullptr											//Inmutable samplers
 			), 
 		};

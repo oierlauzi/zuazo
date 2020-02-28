@@ -5,6 +5,8 @@
 #include "Buffer.h"
 #include "Image.h"
 
+#include <memory>
+
 namespace Zuazo::Graphics {
 
 class Frame {
@@ -15,7 +17,7 @@ public:
 
 	Frame(	const Vulkan& vulkan,
 			Image&& image,
-			Buffer&& colorTransfer,
+			std::shared_ptr<const Buffer>&& colorTransfer,
 			std::unique_ptr<Data>&& data );
 	Frame(const Frame& other) = delete;
 	Frame(Frame&& other) = default;
@@ -32,7 +34,6 @@ public:
 	Image&							getImage();
 	const Image&					getImage() const;
 
-	Buffer&							getColorTransfer();
 	const Buffer&					getColorTransfer() const;
 
 	Data&							getData();
@@ -54,7 +55,7 @@ private:
 	vk::UniqueFence					m_readyFence;
 
 	Image							m_image;
-	Buffer							m_colorTransfer;
+	std::shared_ptr<const Buffer>	m_colorTransfer;
 	std::unique_ptr<Data>			m_data;	
 
 	vk::UniqueDescriptorPool		m_descriptorPool;

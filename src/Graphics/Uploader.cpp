@@ -10,15 +10,13 @@ Uploader::Uploader(	const Vulkan& vulkan,
 	: m_vulkan(vulkan)
 	, m_descriptor(descriptor)
 	, m_commandPool(createCommandPool(m_vulkan))
+	, m_colorTransferBuffer(createColorTransferBuffer(m_vulkan, **m_commandPool, m_descriptor.colorTransfer))
 {
 }
 
-/*std::shared_ptr<const Frame> Uploader::operator()(const Utils::BufferView<Utils::BufferView<std::byte>>& pixData) const{
+std::tuple<const std::shared_ptr<Frame>&, const Uploader::PixelData&> Uploader::getFrame() const {
 	const auto& frame = acquireFrame();
 	const auto& data = static_cast<FrameData&>(frame->getData());
-	const auto& memory = data.stagingBuffer.getDeviceMemory();
-	const auto& offsets = frame->getImage().getOffsets();
-	assert(offsets.size() == pixData.size());
 
 	//Wait for completion of previous uplaods
 	m_vulkan.getDevice().waitForFences(
@@ -28,35 +26,13 @@ Uploader::Uploader(	const Vulkan& vulkan,
 		m_vulkan.getDispatcher()						//Dispatcher
 	);
 
-	//Copy the provided data to the staging buffer by mapping it
-	// onto memory
-	void* mappedMemory = m_vulkan.getDevice().mapMemory(memory, 
-														0, VK_WHOLE_SIZE, 
-														{}, 
-														m_vulkan.getDispatcher());
+	return { frame, data.pixelData };
+}
 
-	for(size_t i = 0; i < pixData.size(); i++) {
-		std::memcpy(
-			mappedMemory + offsets[i],
-			pixData[i].data(),
-			pixData[i].size()
-		);
-	}
 
-	m_vulkan.getDevice().unmapMemory(memory, m_vulkan.getDispatcher());
-
-	//Submit the commandbuffer to the queue
-	m_vulkan.getDevice().resetFences(
-		frame->getReadyFence(), 
-		m_vulkan.getDispatcher()
-	);
-	m_vulkan.getTransferQueue().submit(
-		data.commandBufferSubmit, 
-		frame->getReadyFence(), 
-		m_vulkan.getDispatcher()
-	);
-
-	return std::static_pointer_cast<const Frame>(frame);
+void Uploader::flush(const std::shared_ptr<Frame>& frame) {
+	auto& data = static_cast<FrameData&>(frame->getData());
+	data.stagingBufferMemory.flush();
 }
 
 
@@ -74,18 +50,9 @@ const std::shared_ptr<Frame>& Uploader::acquireFrame() const {
 	//No unused frames were found. Create a new one and return it
 	m_frames.emplace_back(createFrame());
 	return m_frames.back();
-}*/
-
-std::shared_ptr<Frame> Uploader::createFrame() const {
-	/*const vk::SubmitInfo submitInfo(
-		0, nullptr,							//Wait semaphores
-		nullptr,							//Pipeline stages
-		1, &(*data.commandBuffer),			//Command buffers
-		1, &(frame->getReadySemaphore())	//Signal semaphores
-	);*/
-	//TODO
-	return {};
 }
+
+
 
 Uploader::Descriptor Uploader::getDescriptor(	const Vulkan& vulkan,
 												Resolution resolution,
@@ -199,6 +166,59 @@ Uploader::Descriptor Uploader::getDescriptor(	const Vulkan& vulkan,
 
 
 
+std::shared_ptr<Frame> Uploader::createFrame() const {
+	return std::make_shared<Frame>(
+		m_vulkan,
+		createImage(),
+		std::shared_ptr(m_colorTransferBuffer),
+		createFrameData()
+	);
+	return {};
+}
+
+Image Uploader::createImage() const {
+	constexpr vk::ImageUsageFlags usageFlags =
+		vk::ImageUsageFlagBits::eSampled |
+		vk::ImageUsageFlagBits::eTransferDst;
+
+	constexpr vk::MemoryPropertyFlags memoryFlags =
+		vk::MemoryPropertyFlagBits::eDeviceLocal;
+
+	//Get the plane descriptor array
+	std::vector<std::tuple<vk::Extent2D, vk::Format, vk::ComponentMapping>> planeDescriptors;
+	for(size_t i = 0; i < m_descriptor.colorFormat.size(); i++){
+		if(std::get<vk::Format>(m_descriptor.colorFormat[i]) != vk::Format::eUndefined){
+			planeDescriptors.emplace_back(
+				m_descriptor.extents[i],
+				std::get<vk::Format>(m_descriptor.colorFormat[i]),
+				std::get<vk::ComponentMapping>(m_descriptor.colorFormat[i])
+			);
+		} else {
+			break;
+		}
+	}
+
+	return Image(
+		m_vulkan,
+		usageFlags,
+		memoryFlags,
+		planeDescriptors
+	);
+	return {};
+}
+
+std::unique_ptr<Frame::Data> Uploader::createFrameData() const {
+	/*const vk::SubmitInfo submitInfo(
+		0, nullptr,							//Wait semaphores
+		nullptr,							//Pipeline stages
+		1, &(*data.commandBuffer),			//Command buffers
+		1, &(frame->getReadySemaphore())	//Signal semaphores
+	);*/
+	//TODO
+	return {};
+}
+
+
 
 
 std::shared_ptr<vk::UniqueCommandPool> Uploader::createCommandPool(const Vulkan& vulkan){
@@ -208,6 +228,147 @@ std::shared_ptr<vk::UniqueCommandPool> Uploader::createCommandPool(const Vulkan&
 	);
 
 	return std::make_shared<vk::UniqueCommandPool>(vulkan.createCommandPool(createInfo));
+}
+
+std::shared_ptr<const Buffer> Uploader::createColorTransferBuffer(	const Vulkan& vulkan,
+																	vk::CommandPool& commandPool,
+																	const ColorTransfer& colorTransfer )
+{
+	//Create the buffer
+	constexpr vk::BufferUsageFlags usageFlags =
+		vk::BufferUsageFlagBits::eUniformBuffer |
+		vk::BufferUsageFlagBits::eTransferDst;
+
+	constexpr vk::MemoryPropertyFlags memoryFlags =
+		vk::MemoryPropertyFlagBits::eDeviceLocal;
+
+	constexpr size_t size = sizeof(ColorTransfer);
+
+	Buffer result(
+		vulkan,
+		usageFlags,
+		memoryFlags,
+		size
+	);
+ 
+	//Create a staging buffer. Using this technique due to preferably having
+	//device memory allocated for the UBO as it will be only written once and
+	//read frequently
+	constexpr vk::BufferUsageFlags stagingUsageFlags =
+		vk::BufferUsageFlagBits::eTransferSrc;
+
+	constexpr vk::MemoryPropertyFlags stagingMemoryFlags =
+		vk::MemoryPropertyFlagBits::eHostVisible;
+
+	Buffer stagingBuffer(
+		vulkan,
+		stagingUsageFlags,
+		stagingMemoryFlags,
+		size
+	);
+
+	//Upload the contents to the staging buffer
+	{
+		MappedMemory mapping(
+			vulkan,
+			vk::MappedMemoryRange(
+				stagingBuffer.getDeviceMemory(),
+				0, VK_WHOLE_SIZE
+			)
+		);
+
+		std::memcpy(
+			mapping.data(),
+			&colorTransfer,
+			size
+		);
+
+		mapping.flush();
+	}
+
+	//Allocate a command buffer for uploading it
+	const vk::CommandBufferAllocateInfo cbAllocInfo(
+		commandPool,
+		vk::CommandBufferLevel::ePrimary,
+		1
+	);
+
+	vk::CommandBuffer cmdBuffer;
+	vulkan.getDevice().allocateCommandBuffers(
+		&cbAllocInfo, 
+		&cmdBuffer, 
+		vulkan.getDispatcher()
+	);
+
+	//Record the command buffer
+	constexpr vk::CommandBufferUsageFlags cbUsage =
+		vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+
+	const vk::CommandBufferBeginInfo cbBeginInfo(
+		cbUsage,
+		nullptr
+	);
+
+	cmdBuffer.begin(cbBeginInfo, vulkan.getDispatcher()); 
+	{
+		cmdBuffer.copyBuffer(
+			stagingBuffer.getBuffer(),
+			result.getBuffer(),
+			vk::BufferCopy(0, 0, size),
+			vulkan.getDispatcher()
+		);
+
+		if(vulkan.getTransferQueueIndex() != vulkan.getGraphicsQueueIndex()) {
+			//Change the ownership to the graphics queue
+			const vk::BufferMemoryBarrier memoryBarrier(
+				{},								//Old access mask
+				{},								//New access mask
+				vulkan.getTransferQueueIndex(),	//Old queue family
+				vulkan.getGraphicsQueueIndex(), //New queue family
+				result.getBuffer(),				//Buffer
+				0, VK_WHOLE_SIZE				//Range
+			);
+
+			constexpr vk::PipelineStageFlags sourceStages = 
+				vk::PipelineStageFlagBits::eTransfer;
+
+			constexpr vk::PipelineStageFlags destinationStages = 
+				vk::PipelineStageFlagBits::eAllGraphics;
+			
+			cmdBuffer.pipelineBarrier(
+				sourceStages,					//Generating stages
+				destinationStages,				//Consuming stages
+				{},								//dependency flags
+				{},								//Memory barriers
+				memoryBarrier,					//Buffer memory barriers
+				{},								//Image memory barriers
+				vulkan.getDispatcher()
+			);
+		}
+	}
+	cmdBuffer.end(vulkan.getDispatcher());
+
+	//Submit the command buffer
+	const auto uploadFence = vulkan.createFence();
+	const vk::SubmitInfo submitInfo(
+		0, nullptr,							//Wait semaphores
+		nullptr,							//Pipeline stages
+		1, &cmdBuffer,						//Command buffers
+		0, nullptr							//Signal semaphores
+	);
+
+	vulkan.getTransferQueue().submit(submitInfo, *uploadFence, vulkan.getDispatcher());
+
+	//Wait for completion and reset the command pool, as we've allocated a command buffer
+	vulkan.getDevice().waitForFences(
+		*uploadFence, 
+		true, 
+		std::numeric_limits<uint64_t>::max(),
+		vulkan.getDispatcher()
+	);
+	vulkan.getDevice().resetCommandPool(commandPool, {}, vulkan.getDispatcher());
+
+	return std::make_shared<const Buffer>(std::move(result));
 }
 
 }

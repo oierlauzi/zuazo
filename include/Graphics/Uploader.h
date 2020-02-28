@@ -2,6 +2,8 @@
 
 #include "Vulkan.h"
 #include "Frame.h"
+#include "Buffer.h"
+#include "MappedMemory.h"
 
 #include "../Resolution.h"
 #include "../ColorSubsampling.h"
@@ -38,8 +40,8 @@ public:
 
 	Uploader& 									operator=(const Uploader& other) = delete;
 
-	std::tuple<const std::shared_ptr<Frame>&, const PixelData&> acquireFrame() const;
-	void										flush(const std::shared_ptr<Frame>& frame) const;
+	std::tuple<const std::shared_ptr<Frame>&, const PixelData&> getFrame() const;
+	static void									flush(const std::shared_ptr<Frame>& frame);
 
 	static Descriptor							getDescriptor(	const Vulkan& vulkan,
 																Resolution resolution,
@@ -52,7 +54,7 @@ public:
 private:
 	struct FrameData : Frame::Data {
 		Buffer stagingBuffer;
-		Buffer::MappedMemory mappedMemory;
+		MappedMemory stagingBufferMemory;
 		PixelData pixelData;
 		 
 		std::shared_ptr<vk::UniqueCommandPool> commandPool;
@@ -64,11 +66,20 @@ private:
 	Descriptor									m_descriptor;
 
 	mutable std::vector<std::shared_ptr<Frame>>	m_frames;
-	std::shared_ptr<vk::UniqueCommandPool>		m_commandPool;
 
+	std::shared_ptr<vk::UniqueCommandPool>		m_commandPool;
+	std::shared_ptr<const Buffer>				m_colorTransferBuffer;
+
+	const std::shared_ptr<Frame>&				acquireFrame() const;
 	std::shared_ptr<Frame>						createFrame() const;
+	Image										createImage() const;
+	std::unique_ptr<Frame::Data>				createFrameData() const;
+
 
 	static std::shared_ptr<vk::UniqueCommandPool> createCommandPool(const Vulkan& vulkan);
+	static std::shared_ptr<const Buffer>		createColorTransferBuffer(	const Vulkan& vulkan,
+																			vk::CommandPool& commandPool,
+																			const ColorTransfer& colorTransfer );
 };
 
 

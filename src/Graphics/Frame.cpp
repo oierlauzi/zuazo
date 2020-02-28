@@ -6,7 +6,7 @@ namespace Zuazo::Graphics {
 
 Frame::Frame(	const Vulkan& vulkan,
 				Image&& image,
-				Buffer&& colorTransfer,
+				std::shared_ptr<const Buffer>&& colorTransfer,
 				std::unique_ptr<Data>&& data )
 	: m_vulkan(vulkan)
 	, m_readySemaphore(m_vulkan.createSemaphore())
@@ -32,7 +32,7 @@ Frame::Frame(	const Vulkan& vulkan,
 
 		const std::array buffers = {
 			vk::DescriptorBufferInfo(
-				m_colorTransfer.getBuffer(),							//Buffer
+				m_colorTransfer->getBuffer(),							//Buffer
 				0,														//Offset
 				sizeof(ColorTransfer)									//Size
 			)
@@ -102,12 +102,9 @@ const Image& Frame::getImage() const {
 }
 
 
-Buffer& Frame::getColorTransfer() {
-	return m_colorTransfer;
-}
 
 const Buffer& Frame::getColorTransfer() const {
-	return m_colorTransfer;
+	return *m_colorTransfer;
 }
 
 
