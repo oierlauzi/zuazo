@@ -8,14 +8,25 @@ namespace Zuazo::Graphics {
 Image::Image(	const Vulkan& vulkan,
 				vk::ImageUsageFlags usage,
 				vk::MemoryPropertyFlags memoryProperties,
-				const Utils::BufferView<vk::Format>&  formats, 
-				const Utils::BufferView<vk::Extent2D>&  extents,
-				const Utils::BufferView<vk::ComponentMapping>&  swizzles )
-	: m_images(createImages(vulkan, usage, formats, extents))
+				const std::span<const std::tuple<vk::Extent2D, vk::Format, vk::ComponentMapping>>& imagePlanes )
+	: m_images(createImages(vulkan, usage, imagePlanes))
 	, m_memory(allocateMemory(vulkan, memoryProperties, m_images))
-	, m_imageViews(createImageViews(vulkan, formats, swizzles, m_images))
+	, m_imageViews(createImageViews(vulkan, imagePlanes, m_images))
 {
 }
+
+const std::vector<vk::UniqueImage>& Image::getImages() const{
+	return m_images;
+}
+
+const std::vector<size_t>& Image::getOffsets() const {
+	return m_memory.offsets;
+}
+
+const vk::DeviceMemory& Image::getMemory() const {
+	return *(m_memory.memory);
+}
+
 
 const std::vector<vk::UniqueImageView>&	Image::getImageViews() const{
 	return m_imageViews;
@@ -25,19 +36,17 @@ const std::vector<vk::UniqueImageView>&	Image::getImageViews() const{
 
 std::vector<vk::UniqueImage> Image::createImages(	const Vulkan& vulkan,
 													vk::ImageUsageFlags usage,
-													const Utils::BufferView<vk::Format>& formats, 
-													const Utils::BufferView<vk::Extent2D>& extents )
+													const std::span<const std::tuple<vk::Extent2D, vk::Format, vk::ComponentMapping>>& imagePlanes )
 {
-	assert(formats.size() == extents.size());
 	std::vector<vk::UniqueImage> result;
-	result.reserve(extents.size());
+	result.reserve(imagePlanes.size());
 
-	for(size_t i = 0; i < extents.size(); i++){
+	for(size_t i = 0; i < imagePlanes.size(); i++){
 		const vk::ImageCreateInfo createInfo(
 			{},											//Flags
 			vk::ImageType::e2D,							//Image type
-			formats.data()[i],							//Pixel format
-			vk::Extent3D(extents.data()[i], 1),			//Extent
+			std::get<vk::Format>(imagePlanes[i]),		//Pixel format
+			vk::Extent3D(std::get<vk::Extent2D>(imagePlanes[i]), 1), //Extent
 			1,											//Mip levels
 			1,											//Array layers
 			vk::SampleCountFlagBits::e1,				//Sample count
@@ -89,11 +98,10 @@ Image::Memory Image::allocateMemory(const Vulkan& vulkan,
 }
 
 std::vector<vk::UniqueImageView> Image::createImageViews(	const Vulkan& vulkan,
-															const Utils::BufferView<vk::Format>& formats,
-															const Utils::BufferView<vk::ComponentMapping>&  swizzles,
+															const std::span<const std::tuple<vk::Extent2D, vk::Format, vk::ComponentMapping>>& imagePlanes ,
 															const std::vector<vk::UniqueImage>& images )
 {
-	assert(formats.size() == images.size() && swizzles.size() == images.size());
+	assert(imagePlanes.size() == images.size());
 	std::vector<vk::UniqueImageView> result;
 	result.reserve(images.size());
 
@@ -102,8 +110,8 @@ std::vector<vk::UniqueImageView> Image::createImageViews(	const Vulkan& vulkan,
 			{},												//Flags
 			*(images[i]),									//Image
 			vk::ImageViewType::e2D,							//ImageView type
-			formats.data()[i],								//Image format
-			swizzles.data()[i],								//Swizzle
+			std::get<vk::Format>(imagePlanes[i]),			//Image format
+			std::get<vk::ComponentMapping>(imagePlanes[i]),	//Swizzle
 			vk::ImageSubresourceRange(						//Image subresources
 				vk::ImageAspectFlagBits::eColor,				//Aspect mask
 				0, 1, 0, 1										//Base mipmap level, mipmap levels, base array layer, layers

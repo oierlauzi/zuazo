@@ -188,10 +188,10 @@ vk::UniqueRenderPass Vulkan::createRenderPass(const vk::RenderPassCreateInfo& cr
 	return m_device->createRenderPassUnique(createInfo, nullptr, m_dispatcher);
 }
 
-vk::UniqueShaderModule Vulkan::createShader(const Utils::BufferView<uint32_t>& code) const {
+vk::UniqueShaderModule Vulkan::createShader(const std::span<const uint32_t>& code) const {
 	const vk::ShaderModuleCreateInfo createInfo(
 		{},												//Flags
-		code.size() * sizeof(uint32_t), code.data()		//Code
+		code.size_bytes(), code.data()					//Code
 	);
 
 	return m_device->createShaderModuleUnique(createInfo, nullptr, m_dispatcher);

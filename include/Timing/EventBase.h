@@ -8,7 +8,7 @@ class Scheduler;
 class EventBase {
 	friend Scheduler;
 public:
-	struct UniqueDisable;
+	class UniqueDisable;
 
 	EventBase() = default;
 	EventBase(const EventBase& other) = default;

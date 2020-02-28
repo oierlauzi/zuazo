@@ -2,9 +2,10 @@
 
 #include "Vulkan.h"
 #include "Buffer.h"
-#include "../Utils/BufferView.h"
 
 #include <vector>
+#include <span>
+#include <tuple>
 
 namespace Zuazo::Graphics {
 
@@ -14,9 +15,7 @@ public:
 	Image(	const Vulkan& vulkan,
 			vk::ImageUsageFlags usage,
 			vk::MemoryPropertyFlags memoryProperties,
-			const Utils::BufferView<vk::Format>&  formats, 
-			const Utils::BufferView<vk::Extent2D>&  extents,
-			const Utils::BufferView<vk::ComponentMapping>&  swizzles );
+			const std::span<const std::tuple<vk::Extent2D, vk::Format, vk::ComponentMapping>>& imagePlanes );
 	Image(const Image& other) = delete;
 	Image(Image&& other) = default;
 	~Image() = default;
@@ -24,6 +23,9 @@ public:
 	Image& 									operator=(const Image& other) = delete;
 	Image& 									operator=(Image&& other) = default;
 
+	const std::vector<vk::UniqueImage>&		getImages() const;
+	const std::vector<size_t>&				getOffsets() const;
+	const vk::DeviceMemory&					getMemory() const;
 	const std::vector<vk::UniqueImageView>&	getImageViews() const;
 
 private:
@@ -38,14 +40,12 @@ private:
 
 	static std::vector<vk::UniqueImage> 	createImages(	const Vulkan& vulkan,
 															vk::ImageUsageFlags usage,
-															const Utils::BufferView<vk::Format>& formats, 
-															const Utils::BufferView<vk::Extent2D>&  extents );
+															const std::span<const std::tuple<vk::Extent2D, vk::Format, vk::ComponentMapping>>& imagePlanes );
 	static Memory							allocateMemory(	const Vulkan& vulkan,
 															vk::MemoryPropertyFlags memoryProperties,
 															const std::vector<vk::UniqueImage>& images );
 	static std::vector<vk::UniqueImageView>	createImageViews(	const Vulkan& vulkan,
-																const Utils::BufferView<vk::Format>& formats,
-																const Utils::BufferView<vk::ComponentMapping>&  swizzles,
+																const std::span<const std::tuple<vk::Extent2D, vk::Format, vk::ComponentMapping>>& imagePlanes,
 																const std::vector<vk::UniqueImage>& images );
 
 

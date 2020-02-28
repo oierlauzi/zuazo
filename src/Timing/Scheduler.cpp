@@ -130,7 +130,7 @@ void Scheduler::Event::disable(){
 }
 
 void Scheduler::Event::setScheduler(Scheduler* sch){
-	EventBase::UniqueDisable dis();
+	EventBase::UniqueDisable dis;
 	m_scheduler = sch;
 }
 
@@ -140,7 +140,7 @@ Scheduler* Scheduler::Event::getScheduler() const{
 
 
 void Scheduler::Event::setPriority(Priority prior){
-	EventBase::UniqueDisable dis();
+	EventBase::UniqueDisable dis;
 	m_priority = prior;
 }
 
@@ -149,7 +149,7 @@ Scheduler::Priority Scheduler::Event::getPriority() const{
 }
 
 void Scheduler::Event::setPeriod(Period period){
-	EventBase::UniqueDisable dis();
+	EventBase::UniqueDisable dis;
 	m_period = period;
 }
 
@@ -158,7 +158,7 @@ Period Scheduler::Event::getPeriod() const {
 }
 
 void Scheduler::Event::setRate(const Rate& rat){
-	EventBase::UniqueDisable dis();
+	EventBase::UniqueDisable dis;
 	m_period = Timing::getPeriod(rat);
 }
 

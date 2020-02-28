@@ -2,12 +2,12 @@
 
 #include "../Version.h"
 #include "../Verbosity.h"
-#include "../Utils/BufferView.h"
 
 #include <vector>
 #include <array>
 #include <map>
 #include <optional>
+#include <span>
 
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #define VULKAN_HPP_DEFAULT_DISPATCHER void()
@@ -55,7 +55,7 @@ public:
 	vk::UniqueImage									createImage(const vk::ImageCreateInfo& createInfo) const;
 	vk::UniqueImageView								createImageView(const vk::ImageViewCreateInfo& createInfo) const;
 	vk::UniqueRenderPass							createRenderPass(const vk::RenderPassCreateInfo& createInfo) const;
-	vk::UniqueShaderModule							createShader(const Utils::BufferView<uint32_t>& code) const;
+	vk::UniqueShaderModule							createShader(const std::span<const uint32_t>& code) const;
 	vk::UniquePipelineLayout						createPipelineLayout(const vk::PipelineLayoutCreateInfo& createInfo) const;
 	vk::UniquePipeline								createGraphicsPipeline(	vk::PipelineCache cache,
 																			const vk::GraphicsPipelineCreateInfo& createInfo ) const;

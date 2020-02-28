@@ -39,7 +39,7 @@ void Window::open(){
 	impl.framebuffers = createFramebuffers(vulkan, *impl.renderPass, impl.swapchainImageViews, extent);
 
 	//Create command pool and command buffers
-	impl.commandPool = createCommandPool(vulkan, vulkan.getGraphicsQueueIndex());
+	impl.commandPool = createCommandPool(vulkan);
 	impl.commandBuffers = createCommandBuffers(vulkan, *impl.commandPool, impl.framebuffers.size());
 
 	//Create the semaphores and the fence
@@ -390,8 +390,8 @@ vk::UniquePipeline Window::createPipeline(	const Graphics::Vulkan& vulkan,
 											vk::PipelineLayout layout,
 											const vk::Extent2D& extent )
 {
-	const auto vertexShader = vulkan.createShader(Utils::BufferView(Window_vert, sizeof(Window_vert) / 4));
-	const auto fragmentShader = vulkan.createShader(Utils::BufferView(Window_frag, sizeof(Window_frag) / 4));
+	const auto vertexShader = vulkan.createShader(Window_vert);
+	const auto fragmentShader = vulkan.createShader(Window_frag);
 
 	constexpr auto SHADER_ENTRY_POINT = "main";
 	const std::array shaderStages = {
@@ -548,8 +548,7 @@ std::vector<vk::UniqueFramebuffer> Window::createFramebuffers(	const Graphics::V
 	return result;
 }
 
-vk::UniqueCommandPool Window::createCommandPool(const Graphics::Vulkan& vulkan,
-												uint32_t queueIndex )
+vk::UniqueCommandPool Window::createCommandPool(const Graphics::Vulkan& vulkan)
 {
 	constexpr auto createFlags = 
 		vk::CommandPoolCreateFlagBits::eTransient | 		//Re-recorded often
@@ -557,7 +556,7 @@ vk::UniqueCommandPool Window::createCommandPool(const Graphics::Vulkan& vulkan,
 
 	const vk::CommandPoolCreateInfo createInfo(
 		createFlags,										//Flags
-		queueIndex											//Queue index
+		vulkan.getGraphicsQueueIndex()						//Queue index
 	);
 
 	return vulkan.createCommandPool(createInfo);

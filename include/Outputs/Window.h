@@ -71,8 +71,7 @@ private:
 																	vk::RenderPass renderPass,
 																	const std::vector<vk::UniqueImageView>& imageViews,
 																	const vk::Extent2D& extent );
-	static vk::UniqueCommandPool				createCommandPool(	const Graphics::Vulkan& vulkan,
-																	uint32_t queueIndex );
+	static vk::UniqueCommandPool				createCommandPool(const Graphics::Vulkan& vulkan);
 	static std::vector<vk::UniqueCommandBuffer>	createCommandBuffers(	const Graphics::Vulkan& vulkan,
 																		vk::CommandPool pool,
 																		uint32_t count );

@@ -12,7 +12,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/shaders/)
 add_subdirectory(${PROJECT_SOURCE_DIR}/doc/doxygen/)
 
 #Set compiler's options
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic")
 
 #Register all source and header files
