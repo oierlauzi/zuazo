@@ -6,27 +6,22 @@
 #include "Image.h"
 
 #include <memory>
+#include <span>
 
 namespace Zuazo::Graphics {
 
 class Frame {
 public:	
-	struct Data { 
-		virtual ~Data() = default;
-	};
+	using PixelData = std::array<std::span<std::byte>, IMAGE_COUNT>;
 
 	Frame(	const Vulkan& vulkan,
 			Image&& image,
-			std::shared_ptr<const Buffer>&& colorTransfer,
-			std::unique_ptr<Data>&& data );
+			std::shared_ptr<const Buffer>&& colorTransfer );
 	Frame(const Frame& other) = delete;
 	Frame(Frame&& other) = default;
-	~Frame();
+	virtual ~Frame();
 
 	Frame& 							operator=(const Frame& other) = delete;
-
-	vk::Semaphore&					getReadySemaphore();
-	const vk::Semaphore&			getReadySemaphore() const;
 
 	vk::Fence&						getReadyFence();
 	const vk::Fence&				getReadyFence() const;
@@ -36,27 +31,26 @@ public:
 
 	const Buffer&					getColorTransfer() const;
 
-	Data&							getData();
-	const Data&						getData() const;
-
 	void							bind(	vk::CommandBuffer cmd,
 											vk::PipelineBindPoint bindPoint,
 											vk::PipelineLayout layout,
 											uint32_t index,
 											vk::Filter filter );
-											
+
+	static std::shared_ptr<Buffer> 	createColorTransferBuffer(	const Vulkan& vulkan,
+																const ColorTransfer& colorTransfer );
+
+protected:
+	const Vulkan&					m_vulkan;
+	
 private:
 	static constexpr size_t DESCRIPTOR_COUNT = VK_FILTER_RANGE_SIZE;
 	using DescriptorSets = std::array<vk::DescriptorSet, DESCRIPTOR_COUNT>;
 
-	const Vulkan&					m_vulkan;
-
-	vk::UniqueSemaphore				m_readySemaphore;
 	vk::UniqueFence					m_readyFence;
 
 	Image							m_image;
 	std::shared_ptr<const Buffer>	m_colorTransfer;
-	std::unique_ptr<Data>			m_data;	
 
 	vk::UniqueDescriptorPool		m_descriptorPool;
 	DescriptorSets					m_descriptorSets;

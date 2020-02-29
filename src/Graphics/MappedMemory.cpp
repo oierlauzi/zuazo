@@ -3,7 +3,7 @@
 namespace Zuazo::Graphics {
 
 MappedMemory::MappedMemory(	const Vulkan& vulkan,
-									const vk::MappedMemoryRange& mapping )
+							const vk::MappedMemoryRange& mapping )
 	: m_vulkan(&vulkan)
 	, m_mappedMemoryRange(mapping)
 	, m_memory(map(*m_vulkan, m_mappedMemoryRange))

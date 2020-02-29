@@ -10,13 +10,13 @@ Uploader::Uploader(	const Vulkan& vulkan,
 	: m_vulkan(vulkan)
 	, m_descriptor(descriptor)
 	, m_commandPool(createCommandPool(m_vulkan))
-	, m_colorTransferBuffer(createColorTransferBuffer(m_vulkan, **m_commandPool, m_descriptor.colorTransfer))
+	, m_colorTransferBuffer(Graphics::Frame::createColorTransferBuffer(m_vulkan, m_descriptor.colorTransfer))
 {
 }
 
-std::tuple<const std::shared_ptr<Frame>&, const Uploader::PixelData&> Uploader::getFrame() const {
-	const auto& frame = acquireFrame();
-	const auto& data = static_cast<FrameData&>(frame->getData());
+
+const std::shared_ptr<Uploader::Frame>& Uploader::acquireFrame() const {
+	const auto& frame = getUniqueFrame();
 
 	//Wait for completion of previous uplaods
 	m_vulkan.getDevice().waitForFences(
@@ -26,30 +26,7 @@ std::tuple<const std::shared_ptr<Frame>&, const Uploader::PixelData&> Uploader::
 		m_vulkan.getDispatcher()						//Dispatcher
 	);
 
-	return { frame, data.pixelData };
-}
-
-
-void Uploader::flush(const std::shared_ptr<Frame>& frame) {
-	auto& data = static_cast<FrameData&>(frame->getData());
-	data.stagingBufferMemory.flush();
-}
-
-
-const std::shared_ptr<Frame>& Uploader::acquireFrame() const {
-	//FIXME delete vacant frames
-
-	//Try to find a unused frame.
-	//If it is only held by me it is considered to be unused
-	for(const auto& frame : m_frames){
-		if(frame.unique()){
-			return frame;
-		}
-	}
-
-	//No unused frames were found. Create a new one and return it
-	m_frames.emplace_back(createFrame());
-	return m_frames.back();
+	return frame;
 }
 
 
@@ -164,60 +141,25 @@ Uploader::Descriptor Uploader::getDescriptor(	const Vulkan& vulkan,
 	return result;
 }
 
-
-
-std::shared_ptr<Frame> Uploader::createFrame() const {
-	return std::make_shared<Frame>(
-		m_vulkan,
-		createImage(),
-		std::shared_ptr(m_colorTransferBuffer),
-		createFrameData()
-	);
-	return {};
-}
-
-Image Uploader::createImage() const {
-	constexpr vk::ImageUsageFlags usageFlags =
-		vk::ImageUsageFlagBits::eSampled |
-		vk::ImageUsageFlagBits::eTransferDst;
-
-	constexpr vk::MemoryPropertyFlags memoryFlags =
-		vk::MemoryPropertyFlagBits::eDeviceLocal;
-
-	//Get the plane descriptor array
-	std::vector<std::tuple<vk::Extent2D, vk::Format, vk::ComponentMapping>> planeDescriptors;
-	for(size_t i = 0; i < m_descriptor.colorFormat.size(); i++){
-		if(std::get<vk::Format>(m_descriptor.colorFormat[i]) != vk::Format::eUndefined){
-			planeDescriptors.emplace_back(
-				m_descriptor.extents[i],
-				std::get<vk::Format>(m_descriptor.colorFormat[i]),
-				std::get<vk::ComponentMapping>(m_descriptor.colorFormat[i])
-			);
-		} else {
-			break;
+const std::shared_ptr<Uploader::Frame>& Uploader::getUniqueFrame() const {
+	//Try to find a unused frame.
+	//If it is only held by me it is considered to be unused
+	for(const auto& frame : m_frames){
+		if(frame.unique()){
+			return frame;
 		}
 	}
 
-	return Image(
+	//No unused frames were found. Create a new one and return it
+	m_frames.emplace_back(std::make_shared<Frame>(
 		m_vulkan,
-		usageFlags,
-		memoryFlags,
-		planeDescriptors
-	);
-	return {};
-}
+		m_descriptor,
+		std::static_pointer_cast<const Buffer>(m_colorTransferBuffer),
+		std::static_pointer_cast<const vk::UniqueCommandPool>(m_commandPool)
+	));
 
-std::unique_ptr<Frame::Data> Uploader::createFrameData() const {
-	/*const vk::SubmitInfo submitInfo(
-		0, nullptr,							//Wait semaphores
-		nullptr,							//Pipeline stages
-		1, &(*data.commandBuffer),			//Command buffers
-		1, &(frame->getReadySemaphore())	//Signal semaphores
-	);*/
-	//TODO
-	return {};
+	return m_frames.back();
 }
-
 
 
 
@@ -230,145 +172,257 @@ std::shared_ptr<vk::UniqueCommandPool> Uploader::createCommandPool(const Vulkan&
 	return std::make_shared<vk::UniqueCommandPool>(vulkan.createCommandPool(createInfo));
 }
 
-std::shared_ptr<const Buffer> Uploader::createColorTransferBuffer(	const Vulkan& vulkan,
-																	vk::CommandPool& commandPool,
-																	const ColorTransfer& colorTransfer )
+
+
+
+
+Uploader::Frame::Frame(	const Vulkan& vulkan,
+						const Descriptor& desc,
+						std::shared_ptr<const Buffer>&& colorTransfer,
+						std::shared_ptr<const vk::UniqueCommandPool>&& cmdPool )
+	: Graphics::Frame(
+		vulkan,
+		createImage(vulkan, desc),
+		std::move(colorTransfer) )
+	, m_stagingBuffer(createStagingBuffer(vulkan, getImage()))
+	, m_stagingBufferMemory(mapStagingBuffer(vulkan, m_stagingBuffer))
+	, m_pixelData(createPixelData(getImage(), m_stagingBufferMemory))
+	, m_commandPool(std::move(cmdPool))
+	, m_commandBuffer(createCommandBuffer(m_vulkan, desc, **m_commandPool, getImage(), m_stagingBuffer))
+	, m_commandBufferSubmit(createSubmitInfo(*m_commandBuffer))
 {
-	//Create the buffer
-	constexpr vk::BufferUsageFlags usageFlags =
-		vk::BufferUsageFlagBits::eUniformBuffer |
-		vk::BufferUsageFlagBits::eTransferDst;
+}
+
+const Frame::PixelData& Uploader::Frame::getPixelData() {
+	return m_pixelData;
+}
+
+void Uploader::Frame::flush() {
+	m_stagingBufferMemory.flush();
+
+	//Send it to the queue
+	m_vulkan.getDevice().resetFences(getReadyFence(), m_vulkan.getDispatcher());
+	m_vulkan.getTransferQueue().submit(
+		m_commandBufferSubmit,
+		getReadyFence(),
+		m_vulkan.getDispatcher()
+	);
+}
+
+
+
+Image Uploader::Frame::createImage(	const Vulkan& vulkan,
+									const Descriptor& desc )
+{
+	constexpr vk::ImageUsageFlags usageFlags =
+		vk::ImageUsageFlagBits::eSampled |
+		vk::ImageUsageFlagBits::eTransferDst;
 
 	constexpr vk::MemoryPropertyFlags memoryFlags =
 		vk::MemoryPropertyFlagBits::eDeviceLocal;
 
-	constexpr size_t size = sizeof(ColorTransfer);
+	//Get the plane descriptor array
+	std::vector<std::tuple<vk::Extent2D, vk::Format, vk::ComponentMapping>> planeDescriptors;
+	for(size_t i = 0; i < desc.colorFormat.size(); i++){
+		if(std::get<vk::Format>(desc.colorFormat[i]) != vk::Format::eUndefined){
+			planeDescriptors.emplace_back(
+				desc.extents[i],
+				std::get<vk::Format>(desc.colorFormat[i]),
+				std::get<vk::ComponentMapping>(desc.colorFormat[i])
+			);
+		} else {
+			break;
+		}
+	}
 
-	Buffer result(
+	return Image(
 		vulkan,
 		usageFlags,
 		memoryFlags,
-		size
+		planeDescriptors
 	);
- 
-	//Create a staging buffer. Using this technique due to preferably having
-	//device memory allocated for the UBO as it will be only written once and
-	//read frequently
-	constexpr vk::BufferUsageFlags stagingUsageFlags =
+}
+
+Buffer Uploader::Frame::createStagingBuffer(const Vulkan& vulkan,
+											const Image& image )
+{
+	constexpr vk::BufferUsageFlags usageFlags =
 		vk::BufferUsageFlagBits::eTransferSrc;
 
-	constexpr vk::MemoryPropertyFlags stagingMemoryFlags =
+	constexpr vk::MemoryPropertyFlags memoryFlags =
 		vk::MemoryPropertyFlagBits::eHostVisible;
 
-	Buffer stagingBuffer(
+	const auto& planes = image.getPlanes();
+
+	return Buffer(
 		vulkan,
-		stagingUsageFlags,
-		stagingMemoryFlags,
-		size
+		usageFlags,
+		memoryFlags,
+		planes.back().first + planes.back().second 
 	);
+}
 
-	//Upload the contents to the staging buffer
-	{
-		MappedMemory mapping(
-			vulkan,
-			vk::MappedMemoryRange(
-				stagingBuffer.getDeviceMemory(),
-				0, VK_WHOLE_SIZE
-			)
-		);
+MappedMemory Uploader::Frame::mapStagingBuffer(	const Vulkan& vulkan, 
+												const Buffer& buffer)
+{
+	return MappedMemory(
+		vulkan,
+		vk::MappedMemoryRange(
+			buffer.getDeviceMemory(),
+			0, VK_WHOLE_SIZE
+		)
+	);
+}
 
-		std::memcpy(
-			mapping.data(),
-			&colorTransfer,
-			size
-		);
+Frame::PixelData Uploader::Frame::createPixelData(	const Image& image,
+													MappedMemory& memory )
+{
+	Frame::PixelData result;
+	const auto planes = image.getPlanes();
+	auto* data = memory.data();
 
-		mapping.flush();
+	for(size_t i = 0; i < planes.size(); i++){
+		result[i] = std::span<std::byte>(data + planes[i].first, planes[i].second);
 	}
 
-	//Allocate a command buffer for uploading it
+	return result;
+}
+
+vk::UniqueCommandBuffer Uploader::Frame::createCommandBuffer(	const Vulkan& vulkan,
+																const Descriptor& desc,
+																vk::CommandPool cmdPool,
+																const Image& image,
+																const Buffer& stagingBuffer )
+{
 	const vk::CommandBufferAllocateInfo cbAllocInfo(
-		commandPool,
+		cmdPool,
 		vk::CommandBufferLevel::ePrimary,
 		1
 	);
 
-	vk::CommandBuffer cmdBuffer;
-	vulkan.getDevice().allocateCommandBuffers(
-		&cbAllocInfo, 
-		&cmdBuffer, 
+	auto cmdBuffers = vulkan.getDevice().allocateCommandBuffersUnique(
+		cbAllocInfo, 
 		vulkan.getDispatcher()
 	);
 
-	//Record the command buffer
-	constexpr vk::CommandBufferUsageFlags cbUsage =
-		vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+	const auto& cmdBuffer = *(cmdBuffers[0]);
 
+	//Record the command buffer
 	const vk::CommandBufferBeginInfo cbBeginInfo(
-		cbUsage,
+		{},
 		nullptr
 	);
 
 	cmdBuffer.begin(cbBeginInfo, vulkan.getDispatcher()); 
 	{
-		cmdBuffer.copyBuffer(
-			stagingBuffer.getBuffer(),
-			result.getBuffer(),
-			vk::BufferCopy(0, 0, size),
+		const bool familyOwnershipTransfer = vulkan.getTransferQueueIndex() == vulkan.getGraphicsQueueIndex();
+		const auto& images = image.getImages();
+		std::vector<vk::ImageMemoryBarrier> memoryBarriers(images.size());
+		constexpr vk::ImageSubresourceRange imageSubresourceRange(
+			vk::ImageAspectFlagBits::eColor,				//Aspect mask
+			0, 1, 0, 1										//Base mipmap level, mipmap levels, base array layer, layers
+		);
+
+		//Transition the layout of the images
+		for(size_t i = 0; i < images.size(); i++){
+			constexpr vk::AccessFlags srcAccess = {};
+			constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eTransferWrite;
+
+			const auto srcFamily = familyOwnershipTransfer ? vulkan.getGraphicsQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
+			const auto dstFamily = familyOwnershipTransfer ? vulkan.getTransferQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
+
+			memoryBarriers[i] = vk::ImageMemoryBarrier(
+				srcAccess,								//Old access mask
+				dstAccess,								//New access mask
+				vk::ImageLayout::eUndefined,			//Old layout
+				vk::ImageLayout::eTransferDstOptimal,	//New layout
+				srcFamily,								//Old queue family
+				dstFamily,								//New queue family
+				*(images[i]),							//Image
+				imageSubresourceRange					//Image subresource
+			);
+		}
+
+		cmdBuffer.pipelineBarrier(
+			vk::PipelineStageFlagBits::eTopOfPipe,		//Generating stages
+			vk::PipelineStageFlagBits::eTransfer,		//Consuming stages
+			{},											//dependency flags
+			{},											//Memory barriers
+			{},											//Buffer memory barriers
+			memoryBarriers,								//Image memory barriers
 			vulkan.getDispatcher()
 		);
 
-		if(vulkan.getTransferQueueIndex() != vulkan.getGraphicsQueueIndex()) {
-			//Change the ownership to the graphics queue
-			const vk::BufferMemoryBarrier memoryBarrier(
-				{},								//Old access mask
-				{},								//New access mask
-				vulkan.getTransferQueueIndex(),	//Old queue family
-				vulkan.getGraphicsQueueIndex(), //New queue family
-				result.getBuffer(),				//Buffer
-				0, VK_WHOLE_SIZE				//Range
+		//Copy the buffer to the image
+		for(size_t i = 0; i < images.size(); i++){
+			const vk::BufferImageCopy region(
+				0, 										//Buffer offset
+				0,										//Buffer line stride
+				0,										//Buffer image lines
+				vk::ImageSubresourceLayers(				//Image subresource
+					imageSubresourceRange.aspectMask,		//Aspect mask
+					imageSubresourceRange.baseMipLevel,			//Mip level
+					imageSubresourceRange.baseArrayLayer,	//Array layer offset
+					imageSubresourceRange.layerCount 		//Array layers
+				),	
+				vk::Offset3D(),							//Image offset
+				vk::Extent3D(desc.extents[i], 1)		//Image extent
 			);
 
-			constexpr vk::PipelineStageFlags sourceStages = 
-				vk::PipelineStageFlagBits::eTransfer;
-
-			constexpr vk::PipelineStageFlags destinationStages = 
-				vk::PipelineStageFlagBits::eAllGraphics;
-			
-			cmdBuffer.pipelineBarrier(
-				sourceStages,					//Generating stages
-				destinationStages,				//Consuming stages
-				{},								//dependency flags
-				{},								//Memory barriers
-				memoryBarrier,					//Buffer memory barriers
-				{},								//Image memory barriers
+			cmdBuffer.copyBufferToImage(
+				stagingBuffer.getBuffer(),
+				*(images[i]),
+				vk::ImageLayout::eTransferDstOptimal,
+				region,
 				vulkan.getDispatcher()
 			);
 		}
+
+		//Transition the layout of the images (again)
+		for(size_t i = 0; i < images.size(); i++){
+			constexpr vk::AccessFlags srcAccess = vk::AccessFlagBits::eTransferWrite;
+			constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eShaderRead;
+
+			const auto srcFamily = familyOwnershipTransfer ? vulkan.getTransferQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
+			const auto dstFamily = familyOwnershipTransfer ? vulkan.getGraphicsQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
+
+			memoryBarriers[i] = vk::ImageMemoryBarrier(
+				srcAccess,								//Old access mask
+				dstAccess,								//New access mask
+				vk::ImageLayout::eTransferDstOptimal,	//Old layout
+				vk::ImageLayout::eShaderReadOnlyOptimal,//New layout
+				srcFamily,								//Old queue family
+				dstFamily,								//New queue family
+				*(images[i]),							//Image
+				imageSubresourceRange					//Image subresource
+			);
+		}
+
+		cmdBuffer.pipelineBarrier(
+			vk::PipelineStageFlagBits::eTransfer,		//Generating stages
+			vk::PipelineStageFlagBits::eAllGraphics,	//Consuming stages
+			{},											//Dependency flags
+			{},											//Memory barriers
+			{},											//Buffer memory barriers
+			memoryBarriers,								//Image memory barriers
+			vulkan.getDispatcher()
+		);
 	}
 	cmdBuffer.end(vulkan.getDispatcher());
 
-	//Submit the command buffer
-	const auto uploadFence = vulkan.createFence();
-	const vk::SubmitInfo submitInfo(
+	return std::move(cmdBuffers[0]);
+}
+
+vk::SubmitInfo Uploader::Frame::createSubmitInfo(const vk::CommandBuffer& cmdBuffer)
+{
+	return vk::SubmitInfo(
 		0, nullptr,							//Wait semaphores
 		nullptr,							//Pipeline stages
 		1, &cmdBuffer,						//Command buffers
 		0, nullptr							//Signal semaphores
 	);
-
-	vulkan.getTransferQueue().submit(submitInfo, *uploadFence, vulkan.getDispatcher());
-
-	//Wait for completion and reset the command pool, as we've allocated a command buffer
-	vulkan.getDevice().waitForFences(
-		*uploadFence, 
-		true, 
-		std::numeric_limits<uint64_t>::max(),
-		vulkan.getDispatcher()
-	);
-	vulkan.getDevice().resetCommandPool(commandPool, {}, vulkan.getDispatcher());
-
-	return std::make_shared<const Buffer>(std::move(result));
 }
+
+
 
 }

@@ -15,7 +15,6 @@
 
 #include <memory>
 #include <utility>
-#include <span>
 
 namespace Zuazo::Graphics {
 
@@ -30,7 +29,7 @@ public:
 		ColorTransfer colorTransfer;
 	};
 
-	using PixelData = std::array<std::span<std::byte>, IMAGE_COUNT>;
+	class Frame;
 
 	Uploader(	const Vulkan& vulkan, 
 				const Descriptor& descriptor );
@@ -40,8 +39,7 @@ public:
 
 	Uploader& 									operator=(const Uploader& other) = delete;
 
-	std::tuple<const std::shared_ptr<Frame>&, const PixelData&> getFrame() const;
-	static void									flush(const std::shared_ptr<Frame>& frame);
+	const std::shared_ptr<Frame>&				acquireFrame() const;
 
 	static Descriptor							getDescriptor(	const Vulkan& vulkan,
 																Resolution resolution,
@@ -52,35 +50,58 @@ public:
 																ColorModel model,
 																ColorPrimaries primaries );
 private:
-	struct FrameData : Frame::Data {
-		Buffer stagingBuffer;
-		MappedMemory stagingBufferMemory;
-		PixelData pixelData;
-		 
-		std::shared_ptr<vk::UniqueCommandPool> commandPool;
-		vk::UniqueCommandBuffer	commandBuffer;
-		vk::SubmitInfo commandBufferSubmit;
-	};
-
 	const Vulkan& 								m_vulkan;
 	Descriptor									m_descriptor;
 
 	mutable std::vector<std::shared_ptr<Frame>>	m_frames;
 
 	std::shared_ptr<vk::UniqueCommandPool>		m_commandPool;
-	std::shared_ptr<const Buffer>				m_colorTransferBuffer;
+	std::shared_ptr<Buffer>						m_colorTransferBuffer;
 
-	const std::shared_ptr<Frame>&				acquireFrame() const;
-	std::shared_ptr<Frame>						createFrame() const;
-	Image										createImage() const;
-	std::unique_ptr<Frame::Data>				createFrameData() const;
-
+	const std::shared_ptr<Frame>&				getUniqueFrame() const;
 
 	static std::shared_ptr<vk::UniqueCommandPool> createCommandPool(const Vulkan& vulkan);
-	static std::shared_ptr<const Buffer>		createColorTransferBuffer(	const Vulkan& vulkan,
-																			vk::CommandPool& commandPool,
-																			const ColorTransfer& colorTransfer );
 };
+
+class Uploader::Frame : public Graphics::Frame {
+public:
+	Frame(	const Vulkan& vulkan,
+			const Descriptor& desc,
+			std::shared_ptr<const Buffer>&& colorTransfer,
+			std::shared_ptr<const vk::UniqueCommandPool>&& cmdPool );
+	Frame(const Frame& other) = delete;
+	Frame(Frame&& other) = default;
+	virtual ~Frame() = default; 
+
+	Frame& 										operator=(const Frame& other) = delete;
+
+	const PixelData&							getPixelData();
+	void										flush();
+private:
+	Buffer										m_stagingBuffer;
+	MappedMemory 								m_stagingBufferMemory;
+	PixelData 									m_pixelData;
+		
+	std::shared_ptr<const vk::UniqueCommandPool>m_commandPool;
+	vk::UniqueCommandBuffer						m_commandBuffer;
+	vk::SubmitInfo 								m_commandBufferSubmit;
+
+	static Image								createImage(const Vulkan& vulkan,
+															const Descriptor& desc );
+	static Buffer								createStagingBuffer(const Vulkan& vulkan,
+																	const Image& image );
+	static MappedMemory							mapStagingBuffer(	const Vulkan& vulkan,
+																	const Buffer& buffer);
+	static PixelData							createPixelData(const Image& image,
+																MappedMemory& memory );
+	static vk::UniqueCommandBuffer				createCommandBuffer(const Vulkan& vulkan,
+																	const Descriptor& desc,
+																	vk::CommandPool cmdPool,
+																	const Image& image,
+																	const Buffer& stagingBuffer );
+	static vk::SubmitInfo						createSubmitInfo(const vk::CommandBuffer& cmdBuffer);
+};
+
 
 
 }

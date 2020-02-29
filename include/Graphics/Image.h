@@ -24,14 +24,14 @@ public:
 	Image& 									operator=(Image&& other) = default;
 
 	const std::vector<vk::UniqueImage>&		getImages() const;
-	const std::vector<size_t>&				getOffsets() const;
+	const std::vector<std::pair<size_t, size_t>>& getPlanes() const;
 	const vk::DeviceMemory&					getMemory() const;
 	const std::vector<vk::UniqueImageView>&	getImageViews() const;
 
 private:
 	struct Memory {
 		vk::UniqueDeviceMemory				memory;
-		std::vector<size_t>					offsets;
+		std::vector<std::pair<size_t, size_t>> planes;
 	};
 
 	std::vector<vk::UniqueImage> 			m_images;

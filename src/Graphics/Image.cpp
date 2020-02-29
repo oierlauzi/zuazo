@@ -19,8 +19,8 @@ const std::vector<vk::UniqueImage>& Image::getImages() const{
 	return m_images;
 }
 
-const std::vector<size_t>& Image::getOffsets() const {
-	return m_memory.offsets;
+const std::vector<std::pair<size_t, size_t>>& Image::getPlanes() const {
+	return m_memory.planes;
 }
 
 const vk::DeviceMemory& Image::getMemory() const {
@@ -70,7 +70,7 @@ Image::Memory Image::allocateMemory(const Vulkan& vulkan,
 	Memory result;
 	vk::MemoryRequirements requirements(0, 1, ~(0U));
 
-	result.offsets.reserve(images.size());
+	result.planes.reserve(images.size());
 
 	//Combine all fields and evaluate offsets
 	for(size_t i = 0; i < images.size(); i++){
@@ -80,7 +80,7 @@ Image::Memory Image::allocateMemory(const Vulkan& vulkan,
 			//Padding is required for alignment
 			requirements.size = (requirements.size / req.alignment + 1) * req.alignment;
 		}
-		result.offsets.emplace_back(requirements.size);
+		result.planes.emplace_back(requirements.size, req.size);
 
 		requirements.size += req.size;
 		requirements.memoryTypeBits &= req.memoryTypeBits;
@@ -91,7 +91,7 @@ Image::Memory Image::allocateMemory(const Vulkan& vulkan,
 
 	//Bind image's memory
 	for(size_t i = 0; i < images.size(); i++){
-		vulkan.getDevice().bindImageMemory(*(images[i]), *result.memory, result.offsets[i], vulkan.getDispatcher());
+		vulkan.getDevice().bindImageMemory(*(images[i]), *result.memory, result.planes[i].first, vulkan.getDispatcher());
 	}
 
 	return result;

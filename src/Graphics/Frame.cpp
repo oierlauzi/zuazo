@@ -1,19 +1,17 @@
 #include <Graphics/Frame.h>
 
+#include <Graphics/MappedMemory.h>
 #include <Exception.h>
 
 namespace Zuazo::Graphics {
 
 Frame::Frame(	const Vulkan& vulkan,
 				Image&& image,
-				std::shared_ptr<const Buffer>&& colorTransfer,
-				std::unique_ptr<Data>&& data )
+				std::shared_ptr<const Buffer>&& colorTransfer )
 	: m_vulkan(vulkan)
-	, m_readySemaphore(m_vulkan.createSemaphore())
 	, m_readyFence(m_vulkan.createFence(true))
 	, m_image(std::move(image))
 	, m_colorTransfer(std::move(colorTransfer))
-	, m_data(std::move(data))
 	, m_descriptorPool(createDescriptorPool(m_vulkan))
 	, m_descriptorSets(allocateDescriptorSets(m_vulkan, *m_descriptorPool))
 {
@@ -75,14 +73,6 @@ Frame::~Frame(){
 	);
 }
 
-vk::Semaphore& Frame::getReadySemaphore(){
-	return *m_readySemaphore;
-}
-
-const vk::Semaphore& Frame::getReadySemaphore() const{
-	return *m_readySemaphore;
-}
-
 
 vk::Fence& Frame::getReadyFence() {
 	return *m_readyFence;
@@ -108,16 +98,6 @@ const Buffer& Frame::getColorTransfer() const {
 }
 
 
-Frame::Data& Frame::getData() {
-	return *m_data;
-}
-
-const Frame::Data& Frame::getData() const {
-	return *m_data;
-}
-
-
-
 void Frame::bind( 	vk::CommandBuffer cmd,
 					vk::PipelineBindPoint bindPoint,
 					vk::PipelineLayout layout,
@@ -136,6 +116,155 @@ void Frame::bind( 	vk::CommandBuffer cmd,
 		{},								//Dynamic offsets
 		m_vulkan.getDispatcher()
 	);
+}
+
+
+
+
+std::shared_ptr<Buffer> Frame::createColorTransferBuffer( 	const Vulkan& vulkan,
+															const ColorTransfer& colorTransfer )
+{
+	//Create the buffer
+	constexpr vk::BufferUsageFlags usageFlags =
+		vk::BufferUsageFlagBits::eUniformBuffer |
+		vk::BufferUsageFlagBits::eTransferDst;
+
+	constexpr vk::MemoryPropertyFlags memoryFlags =
+		vk::MemoryPropertyFlagBits::eDeviceLocal;
+
+	constexpr size_t size = sizeof(ColorTransfer);
+
+	Buffer result(
+		vulkan,
+		usageFlags,
+		memoryFlags,
+		size
+	);
+ 
+	//Create a staging buffer. Using this technique due to preferably having
+	//device memory allocated for the UBO as it will be only written once and
+	//read frequently
+	constexpr vk::BufferUsageFlags stagingUsageFlags =
+		vk::BufferUsageFlagBits::eTransferSrc;
+
+	constexpr vk::MemoryPropertyFlags stagingMemoryFlags =
+		vk::MemoryPropertyFlagBits::eHostVisible;
+
+	Buffer stagingBuffer(
+		vulkan,
+		stagingUsageFlags,
+		stagingMemoryFlags,
+		size
+	);
+
+	//Upload the contents to the staging buffer
+	{
+		MappedMemory mapping(
+			vulkan,
+			vk::MappedMemoryRange(
+				stagingBuffer.getDeviceMemory(),
+				0, VK_WHOLE_SIZE
+			)
+		);
+
+		std::memcpy(
+			mapping.data(),
+			&colorTransfer,
+			size
+		);
+
+		mapping.flush();
+	}
+
+	//Create a command pool and a command buffer for uploading it
+	const vk::CommandPoolCreateInfo cpCreateInfo(
+		{},													//Flags
+		vulkan.getTransferQueueIndex()						//Queue index
+	);
+
+	const auto commandPool = vulkan.createCommandPool(cpCreateInfo);
+
+	const vk::CommandBufferAllocateInfo cbAllocInfo(
+		*commandPool,
+		vk::CommandBufferLevel::ePrimary,
+		1
+	);
+
+	vk::CommandBuffer cmdBuffer;
+	vulkan.getDevice().allocateCommandBuffers(
+		&cbAllocInfo, 
+		&cmdBuffer, 
+		vulkan.getDispatcher()
+	);
+
+	//Record the command buffer
+	constexpr vk::CommandBufferUsageFlags cbUsage =
+		vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+
+	const vk::CommandBufferBeginInfo cbBeginInfo(
+		cbUsage,
+		nullptr
+	);
+
+	cmdBuffer.begin(cbBeginInfo, vulkan.getDispatcher()); 
+	{
+		cmdBuffer.copyBuffer(
+			stagingBuffer.getBuffer(),
+			result.getBuffer(),
+			vk::BufferCopy(0, 0, size),
+			vulkan.getDispatcher()
+		);
+
+		if(vulkan.getTransferQueueIndex() != vulkan.getGraphicsQueueIndex()) {
+			//Change the ownership to the graphics queue
+			const vk::BufferMemoryBarrier memoryBarrier(
+				{},								//Old access mask
+				{},								//New access mask
+				vulkan.getTransferQueueIndex(),	//Old queue family
+				vulkan.getGraphicsQueueIndex(), //New queue family
+				result.getBuffer(),				//Buffer
+				0, VK_WHOLE_SIZE				//Range
+			);
+
+			constexpr vk::PipelineStageFlags sourceStages = 
+				vk::PipelineStageFlagBits::eTransfer;
+
+			constexpr vk::PipelineStageFlags destinationStages = 
+				vk::PipelineStageFlagBits::eAllGraphics;
+			
+			cmdBuffer.pipelineBarrier(
+				sourceStages,					//Generating stages
+				destinationStages,				//Consuming stages
+				{},								//dependency flags
+				{},								//Memory barriers
+				memoryBarrier,					//Buffer memory barriers
+				{},								//Image memory barriers
+				vulkan.getDispatcher()
+			);
+		}
+	}
+	cmdBuffer.end(vulkan.getDispatcher());
+
+	//Submit the command buffer
+	const auto uploadFence = vulkan.createFence();
+	const vk::SubmitInfo submitInfo(
+		0, nullptr,							//Wait semaphores
+		nullptr,							//Pipeline stages
+		1, &cmdBuffer,						//Command buffers
+		0, nullptr							//Signal semaphores
+	);
+
+	vulkan.getTransferQueue().submit(submitInfo, *uploadFence, vulkan.getDispatcher());
+
+	//Wait for completion
+	vulkan.getDevice().waitForFences(
+		*uploadFence, 
+		true, 
+		std::numeric_limits<uint64_t>::max(),
+		vulkan.getDispatcher()
+	);
+
+	return std::make_shared<Buffer>(std::move(result));
 }
 
 
