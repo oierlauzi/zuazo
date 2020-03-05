@@ -2,9 +2,7 @@
 #include <Graphics/VulkanConversions.h>
 #include <Graphics/VulkanUtils.h>
 #include <Graphics/ColorTransfer.h>
-
-#include <Window_frag.h>
-#include <Window_vert.h>
+#include <Graphics/Uploader.h>
 
 #include <cmath>
 #include <algorithm>
@@ -12,47 +10,55 @@
 namespace Zuazo::Outputs {
 
 void Window::open(){
-	Implementation impl;
-
 	const auto& videoMode = getVideoMode();
 	const auto& vulkan = getInstance().getVulkan();
 	const auto[requestedExtent, requestedSurfaceFormat] = getVulkanVideoMode();
 
 	//Create the window and its surface
-	impl.window = Graphics::GLFW::Window(videoMode.resolution, getName());
-	impl.surface = impl.window.getSurface(vulkan);
+	auto window = Graphics::GLFW::Window(videoMode.resolution, getName());
+	auto surface = window.getSurface(vulkan);
 
 	//Evaluate the actual video mode
-	const auto surfaceCapabilities = vulkan.getPhysicalDevice().getSurfaceCapabilitiesKHR(*impl.surface, vulkan.getDispatcher());
-	const auto surfaceFormats = vulkan.getPhysicalDevice().getSurfaceFormatsKHR(*impl.surface, vulkan.getDispatcher());
+	const auto surfaceCapabilities = vulkan.getPhysicalDevice().getSurfaceCapabilitiesKHR(*surface, vulkan.getDispatcher());
+	const auto surfaceFormats = vulkan.getPhysicalDevice().getSurfaceFormatsKHR(*surface, vulkan.getDispatcher());
 	const auto extent = getExtent(surfaceCapabilities, requestedExtent);
 	const auto surfaceFormat = getSurfaceFormat(surfaceFormats, requestedSurfaceFormat);
 
 	//Create the swapchain and retrieve images from it
-	impl.swapchain = createSwapchain(vulkan, *impl.surface, extent, surfaceFormat, surfaceCapabilities);
-	impl.swapchainImageViews = createImageViews(vulkan, *impl.swapchain, surfaceFormat.format);
+	auto swapchain = createSwapchain(vulkan, *surface, extent, surfaceFormat, surfaceCapabilities);
+	auto swapchainImageViews = createImageViews(vulkan, *swapchain, surfaceFormat.format);
 
 	//Create the renderpass and pipeline
-	impl.renderPass = createRenderPass(vulkan, surfaceFormat.format);
-	impl.pipelineLayout = createPipelineLayout(vulkan);
-	impl.pipeline = createPipeline(vulkan, *impl.renderPass, *impl.pipelineLayout, extent);
-	impl.framebuffers = createFramebuffers(vulkan, *impl.renderPass, impl.swapchainImageViews, extent);
+	auto renderPass = createRenderPass(vulkan, surfaceFormat.format);
+	auto pipelineLayout = createPipelineLayout(vulkan);
+	auto pipeline = createPipeline(vulkan, *renderPass, *pipelineLayout, extent);
+	auto framebuffers = createFramebuffers(vulkan, *renderPass, swapchainImageViews, extent);
 
 	//Create command pool and command buffers
-	impl.commandPool = createCommandPool(vulkan);
-	impl.commandBuffers = createCommandBuffers(vulkan, *impl.commandPool, impl.framebuffers.size());
-
-	//Create the semaphores and the fence
-	impl.imageAvailableSemaphore = vulkan.createSemaphore();
-	impl.renderFinishedSemaphore = vulkan.createSemaphore();
-	impl.renderFinishedFence = vulkan.createFence(true);
+	auto commandPool = createCommandPool(vulkan);
+	auto commandBuffers = createCommandBuffers(vulkan, *commandPool, framebuffers.size());
 
 	//Write the data to the class
 	if((requestedExtent != extent) || (requestedSurfaceFormat != surfaceFormat)){
 		//Video mode has changed
 	}
 
-	m_implementation = std::make_unique<Implementation>(std::move(impl));
+	m_implementation = std::make_unique<Implementation>(Implementation{
+		std::move(window),
+		Graphics::Frame::Geometry(vulkan, videoMode.resolution),
+		std::move(surface),
+		std::move(swapchain),
+		std::move(swapchainImageViews),
+		std::move(renderPass),
+		std::move(pipelineLayout),
+		std::move(pipeline),
+		std::move(framebuffers),
+		std::move(commandPool),
+		std::move(commandBuffers),
+		vulkan.createSemaphore(),
+		vulkan.createSemaphore(),
+		vulkan.createFence(true)
+	});
 
 	//Setup callbacks
 	m_implementation->window.setResolutionCallback([this] (Resolution res){
@@ -145,6 +151,30 @@ void Window::drawFrameProvisional(){
 	const auto& vulkan = getInstance().getVulkan();
 	const auto& impl = *m_implementation;
 
+	Graphics::Uploader uplo(
+		vulkan,
+		Zuazo::Graphics::Uploader::getDescriptor(
+            vulkan,
+            {1280, 720},
+            Zuazo::ColorSubsampling::CHROMA_444,
+            Zuazo::ColorFormat::R8G8B8A8,
+            Zuazo::ColorRange::FULL,
+            Zuazo::ColorTransferFunction::LINEAR,
+            Zuazo::ColorModel::RGB,
+            Zuazo::ColorPrimaries::BT709
+        )
+	);
+	const auto frame = uplo.acquireFrame();
+	const auto& pixels = frame->getPixelData();
+	for(size_t i = 0; i < pixels[0].size(); i+=4){
+		pixels[0][i + 0] = static_cast<std::byte>(rand());
+		pixels[0][i + 1] = static_cast<std::byte>(rand());
+		pixels[0][i + 2] = static_cast<std::byte>(rand());
+		pixels[0][i + 3] = static_cast<std::byte>(0xff);
+	}
+
+	frame->flush();
+
 	std::lock_guard<std::mutex> lock(m_resizeMutex);
 
 	//Wait for the previous rendering to be completed
@@ -183,6 +213,13 @@ void Window::drawFrameProvisional(){
 	cmdBuffer.beginRenderPass(rendBegin, vk::SubpassContents::eInline, vulkan.getDispatcher());
 	cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *impl.pipeline, vulkan.getDispatcher());
 
+	frame->bind(
+		cmdBuffer,
+		vk::PipelineBindPoint::eGraphics,
+		*(impl.pipelineLayout),
+		0,
+		vk::Filter::eNearest
+	);
 	cmdBuffer.draw(4, 1, 0, 0, vulkan.getDispatcher());
 
 	cmdBuffer.endRenderPass(vulkan.getDispatcher());
@@ -240,6 +277,8 @@ void Window::drawFrameProvisional(){
 	default:
 		return;
 	}
+
+	vulkan.getDevice().waitIdle(vulkan.getDispatcher());
 }
 
 
@@ -370,7 +409,7 @@ vk::UniqueRenderPass Window::createRenderPass(	const Graphics::Vulkan& vulkan,
 }
 
 vk::UniquePipelineLayout Window::createPipelineLayout(const Graphics::Vulkan& vulkan) {
-	constexpr vk::Filter filter = vk::Filter::eLinear; //TODO
+	constexpr vk::Filter filter = vk::Filter::eNearest; //TODO
 
 	std::array layouts = {
 		vulkan.getColorTransferDescriptorSetLayout(filter)
@@ -390,6 +429,9 @@ vk::UniquePipeline Window::createPipeline(	const Graphics::Vulkan& vulkan,
 											vk::PipelineLayout layout,
 											const vk::Extent2D& extent )
 {
+	#include <Window_vert.h>
+	#include <Window_frag.h>
+
 	const auto vertexShader = vulkan.createShader(Window_vert);
 	const auto fragmentShader = vulkan.createShader(Window_frag);
 
@@ -501,6 +543,7 @@ vk::UniquePipeline Window::createPipeline(	const Graphics::Vulkan& vulkan,
 		0, nullptr											//Dynamis states
 	);
 
+	const uint32_t inheritId = static_cast<uint32_t>(typeid(Window).hash_code());
 	const vk::GraphicsPipelineCreateInfo createInfo(
 		{},													//Flags
 		shaderStages.size(), shaderStages.data(),			//Shader stages
@@ -515,10 +558,10 @@ vk::UniquePipeline Window::createPipeline(	const Graphics::Vulkan& vulkan,
 		&dynamicState,										//Dynamic states
 		layout,												//Pipeline layout
 		renderPass, 0,										//Renderpasses
-		nullptr, -1											//Inherit //TODO
+		nullptr, inheritId									//Inherit
 	);
 
-	return vulkan.createGraphicsPipeline(nullptr, createInfo);
+	return vulkan.createGraphicsPipeline(createInfo);
 }
 
 std::vector<vk::UniqueFramebuffer> Window::createFramebuffers(	const Graphics::Vulkan& vulkan,

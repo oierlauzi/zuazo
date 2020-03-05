@@ -1,6 +1,6 @@
 #version 450
 
-layout(location = 0) out vec4 ex_color;
+layout(location = 0) out vec2 ex_texCoord;
 
 void main() {
 	const vec2 positions[] = {
@@ -10,13 +10,13 @@ void main() {
 		vec2(+1.0, +1.0)
 	};
 
-	const vec4 colors[] = {
-		vec4(1.0f, 0.0f, 0.0f, 1.0f),
-		vec4(0.0f, 1.0f, 0.0f, 1.0f),
-		vec4(0.0f, 0.0f, 1.0f, 1.0f),
-		vec4(1.0f, 1.0f, 1.0f, 1.0f)
+	const vec2 colors[] = {
+		vec2(0.0f, 0.0f ),
+		vec2(0.0f, 1.0f ),
+		vec2(1.0f, 0.0f ),
+		vec2(1.0f, 1.0f )
 	};
 
     gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);
-	ex_color = colors[gl_VertexIndex];
+	ex_texCoord = colors[gl_VertexIndex];
 }

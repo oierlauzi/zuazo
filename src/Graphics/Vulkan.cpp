@@ -150,6 +150,10 @@ vk::Queue Vulkan::getPresentationQueue() const{
 	return m_queues[PRESENTATION_QUEUE];
 }
 
+vk::PipelineCache Vulkan::getPipelineCache() const {
+	return *m_pipelineCache;
+}
+
 const Vulkan::FormatSupport& Vulkan::getFormatSupport() const{
 	return m_formatSupport;
 }
@@ -201,10 +205,9 @@ vk::UniquePipelineLayout Vulkan::createPipelineLayout(const vk::PipelineLayoutCr
 	return m_device->createPipelineLayoutUnique(createInfo, nullptr, m_dispatcher);
 }
 
-vk::UniquePipeline Vulkan::createGraphicsPipeline(	vk::PipelineCache cache,
-													const vk::GraphicsPipelineCreateInfo& createInfo ) const 
+vk::UniquePipeline Vulkan::createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& createInfo ) const 
 {
-	return m_device->createGraphicsPipelineUnique(cache, createInfo, nullptr, m_dispatcher);
+	return m_device->createGraphicsPipelineUnique(*m_pipelineCache, createInfo, nullptr, m_dispatcher);
 }
 
 vk::UniqueFramebuffer Vulkan::createFramebuffer(const vk::FramebufferCreateInfo& createInfo) const{
@@ -523,6 +526,17 @@ std::array<vk::Queue, Vulkan::QUEUE_NUM> Vulkan::getQueues(	const vk::DispatchLo
 	}
 
 	return queues;
+}
+
+vk::UniquePipelineCache Vulkan::createPipelineCache(const vk::DispatchLoaderDynamic& disp, 
+													vk::Device device )
+{
+	const vk::PipelineCacheCreateInfo createInfo(
+		{},															//Flags
+		0, nullptr													//Data
+	);
+
+	return device.createPipelineCacheUnique(createInfo, nullptr, disp);
 }
 
 Vulkan::FormatSupport Vulkan::getFormatSupport(	const vk::DispatchLoaderDynamic& disp, 

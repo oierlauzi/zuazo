@@ -3,6 +3,7 @@
 #include "../ZuazoBase.h"
 #include "../Graphics/GLFW.h"
 #include "../Graphics/Vulkan.h"
+#include "../Graphics/Frame.h"
 #include "../Signal/Input.h"
 
 #include <memory>
@@ -23,6 +24,7 @@ public:
 private:
 	struct Implementation {
 		Graphics::GLFW::Window						window;
+		Graphics::Frame::Geometry					geometry;
 		vk::UniqueSurfaceKHR						surface;
 		vk::UniqueSwapchainKHR						swapchain;
 		std::vector<vk::UniqueImageView>			swapchainImageViews;

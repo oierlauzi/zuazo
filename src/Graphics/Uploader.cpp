@@ -300,12 +300,8 @@ vk::UniqueCommandBuffer Uploader::Frame::createCommandBuffer(	const Vulkan& vulk
 		1
 	);
 
-	auto cmdBuffers = vulkan.getDevice().allocateCommandBuffersUnique(
-		cbAllocInfo, 
-		vulkan.getDispatcher()
-	);
-
-	const auto& cmdBuffer = *(cmdBuffers[0]);
+	auto cmdBuffers = vulkan.allocateCommnadBuffers(cbAllocInfo);
+	auto& cmdBuffer = *(cmdBuffers[0]);
 
 	//Record the command buffer
 	const vk::CommandBufferBeginInfo cbBeginInfo(
@@ -315,7 +311,7 @@ vk::UniqueCommandBuffer Uploader::Frame::createCommandBuffer(	const Vulkan& vulk
 
 	cmdBuffer.begin(cbBeginInfo, vulkan.getDispatcher()); 
 	{
-		const bool familyOwnershipTransfer = vulkan.getTransferQueueIndex() == vulkan.getGraphicsQueueIndex();
+		const bool queueOwnershipTransfer = vulkan.getTransferQueueIndex() != vulkan.getGraphicsQueueIndex();
 		const auto& images = image.getImages();
 		std::vector<vk::ImageMemoryBarrier> memoryBarriers(images.size());
 		constexpr vk::ImageSubresourceRange imageSubresourceRange(
@@ -328,8 +324,8 @@ vk::UniqueCommandBuffer Uploader::Frame::createCommandBuffer(	const Vulkan& vulk
 			constexpr vk::AccessFlags srcAccess = {};
 			constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eTransferWrite;
 
-			const auto srcFamily = familyOwnershipTransfer ? vulkan.getGraphicsQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
-			const auto dstFamily = familyOwnershipTransfer ? vulkan.getTransferQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
+			const auto srcFamily = VK_QUEUE_FAMILY_IGNORED;
+			const auto dstFamily = queueOwnershipTransfer ? vulkan.getTransferQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
 
 			memoryBarriers[i] = vk::ImageMemoryBarrier(
 				srcAccess,								//Old access mask
@@ -383,8 +379,8 @@ vk::UniqueCommandBuffer Uploader::Frame::createCommandBuffer(	const Vulkan& vulk
 			constexpr vk::AccessFlags srcAccess = vk::AccessFlagBits::eTransferWrite;
 			constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eShaderRead;
 
-			const auto srcFamily = familyOwnershipTransfer ? vulkan.getTransferQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
-			const auto dstFamily = familyOwnershipTransfer ? vulkan.getGraphicsQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
+			const auto srcFamily = queueOwnershipTransfer ? vulkan.getTransferQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
+			const auto dstFamily = queueOwnershipTransfer ? vulkan.getGraphicsQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
 
 			memoryBarriers[i] = vk::ImageMemoryBarrier(
 				srcAccess,								//Old access mask

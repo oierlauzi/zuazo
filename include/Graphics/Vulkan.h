@@ -8,12 +8,12 @@
 #include <map>
 #include <optional>
 #include <span>
+#include <unordered_map>
+#include <cstdint>
 
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #define VULKAN_HPP_DEFAULT_DISPATCHER void()
 #include <vulkan/vulkan.hpp>
-
-#include <cstdint>
 
 namespace Zuazo::Graphics {
 
@@ -45,6 +45,7 @@ public:
 	vk::Queue										getTransferQueue() const;
 	uint32_t										getPresentationQueueIndex() const;
 	vk::Queue										getPresentationQueue() const;
+	vk::PipelineCache								getPipelineCache() const;
 	const FormatSupport&							getFormatSupport() const;
 	vk::Sampler										getSampler(vk::Filter filter) const;
 	vk::DescriptorSetLayout							getColorTransferDescriptorSetLayout(vk::Filter filter) const;
@@ -57,8 +58,7 @@ public:
 	vk::UniqueRenderPass							createRenderPass(const vk::RenderPassCreateInfo& createInfo) const;
 	vk::UniqueShaderModule							createShader(const std::span<const uint32_t>& code) const;
 	vk::UniquePipelineLayout						createPipelineLayout(const vk::PipelineLayoutCreateInfo& createInfo) const;
-	vk::UniquePipeline								createGraphicsPipeline(	vk::PipelineCache cache,
-																			const vk::GraphicsPipelineCreateInfo& createInfo ) const;
+	vk::UniquePipeline								createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& createInfo ) const;
 	vk::UniqueFramebuffer							createFramebuffer(const vk::FramebufferCreateInfo& createInfo) const;
 	vk::UniqueCommandPool							createCommandPool(const vk::CommandPoolCreateInfo& createInfo) const;
 	std::vector<vk::UniqueCommandBuffer>			allocateCommnadBuffers(const vk::CommandBufferAllocateInfo& allocInfo) const;
@@ -91,6 +91,7 @@ private:
 	std::array<uint32_t, QUEUE_NUM>					m_queueIndices;
 	vk::UniqueDevice								m_device;
 	std::array<vk::Queue, QUEUE_NUM>				m_queues;
+	vk::UniquePipelineCache							m_pipelineCache;
 	FormatSupport									m_formatSupport;
 	Samplers										m_samplers;
 	ColorTransferDescriporSetLayouts				m_colorTransferDescriptorSetLayouts;
@@ -113,6 +114,8 @@ private:
 	static std::array<vk::Queue, QUEUE_NUM>			getQueues(	const vk::DispatchLoaderDynamic& disp, 
 																vk::Device device, 
 																const std::array<uint32_t, QUEUE_NUM>& queueIndices);
+	static vk::UniquePipelineCache					createPipelineCache(const vk::DispatchLoaderDynamic& disp, 
+																		vk::Device device );
 	static FormatSupport							getFormatSupport(	const vk::DispatchLoaderDynamic& disp, 
 																		vk::PhysicalDevice physicalDevice );
 	static Samplers 								createSamplers(	const vk::DispatchLoaderDynamic& disp, 
