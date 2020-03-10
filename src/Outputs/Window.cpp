@@ -9,6 +9,8 @@
 
 namespace Zuazo::Outputs {
 
+const size_t Window::typeIndentfier = static_cast<uint32_t>(typeid(Window).hash_code());
+
 void Window::open(){
 	const auto& videoMode = getVideoMode();
 	const auto& vulkan = getInstance().getVulkan();
@@ -16,6 +18,7 @@ void Window::open(){
 
 	//Create the window and its surface
 	auto window = Graphics::GLFW::Window(videoMode.resolution, getName());
+	auto geometry = Graphics::Frame::Geometry(vulkan, VERTEX_BUFFER_BINDING, videoMode.resolution);
 	auto surface = window.getSurface(vulkan);
 
 	//Evaluate the actual video mode
@@ -31,7 +34,7 @@ void Window::open(){
 	//Create the renderpass and pipeline
 	auto renderPass = createRenderPass(vulkan, surfaceFormat.format);
 	auto pipelineLayout = createPipelineLayout(vulkan);
-	auto pipeline = createPipeline(vulkan, *renderPass, *pipelineLayout, extent);
+	auto pipeline = createPipeline(vulkan, geometry, *renderPass, pipelineLayout, extent);
 	auto framebuffers = createFramebuffers(vulkan, *renderPass, swapchainImageViews, extent);
 
 	//Create command pool and command buffers
@@ -45,12 +48,12 @@ void Window::open(){
 
 	m_implementation = std::make_unique<Implementation>(Implementation{
 		std::move(window),
-		Graphics::Frame::Geometry(vulkan, videoMode.resolution),
+		std::move(geometry),
 		std::move(surface),
 		std::move(swapchain),
 		std::move(swapchainImageViews),
 		std::move(renderPass),
-		std::move(pipelineLayout),
+		pipelineLayout,
 		std::move(pipeline),
 		std::move(framebuffers),
 		std::move(commandPool),
@@ -139,7 +142,7 @@ void Window::recreate(){
 	impl.swapchain = createSwapchain(vulkan, *impl.surface, extent, surfaceFormat, surfaceCapabilities, *impl.swapchain);
 	impl.swapchainImageViews = createImageViews(vulkan, *impl.swapchain, surfaceFormat.format);
 	impl.renderPass = createRenderPass(vulkan, surfaceFormat.format);
-	impl.pipeline = createPipeline(vulkan, *impl.renderPass, *impl.pipelineLayout, extent);
+	impl.pipeline = createPipeline(vulkan, impl.geometry, *impl.renderPass, createPipelineLayout(vulkan), extent);
 	impl.framebuffers = createFramebuffers(vulkan, *impl.renderPass, impl.swapchainImageViews, extent);
 	impl.commandBuffers = createCommandBuffers(vulkan, *impl.commandPool, impl.framebuffers.size());
 }
@@ -149,7 +152,7 @@ void Window::recreate(){
 
 void Window::drawFrameProvisional(){
 	const auto& vulkan = getInstance().getVulkan();
-	const auto& impl = *m_implementation;
+	auto& impl = *m_implementation;
 
 	Graphics::Uploader uplo(
 		vulkan,
@@ -174,6 +177,7 @@ void Window::drawFrameProvisional(){
 	}
 
 	frame->flush();
+	impl.geometry.upd();
 
 	std::lock_guard<std::mutex> lock(m_resizeMutex);
 
@@ -213,10 +217,12 @@ void Window::drawFrameProvisional(){
 	cmdBuffer.beginRenderPass(rendBegin, vk::SubpassContents::eInline, vulkan.getDispatcher());
 	cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *impl.pipeline, vulkan.getDispatcher());
 
+	impl.geometry.bind(cmdBuffer);
+
+
 	frame->bind(
 		cmdBuffer,
-		vk::PipelineBindPoint::eGraphics,
-		*(impl.pipelineLayout),
+		impl.pipelineLayout,
 		0,
 		vk::Filter::eNearest
 	);
@@ -408,8 +414,10 @@ vk::UniqueRenderPass Window::createRenderPass(	const Graphics::Vulkan& vulkan,
 	return vulkan.createRenderPass(createInfo);
 }
 
-vk::UniquePipelineLayout Window::createPipelineLayout(const Graphics::Vulkan& vulkan) {
+vk::PipelineLayout Window::createPipelineLayout(const Graphics::Vulkan& vulkan) {
 	constexpr vk::Filter filter = vk::Filter::eNearest; //TODO
+	const size_t pipelineId = typeIndentfier ^ (static_cast<size_t>(filter));
+
 
 	std::array layouts = {
 		vulkan.getColorTransferDescriptorSetLayout(filter)
@@ -421,38 +429,49 @@ vk::UniquePipelineLayout Window::createPipelineLayout(const Graphics::Vulkan& vu
 		0, nullptr											//Push constants
 	);
 
-	return vulkan.createPipelineLayout(createInfo);
+	return vulkan.createPipelineLayout(createInfo, pipelineId);
 }
 
 vk::UniquePipeline Window::createPipeline(	const Graphics::Vulkan& vulkan,
+											const Graphics::Frame::Geometry& geom,
 											vk::RenderPass renderPass,
 											vk::PipelineLayout layout,
 											const vk::Extent2D& extent )
 {
+	static //So that its ptr can be used as an indentifier
 	#include <Window_vert.h>
+	static
 	#include <Window_frag.h>
 
-	const auto vertexShader = vulkan.createShader(Window_vert);
-	const auto fragmentShader = vulkan.createShader(Window_frag);
+	const auto vertexShader = vulkan.createShader(Window_vert, reinterpret_cast<size_t>(Window_vert));
+	const auto fragmentShader = vulkan.createShader(Window_frag, reinterpret_cast<size_t>(Window_frag));
 
 	constexpr auto SHADER_ENTRY_POINT = "main";
 	const std::array shaderStages = {
 		vk::PipelineShaderStageCreateInfo(		
 			{},												//Flags
 			vk::ShaderStageFlagBits::eVertex,				//Shader type
-			*vertexShader,									//Shader handle
+			vertexShader,									//Shader handle
 			SHADER_ENTRY_POINT ),							//Shader entry point
 		vk::PipelineShaderStageCreateInfo(		
 			{},												//Flags
 			vk::ShaderStageFlagBits::eFragment,				//Shader type
-			*fragmentShader,								//Shader handle
+			fragmentShader,									//Shader handle
 			SHADER_ENTRY_POINT ),							//Shader entry point
+	};
+
+	const std::array vertexBindings = {
+		geom.getBindingDescription()
+	};
+
+	const std::array vertexAttributes = {
+		geom.getAttributeDescriptions(VERTEX_POSITION, VERTEX_TEXCOORD)
 	};
 
 	const vk::PipelineVertexInputStateCreateInfo vertexInput(
 		{},
-		0, nullptr,											//Vertex bindings
-		0, nullptr											//Vertex attributes
+		vertexBindings.size(), vertexBindings.data(),		//Vertex bindings
+		vertexAttributes.size(), vertexAttributes.data()	//Vertex attributes
 	);
 
 	const vk::PipelineInputAssemblyStateCreateInfo inputAssembly(

@@ -192,17 +192,41 @@ vk::UniqueRenderPass Vulkan::createRenderPass(const vk::RenderPassCreateInfo& cr
 	return m_device->createRenderPassUnique(createInfo, nullptr, m_dispatcher);
 }
 
-vk::UniqueShaderModule Vulkan::createShader(const std::span<const uint32_t>& code) const {
-	const vk::ShaderModuleCreateInfo createInfo(
-		{},												//Flags
-		code.size_bytes(), code.data()					//Code
-	);
+vk::ShaderModule Vulkan::createShader(	const std::span<const uint32_t>& code,
+										size_t id ) const
+{
+	auto ite = m_shaders.find(id);
 
-	return m_device->createShaderModuleUnique(createInfo, nullptr, m_dispatcher);
+	if(ite == m_shaders.cend()){
+		const vk::ShaderModuleCreateInfo createInfo(
+			{},												//Flags
+			code.size_bytes(), code.data()					//Code
+		);
+
+		std::tie(ite, std::ignore) = m_shaders.emplace(
+			id,
+			m_device->createShaderModuleUnique(createInfo, nullptr, m_dispatcher)
+		);
+	}
+
+	assert(ite != m_shaders.cend());
+	return *(ite->second);
 }
 
-vk::UniquePipelineLayout Vulkan::createPipelineLayout(const vk::PipelineLayoutCreateInfo& createInfo) const{
-	return m_device->createPipelineLayoutUnique(createInfo, nullptr, m_dispatcher);
+vk::PipelineLayout Vulkan::createPipelineLayout(const vk::PipelineLayoutCreateInfo& createInfo,
+												size_t id ) const
+{
+	auto ite = m_pipelineLayouts.find(id);
+
+	if(ite == m_pipelineLayouts.cend()){
+		std::tie(ite, std::ignore) = m_pipelineLayouts.emplace(
+			id,
+			m_device->createPipelineLayoutUnique(createInfo, nullptr, m_dispatcher)
+		);
+	}
+
+	assert(ite != m_pipelineLayouts.cend());
+	return *(ite->second);
 }
 
 vk::UniquePipeline Vulkan::createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& createInfo ) const 

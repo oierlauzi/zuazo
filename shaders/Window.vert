@@ -1,5 +1,8 @@
 #version 450
 
+layout(location = 0) in vec2 in_position;
+layout(location = 1) in vec2 in_texCoord;
+
 layout(location = 0) out vec2 ex_texCoord;
 
 void main() {
@@ -17,6 +20,6 @@ void main() {
 		vec2(1.0f, 1.0f )
 	};
 
-    gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);
-	ex_texCoord = colors[gl_VertexIndex];
+    gl_Position = vec4(in_position, 0.0, 1.0);
+	ex_texCoord = in_texCoord;
 }

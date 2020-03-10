@@ -99,7 +99,6 @@ const Buffer& Frame::getColorTransfer() const {
 
 
 void Frame::bind( 	vk::CommandBuffer cmd,
-					vk::PipelineBindPoint bindPoint,
 					vk::PipelineLayout layout,
 					uint32_t index,
 					vk::Filter filter ) 
@@ -109,11 +108,11 @@ void Frame::bind( 	vk::CommandBuffer cmd,
 	};
 
 	cmd.bindDescriptorSets(
-		bindPoint,						//Pipeline bind point
-		layout,							//Pipeline layout
-		index,							//First index
-		descriptorSets,					//Descriptor sets
-		{},								//Dynamic offsets
+		vk::PipelineBindPoint::eGraphics,	//Pipeline bind point
+		layout,								//Pipeline layout
+		index,								//First index
+		descriptorSets,						//Descriptor sets
+		{},									//Dynamic offsets
 		m_vulkan.getDispatcher()
 	);
 }
@@ -329,8 +328,11 @@ Frame::DescriptorSets Frame::allocateDescriptorSets(const Vulkan& vulkan,
 
 
 
-Frame::Geometry::Geometry(const Vulkan& vulkan, const Resolution& resolution)
+Frame::Geometry::Geometry(	const Vulkan& vulkan, 
+							uint32_t binding, 
+							const Resolution& resolution )
 	: m_vulkan(vulkan)
+	, m_binding(binding)
 	, m_dstResolution(resolution)
 	, m_vertexBuffer(createVertexBuffer(m_vulkan))
 	, m_stagingBuffer(createStagingBuffer(m_vulkan))
@@ -345,32 +347,41 @@ Frame::Geometry::Geometry(const Vulkan& vulkan, const Resolution& resolution)
 {
 }
 
-vk::VertexInputBindingDescription Frame::Geometry::getBindingDescription(uint32_t binding) {
+vk::VertexInputBindingDescription Frame::Geometry::getBindingDescription() const{
 	return vk::VertexInputBindingDescription(
-		binding,
+		m_binding,
 		sizeof(Vertex),
 		vk::VertexInputRate::eVertex
 	);
 }
 
-vk::VertexInputAttributeDescription Frame::Geometry::getPositionAttributeDescription(uint32_t binding, uint32_t location) {
-	return vk::VertexInputAttributeDescription(
-		location,
-		binding,
-		vk::Format::eR32G32Sfloat,
-		offsetof(Vertex, position)
-	);
+std::array<vk::VertexInputAttributeDescription, Frame::Geometry::ATTRIBUTE_COUNT> Frame::Geometry::getAttributeDescriptions(uint32_t posLocation, 
+																															uint32_t texLocation ) const
+{
+	return{
+		vk::VertexInputAttributeDescription(
+			posLocation,
+			m_binding,
+			vk::Format::eR32G32Sfloat,
+			offsetof(Vertex, position)
+		),
+		vk::VertexInputAttributeDescription(
+			texLocation,
+			m_binding,
+			vk::Format::eR32G32Sfloat,
+			offsetof(Vertex, texCoord)
+		)
+	};
 }
 
-vk::VertexInputAttributeDescription Frame::Geometry::getTexCoordAttributeDescription(uint32_t binding, uint32_t location) {
-	return vk::VertexInputAttributeDescription(
-		location,
-		binding,
-		vk::Format::eR32G32Sfloat,
-		offsetof(Vertex, texCoord)
+void Frame::Geometry::bind(const vk::CommandBuffer& cmd) const {
+	cmd.bindVertexBuffers(
+		m_binding,									//Binding
+		m_vertexBuffer.getBuffer(),					//Vertex buffers
+		0UL,										//Offsets
+		m_vulkan.getDispatcher()					//Dispathcer
 	);
 }
-
 
 void Frame::Geometry::updateVertexBuffer() {
 	auto* data = reinterpret_cast<Vertex*>(m_stagingBufferMapping.data());
@@ -387,15 +398,28 @@ void Frame::Geometry::updateVertexBuffer() {
 }
 
 void Frame::Geometry::calculateVertices(const std::span<Vertex, VERTEX_COUNT>& vertices) const {
-	std::array testData = { //TODO only for testing
-		Vertex{ glm::vec2(-0.5f, -0.5f), glm::vec2(0.0f, 0.0f) },
-		Vertex{ glm::vec2(-0.5f, +0.5f), glm::vec2(0.0f, 1.0f) },
-		Vertex{ glm::vec2(+0.5f, -0.5f), glm::vec2(1.0f, 0.0f) },
-		Vertex{ glm::vec2(+0.5f, +0.5f), glm::vec2(1.0f, 1.0f) }
-	};
+	auto scale = static_cast<Math::Vec2f>(m_dstResolution) / static_cast<Math::Vec2f>(m_srcResolution); 
 
-	assert(vertices.size() == testData.size());
-	std::memcpy(vertices.data(), testData.data(), BUFFER_SIZE);
+	//TODO modify scale to fit
+
+	auto resolution = static_cast<Math::Vec2f>(m_srcResolution) * scale;
+	auto texSize = static_cast<Math::Vec2f>(m_dstResolution) / resolution;
+	auto resolution = glm::max(resolution, static_cast<Math::Vec2f>(m_dstResolution));
+
+	constexpr std::array vertexPositions = {
+		glm::vec2(-0.5f, -0.5f),
+		glm::vec2(-0.5f, +0.5f),
+		glm::vec2(+0.5f, -0.5f),
+		glm::vec2(+0.5f, +0.5f),
+	};
+	assert(vertexPositions.size() == vertices.size());
+
+	for(size_t i = 0; i < vertexPositions.size(); i++){
+		vertices[i] = Vertex{
+			resolution * vertexPositions[i],
+			texSize * vertexPositions[i] + glm::vec2(0.5f)
+		};
+	}
 }
 
 Buffer Frame::Geometry::createVertexBuffer(const Vulkan& vulkan) {

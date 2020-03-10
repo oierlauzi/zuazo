@@ -56,8 +56,8 @@ public:
 	vk::UniqueImage									createImage(const vk::ImageCreateInfo& createInfo) const;
 	vk::UniqueImageView								createImageView(const vk::ImageViewCreateInfo& createInfo) const;
 	vk::UniqueRenderPass							createRenderPass(const vk::RenderPassCreateInfo& createInfo) const;
-	vk::UniqueShaderModule							createShader(const std::span<const uint32_t>& code) const;
-	vk::UniquePipelineLayout						createPipelineLayout(const vk::PipelineLayoutCreateInfo& createInfo) const;
+	vk::ShaderModule								createShader(const std::span<const uint32_t>& code, size_t id) const;
+	vk::PipelineLayout								createPipelineLayout(const vk::PipelineLayoutCreateInfo& createInfo, size_t id) const;
 	vk::UniquePipeline								createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& createInfo ) const;
 	vk::UniqueFramebuffer							createFramebuffer(const vk::FramebufferCreateInfo& createInfo) const;
 	vk::UniqueCommandPool							createCommandPool(const vk::CommandPoolCreateInfo& createInfo) const;
@@ -95,6 +95,13 @@ private:
 	FormatSupport									m_formatSupport;
 	Samplers										m_samplers;
 	ColorTransferDescriporSetLayouts				m_colorTransferDescriptorSetLayouts;
+
+
+	template<typename T>
+	using HashMap = std::unordered_map<size_t, T>;
+
+	mutable HashMap<vk::UniqueShaderModule>			m_shaders;
+	mutable HashMap<vk::UniquePipelineLayout>		m_pipelineLayouts;
 
 	static vk::DispatchLoaderDynamic				createDispatcher(const vk::DynamicLoader& loader);
 	static vk::UniqueInstance						createInstance(	vk::DispatchLoaderDynamic& disp, 

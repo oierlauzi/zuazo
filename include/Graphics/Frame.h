@@ -35,7 +35,6 @@ public:
 	const Buffer&					getColorTransfer() const;
 
 	void							bind(	vk::CommandBuffer cmd,
-											vk::PipelineBindPoint bindPoint,
 											vk::PipelineLayout layout,
 											uint32_t index,
 											vk::Filter filter );
@@ -73,14 +72,22 @@ public:
 		CLAMP_VERTICALLY
 	};
 
-	Geometry(const Vulkan& vulkan, const Resolution& resolution);
+	static constexpr size_t ATTRIBUTE_COUNT = 2;
+
+	Geometry(	const Vulkan& vulkan, 
+				uint32_t binding, 
+				const Resolution& resolution);
 	Geometry(const Geometry& other) = delete;
 	Geometry(Geometry&& other) = default;
 	~Geometry() = default;
 
-	static vk::VertexInputBindingDescription getBindingDescription(uint32_t binding);
-	static vk::VertexInputAttributeDescription getPositionAttributeDescription(uint32_t binding, uint32_t location);
-	static vk::VertexInputAttributeDescription getTexCoordAttributeDescription(uint32_t binding, uint32_t location);
+	void					upd() { updateVertexBuffer(); }
+
+	vk::VertexInputBindingDescription getBindingDescription() const;
+	std::array<vk::VertexInputAttributeDescription, ATTRIBUTE_COUNT> getAttributeDescriptions(	uint32_t posLocation, 
+																								uint32_t texLocation ) const;
+
+	void bind(const vk::CommandBuffer& cmd) const;
 	
 private:
 	struct Vertex {
@@ -92,6 +99,8 @@ private:
 	static constexpr size_t BUFFER_SIZE = sizeof(Vertex) * VERTEX_COUNT;
 
 	const Vulkan&					m_vulkan;
+
+	uint32_t						m_binding;
 
 	Resolution 						m_srcResolution;
 	Resolution						m_dstResolution;
