@@ -29,6 +29,18 @@ const std::shared_ptr<Uploader::Frame>& Uploader::acquireFrame() const {
 	return frame;
 }
 
+void Uploader::clear() {
+	//Remove all unused frames
+	auto ite = m_frames.begin();
+	while(ite != m_frames.end()){
+		if(ite->unique()){
+			m_frames.erase(ite);
+		} else {
+			++ite;
+		}
+	} 
+}
+
 
 
 Uploader::Descriptor Uploader::getDescriptor(	const Vulkan& vulkan,
@@ -178,15 +190,14 @@ std::shared_ptr<vk::UniqueCommandPool> Uploader::createCommandPool(const Vulkan&
 
 Uploader::Frame::Frame(	const Vulkan& vulkan,
 						const Descriptor& desc,
-						std::shared_ptr<const Buffer>&& colorTransfer,
-						std::shared_ptr<const vk::UniqueCommandPool>&& cmdPool )
+						std::shared_ptr<const Buffer> colorTransfer,
+						std::shared_ptr<const vk::UniqueCommandPool> cmdPool )
 	: Graphics::Frame(
 		vulkan,
 		createImage(vulkan, desc),
 		std::move(colorTransfer) )
 	, m_stagingBuffer(createStagingBuffer(vulkan, getImage()))
-	, m_stagingBufferMemory(mapStagingBuffer(vulkan, m_stagingBuffer))
-	, m_pixelData(createPixelData(getImage(), m_stagingBufferMemory))
+	, m_pixelData(getPixelData(vulkan, getImage(), m_stagingBuffer))
 	, m_commandPool(std::move(cmdPool))
 	, m_commandBuffer(createCommandBuffer(m_vulkan, desc, **m_commandPool, getImage(), m_stagingBuffer))
 	, m_commandBufferSubmit(createSubmitInfo(*m_commandBuffer))
@@ -198,7 +209,12 @@ const Frame::PixelData& Uploader::Frame::getPixelData() {
 }
 
 void Uploader::Frame::flush() {
-	m_stagingBufferMemory.flush();
+	//Flush the mapped memory
+	const vk::MappedMemoryRange range(
+		m_stagingBuffer.getDeviceMemory(),
+		0, VK_WHOLE_SIZE
+	);
+	m_vulkan.flushMappedMemory(range);
 
 	//Send it to the queue
 	m_vulkan.getDevice().resetFences(getReadyFence(), m_vulkan.getDispatcher());
@@ -262,27 +278,23 @@ Buffer Uploader::Frame::createStagingBuffer(const Vulkan& vulkan,
 	);
 }
 
-MappedMemory Uploader::Frame::mapStagingBuffer(	const Vulkan& vulkan, 
-												const Buffer& buffer)
-{
-	return MappedMemory(
-		vulkan,
-		vk::MappedMemoryRange(
-			buffer.getDeviceMemory(),
-			0, VK_WHOLE_SIZE
-		)
-	);
-}
-
-Frame::PixelData Uploader::Frame::createPixelData(	const Image& image,
-													MappedMemory& memory )
+Frame::PixelData Uploader::Frame::getPixelData(	const Vulkan& vulkan,
+												const Image& image,
+												const Buffer& buffer )
 {
 	Frame::PixelData result;
-	const auto planes = image.getPlanes();
-	auto* data = memory.data();
 
+	const vk::MappedMemoryRange range(
+		buffer.getDeviceMemory(),
+		0, VK_WHOLE_SIZE
+	);
+
+	const auto planes = image.getPlanes();
+	auto* data = vulkan.mapMemory(range);
+
+	//Divide the data onto the planes
 	for(size_t i = 0; i < planes.size(); i++){
-		result[i] = std::span<std::byte>(data + planes[i].first, planes[i].second);
+		result[i] = { data + planes[i].first, planes[i].second };
 	}
 
 	return result;

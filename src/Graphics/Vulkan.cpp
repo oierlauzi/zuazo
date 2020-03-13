@@ -282,6 +282,23 @@ vk::UniqueDeviceMemory Vulkan::allocateMemory(	const vk::MemoryRequirements& req
 	return allocateMemory(allocInfo);
 }
 
+std::byte* Vulkan::mapMemory(const vk::MappedMemoryRange& range) const{
+	return static_cast<std::byte*>(m_device->mapMemory(
+		range.memory,												//Memory allocation
+		range.offset,												//Offset
+		range.size,													//Size
+		{},															//Flags
+		m_dispatcher												//Dispatcher
+	));
+}
+
+void Vulkan::flushMappedMemory(const vk::MappedMemoryRange& range) const {
+	m_device->flushMappedMemoryRanges(
+		range,
+		m_dispatcher
+	);
+}
+
 vk::UniqueDescriptorPool Vulkan::createDescriptorPool(const vk::DescriptorPoolCreateInfo& createInfo) const{
 	return m_device->createDescriptorPoolUnique(createInfo, nullptr, m_dispatcher);
 }

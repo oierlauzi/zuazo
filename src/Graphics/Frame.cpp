@@ -1,6 +1,4 @@
 #include <Graphics/Frame.h>
-
-#include <Graphics/MappedMemory.h>
 #include <Exception.h>
 
 namespace Zuazo::Graphics {
@@ -157,23 +155,17 @@ std::shared_ptr<Buffer> Frame::createColorTransferBuffer( 	const Vulkan& vulkan,
 	);
 
 	//Upload the contents to the staging buffer
-	{
-		MappedMemory mapping(
-			vulkan,
-			vk::MappedMemoryRange(
-				stagingBuffer.getDeviceMemory(),
-				0, VK_WHOLE_SIZE
-			)
-		);
+	const vk::MappedMemoryRange range(
+		stagingBuffer.getDeviceMemory(),
+		0, VK_WHOLE_SIZE
+	);
 
-		std::memcpy(
-			mapping.data(),
-			&colorTransfer,
-			size
-		);
-
-		mapping.flush();
-	}
+	auto* stagingBufferData = vulkan.mapMemory(range);
+	std::memcpy(
+		stagingBufferData,
+		&colorTransfer,
+		size
+	);
 
 	//Create a command pool and a command buffer for uploading it
 	const vk::CommandPoolCreateInfo cpCreateInfo(
@@ -336,7 +328,7 @@ Frame::Geometry::Geometry(	const Vulkan& vulkan,
 	, m_dstResolution(resolution)
 	, m_vertexBuffer(createVertexBuffer(m_vulkan))
 	, m_stagingBuffer(createStagingBuffer(m_vulkan))
-	, m_stagingBufferMapping(mapStagingBuffer(m_vulkan, m_stagingBuffer))
+	, m_vertices(mapStagingBuffer(m_vulkan, m_stagingBuffer))
 	, m_commandPool(createCommandPool(m_vulkan))
 	, m_uploadCommand(createCommandBuffer(
 		m_vulkan,
@@ -384,12 +376,36 @@ void Frame::Geometry::bind(const vk::CommandBuffer& cmd) const {
 }
 
 void Frame::Geometry::updateVertexBuffer() {
-	auto* data = reinterpret_cast<Vertex*>(m_stagingBufferMapping.data());
+	auto scale = static_cast<Math::Vec2f>(m_dstResolution) / static_cast<Math::Vec2f>(m_srcResolution); 
 
-	calculateVertices(std::span<Vertex, VERTEX_COUNT>(data, 4));
-	m_stagingBufferMapping.flush();
+	//TODO modify scale to fit
 
-	//Send it to the queue
+	/*auto resolution = static_cast<Math::Vec2f>(m_srcResolution) * scale;
+	auto texSize = static_cast<Math::Vec2f>(m_dstResolution) / resolution;
+	resolution = glm::max(resolution, static_cast<Math::Vec2f>(m_dstResolution));*/
+	auto resolution = Math::Vec2f(1.0);
+	auto texSize = Math::Vec2f(1.0);
+
+	constexpr std::array<glm::vec2, VERTEX_COUNT> vertexPositions = {
+		glm::vec2(-0.5f, -0.5f),
+		glm::vec2(-0.5f, +0.5f),
+		glm::vec2(+0.5f, -0.5f),
+		glm::vec2(+0.5f, +0.5f),
+	};
+
+	for(size_t i = 0; i < vertexPositions.size(); i++){
+		m_vertices[i] = Vertex{
+			resolution * vertexPositions[i],
+			texSize * vertexPositions[i] + glm::vec2(0.5f)
+		};
+	}
+
+	//Flush it
+	const vk::MappedMemoryRange range(
+		m_stagingBuffer.getDeviceMemory(),
+		0, VK_WHOLE_SIZE
+	);
+	m_vulkan.flushMappedMemory(range);
 	m_vulkan.getTransferQueue().submit(
 		m_uploadCommandSubmit,
 		nullptr,
@@ -397,30 +413,7 @@ void Frame::Geometry::updateVertexBuffer() {
 	);
 }
 
-void Frame::Geometry::calculateVertices(const std::span<Vertex, VERTEX_COUNT>& vertices) const {
-	auto scale = static_cast<Math::Vec2f>(m_dstResolution) / static_cast<Math::Vec2f>(m_srcResolution); 
 
-	//TODO modify scale to fit
-
-	auto resolution = static_cast<Math::Vec2f>(m_srcResolution) * scale;
-	auto texSize = static_cast<Math::Vec2f>(m_dstResolution) / resolution;
-	auto resolution = glm::max(resolution, static_cast<Math::Vec2f>(m_dstResolution));
-
-	constexpr std::array vertexPositions = {
-		glm::vec2(-0.5f, -0.5f),
-		glm::vec2(-0.5f, +0.5f),
-		glm::vec2(+0.5f, -0.5f),
-		glm::vec2(+0.5f, +0.5f),
-	};
-	assert(vertexPositions.size() == vertices.size());
-
-	for(size_t i = 0; i < vertexPositions.size(); i++){
-		vertices[i] = Vertex{
-			resolution * vertexPositions[i],
-			texSize * vertexPositions[i] + glm::vec2(0.5f)
-		};
-	}
-}
 
 Buffer Frame::Geometry::createVertexBuffer(const Vulkan& vulkan) {
 	constexpr vk::BufferUsageFlags usageFlags =
@@ -453,15 +446,19 @@ Buffer Frame::Geometry::createStagingBuffer(const Vulkan& vulkan) {
 	);
 }
 
-MappedMemory Frame::Geometry::mapStagingBuffer(	const Vulkan& vulkan, 
-												const Buffer& stagingBuffer )
+std::span<Frame::Geometry::Vertex, Frame::Geometry::VERTEX_COUNT> Frame::Geometry::mapStagingBuffer(	const Vulkan& vulkan, 
+																					const Buffer& stagingBuffer )
 {
-	return MappedMemory(
-		vulkan,
-		vk::MappedMemoryRange(
-			stagingBuffer.getDeviceMemory(),
-			0, VK_WHOLE_SIZE
-		)
+	//Map its memory
+	const vk::MappedMemoryRange range(
+		stagingBuffer.getDeviceMemory(),
+		0, VK_WHOLE_SIZE
+	);
+	auto* data = vulkan.mapMemory(range);
+
+	return std::span<Vertex, VERTEX_COUNT>( 
+		reinterpret_cast<Vertex*>(data), 
+		VERTEX_COUNT 
 	);
 }
 

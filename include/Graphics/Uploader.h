@@ -3,7 +3,6 @@
 #include "Vulkan.h"
 #include "Frame.h"
 #include "Buffer.h"
-#include "MappedMemory.h"
 
 #include "../Resolution.h"
 #include "../ColorSubsampling.h"
@@ -40,6 +39,7 @@ public:
 	Uploader& 									operator=(const Uploader& other) = delete;
 
 	const std::shared_ptr<Frame>&				acquireFrame() const;
+	void										clear();
 
 	static Descriptor							getDescriptor(	const Vulkan& vulkan,
 																Resolution resolution,
@@ -67,8 +67,8 @@ class Uploader::Frame : public Graphics::Frame {
 public:
 	Frame(	const Vulkan& vulkan,
 			const Descriptor& desc,
-			std::shared_ptr<const Buffer>&& colorTransfer,
-			std::shared_ptr<const vk::UniqueCommandPool>&& cmdPool );
+			std::shared_ptr<const Buffer> colorTransfer,
+			std::shared_ptr<const vk::UniqueCommandPool> cmdPool );
 	Frame(const Frame& other) = delete;
 	Frame(Frame&& other) = default;
 	virtual ~Frame() = default; 
@@ -79,7 +79,6 @@ public:
 	void										flush();
 private:
 	Buffer										m_stagingBuffer;
-	MappedMemory 								m_stagingBufferMemory;
 	PixelData 									m_pixelData;
 		
 	std::shared_ptr<const vk::UniqueCommandPool>m_commandPool;
@@ -90,10 +89,9 @@ private:
 															const Descriptor& desc );
 	static Buffer								createStagingBuffer(const Vulkan& vulkan,
 																	const Image& image );
-	static MappedMemory							mapStagingBuffer(	const Vulkan& vulkan,
-																	const Buffer& buffer);
-	static PixelData							createPixelData(const Image& image,
-																MappedMemory& memory );
+	static PixelData							getPixelData(	const Vulkan& vulkan,
+																const Image& image,
+																const Buffer& buffer );
 	static vk::UniqueCommandBuffer				createCommandBuffer(const Vulkan& vulkan,
 																	const Descriptor& desc,
 																	vk::CommandPool cmdPool,

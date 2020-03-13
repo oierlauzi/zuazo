@@ -4,7 +4,6 @@
 #include "ColorTransfer.h"
 #include "Image.h"
 #include "Buffer.h"
-#include "MappedMemory.h"
 #include "../Resolution.h"
 
 #include <memory>
@@ -81,7 +80,7 @@ public:
 	Geometry(Geometry&& other) = default;
 	~Geometry() = default;
 
-	void					upd() { updateVertexBuffer(); }
+	void					upd() { updateVertexBuffer(); } //TODO testing
 
 	vk::VertexInputBindingDescription getBindingDescription() const;
 	std::array<vk::VertexInputAttributeDescription, ATTRIBUTE_COUNT> getAttributeDescriptions(	uint32_t posLocation, 
@@ -107,19 +106,18 @@ private:
 
 	Buffer							m_vertexBuffer;
 	Buffer							m_stagingBuffer;
-	MappedMemory					m_stagingBufferMapping;
+	std::span<Vertex, VERTEX_COUNT>	m_vertices;
 
 	vk::UniqueCommandPool			m_commandPool;
 	vk::CommandBuffer				m_uploadCommand;
 	vk::SubmitInfo 					m_uploadCommandSubmit;
 
 	void							updateVertexBuffer();
-	void							calculateVertices(const std::span<Vertex, VERTEX_COUNT>& vertices) const;
 
 	static Buffer					createVertexBuffer(const Vulkan& vulkan);
 	static Buffer					createStagingBuffer(const Vulkan& vulkan);
-	static MappedMemory				mapStagingBuffer(	const Vulkan& vulkan, 
-														const Buffer& stagingBuffer );
+	static std::span<Vertex, VERTEX_COUNT>	mapStagingBuffer(	const Vulkan& vulkan, 
+																const Buffer& stagingBuffer );
 	static vk::UniqueCommandPool	createCommandPool(const Vulkan& vulkan);
 	static vk::CommandBuffer		createCommandBuffer(const Vulkan& vulkan,
 														const vk::CommandPool& cmdPool,

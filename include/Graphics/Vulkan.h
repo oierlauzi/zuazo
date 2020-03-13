@@ -66,6 +66,8 @@ public:
 	vk::UniqueDeviceMemory							allocateMemory(const vk::MemoryAllocateInfo& allocInfo) const;
 	vk::UniqueDeviceMemory							allocateMemory(	const vk::MemoryRequirements& requirements,
 																	vk::MemoryPropertyFlags properties ) const;
+	std::byte*										mapMemory(const vk::MappedMemoryRange& range) const;
+	void											flushMappedMemory(const vk::MappedMemoryRange& range) const;
 	vk::UniqueDescriptorPool						createDescriptorPool(const vk::DescriptorPoolCreateInfo& createInfo) const;
 
 	vk::UniqueSemaphore								createSemaphore() const;
