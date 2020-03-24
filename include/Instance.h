@@ -5,22 +5,23 @@
 #include "Verbosity.h"
 #include "ColorFormat.h"
 #include "VideoMode.h"
-#include "Timing/MainLoop.h"
-#include "Graphics/GLFW.h"
+#include "Utils/Pimpl.h"
 #include "Graphics/Vulkan.h"
+#include "Timing/Scheduler.h"
+#include "Timing/MainLoop.h"
 
 #include <functional>
+#include <vector>
 
 namespace Zuazo {
 
 class Instance {
 public:
-	using LogFunc = std::function<void(const Instance&, Verbosity, const std::string_view&)>;
+	using LogFunc = std::function<void(const Instance&, Verbosity, std::string_view)>;
 	using DeviceScoreFunc = Graphics::Vulkan::DeviceScoreFunc;
 
 	struct ApplicationInfo {
 		std::string		name;
-		std::string		description;
 		Version			version;
 		Verbosity		verbosity = ZUAZO_IS_DEBUG ? Verbosity::INFO : Verbosity::SILENT;
 		VideoMode		defaultVideoMode = {
@@ -37,45 +38,51 @@ public:
 		LogFunc			logFunc = defaultLogFunc;
 		DeviceScoreFunc	deviceScoreFunc = defaultDeviceScoreFunc;
 	};
+	
+	struct FormatSupport {
+		std::vector<ColorFormat> inputFormats;
+		std::vector<ColorFormat> outputFormats;
+	};
+
+	struct ResolutionSupport {
+		Resolution maxInputResolution;
+		Resolution maxOutputResolution;
+	};
 
 	Instance(ApplicationInfo&& applicationInfo);
 	Instance(const Instance& other) = delete;
-	Instance(Instance&& other) = delete;
-	~Instance() = default;
+	Instance(Instance&& other);
+	~Instance();
 
 	Instance& operator=(const Instance& other) = delete;
-	Instance& operator=(Instance&& other) = delete;
+	Instance& operator=(Instance&& other);
 
 	const ApplicationInfo&		getApplicationInfo() const;
-
-	void						log(Verbosity severity, const std::string_view& msg) const;
-
 	const Graphics::Vulkan&		getVulkan() const;
-	Graphics::Vulkan&			getVulkan();
-
+	const Timing::Scheduler&	getScheduler() const;
 	const Timing::MainLoop&		getMainLoop() const;
-	Timing::MainLoop&			getMainLoop();
 
-	const std::vector<ColorFormat>& getSupportedInputFormats() const;
-	const std::vector<ColorFormat>& getSupportedOutputFormats() const;
+	const FormatSupport& 		getFormatSupport() const;
+	const ResolutionSupport&	getResolutionSupport() const;
 
 	static void 				defaultLogFunc(	const Instance& inst, 
 												Verbosity severity, 
-												const std::string_view& msg );
+												std::string_view msg );
 
 	static uint32_t				defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp, 
 														vk::PhysicalDevice device );
 private:
-	ApplicationInfo				m_applicationInfo;
-	Graphics::GLFW				m_glfw;
-	Graphics::Vulkan			m_vulkan;
-	Timing::MainLoop			m_loop;
+	struct Impl;
+	Utils::Pimpl<Impl>			m_impl;
 
-	std::vector<ColorFormat>	m_inputFormats;
-	std::vector<ColorFormat>	m_outputFormats;
-
-	void 						setupSupportedFormats();
-	std::string					generateInitMessage() const;
 };
+
+#define ZUAZO_LOG(instance, severity, message)									\
+	if(																			\
+		(instance).getApplicationInfo().logFunc && 								\
+		((severity) <= (instance).getApplicationInfo().verbosity) ) 			\
+	{																			\
+		(instance).getApplicationInfo().logFunc(instance, severity, message);	\
+	}
 
 }

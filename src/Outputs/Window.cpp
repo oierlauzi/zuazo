@@ -1,6 +1,8 @@
 #include <Outputs/Window.h>
+
+#include "../Graphics/VulkanUtils.h"
+
 #include <Graphics/VulkanConversions.h>
-#include <Graphics/VulkanUtils.h>
 #include <Graphics/ColorTransfer.h>
 #include <Graphics/Uploader.h>
 
@@ -259,30 +261,10 @@ void Window::drawFrameProvisional(){
 	vulkan.getGraphicsQueue().submit(subInfo, *impl.renderFinishedFence, vulkan.getDispatcher());
 
 	//Present it
-	const std::array swapchains = {
-		*impl.swapchain
-	};
+	vulkan.present(*impl.swapchain, index.value, renderFinishedSemaphores.front());
+	vulkan.presentAll();
 
-	const std::array indices = {
-		index.value
-	};
 
-	const vk::PresentInfoKHR presentInfo(
-		renderFinishedSemaphores.size(), renderFinishedSemaphores.data(),	//Wait semaphores
-		swapchains.size(), swapchains.data(), 								//Swapchains
-		indices.data(),														//Image index
-		nullptr																//Results								
-	);
-
-	switch(vulkan.getPresentationQueue().presentKHR(&presentInfo, vulkan.getDispatcher())){
-	case vk::Result::eSuccess: 
-		break;
-	case vk::Result::eErrorOutOfDateKHR: 
-		recreate();
-		return;
-	default:
-		return;
-	}
 
 	vulkan.getDevice().waitIdle(vulkan.getDispatcher());
 }
@@ -420,7 +402,7 @@ vk::PipelineLayout Window::createPipelineLayout(const Graphics::Vulkan& vulkan) 
 
 
 	std::array layouts = {
-		vulkan.getColorTransferDescriptorSetLayout(filter)
+		Graphics::Frame::getDescriptorSetLayout(vulkan, filter)
 	};
 
 	const vk::PipelineLayoutCreateInfo createInfo(

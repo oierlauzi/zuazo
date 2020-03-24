@@ -1,44 +1,28 @@
 #pragma once
 
-#include "Scheduler.h"
-#include "Chrono.h"
-#include "../Macros.h"
-
-#include <atomic>
-#include <condition_variable>
-#include <functional>
-#include <future>
-#include <memory>
-#include <mutex>
-#include <thread>
+#include "../Utils/Pimpl.h"
 
 namespace Zuazo::Timing {
 
+class Scheduler;
+
 class MainLoop {
 public:
-	MainLoop();
+	MainLoop(Scheduler& scheduler);
 	MainLoop(const MainLoop& other) = delete;
-	virtual ~MainLoop();
+	MainLoop(MainLoop&& other);
+	~MainLoop();
 
-	TimePoint                           getCurrentTime() const;
-	Duration                            getElapsed() const;
-	Scheduler&                          getScheduler();
-	const Scheduler&                    getScheduler() const;
-	std::mutex&                         getMutex();
+	MainLoop&				operator=(const MainLoop& other) = delete;
+	MainLoop&				operator=(MainLoop&& other);
 
-	void                                handleEvents();
+	void					setScheduler(Scheduler& scheduler);
+	Scheduler&				getScheduler() const;
+
 private:
-	Scheduler                           m_scheduler;
+	struct Impl;
+	Utils::Pimpl<Impl>		m_impl;
 
-	TimePoint                           m_now;
-	Duration                            m_elapsed;
-
-	std::atomic<bool>                   m_exit;
-	mutable std::mutex                  m_mutex;
-	mutable std::condition_variable     m_handleEvents;
-	std::thread                         m_thread;
-
-	void                                threadFunc();
 };
 
 }

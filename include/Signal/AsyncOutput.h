@@ -3,7 +3,6 @@
 #pragma once
 
 #include "Output.h"
-#include "../Timing/Scheduler.h"
 
 #include <memory>
 #include <mutex>
@@ -13,10 +12,7 @@
 namespace Zuazo::Signal {
 
 template <typename T>
-class AsyncOutput :
-		public Output<T>,
-		public Timing::Scheduler::Event
-{
+class AsyncOutput : public Output<T> {
 public:
 	using Output<T>::Output;
 
@@ -32,14 +28,15 @@ public:
 	size_t								getBufferSize() const;
 	void								flushBuffer();
 
+	void								update();
+
 	void								reset();
 	void								push(T&& element);
-
-	virtual void 						update() override;
 
 	static constexpr int				DEFAULT_MAX_DROPPED=3;
 	static constexpr uint				DEFAULT_MAX_BUFFER_SIZE=3;
 private:
+	Timing::PeriodicEvent				m_period;
 	std::mutex							m_mutex;
 
 	int									m_maxDropped = DEFAULT_MAX_DROPPED;

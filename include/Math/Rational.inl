@@ -5,16 +5,16 @@ namespace Zuazo::Math {
  */
 
 template<typename T>
-constexpr Rational<T>::Rational() :
-	m_num(0),
-	m_den(1)
+constexpr Rational<T>::Rational()
+	: m_num(0)
+	, m_den(1)
 {
 }
 
 template<typename T>
-constexpr Rational<T>::Rational(Integer num, Integer den) :
-	m_num(num),
-	m_den(den)
+constexpr Rational<T>::Rational(Integer num, Integer den)
+	: m_num(num)
+	, m_den(den)
 {
 	//Take out the common factor
 	Integer gcd = std::gcd(m_num, m_den);
@@ -31,9 +31,9 @@ constexpr Rational<T>::Rational(Integer num, Integer den) :
 }
 
 template<typename T>
-constexpr Rational<T>::Rational(Integer number) :
-	m_num(number),
-	m_den(1)
+constexpr Rational<T>::Rational(Integer number)
+	: m_num(number)
+	, m_den(1)
 {
 }
 
@@ -95,10 +95,17 @@ constexpr Rational<T>::Rational(Real number) : Rational() {
 }
 
 template<typename T>
+template<intmax_t num, intmax_t den>
+constexpr Rational<T>::Rational(std::ratio<num, den>)
+	: Rational(num, den)
+{
+}
+
+template<typename T>
 template<typename Q>
-constexpr Rational<T>::Rational(const Rational<Q>& rat) :
-	m_num(static_cast<Integer>(rat.getNumerator())),
-	m_den(static_cast<Integer>(rat.getDenominator()))
+constexpr Rational<T>::Rational(const Rational<Q>& rat)
+	: m_num(static_cast<Integer>(rat.getNumerator()))
+	, m_den(static_cast<Integer>(rat.getDenominator()))
 {
 }
 

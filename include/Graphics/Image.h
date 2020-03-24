@@ -2,20 +2,26 @@
 
 #include "Vulkan.h"
 #include "Buffer.h"
+#include "../Utils/BufferView.h"
 
 #include <vector>
-#include <span>
 #include <tuple>
 
 namespace Zuazo::Graphics {
 
 class Image{
 public:
+	struct PlaneDescriptor {
+		vk::Extent2D extent;
+		vk::Format format;
+		vk::ComponentMapping swizzle;
+	};
+
 	Image() = default;
 	Image(	const Vulkan& vulkan,
 			vk::ImageUsageFlags usage,
 			vk::MemoryPropertyFlags memoryProperties,
-			const std::span<const std::tuple<vk::Extent2D, vk::Format, vk::ComponentMapping>>& imagePlanes );
+			const Utils::BufferView<PlaneDescriptor>& imagePlanes );
 	Image(const Image& other) = delete;
 	Image(Image&& other) = default;
 	~Image() = default;
@@ -40,12 +46,12 @@ private:
 
 	static std::vector<vk::UniqueImage> 	createImages(	const Vulkan& vulkan,
 															vk::ImageUsageFlags usage,
-															const std::span<const std::tuple<vk::Extent2D, vk::Format, vk::ComponentMapping>>& imagePlanes );
+															const Utils::BufferView<PlaneDescriptor>& imagePlanes );
 	static Memory							allocateMemory(	const Vulkan& vulkan,
 															vk::MemoryPropertyFlags memoryProperties,
 															const std::vector<vk::UniqueImage>& images );
 	static std::vector<vk::UniqueImageView>	createImageViews(	const Vulkan& vulkan,
-																const std::span<const std::tuple<vk::Extent2D, vk::Format, vk::ComponentMapping>>& imagePlanes,
+																const Utils::BufferView<PlaneDescriptor>& imagePlanes,
 																const std::vector<vk::UniqueImage>& images );
 
 

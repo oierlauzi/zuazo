@@ -4,6 +4,7 @@
 #include "Math/Rational.h"
 
 #include <sys/types.h>
+#include <string>
 
 namespace Zuazo {
 
@@ -36,6 +37,8 @@ struct Resolution{
 
 	constexpr AspectRatio getAspectRatio() const;
 };
+
+std::string toString(Resolution res);
 
 }
 

@@ -17,24 +17,22 @@
 
 namespace Zuazo::Graphics {
 
-constexpr uint32_t toVulkan(Version version);
+uint32_t toVulkan(Version version);
 
-constexpr vk::Extent2D toVulkan(const Resolution& res);
-constexpr Resolution fromVulkan(const vk::Extent2D& res);
+vk::Extent2D toVulkan(const Resolution& res);
+Resolution fromVulkan(const vk::Extent2D& res);
 
-constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, IMAGE_COUNT> toVulkan(ColorFormat fmt);
-constexpr std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format fmt);
+std::array<std::tuple<vk::Format, vk::ComponentMapping>, IMAGE_COUNT> toVulkan(ColorFormat fmt);
+std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format fmt);
 
-constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction enc);
-constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::ColorSpaceKHR space);
+vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction enc);
+std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::ColorSpaceKHR space);
 
-constexpr int32_t toVulkan(ColorRange range, ColorModel model);
+int32_t toVulkan(ColorRange range, ColorModel model);
 
-constexpr int32_t toVulkan(ColorTransferFunction transferFunction);
+int32_t toVulkan(ColorTransferFunction transferFunction);
 
-constexpr std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std::tuple<vk::Format, vk::ComponentMapping>& fmt);
-constexpr std::tuple<vk::Format, int32_t> optimizeFormat(vk::Format fmt, int32_t trf, int32_t range);
+std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std::tuple<vk::Format, vk::ComponentMapping>& fmt);
+std::tuple<vk::Format, int32_t> optimizeFormat(vk::Format fmt, int32_t trf, int32_t range);
 
 }
-
-#include "VulkanConversions.inl"

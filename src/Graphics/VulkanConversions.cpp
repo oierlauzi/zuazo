@@ -1,13 +1,14 @@
-#include "VulkanConversions.h"
+#include <Graphics/VulkanConversions.h>
+
+#include <Macros.h>
 
 #include "VulkanUtils.h"
-#include "../Macros.h"
 
 #include <utility>
 
 namespace Zuazo::Graphics {
 
-constexpr uint32_t toVulkan(Version version){
+uint32_t toVulkan(Version version){
 	return VK_MAKE_VERSION(
 		version.getMajor(),
 		version.getMinor(),
@@ -15,21 +16,21 @@ constexpr uint32_t toVulkan(Version version){
 	);
 }
 
-constexpr vk::Extent2D toVulkan(const Resolution& res){
+vk::Extent2D toVulkan(const Resolution& res){
 	return vk::Extent2D(
 		res.width,
 		res.height
 	);
 }
 
-constexpr Resolution fromVulkan(const vk::Extent2D& res){
+Resolution fromVulkan(const vk::Extent2D& res){
 	return Resolution(
 		res.width,
 		res.height
 	);
 }
 
-constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, IMAGE_COUNT> toVulkan(ColorFormat fmt){
+std::array<std::tuple<vk::Format, vk::ComponentMapping>, IMAGE_COUNT> toVulkan(ColorFormat fmt){
 	constexpr vk::ComponentMapping IDENTITY;
 
 	constexpr auto R2Y 			= ZUAZO_CONSTRUCT_SWIZZLE( Identity, R, R, One );
@@ -346,7 +347,7 @@ constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, IMAGE_COUNT> 
 	}
 }
 
-constexpr std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format fmt){
+std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format fmt){
 	switch(fmt){
 	//4 bit formats
 	case vk::Format::eR4G4B4A4UnormPack16: 	return { ColorFormat::R4G4B4A4_16, ColorTransferFunction::LINEAR };
@@ -407,7 +408,7 @@ constexpr std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format f
 
 
 
-constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction enc){
+vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction enc){
 	constexpr vk::ColorSpaceKHR ERROR = static_cast<vk::ColorSpaceKHR>(-1);
 
 	switch(enc){
@@ -431,7 +432,7 @@ constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction 
 	}
 }
 
-constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::ColorSpaceKHR space){
+std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::ColorSpaceKHR space){
 	switch(space){
 	case vk::ColorSpaceKHR::eBt709LinearEXT: return { ColorPrimaries::BT709, ColorTransferFunction::LINEAR };
 	case vk::ColorSpaceKHR::eBt2020LinearEXT: return { ColorPrimaries::BT2020, ColorTransferFunction::LINEAR};
@@ -444,7 +445,7 @@ constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::Color
 }
 
 
-constexpr int32_t toVulkan(ColorRange range, ColorModel model){
+int32_t toVulkan(ColorRange range, ColorModel model){
 	switch(model){
 	case ColorModel::RGB:
 		switch(range){
@@ -468,7 +469,7 @@ constexpr int32_t toVulkan(ColorRange range, ColorModel model){
 	return -1;
 }
 
-constexpr int32_t toVulkan(ColorTransferFunction transferFunction){
+int32_t toVulkan(ColorTransferFunction transferFunction){
 	switch(transferFunction){
 	case ColorTransferFunction::LINEAR: return COLOR_TRANSFER_FUNCTION_LINEAR;
 	case ColorTransferFunction::IEC61966_2_1: return COLOR_TRANSFER_FUNCTION_IEC61966_2_1;
@@ -480,7 +481,7 @@ constexpr int32_t toVulkan(ColorTransferFunction transferFunction){
 
 
 
-constexpr std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std::tuple<vk::Format, vk::ComponentMapping>& fmt){
+std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std::tuple<vk::Format, vk::ComponentMapping>& fmt){
 	const auto& format = std::get<vk::Format>(fmt);
 	const auto& swizzle = std::get<vk::ComponentMapping>(fmt);
 
@@ -564,7 +565,7 @@ constexpr std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std:
 	return fmt; //No conversion was found
 }
 
-constexpr std::tuple<vk::Format, int32_t> optimizeFormat(vk::Format fmt, int32_t trf, int32_t range){
+std::tuple<vk::Format, int32_t> optimizeFormat(vk::Format fmt, int32_t trf, int32_t range){
 	if(trf == COLOR_TRANSFER_FUNCTION_IEC61966_2_1 && range == COLOR_RANGE_FULL_RGB){
 		switch(fmt){
 		case vk::Format::eR8Unorm:					return { vk::Format::eR8Srgb, COLOR_TRANSFER_FUNCTION_LINEAR };

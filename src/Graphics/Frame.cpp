@@ -1,17 +1,21 @@
 #include <Graphics/Frame.h>
+
 #include <Exception.h>
+#include <Utils/StaticId.h>
+
 
 namespace Zuazo::Graphics {
 
 Frame::Frame(	const Vulkan& vulkan,
-				Image&& image,
-				std::shared_ptr<const Buffer>&& colorTransfer )
+				const Descriptor& desc,
+				const std::shared_ptr<const Buffer>& colorTransfer )
 	: m_vulkan(vulkan)
-	, m_readyFence(m_vulkan.createFence(true))
-	, m_image(std::move(image))
-	, m_colorTransfer(std::move(colorTransfer))
+	, m_descriptor(desc)
+	, m_image(createImage(m_vulkan, m_descriptor))
+	, m_colorTransfer(colorTransfer)
 	, m_descriptorPool(createDescriptorPool(m_vulkan))
 	, m_descriptorSets(allocateDescriptorSets(m_vulkan, *m_descriptorPool))
+	, m_readyFence(m_vulkan.createFence(true))
 {
 	//Update the descriptors
 	for(size_t i = 0; i < m_descriptorSets.size(); i++){
@@ -72,29 +76,6 @@ Frame::~Frame(){
 }
 
 
-vk::Fence& Frame::getReadyFence() {
-	return *m_readyFence;
-}
-
-const vk::Fence& Frame::getReadyFence() const {
-	return *m_readyFence;
-}
-
-
-Image& Frame::getImage() {
-	return m_image;
-}
-
-const Image& Frame::getImage() const {
-	return m_image;
-}
-
-
-
-const Buffer& Frame::getColorTransfer() const {
-	return *m_colorTransfer;
-}
-
 
 void Frame::bind( 	vk::CommandBuffer cmd,
 					vk::PipelineLayout layout,
@@ -113,6 +94,24 @@ void Frame::bind( 	vk::CommandBuffer cmd,
 		{},									//Dynamic offsets
 		m_vulkan.getDispatcher()
 	);
+}
+
+
+
+const Frame::Descriptor& Frame::getDescriptor() const {
+	return m_descriptor;
+}
+
+const Image& Frame::getImage() const {
+	return m_image;
+}
+
+const Buffer& Frame::getColorTransfer() const {
+	return *m_colorTransfer;
+}
+
+const vk::Fence& Frame::getReadyFence() const {
+	return *m_readyFence;
 }
 
 
@@ -258,8 +257,77 @@ std::shared_ptr<Buffer> Frame::createColorTransferBuffer( 	const Vulkan& vulkan,
 	return std::make_shared<Buffer>(std::move(result));
 }
 
+vk::DescriptorSetLayout	Frame::getDescriptorSetLayout(	const Vulkan& vulkan,
+														vk::Filter filt) {
+	constexpr std::array<Utils::StaticId, VK_FILTER_RANGE_SIZE> ids;
+	const size_t id = ids[static_cast<size_t>(filt)];
+
+	std::array<vk::Sampler, IMAGE_COUNT> inmutableSamplers;
+	for(size_t j = 0; j < inmutableSamplers.size(); j++){
+		inmutableSamplers[j] = vulkan.getSampler(filt);
+	}
+
+	//Create the bindings
+	const std::array bindings = {
+		vk::DescriptorSetLayoutBinding( //Sampled image binding
+			IMAGE_BINDING,									//Binding
+			vk::DescriptorType::eCombinedImageSampler,		//Type
+			IMAGE_COUNT,									//Count
+			vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
+			inmutableSamplers.data()						//Inmutable samplers
+		), 
+		vk::DescriptorSetLayoutBinding(	//Color transfer binding
+			COLOR_TRANSFER_BINDING,							//Binding
+			vk::DescriptorType::eUniformBuffer,				//Type
+			1,												//Count
+			vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
+			nullptr											//Inmutable samplers
+		), 
+	};
+
+	const vk::DescriptorSetLayoutCreateInfo createInfo(
+		{},
+		bindings.size(), bindings.data()
+	);
+
+	return vulkan.createDescriptorSetLayout(createInfo, id);
+}
 
 
+
+Image Frame::createImage(	const Vulkan& vulkan,
+							const Descriptor& desc )
+{
+	constexpr vk::ImageUsageFlags usageFlags =
+		vk::ImageUsageFlagBits::eSampled |
+		vk::ImageUsageFlagBits::eTransferDst;
+
+	constexpr vk::MemoryPropertyFlags memoryFlags =
+		vk::MemoryPropertyFlagBits::eDeviceLocal;
+
+	//Get the plane descriptor array
+	std::vector<Image::PlaneDescriptor> planeDescriptors;
+	for(size_t i = 0; i < desc.colorFormat.size(); i++){
+		if(std::get<vk::Format>(desc.colorFormat[i]) != vk::Format::eUndefined){
+			planeDescriptors.emplace_back(
+				Image::PlaneDescriptor {
+					desc.extents[i],
+					std::get<vk::Format>(desc.colorFormat[i]),
+					std::get<vk::ComponentMapping>(desc.colorFormat[i])
+				}
+			);
+		} else {
+			break;
+		}
+	}
+
+	return Image(
+		vulkan,
+		usageFlags,
+		memoryFlags,
+		planeDescriptors
+	);
+}
 
 vk::UniqueDescriptorPool Frame::createDescriptorPool(const Vulkan& vulkan){
 	//A descriptor pool is created, from which 2 descriptor sets, each one with 
@@ -291,7 +359,7 @@ Frame::DescriptorSets Frame::allocateDescriptorSets(const Vulkan& vulkan,
 	std::array<vk::DescriptorSetLayout, DESCRIPTOR_COUNT> layouts;
 	for(size_t i = 0; i < layouts.size(); i++){
 		const auto filter = static_cast<vk::Filter>(i);
-		layouts[i] = vulkan.getColorTransferDescriptorSetLayout(filter);
+		layouts[i] = getDescriptorSetLayout(vulkan, filter);
 	}
 
 	const vk::DescriptorSetAllocateInfo allocInfo(
@@ -366,7 +434,7 @@ std::array<vk::VertexInputAttributeDescription, Frame::Geometry::ATTRIBUTE_COUNT
 	};
 }
 
-void Frame::Geometry::bind(const vk::CommandBuffer& cmd) const {
+void Frame::Geometry::bind(vk::CommandBuffer cmd) const {
 	cmd.bindVertexBuffers(
 		m_binding,									//Binding
 		m_vertexBuffer.getBuffer(),					//Vertex buffers
@@ -446,8 +514,8 @@ Buffer Frame::Geometry::createStagingBuffer(const Vulkan& vulkan) {
 	);
 }
 
-std::span<Frame::Geometry::Vertex, Frame::Geometry::VERTEX_COUNT> Frame::Geometry::mapStagingBuffer(	const Vulkan& vulkan, 
-																					const Buffer& stagingBuffer )
+Utils::BufferView<Frame::Geometry::Vertex> Frame::Geometry::mapStagingBuffer(	const Vulkan& vulkan, 
+																				const Buffer& stagingBuffer )
 {
 	//Map its memory
 	const vk::MappedMemoryRange range(
@@ -456,7 +524,7 @@ std::span<Frame::Geometry::Vertex, Frame::Geometry::VERTEX_COUNT> Frame::Geometr
 	);
 	auto* data = vulkan.mapMemory(range);
 
-	return std::span<Vertex, VERTEX_COUNT>( 
+	return Utils::BufferView<Vertex>( 
 		reinterpret_cast<Vertex*>(data), 
 		VERTEX_COUNT 
 	);
@@ -472,7 +540,7 @@ vk::UniqueCommandPool Frame::Geometry::createCommandPool(const Vulkan& vulkan) {
 }
 
 vk::CommandBuffer Frame::Geometry::createCommandBuffer(	const Vulkan& vulkan,
-														const vk::CommandPool& cmdPool,
+														vk::CommandPool cmdPool,
 														const Buffer& stagingBuffer,
 														const Buffer& vertexBuffer )
 {

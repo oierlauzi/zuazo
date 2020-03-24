@@ -49,4 +49,8 @@ constexpr AspectRatio Resolution::getAspectRatio() const {
     );
 }
 
+inline std::string toString(Resolution res) {
+    return std::to_string(res.width) + "x" + std::to_string(res.height);
+}
+
 }

@@ -54,15 +54,9 @@ inline void AsyncOutput<T>::flushBuffer(){
 }
 
 template <typename T>
-inline void AsyncOutput<T>::reset(){
-	flushBuffer();
-	Output<T>::reset();
-}
-
-template <typename T>
 inline void AsyncOutput<T>::update() {
 	//No need for lock buffer resizing. 
-	//update() wont be called while there is an active context
+	//update() shouldnt be called while there is an active context
 
 	const size_t read = m_read.load();
 	const size_t write = m_write.load();
@@ -82,6 +76,12 @@ inline void AsyncOutput<T>::update() {
 			Output<T>::push(T());
 		}
 	}
+}
+
+template <typename T>
+inline void AsyncOutput<T>::reset(){
+	flushBuffer();
+	Output<T>::reset();
 }
 
 

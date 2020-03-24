@@ -6,7 +6,7 @@
 namespace Zuazo::Graphics {
 
 Uploader::Uploader(	const Vulkan& vulkan,
-					const Descriptor& descriptor )
+					const Graphics::Frame::Descriptor& descriptor )
 	: m_vulkan(vulkan)
 	, m_descriptor(descriptor)
 	, m_commandPool(createCommandPool(m_vulkan))
@@ -43,16 +43,16 @@ void Uploader::clear() {
 
 
 
-Uploader::Descriptor Uploader::getDescriptor(	const Vulkan& vulkan,
-												Resolution resolution,
-												ColorSubsampling subsampling,
-												ColorFormat format,
-												ColorRange range,
-												ColorTransferFunction transferFunction,
-												ColorModel model,
-												ColorPrimaries primaries )
+Graphics::Frame::Descriptor Uploader::getDescriptor(	const Vulkan& vulkan,
+														Resolution resolution,
+														ColorSubsampling subsampling,
+														ColorFormat format,
+														ColorRange range,
+														ColorTransferFunction transferFunction,
+														ColorModel model,
+														ColorPrimaries primaries )
 {
-	Descriptor result;
+	Graphics::Frame::Descriptor result;
 
 	//Get the plane count
 	const auto planeCount = getPlaneCount(format);
@@ -69,17 +69,22 @@ Uploader::Descriptor Uploader::getDescriptor(	const Vulkan& vulkan,
 
 	//Obtain the format
 	result.colorFormat = toVulkan(format);
+
 	const auto& supportedFormats = vulkan.getFormatSupport();
+
+	//For binary search:
+	assert(std::is_sorted(supportedFormats.sampler.cbegin(), supportedFormats.sampler.cend()));
+
+	//Check that format and plane is supported
 	for(size_t i = 0; i < planeCount; i++){
-		if(	std::find(
-				supportedFormats.sampler.cbegin(), 
-				supportedFormats.sampler.cend(), 
-				std::get<vk::Format>(result.colorFormat[i]) )
-			== supportedFormats.sampler.cend())
+		if(	!std::binary_search(supportedFormats.sampler.cbegin(), 
+								supportedFormats.sampler.cend(), 
+								std::get<vk::Format>(result.colorFormat[i]) ))
 		{
 			throw Exception("Unsupported format!");
 		}
 	}
+
 	switch(planeCount){
 	case 1:
 		result.colorTransfer.planeFormat = PLANE_FORMAT_RGBA;	
@@ -121,11 +126,9 @@ Uploader::Descriptor Uploader::getDescriptor(	const Vulkan& vulkan,
 	//Try to optimize the format
 	for(size_t i = 0; i < planeCount; i++){
 		const auto optimizedFormat = optimizeFormat(result.colorFormat[i]);
-		if(	std::find(
-				supportedFormats.sampler.cbegin(), 
-				supportedFormats.sampler.cend(), 
-				std::get<vk::Format>(optimizedFormat) )
-			!= supportedFormats.sampler.cend())
+		if(	std::binary_search(	supportedFormats.sampler.cbegin(), 
+								supportedFormats.sampler.cend(), 
+								std::get<vk::Format>(optimizedFormat) ))
 		{
 			result.colorFormat[i] = optimizedFormat;
 		}
@@ -139,11 +142,9 @@ Uploader::Descriptor Uploader::getDescriptor(	const Vulkan& vulkan,
 			result.colorTransfer.colorRange
 		);
 
-		if(	std::find(
-				supportedFormats.sampler.cbegin(), 
-				supportedFormats.sampler.cend(), 
-				std::get<vk::Format>(optimizedFormat) )
-			!= supportedFormats.sampler.cend())
+		if(	std::binary_search(	supportedFormats.sampler.cbegin(), 
+								supportedFormats.sampler.cend(), 
+								std::get<vk::Format>(optimizedFormat) ))
 		{
 			std::get<vk::Format>(result.colorFormat[0]) = std::get<vk::Format>(optimizedFormat);
 			result.colorTransfer.colorTransferFunction = std::get<int32_t>(optimizedFormat);
@@ -166,8 +167,8 @@ const std::shared_ptr<Uploader::Frame>& Uploader::getUniqueFrame() const {
 	m_frames.emplace_back(std::make_shared<Frame>(
 		m_vulkan,
 		m_descriptor,
-		std::static_pointer_cast<const Buffer>(m_colorTransferBuffer),
-		std::static_pointer_cast<const vk::UniqueCommandPool>(m_commandPool)
+		m_colorTransferBuffer,
+		m_commandPool
 	));
 
 	return m_frames.back();
@@ -190,12 +191,12 @@ std::shared_ptr<vk::UniqueCommandPool> Uploader::createCommandPool(const Vulkan&
 
 Uploader::Frame::Frame(	const Vulkan& vulkan,
 						const Descriptor& desc,
-						std::shared_ptr<const Buffer> colorTransfer,
-						std::shared_ptr<const vk::UniqueCommandPool> cmdPool )
+						const std::shared_ptr<const Buffer>& colorTransfer,
+						const std::shared_ptr<const vk::UniqueCommandPool>& cmdPool )
 	: Graphics::Frame(
 		vulkan,
-		createImage(vulkan, desc),
-		std::move(colorTransfer) )
+		desc,
+		colorTransfer)
 	, m_stagingBuffer(createStagingBuffer(vulkan, getImage()))
 	, m_pixelData(getPixelData(vulkan, getImage(), m_stagingBuffer))
 	, m_commandPool(std::move(cmdPool))
@@ -227,37 +228,6 @@ void Uploader::Frame::flush() {
 
 
 
-Image Uploader::Frame::createImage(	const Vulkan& vulkan,
-									const Descriptor& desc )
-{
-	constexpr vk::ImageUsageFlags usageFlags =
-		vk::ImageUsageFlagBits::eSampled |
-		vk::ImageUsageFlagBits::eTransferDst;
-
-	constexpr vk::MemoryPropertyFlags memoryFlags =
-		vk::MemoryPropertyFlagBits::eDeviceLocal;
-
-	//Get the plane descriptor array
-	std::vector<std::tuple<vk::Extent2D, vk::Format, vk::ComponentMapping>> planeDescriptors;
-	for(size_t i = 0; i < desc.colorFormat.size(); i++){
-		if(std::get<vk::Format>(desc.colorFormat[i]) != vk::Format::eUndefined){
-			planeDescriptors.emplace_back(
-				desc.extents[i],
-				std::get<vk::Format>(desc.colorFormat[i]),
-				std::get<vk::ComponentMapping>(desc.colorFormat[i])
-			);
-		} else {
-			break;
-		}
-	}
-
-	return Image(
-		vulkan,
-		usageFlags,
-		memoryFlags,
-		planeDescriptors
-	);
-}
 
 Buffer Uploader::Frame::createStagingBuffer(const Vulkan& vulkan,
 											const Image& image )

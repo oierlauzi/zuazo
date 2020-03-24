@@ -212,9 +212,10 @@ constexpr size_t getPlaneCount(ColorFormat format){
 		case ColorFormat::G16_R16B16:
 		case ColorFormat::G16_B16R16:
 			return 2;
+		case ColorFormat::NONE:
+			return 0;
 		default:
 			return 1;
-
 	}
 }
 

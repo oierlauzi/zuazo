@@ -5,6 +5,7 @@
 #include <limits>
 #include <numeric>
 #include <type_traits>
+#include <ratio>
 
 namespace Zuazo::Math {
 
@@ -90,6 +91,17 @@ public:
 	 * The real number which will get assigned to the rational number
 	 */
 	explicit constexpr Rational(Real number);
+
+	/**
+	 * \brief
+	 * Constructs a rational from a compile time std::ratio
+	 * 
+	 * \param[in] rat
+	 * The compile time std::ratio from which it is constructed
+	 */
+
+	template<intmax_t num, intmax_t den>
+	constexpr Rational(std::ratio<num, den>);
 
 	/**
 	 * \brief
@@ -195,11 +207,6 @@ private:
 	Integer m_num;
 	Integer m_den;
 };
-
-typedef Rational<int64_t>	Rational128_t;
-typedef Rational<int32_t>	Rational64_t;
-typedef Rational<int16_t>	Rational32_t;
-typedef Rational<int8_t>	Rational16_t;
 
 }
 

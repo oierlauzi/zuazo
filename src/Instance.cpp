@@ -1,62 +1,204 @@
 #include <Instance.h>
 
+#include "Graphics/VulkanUtils.h"
+
 #include <Zuazo.h>
 #include <Graphics/VulkanConversions.h>
+#include <Timing/MainLoop.h>
+#include <Timing/Scheduler.h>
+#include <Graphics/GLFW.h>
 
 #include <iostream>
 #include <sstream>
 
 namespace Zuazo {
 
+struct Instance::Impl {
+	ApplicationInfo				applicationInfo;
+	
+	Graphics::GLFW				glfw;
+	Graphics::Vulkan			vulkan;
+	Timing::Scheduler			scheduler;
+	Timing::MainLoop			loop;
+
+	FormatSupport				formatSupport;
+	ResolutionSupport			resolutionSupport;
+
+	Impl(ApplicationInfo&& appInfo)
+		: applicationInfo(std::move(appInfo))
+		, glfw()
+		, vulkan(
+			applicationInfo.name.c_str(), 
+			Graphics::toVulkan(applicationInfo.version), 
+			applicationInfo.deviceScoreFunc
+		)
+		, scheduler()
+		, loop(scheduler)
+		, formatSupport(queryFormatSupport(vulkan))
+		, resolutionSupport(queryResolutionSupport(vulkan))
+	{
+	}
+
+	~Impl() = default;
+
+	const Instance::ApplicationInfo& getApplicationInfo() const {
+		return applicationInfo;
+	}
+
+	const Timing::MainLoop& getMainLoop() const{
+		return loop;
+	}
+
+	const Graphics::Vulkan& getVulkan() const{
+		return vulkan;
+	}
+
+	const FormatSupport& getFormatSupport() const {
+		return formatSupport;
+	}
+
+	const ResolutionSupport& getResolutionSupport() const {
+		return resolutionSupport;
+	}
+
+	std::string	generateInitMessage() const {
+		std::ostringstream message;
+
+		//Show Version
+		message << "Instantiated Zuazo " 
+				<< runtimeVersion.getMajor() << "." 
+				<< runtimeVersion.getMinor() << "." 
+				<< runtimeVersion.getPatch() << "\n";
+
+		//Show selected device
+		const auto deviceProperties = vulkan.getPhysicalDevice().getProperties(vulkan.getDispatcher());
+		message << "\t- Selected GPU: " << deviceProperties.deviceName << "\n";
+
+		//Show supported formats
+		message << "\t- Supported input pixel formats:\n";
+		for(const auto& fmt : formatSupport.inputFormats ){
+			message << "\t\t- " << toString(fmt) << "\n";
+		}
+
+		message << "\t- Supported output pixel formats:\n";
+		for(const auto& fmt : formatSupport.outputFormats ){
+			message << "\t\t- " << toString(fmt) << "\n";
+		}
+
+		//Show resolution limits
+		message << "\t- Maximum input resolution: " <<  toString(resolutionSupport.maxInputResolution) << "\n";
+		message << "\t- Maximum output resolution: " <<  toString(resolutionSupport.maxOutputResolution) << "\n";
+
+		return message.str();
+	}
+
+private:
+	static FormatSupport queryFormatSupport(const Graphics::Vulkan& vulkan) {
+		FormatSupport result;
+
+		const auto& supported = vulkan.getFormatSupport();
+
+		//So that they can be binary searched:
+		assert(std::is_sorted(supported.sampler.cbegin(), supported.sampler.cend()));
+		assert(std::is_sorted(supported.framebuffer.cbegin(), supported.framebuffer.cend()));
+
+		for(auto i = ColorFormat::NONE; i < ColorFormat::COUNT; i++){
+			auto format = Graphics::toVulkan(i);
+
+			//It needs to have at least one valid format
+			if(std::get<vk::Format>(format[0]) == vk::Format::eUndefined){
+				continue; //Not supported
+			}
+
+			//Check if all members are supported by the sampler
+			bool samplerSupport = true;
+			for(size_t j = 0; j < format.size(); j++){
+				if(std::get<vk::Format>(format[j]) == vk::Format::eUndefined){
+					break; //End
+				}
+
+				//Check if it is supported
+				if(!std::binary_search(	supported.sampler.cbegin(), 
+										supported.sampler.cend(), 
+										std::get<vk::Format>(format[j]) ))
+				{
+					samplerSupport = false;
+					break;
+				}
+			}
+
+			if(samplerSupport){
+				//It can be sampled!
+				result.inputFormats.emplace_back(i);
+			}
+
+			//In order to be able to render to it, it needs to have only one plane
+			if(std::get<vk::Format>(format[1]) == vk::Format::eUndefined){
+
+				//In order to be able to render to it, it must not have any swizzle
+				format[0] = Graphics::optimizeFormat(format[0]);
+				if(std::get<vk::ComponentMapping>(format[0]) == vk::ComponentMapping()) {
+
+					//Check if it is supported
+					if(std::binary_search(	supported.framebuffer.cbegin(), 
+											supported.framebuffer.cend(), 
+											std::get<vk::Format>(format[0]) ))
+					{
+						//It can be used as a render target!
+						result.outputFormats.emplace_back(i);
+					}
+				}
+			}
+		}
+
+		return result;
+	}
+
+	static ResolutionSupport queryResolutionSupport(const Graphics::Vulkan& vulkan) {
+		const auto prop = vulkan.getPhysicalDevice().getProperties(vulkan.getDispatcher());
+
+		return ResolutionSupport {
+			Resolution(prop.limits.maxImageDimension2D, prop.limits.maxImageDimension2D),
+			Resolution(prop.limits.maxFramebufferWidth, prop.limits.maxFramebufferHeight)
+		};
+	}
+
+};
+
+
 Instance::Instance(ApplicationInfo&& applicationInfo)
-	: m_applicationInfo(std::move(applicationInfo))
-	, m_vulkan(
-		m_applicationInfo.name.c_str(), 
-		Graphics::toVulkan(m_applicationInfo.version), 
-		m_applicationInfo.deviceScoreFunc
-	)
+	: m_impl(std::move(applicationInfo))
 {
-	setupSupportedFormats();
-	log(Verbosity::INFO, generateInitMessage());
+	ZUAZO_LOG(*this, Verbosity::INFO, m_impl->generateInitMessage());
 }
+
+Instance::Instance(Instance&& other) = default;
+
+Instance::~Instance() = default; 
+
+Instance& Instance::operator=(Instance&& other) = default;
 
 const Instance::ApplicationInfo& Instance::getApplicationInfo() const {
-	return m_applicationInfo;
-}
-
-void Instance::log(Verbosity severity, const std::string_view& msg) const{
-	if(m_applicationInfo.logFunc && (severity <= m_applicationInfo.verbosity)){
-		m_applicationInfo.logFunc(*this, severity, msg);
-	}
+	return m_impl->getApplicationInfo();
 }
 
 const Timing::MainLoop& Instance::getMainLoop() const{
-	return m_loop;
+	return m_impl->getMainLoop();
 }
-
-Timing::MainLoop& Instance::getMainLoop(){
-	return m_loop;
-}
-
 
 const Graphics::Vulkan& Instance::getVulkan() const{
-	return m_vulkan;
+	return m_impl->getVulkan();
 }
 
-Graphics::Vulkan& Instance::getVulkan(){
-	return m_vulkan;
+const Instance::FormatSupport& Instance::getFormatSupport() const {
+	return m_impl->getFormatSupport();
 }
 
-const std::vector<ColorFormat>& Instance::getSupportedInputFormats() const{
-	return m_inputFormats;
+const Instance::ResolutionSupport& Instance::getResolutionSupport() const {
+	return m_impl->getResolutionSupport();
 }
 
-const std::vector<ColorFormat>& Instance::getSupportedOutputFormats() const{
-	return m_outputFormats;
-}
-
-
-void Instance::defaultLogFunc(const Instance& inst, Verbosity severity, const std::string_view& msg){
+void Instance::defaultLogFunc(const Instance& inst, Verbosity severity, std::string_view msg){
 	std::ostream& output = std::cerr;
 
 	switch(severity){
@@ -67,85 +209,6 @@ void Instance::defaultLogFunc(const Instance& inst, Verbosity severity, const st
 	}
 
 	output << &inst << ": " << msg << std::endl;
-}
-
-
-
-void Instance::setupSupportedFormats(){
-	const auto& supported = m_vulkan.getFormatSupport();
-
-	for(auto format = ColorFormat::NONE; format < ColorFormat::COUNT; format++){
-		const auto unoptimized = Graphics::toVulkan(format);
-
-		//It needs to have at least one valid format
-		if(std::get<vk::Format>(unoptimized[0]) == vk::Format::eUndefined){
-			 continue; //Not supported
-		}
-
-		//Check if all members are supported by the sampler
-		bool samplerSupport = true;
-		for(size_t i = 0; i < unoptimized.size(); i++){
-			if(std::get<vk::Format>(unoptimized[i]) == vk::Format::eUndefined){
-				break; //End
-			}
-
-			if(std::find(	supported.sampler.cbegin(), 
-							supported.sampler.cend(), 
-							std::get<vk::Format>(unoptimized[i]) )
-						== supported.sampler.cend() )
-			{
-				samplerSupport = false;
-				break;
-			}
-		}
-
-		if(samplerSupport){
-			m_inputFormats.emplace_back(format);
-		}
-
-		//To be able to render to it it needs to have only one plane
-		if(std::get<vk::Format>(unoptimized[1]) == vk::Format::eUndefined){
-			const auto optimized = Graphics::optimizeFormat(unoptimized[0]);
-
-			//To be able to render to it, it must not have any swizzle
-			if(std::get<vk::ComponentMapping>(optimized) == vk::ComponentMapping()) {
-				if(std::find(	supported.framebuffer.cbegin(), 
-								supported.framebuffer.cend(), 
-								std::get<vk::Format>(optimized)) 
-							!= supported.framebuffer.cend())
-				{
-					m_outputFormats.emplace_back(format);
-				}
-			}
-		}
-	}
-}
-
-std::string Instance::generateInitMessage() const {
-	std::ostringstream message;
-
-	//Show Version
-	message << "Instantiated Zuazo " 
-			<< runtimeVersion.getMajor() << "." 
-			<< runtimeVersion.getMinor() << "." 
-			<< runtimeVersion.getPatch() << "\n";
-
-	//Show selected device
-	const auto deviceProperties = m_vulkan.getPhysicalDevice().getProperties(m_vulkan.getDispatcher());
-	message << "\t- Selected GPU: " << deviceProperties.deviceName << "\n";
-
-	//Show supported formats
-	message << "\t- Supported input pixel formats:\n";
-	for(const auto& fmt : m_inputFormats ){
-		message << "\t\t- " << toString(fmt) << "\n";
-	}
-
-	message << "\t- Supported output pixel formats:\n";
-	for(const auto& fmt : m_outputFormats ){
-		message << "\t\t- " << toString(fmt) << "\n";
-	}
-
-	return message.str();
 }
 
 uint32_t Instance::defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp,

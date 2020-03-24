@@ -5,41 +5,51 @@
 #include "Image.h"
 #include "Buffer.h"
 #include "../Resolution.h"
+#include "../Utils/BufferView.h"
 
 #include <memory>
-#include <span>
 
 namespace Zuazo::Graphics {
 
 class Frame {
 public:	
-	using PixelData = std::array<std::span<std::byte>, IMAGE_COUNT>;
+	using PixelData = std::array<Utils::BufferView<std::byte>, IMAGE_COUNT>;
+
+	struct Descriptor {
+		using Extents = std::array<vk::Extent2D, IMAGE_COUNT>;
+		using Formats = std::array<std::tuple<vk::Format, vk::ComponentMapping>, IMAGE_COUNT>;
+
+		Extents extents;
+		Formats colorFormat;
+		ColorTransfer colorTransfer;
+	};
+
 	class Geometry;
 
 	Frame(	const Vulkan& vulkan,
-			Image&& image,
-			std::shared_ptr<const Buffer>&& colorTransfer );
+			const Descriptor& desc,
+			const std::shared_ptr<const Buffer>& colorTransfer );
 	Frame(const Frame& other) = delete;
 	Frame(Frame&& other) = default;
 	virtual ~Frame();
 
 	Frame& 							operator=(const Frame& other) = delete;
 
-	vk::Fence&						getReadyFence();
-	const vk::Fence&				getReadyFence() const;
-
-	Image&							getImage();
-	const Image&					getImage() const;
-
-	const Buffer&					getColorTransfer() const;
-
 	void							bind(	vk::CommandBuffer cmd,
 											vk::PipelineLayout layout,
 											uint32_t index,
 											vk::Filter filter );
 
+	const Descriptor&				getDescriptor() const;
+	const Image&					getImage() const;
+	const Buffer&					getColorTransfer() const;
+	const vk::Fence&				getReadyFence() const;
+
 	static std::shared_ptr<Buffer> 	createColorTransferBuffer(	const Vulkan& vulkan,
-																const ColorTransfer& colorTransfer );
+																		const ColorTransfer& colorTransfer );
+
+	static vk::DescriptorSetLayout	getDescriptorSetLayout(	const Vulkan& vulkan,
+															vk::Filter filt );
 
 protected:
 	const Vulkan&					m_vulkan;
@@ -48,16 +58,19 @@ private:
 	static constexpr size_t DESCRIPTOR_COUNT = VK_FILTER_RANGE_SIZE;
 	using DescriptorSets = std::array<vk::DescriptorSet, DESCRIPTOR_COUNT>;
 
-	vk::UniqueFence					m_readyFence;
-
+	Descriptor						m_descriptor;
 	Image							m_image;
 	std::shared_ptr<const Buffer>	m_colorTransfer;
 
 	vk::UniqueDescriptorPool		m_descriptorPool;
 	DescriptorSets					m_descriptorSets;
 
-	vk::UniqueDescriptorPool		createDescriptorPool(const Vulkan& vulkan);
-	DescriptorSets					allocateDescriptorSets(	const Vulkan& vulkan,
+	vk::UniqueFence					m_readyFence;
+
+	static Image					createImage(const Vulkan& vulkan,
+												const Descriptor& desc);
+	static vk::UniqueDescriptorPool	createDescriptorPool(const Vulkan& vulkan);
+	static DescriptorSets			allocateDescriptorSets(	const Vulkan& vulkan,
 															vk::DescriptorPool pool );
 };
 
@@ -86,7 +99,7 @@ public:
 	std::array<vk::VertexInputAttributeDescription, ATTRIBUTE_COUNT> getAttributeDescriptions(	uint32_t posLocation, 
 																								uint32_t texLocation ) const;
 
-	void bind(const vk::CommandBuffer& cmd) const;
+	void bind(vk::CommandBuffer cmd) const;
 	
 private:
 	struct Vertex {
@@ -106,7 +119,7 @@ private:
 
 	Buffer							m_vertexBuffer;
 	Buffer							m_stagingBuffer;
-	std::span<Vertex, VERTEX_COUNT>	m_vertices;
+	Utils::BufferView<Vertex>		m_vertices;
 
 	vk::UniqueCommandPool			m_commandPool;
 	vk::CommandBuffer				m_uploadCommand;
@@ -116,11 +129,11 @@ private:
 
 	static Buffer					createVertexBuffer(const Vulkan& vulkan);
 	static Buffer					createStagingBuffer(const Vulkan& vulkan);
-	static std::span<Vertex, VERTEX_COUNT>	mapStagingBuffer(	const Vulkan& vulkan, 
-																const Buffer& stagingBuffer );
+	static Utils::BufferView<Vertex> mapStagingBuffer(	const Vulkan& vulkan, 
+														const Buffer& stagingBuffer );
 	static vk::UniqueCommandPool	createCommandPool(const Vulkan& vulkan);
 	static vk::CommandBuffer		createCommandBuffer(const Vulkan& vulkan,
-														const vk::CommandPool& cmdPool,
+														vk::CommandPool cmdPool,
 														const Buffer& stagingBuffer,
 														const Buffer& vertexBuffer );
 	static vk::SubmitInfo			createSubmitInfo(const vk::CommandBuffer& cmdBuffer);

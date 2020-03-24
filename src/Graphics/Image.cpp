@@ -8,7 +8,7 @@ namespace Zuazo::Graphics {
 Image::Image(	const Vulkan& vulkan,
 				vk::ImageUsageFlags usage,
 				vk::MemoryPropertyFlags memoryProperties,
-				const std::span<const std::tuple<vk::Extent2D, vk::Format, vk::ComponentMapping>>& imagePlanes )
+				const Utils::BufferView<PlaneDescriptor>& imagePlanes )
 	: m_images(createImages(vulkan, usage, imagePlanes))
 	, m_memory(allocateMemory(vulkan, memoryProperties, m_images))
 	, m_imageViews(createImageViews(vulkan, imagePlanes, m_images))
@@ -36,7 +36,7 @@ const std::vector<vk::UniqueImageView>&	Image::getImageViews() const{
 
 std::vector<vk::UniqueImage> Image::createImages(	const Vulkan& vulkan,
 													vk::ImageUsageFlags usage,
-													const std::span<const std::tuple<vk::Extent2D, vk::Format, vk::ComponentMapping>>& imagePlanes )
+													const Utils::BufferView<PlaneDescriptor>& imagePlanes )
 {
 	std::vector<vk::UniqueImage> result;
 	result.reserve(imagePlanes.size());
@@ -45,8 +45,8 @@ std::vector<vk::UniqueImage> Image::createImages(	const Vulkan& vulkan,
 		const vk::ImageCreateInfo createInfo(
 			{},											//Flags
 			vk::ImageType::e2D,							//Image type
-			std::get<vk::Format>(imagePlanes[i]),		//Pixel format
-			vk::Extent3D(std::get<vk::Extent2D>(imagePlanes[i]), 1), //Extent
+			imagePlanes[i].format,						//Pixel format
+			vk::Extent3D(imagePlanes[i].extent, 1), 	//Extent
 			1,											//Mip levels
 			1,											//Array layers
 			vk::SampleCountFlagBits::e1,				//Sample count
@@ -98,7 +98,7 @@ Image::Memory Image::allocateMemory(const Vulkan& vulkan,
 }
 
 std::vector<vk::UniqueImageView> Image::createImageViews(	const Vulkan& vulkan,
-															const std::span<const std::tuple<vk::Extent2D, vk::Format, vk::ComponentMapping>>& imagePlanes ,
+															const Utils::BufferView<PlaneDescriptor>& imagePlanes ,
 															const std::vector<vk::UniqueImage>& images )
 {
 	assert(imagePlanes.size() == images.size());
@@ -110,8 +110,8 @@ std::vector<vk::UniqueImageView> Image::createImageViews(	const Vulkan& vulkan,
 			{},												//Flags
 			*(images[i]),									//Image
 			vk::ImageViewType::e2D,							//ImageView type
-			std::get<vk::Format>(imagePlanes[i]),			//Image format
-			std::get<vk::ComponentMapping>(imagePlanes[i]),	//Swizzle
+			imagePlanes[i].format,							//Image format
+			imagePlanes[i].swizzle,							//Swizzle
 			vk::ImageSubresourceRange(						//Image subresources
 				vk::ImageAspectFlagBits::eColor,				//Aspect mask
 				0, 1, 0, 1										//Base mipmap level, mipmap levels, base array layer, layers

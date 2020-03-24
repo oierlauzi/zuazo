@@ -19,19 +19,10 @@ namespace Zuazo::Graphics {
 
 class Uploader {
 public:
-	struct Descriptor {
-		using Extents = std::array<vk::Extent2D, IMAGE_COUNT>;
-		using Formats = std::array<std::tuple<vk::Format, vk::ComponentMapping>, IMAGE_COUNT>;
-
-		Extents extents;
-		Formats colorFormat;
-		ColorTransfer colorTransfer;
-	};
-
 	class Frame;
 
 	Uploader(	const Vulkan& vulkan, 
-				const Descriptor& descriptor );
+				const Graphics::Frame::Descriptor& descriptor );
 	Uploader(const Uploader& other) = delete;
 	Uploader(Uploader&& other) = default;
 	~Uploader() = default;
@@ -41,7 +32,7 @@ public:
 	const std::shared_ptr<Frame>&				acquireFrame() const;
 	void										clear();
 
-	static Descriptor							getDescriptor(	const Vulkan& vulkan,
+	static Graphics::Frame::Descriptor			getDescriptor(	const Vulkan& vulkan,
 																Resolution resolution,
 																ColorSubsampling subsampling,
 																ColorFormat format,
@@ -51,7 +42,7 @@ public:
 																ColorPrimaries primaries );
 private:
 	const Vulkan& 								m_vulkan;
-	Descriptor									m_descriptor;
+	Graphics::Frame::Descriptor					m_descriptor;
 
 	mutable std::vector<std::shared_ptr<Frame>>	m_frames;
 
@@ -67,8 +58,8 @@ class Uploader::Frame : public Graphics::Frame {
 public:
 	Frame(	const Vulkan& vulkan,
 			const Descriptor& desc,
-			std::shared_ptr<const Buffer> colorTransfer,
-			std::shared_ptr<const vk::UniqueCommandPool> cmdPool );
+			const std::shared_ptr<const Buffer>& colorTransfer,
+			const std::shared_ptr<const vk::UniqueCommandPool>& cmdPool );
 	Frame(const Frame& other) = delete;
 	Frame(Frame&& other) = default;
 	virtual ~Frame() = default; 
@@ -85,8 +76,6 @@ private:
 	vk::UniqueCommandBuffer						m_commandBuffer;
 	vk::SubmitInfo 								m_commandBufferSubmit;
 
-	static Image								createImage(const Vulkan& vulkan,
-															const Descriptor& desc );
 	static Buffer								createStagingBuffer(const Vulkan& vulkan,
 																	const Image& image );
 	static PixelData							getPixelData(	const Vulkan& vulkan,

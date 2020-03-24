@@ -1,178 +1,304 @@
 #include <Timing/Scheduler.h>
 
-#include <typeinfo>
+#include <map>
+#include <algorithm>
+#include <numeric>
 
 namespace Zuazo::Timing {
 
-Scheduler::Scheduler(Scheduler&& other) :
-	m_events(std::move(other.m_events)),
-	m_periods(std::move(other.m_periods))
-{
-	for(auto evnt : m_events){
-		evnt->m_scheduler = this;
-	}
-}
 
-Scheduler::~Scheduler(){
-	for(auto evnt : m_events){
-		evnt->m_scheduler = nullptr;
-	}
-}
+/*
+ * Scheduler
+ */
 
-Duration Scheduler::getTimeForNextEvent() const{
-	//Find the closest update
-	Period result(Duration::max()); //Calculate minimum, begin with the maximum value
+struct Scheduler::Impl {
+	using PeriodMap = std::map<Flicks, EventSet>;
 
-	for(const auto& period : m_periods) {
-		if(period.first.count() > 0) {
-			if(period.second < result){
-				result = period.second;
+	TimePoint currTime;
+	Flicks deltaT;
+	EventSet updates;
+
+	mutable EventSet regularEvents;
+	mutable PeriodMap periodicEvents;
+
+
+
+	void setTime(TimePoint tp) {
+		//Update time related variables
+		deltaT = tp - currTime;
+		currTime = tp;
+
+		//Clear the update set to start over
+		updates.clear();
+
+		//Insert the regular updates
+		updates.insert(
+			updates.cend(), 
+			regularEvents.cbegin(), 
+			regularEvents.cend()
+		);
+
+		//Insert the periodic updates
+		for(auto& period : periodicEvents){
+			if(currTime.time_since_epoch() % period.first == Flicks::zero()){
+				//This period needs to be updated
+				updates.insert(
+					updates.cend(),
+					period.second.cbegin(), 
+					period.second.cend()
+				);
 			}
+		}
+
+		//Sort the events from higher priorities to lower ones
+		std::sort(
+			updates.begin(), 
+			updates.end(), 
+			[](const ScheduledEvent& a, const ScheduledEvent& b) -> bool {
+				return a.getPriority() > b.getPriority();
+			}
+		);
+
+		//Update all
+		for(ScheduledEvent& event : updates){
+			event.update();
 		}
 	}
 
-	return result;
-}
-
-void Scheduler::addTime(Duration dura){
-	for(auto& period : m_periods) {
-		if(period.first.count() > 0) {
-			period.second -= dura;
-		}
+	TimePoint getTime() const {
+		return currTime;
 	}
 
-	for(auto evnt : m_events){
-		auto period = evnt->getPeriod();
-		if(period.count() > 0){
-			if(m_periods[period].count() <= 0){
-				evnt->update();
+	Flicks getDeltaT() const {
+		return deltaT;
+	}
+
+	Flicks getTimeForNextEvent() const {
+		//Calculate the minumum remaining time
+		auto result = Flicks::max();
+
+		for(const auto& period : periodicEvents) {
+			const TimePoint nextUpdate((currTime.time_since_epoch() / period.first + 1) * period.first);
+			const auto remaining = nextUpdate - currTime;
+
+			if(remaining < result){
+				result = remaining;
 			}
+		}
+
+		return result;
+	}
+
+	Flicks getTimeForPrevEvent() const {
+		//Calculate the minumum remaining time
+		auto result = Flicks::max();
+
+		for(const auto& period : periodicEvents) {
+			const TimePoint prevUpdate((currTime.time_since_epoch() / period.first - 1) * period.first);
+			const auto remaining = currTime - prevUpdate;
+
+			if(remaining < result){
+				result = remaining;
+			}
+		}
+
+		return result;
+	}
+
+
+	void addEvent(RegularEvent& event) const {
+		regularEvents.emplace_back(event);
+	}
+
+	void removeEvent(RegularEvent& event) const {
+		auto end = std::remove_if(
+			regularEvents.begin(), 
+			regularEvents.end(), 
+			[&] (const ScheduledEvent& e) -> bool {
+				return &e == &event;
+			}
+		);
+		regularEvents.erase(end, regularEvents.end());
+	}
+
+	void addEvent(PeriodicEvent& event) const {
+		const auto period = event.getPeriod();
+		auto ite = periodicEvents.find(period);
+
+		if(ite == periodicEvents.cend()){
+			//Period does not exist. Create it.
+
+			periodicEvents.emplace(	period, 
+									EventSet{event});			
 		} else {
-			evnt->update();
+			ite->second.emplace_back(event);
 		}
 	}
 
+	void removeEvent(PeriodicEvent& event) const {
+		const auto period = event.getPeriod();
+		auto ite = periodicEvents.find(period);
 
-	for(auto& period : m_periods) {
-		if(period.first.count() > 0) {
-			if(period.second.count() <= 0){
-				period.second += period.first;
+		if(ite != periodicEvents.cend()){
+			//Erase it
+			auto end = std::remove_if(
+				ite->second.begin(), 
+				ite->second.end(), 
+				[&] (const ScheduledEvent& e) -> bool {
+					return &e == &event;
+				}
+			);
+			ite->second.erase(end, ite->second.end());
+
+			if(ite->second.size() == 0){
+				//No more events of this period
+				periodicEvents.erase(ite);
 			}
 		}
 	}
 
+};
+
+
+
+Scheduler::Scheduler() = default;
+
+Scheduler::Scheduler(Scheduler&& other) = default;
+
+Scheduler::~Scheduler() = default;
+
+Scheduler& Scheduler::operator=(Scheduler&& other) = default;
+
+
+
+void Scheduler::setTime(TimePoint tp) {
+	m_impl->setTime(tp);
+}
+
+TimePoint Scheduler::getTime() const {
+	return m_impl->getTime();
+}
+
+Flicks Scheduler::getDeltaT() const {
+	return m_impl->getDeltaT();
+}
+
+Flicks Scheduler::getTimeForNextEvent() const {
+	return m_impl->getTimeForNextEvent();
+}
+
+Flicks Scheduler::getTimeForPrevEvent() const {
+	return m_impl->getTimeForPrevEvent();
 }
 
 
+/*
+ * UniqueDisable
+ */
 
+class UniqueDisable {
+public:
+	UniqueDisable(EventBase& evnt)
+		: m_evnt(evnt.isEnabled() ? &evnt : nullptr)
+	{
+		if(m_evnt) m_evnt->disable();
+	}
+	~UniqueDisable() {
+		if(m_evnt){
+			if(m_evnt) m_evnt->enable();
+		}
+	}
+private:
+	EventBase* m_evnt;
+};
 
-Scheduler::Event::Event(Scheduler* sch, Priority prior) :
-	m_scheduler(sch),
-	m_priority(prior)
+/*
+ * ScheduledEvent
+ */
+
+const ScheduledEvent::Priority ScheduledEvent::OUTPUT_PRIORITY = ScheduledEvent::LOWEST_PRIORITY / 2;
+const ScheduledEvent::Priority ScheduledEvent::PROCESSOR_PRIORITY = 0;
+const ScheduledEvent::Priority ScheduledEvent::INPUT_PRIORITY = ScheduledEvent::HIGHEST_PRIORITY / 2;
+
+ScheduledEvent::ScheduledEvent(const Scheduler& scheduler, Priority priority) 
+	: m_scheduler(scheduler)
+	, m_priority(priority)
 {
 }
 
-Scheduler::Event::Event(const Event& other) :
-	m_scheduler(other.m_scheduler),
-	m_priority(other.m_priority),
-	m_period(other.m_period)
-{
-	if(other.isEnabled()) enable();
+ScheduledEvent::~ScheduledEvent() = default;
+
+void ScheduledEvent::setScheduler(const Scheduler& scheduler) {
+	UniqueDisable dis(*this);
+	m_scheduler = scheduler;
 }
 
-Scheduler::Event::~Event() {
-	if(isEnabled()) disable();
-}
-
-Scheduler::Event& Scheduler::Event::operator=(const Event& other) {
-	if(isEnabled()) disable();
-
-	m_scheduler=other.m_scheduler;
-	m_priority=other.m_priority;
-	m_period=other.m_period;
-
-	if(other.isEnabled()) enable();
-
-	return *this;
-}
-
-void Scheduler::Event::enable(){
-	if(m_scheduler){
-		m_scheduler->m_events.insert(this);
-
-		auto ite = m_scheduler->m_periods.find(m_period);
-		if(ite == m_scheduler->m_periods.cend()){
-			m_scheduler->m_periods.emplace(m_period, 0);
-		}
-	}
-
-	EventBase::enable();
-}
-
-void Scheduler::Event::disable(){
-	if(m_scheduler){
-		m_scheduler->m_events.erase(this);
-
-		bool found = false;
-		for(auto evnt : m_scheduler->m_events){
-			if(evnt->m_period == m_period){
-				found = true;
-				break;
-			}
-		}
-
-		if(!found){
-			m_scheduler->m_periods.erase(m_period);
-		}
-	}
-	
-	EventBase::disable();
-}
-
-void Scheduler::Event::setScheduler(Scheduler* sch){
-	EventBase::UniqueDisable dis;
-	m_scheduler = sch;
-}
-
-Scheduler* Scheduler::Event::getScheduler() const{
+const Scheduler& ScheduledEvent::getScheduler() const {
 	return m_scheduler;
 }
 
-
-void Scheduler::Event::setPriority(Priority prior){
-	EventBase::UniqueDisable dis;
-	m_priority = prior;
+void ScheduledEvent::setPriority(Priority priority) {
+	UniqueDisable dis(*this);
+	m_priority = priority;
 }
 
-Scheduler::Priority Scheduler::Event::getPriority() const{
+ScheduledEvent::Priority ScheduledEvent::getPriority() const {
 	return m_priority;
 }
 
-void Scheduler::Event::setPeriod(Period period){
-	EventBase::UniqueDisable dis;
+
+/*
+ * RegularEvent
+ */
+
+
+RegularEvent::~RegularEvent() {
+	if(isEnabled()) disable();
+}
+
+void RegularEvent::enable() {
+	getScheduler().m_impl->addEvent(*this);
+	ScheduledEvent::enable();
+}
+
+void RegularEvent::disable() {
+	getScheduler().m_impl->removeEvent(*this);
+	ScheduledEvent::disable();
+}
+
+/*
+ * PeriodicEvent
+ */
+
+PeriodicEvent::~PeriodicEvent() {
+	if(isEnabled()) disable();
+}
+
+void PeriodicEvent::enable() {
+	getScheduler().m_impl->addEvent(*this);
+	ScheduledEvent::enable();
+}
+
+void PeriodicEvent::disable() {
+	getScheduler().m_impl->removeEvent(*this);
+	ScheduledEvent::disable();
+}
+
+void PeriodicEvent::setPeriod(Flicks period) {
+	UniqueDisable dis(*this);
 	m_period = period;
 }
 
-Period Scheduler::Event::getPeriod() const {
+Flicks PeriodicEvent::getPeriod() const {
 	return m_period;
 }
 
-void Scheduler::Event::setRate(const Rate& rat){
-	EventBase::UniqueDisable dis;
-	m_period = Timing::getPeriod(rat);
+void PeriodicEvent::setRate(const Rate& rate) {
+	setPeriod(Timing::getPeriod(rate));
 }
 
-Rate Scheduler::Event::getRate() const {
+Rate PeriodicEvent::getRate() const {
 	return Timing::getRate(m_period);
-}
-
-
-
-
-bool Scheduler::PriorityCmp::operator()(const Event* a, const Event* b) const {
-	if(a->getPriority() < b->getPriority()) return true;
-	else if(a->getPriority() > b->getPriority()) return false;
-	else return a < b;
 }
 
 }
