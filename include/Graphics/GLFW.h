@@ -7,16 +7,11 @@
 
 #include <atomic>
 #include <cstddef>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <string_view>
-#include <queue>
-#include <optional>
 #include <memory>
+#include <string_view>
 
-#define GLFW_INCLUDE_NONE //Don't include GL
-#include <GLFW/glfw3.h>
+struct GLFWmonitor;
+struct GLFWwindow;
 
 namespace Zuazo::Graphics{
 
@@ -59,27 +54,21 @@ private:
 	using MonitorHandle = GLFWmonitor*;
 	using WindowHandle = GLFWwindow*;
 
-	class Thread;
+	struct Callbacks;
+
+	struct Impl;
+	static std::unique_ptr<Impl>		s_impl;
 
 	static std::atomic<size_t>			s_instanceCount;
-	static std::unique_ptr<Thread>		s_thread;
-	static std::mutex					s_cbkMutex;
 
 	static MonitorCallback				s_monitorCbk;
-	static MonitorHandle				s_activeMonitorCbk;
-
-	static void 						initialize();
-	static void 						terminate();
-
-	static std::vector<Monitor>			getMonitorsImpl();
-
-	static void							monitorCbk(MonitorHandle mon, int evnt);
+	
 };
 
 
 class GLFW::Monitor {
-	friend GLFW;
-	friend GLFW::Window;
+	friend GLFW::Impl;
+	friend GLFW::Callbacks;
 public:
 	using ColorDepth = Math::Vec3i;
 
@@ -108,18 +97,13 @@ private:
 
 	MonitorHandle						m_monitor = nullptr;
 
-	static bool							isValidImpl(MonitorHandle mon);
-	static std::string					getNameImpl(MonitorHandle mon);
-	static Math::Vec2i					getPositionImpl(MonitorHandle mon);
-	static Math::Vec2d					getPhysicalSizeImpl(MonitorHandle mon);
-	static Mode							getModeImpl(MonitorHandle mon);
-	static std::vector<Mode>			getModesImpl(MonitorHandle mon);
-
 };
 
 
 
 class GLFW::Window {
+	friend GLFW::Impl;
+	friend GLFW::Callbacks;
 public:
 	enum class State {
 		NORMAL,
@@ -140,7 +124,7 @@ public:
 
 	Window() = default;
 	Window(	const Math::Vec2i& size, 
-			const std::string_view& name );
+			std::string_view name );
 	Window(const Window& other) = delete;
 	Window(Window&& other);
 	~Window();
@@ -152,7 +136,7 @@ public:
 
 	vk::UniqueSurfaceKHR 		getSurface(const Vulkan& vulkan) const;
 
-	void						setName(const std::string_view& name);
+	void						setName(std::string_view name);
 
 	void						setState(State st);
 	State						getState() const;
@@ -205,7 +189,7 @@ public:
 
 
 private:
-	struct WindowGeometry {
+	struct Geometry {
 		Math::Vec2i pos, size;
 	};
 
@@ -221,90 +205,9 @@ private:
 	};
 
 	Callbacks						m_callbacks;	
-	WindowGeometry 					m_windowedState = {};
+	Geometry 						m_windowedState = {};
 
 	WindowHandle 					m_window = nullptr;
-
-	static WindowHandle				createWindow(	const Math::Vec2i& size, 
-													const std::string_view& name,
-													Window* usrPtr );
-	static void						destroyWindow(WindowHandle window);
-
-	static void						setNameImpl(WindowHandle win, const std::string_view& name);
-
-	static void						setStateImpl(	WindowHandle win,
-													WindowGeometry* windowedGeom,
-													State st );
-	static State					getStateImpl(WindowHandle win);
-
-	static void						setMonitorImpl(	WindowHandle win, 
-													WindowGeometry* windowedGeom,
-													const Monitor& newMon, 
-													const Monitor::Mode& mode );
-	static Monitor					getMonitorImpl(WindowHandle win);
-
-	static void						setPositionImpl(WindowHandle win, const Math::Vec2i& pos);
-	static Math::Vec2i				getPositionImpl(WindowHandle win);
-
-	static void						setSizeImpl(WindowHandle win, const Math::Vec2i& size);
-	static Math::Vec2i				getSizeImpl(WindowHandle win);
-
-	static void						setOpacityImpl(WindowHandle win, float opa);
-	static float					getOpacityImpl(WindowHandle win);
-
-	static Resolution				getResolutionImpl(WindowHandle win);
-
-	static Math::Vec2f				getScaleImpl(WindowHandle win);
-
-	static void						focusImpl(WindowHandle win);
-
-	static void						setDecoratedImpl(WindowHandle win, bool deco);
-	static bool						getDecoratedImpl(WindowHandle win);
-
-	static void						setResizeableImpl(WindowHandle win, bool resizeable);
-	static bool						getResizeableImpl(WindowHandle win);
-
-	static void						positionCbk(WindowHandle win, int x, int y);
-	static void						sizeCbk(WindowHandle win, int x, int y);
-	static void						closeCbk(WindowHandle win);
-	static void						refreshCbk(WindowHandle win);
-	static void						focusCbk(WindowHandle win, int x);
-	static void						iconifyCbk(WindowHandle win, int x);
-	static void						maximizeCbk(WindowHandle win, int x);
-	static void						framebufferCbk(WindowHandle win, int x, int y);
-	static void						scaleCbk(WindowHandle win, float x, float y);
-
-};
-
-class GLFW::Thread {
-	friend GLFW::Window;
-public:
-	Thread();
-	Thread(const Thread& other) = delete;
-	~Thread();
-
-	Thread& 						operator=(const Thread& other) = delete;
-
-	template<typename Ret, typename Func, typename... Args>
-	Ret 							execute(Func&& func, Args&&... args);
-
-	void							setCallbacksEnabled(bool ena);
-	bool							getCallbacksEnabled() const;
-private:
-	using QueueFunc = std::function<void(void)>;
-
-	std::atomic<bool>				m_exit;
-	std::atomic<size_t>				m_windowCount;
-	std::atomic<bool>				m_cbkEnabled;
-
-	std::mutex						m_mutex;
-	std::condition_variable			m_continueCondition;
-	std::condition_variable			m_completeCondition;
-	std::queue<QueueFunc> 			m_executions;
-	std::thread						m_thread;
-
-	void							threadFunc();
-	void							threadContinue();
 
 };
 
