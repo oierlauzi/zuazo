@@ -7,6 +7,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <queue>
+#include <type_traits>
 
 #define GLFW_INCLUDE_NONE //Don't include GL
 #include <GLFW/glfw3.h>
@@ -400,25 +401,23 @@ private:
 	}
 
 	template<typename Func, typename... Args>
-	auto execute(Func&& func, Args&&... args) -> decltype(func(std::forward<Args>(args)...)){
+	typename std::invoke_result<Func, Args...>::type execute(Func&& func, Args&&... args) {
+		using Ret = typename std::invoke_result<Func, Args...>::type;
+
 		if(std::this_thread::get_id() == thread.get_id()){
 			return func(std::forward<Args>(args)...); //We are on the main thread. Simply execute it
 		}else {
 			std::unique_lock<std::mutex> lock(mutex);
 
 			//Create a future object to pass it to the main thread
-			auto futur = std::async(
-				std::launch::deferred, 
-				std::forward<Func>(func), 
-				std::forward<Args>(args)...
-			);
-			executions.emplace([&futur] () -> void { futur.wait(); });
+			std::packaged_task<Ret(Args...)> task(std::forward<Func>(func));
+			executions.emplace([&] { task(std::forward<Args>(args)...); });
 			
 			//Wait until execution is complete
 			threadContinue();
 			completeCondition.wait(lock);
 
-			return futur.get();
+			return task.get_future().get();
 		}
 	}
 
