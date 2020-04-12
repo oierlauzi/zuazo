@@ -1,52 +1,73 @@
 #pragma once
 
-#pragma once
-
+#include "Layout.h"
 #include "Output.h"
 
-#include <memory>
-#include <mutex>
-#include <vector>
+#include <limits>
+#include <array>
 #include <atomic>
+#include <vector>
+#include <cstddef>
 
 namespace Zuazo::Signal {
 
 template <typename T>
 class AsyncOutput : public Output<T> {
 public:
-	using Output<T>::Output;
+	AsyncOutput() = default;
+	template<typename Str>
+	AsyncOutput(Str&& name, size_t length = DEFAULT_MAX_LENGTH);
+	AsyncOutput(const AsyncOutput& other) = default;
+	AsyncOutput(AsyncOutput&& other) = default;
+	virtual ~AsyncOutput() = default;
 
-	AsyncOutput&                        operator=(AsyncOutput&& other) = default;
+	AsyncOutput&				operator=(const AsyncOutput& other) = default;
+	AsyncOutput&				operator=(AsyncOutput&& other) = default;
 
-	void								setMaxDropped(int max);
-	int									getMaxDropped() const;
-	uint								getDropped() const;
-	void								resetDropped();
+	void						setMaxDropped(int max);
+	int							getMaxDropped() const;
+	uint						getDropped() const;
+	void						resetDropped();
 
-	void								setMaxBufferSize(size_t size);
-	size_t								getMaxBufferSize() const;
-	size_t								getBufferSize() const;
-	void								flushBuffer();
+	void						flushBuffer();
+	size_t						getBufferSize() const;
 
-	void								update();
+	void						update();
 
-	void								reset();
-	void								push(T&& element);
+	void						reset();
+	template<typename Q>
+	void						push(Q&& element);
 
-	static constexpr int				DEFAULT_MAX_DROPPED=3;
-	static constexpr uint				DEFAULT_MAX_BUFFER_SIZE=3;
+	static constexpr int		DEFAULT_MAX_DROPPED = 3;
+	static constexpr size_t		DEFAULT_MAX_LENGTH = 4;
 private:
-	Timing::PeriodicEvent				m_period;
-	std::mutex							m_mutex;
+	std::atomic<size_t>			m_read = 0;
+	std::atomic<size_t>			m_write = 0;
+	std::vector<T>				m_buffer;
 
-	int									m_maxDropped = DEFAULT_MAX_DROPPED;
-	uint								m_dropped = 0;
+	int							m_maxDropped = DEFAULT_MAX_DROPPED;
+	uint						m_dropped = 0;
 
-	std::atomic<size_t>					m_read = 0;
-	std::atomic<size_t>					m_write = 0;
-	std::vector<T>						m_buffer = std::vector<T>(DEFAULT_MAX_BUFFER_SIZE);
+	size_t 						getNextValue(size_t i) const;
+	
+};
 
-	size_t								getNextValue(size_t i) const;		
+template <typename T>
+class Layout::PadProxy<AsyncOutput<T>> : public Layout::PadProxy<Output<T>> {
+public:
+	PadProxy(AsyncOutput<T>& pad);
+	PadProxy(const PadProxy& other) = delete;
+	~PadProxy() = default;
+
+	PadProxy& 					operator=(const PadProxy& other) = delete;
+
+	void						setMaxDropped(int max);
+	int							getMaxDropped() const;
+	uint						getDropped() const;
+	void						resetDropped();
+
+	void						flushBuffer();
+	size_t						getBufferSize();
 };
 
 }

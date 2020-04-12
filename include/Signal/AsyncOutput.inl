@@ -1,7 +1,19 @@
 #include "AsyncOutput.h"
-#include "../Timing/MainLoop.h"
 
 namespace Zuazo::Signal {
+
+/*
+ * AsyncOutput
+ */
+
+template <typename T>
+template<typename Str>
+inline AsyncOutput<T>::AsyncOutput(	Str&& name, 
+									size_t length )
+	: Output<T>(std::forward<Str>(name))
+	, m_buffer(length)
+{
+}
 
 template <typename T>
 inline void AsyncOutput<T>::setMaxDropped(int max){
@@ -20,23 +32,21 @@ inline uint AsyncOutput<T>::getDropped() const{
 
 template <typename T>
 inline void AsyncOutput<T>::resetDropped(){
-	m_dropped;
+	m_dropped = 0;
 }
 
 
 template <typename T>
-inline void	AsyncOutput<T>::setMaxBufferSize(size_t size){
-	std::lock_guard<std::mutex> lock(m_mutex); //Lock to prevent any new elements being added
-	m_buffer.resize(size + 1);
+inline void AsyncOutput<T>::flushBuffer(){
+	size_t read, write;
+	while((read = m_read.load()) !=  (write = m_write.load())){
+		m_buffer[read] = T();
+		m_read.store(getNextValue(read));
+	}
 }
 
 template <typename T>
-inline size_t AsyncOutput<T>::getMaxBufferSize() const{
-	return m_buffer.size();
-}
-
-template <typename T>
-inline size_t AsyncOutput<T>::getBufferSize() const{
+inline size_t AsyncOutput<T>::getBufferSize() const {
 	const size_t read = m_read.load();
 	const size_t write = m_write.load();
 	const size_t bufSize = m_buffer.size();
@@ -45,28 +55,15 @@ inline size_t AsyncOutput<T>::getBufferSize() const{
 }
 
 template <typename T>
-inline void AsyncOutput<T>::flushBuffer(){
-	size_t read, write;
-	while((read = m_read.load()) !=  (write = m_write.load())){
-		m_buffer[read].reset();
-		m_read.store(getNextValue(read));
-	}
-}
-
-template <typename T>
 inline void AsyncOutput<T>::update() {
-	//No need for lock buffer resizing. 
-	//update() shouldnt be called while there is an active context
-
 	const size_t read = m_read.load();
 	const size_t write = m_write.load();
-	const size_t nextRead = getNextValue(read);
 
 	if(read != write) {
 		//There is at least 1 element in the buffer
 		m_dropped = 0;
 		Output<T>::push(std::move(m_buffer[read]));
-		m_read.store(nextRead);
+		m_read.store(getNextValue(read));
 	} else {
 		//Missing element -> increment the dropped counter
 		m_dropped++;
@@ -86,22 +83,63 @@ inline void AsyncOutput<T>::reset(){
 
 
 template <typename T>
-inline void AsyncOutput<T>::push(T&& element){
-	std::lock_guard<std::mutex> lock(m_mutex); //Lock if it is being resized.
-
+template <typename Q>
+inline void AsyncOutput<T>::push(Q&& element){
 	const size_t read = m_read.load();
 	const size_t write = m_write.load();
 	const size_t nextWrite =  getNextValue(write);
 
 	if(read != nextWrite) {
-		m_buffer[write] = std::move(element);
-		m_write.store(nextWrite);
+		//Write only if the buffer is not full
+		m_buffer[write] = std::forward<Q>(element);
+		m_write.store(nextWrite); //Advances the write head
 	} //else discard element
 }
 
 template <typename T>
 inline size_t AsyncOutput<T>::getNextValue(size_t i) const{
 	return (i + 1) % m_buffer.size();
+}
+
+/*
+ * Layout::PadProxy<AsyncOutput<T>>
+ */
+
+template <typename T>
+inline Layout::PadProxy<AsyncOutput<T>>::PadProxy(AsyncOutput<T>& pad)
+	: PadProxy<Output<T>>(pad)
+{
+}
+
+
+template <typename T>
+inline void Layout::PadProxy<AsyncOutput<T>>::setMaxDropped(int max) {
+	PadProxy<PadBase>::template get<AsyncOutput<T>>().setMaxDropped(max);
+}
+
+template <typename T>
+inline int Layout::PadProxy<AsyncOutput<T>>::getMaxDropped() const {
+	return PadProxy<PadBase>::template get<AsyncOutput<T>>().getMaxDropped();
+}
+
+template <typename T>
+inline uint Layout::PadProxy<AsyncOutput<T>>::getDropped() const {
+	return PadProxy<PadBase>::template get<AsyncOutput<T>>().getDropped();
+}
+
+template <typename T>
+inline void Layout::PadProxy<AsyncOutput<T>>::resetDropped() {
+	PadProxy<PadBase>::template get<AsyncOutput<T>>().resetDropped();
+}
+
+template <typename T>
+inline void Layout::PadProxy<AsyncOutput<T>>::flushBuffer() {
+	PadProxy<PadBase>::template get<AsyncOutput<T>>().flushBuffer();
+}
+
+template <typename T>
+inline size_t Layout::PadProxy<AsyncOutput<T>>::getBufferSize() {
+	return PadProxy<PadBase>::template get<AsyncOutput<T>>().getBufferSize();
 }
 
 }
