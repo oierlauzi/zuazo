@@ -2,15 +2,16 @@
 
 #include "Instance.h"
 #include "Signal/Layout.h"
-#include "VideoMode.h"
 
 #include <utility>
 
 namespace Zuazo {
 
-class ZuazoBase : public Signal::Layout {
+class ZuazoBase 
+	: public Signal::Layout {
 public:
-	ZuazoBase(const Instance& instance, std::string&& name);
+	template<typename Str>
+	ZuazoBase(const Instance& instance, Str&& name);
 	ZuazoBase(const ZuazoBase& other) = delete;
 	ZuazoBase(ZuazoBase&& other) = default;
 	virtual ~ZuazoBase() = default;
@@ -24,17 +25,13 @@ public:
 	virtual void 							close() = 0;
 	bool 									isOpen() const;
 
-	virtual void							setVideoMode(const VideoMode& videoMode) = 0;
-	const VideoMode&						getVideoMode() const;
-
 private:
 	std::reference_wrapper<const Instance> 	m_instance;
 
 	bool    								m_isOpen;
-
-	VideoMode								m_videoMode;
-
 	
 };
 
 }
+
+#include "ZuazoBase.inl"

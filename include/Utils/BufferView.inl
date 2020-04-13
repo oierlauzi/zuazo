@@ -12,7 +12,7 @@ constexpr BufferView<T>::BufferView()
 }
 
 template <typename T>
-template <typename Q, typename>
+template <typename Q, typename, typename, typename>
 constexpr BufferView<T>::BufferView(Q* data, size_t size)
 	: m_data(static_cast<T*>(data))
 	, m_size(size)
@@ -30,6 +30,13 @@ template <typename T>
 template <typename Q, size_t N>
 constexpr BufferView<T>::BufferView(Q (&arr)[N])
 	: BufferView(arr, N)
+{
+}
+
+template <typename T>
+template <typename Q>
+constexpr BufferView<T>::BufferView(std::initializer_list<Q> list)
+	: BufferView(list.begin(), list.end())
 {
 }
 

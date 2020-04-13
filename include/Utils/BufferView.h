@@ -1,6 +1,7 @@
 #pragma once
 
 #include <type_traits>
+#include <initializer_list>
 #include <array>
 #include <vector>
 
@@ -12,6 +13,8 @@ public:
 	constexpr BufferView();
 
 	template <	typename Q, 
+				typename = typename std::enable_if< !std::is_same<T, void>::value>::type,
+				typename = typename std::enable_if< !std::is_same<Q, void>::value>::type,
 				typename = typename std::enable_if< std::is_convertible<Q(*)[], T(*)[]>::value>::type >
 	constexpr BufferView(Q* data, size_t size);
 
@@ -20,6 +23,9 @@ public:
 
 	template <typename Q, size_t N>
 	constexpr BufferView(Q (&arr)[N]);
+
+	template <typename Q>
+	constexpr BufferView(std::initializer_list<Q> list);
 
 	template <typename Q, size_t N>
 	constexpr BufferView(std::array<Q, N>& arr);

@@ -56,22 +56,26 @@ public:
 	vk::UniqueImage						createImage(const vk::ImageCreateInfo& createInfo) const;
 	vk::UniqueImageView					createImageView(const vk::ImageViewCreateInfo& createInfo) const;
 	vk::UniqueRenderPass				createRenderPass(const vk::RenderPassCreateInfo& createInfo) const;
-	vk::UniqueShaderModule				createShader(Utils::BufferView<const uint32_t> code) const;
-	vk::ShaderModule					createShader(	Utils::BufferView<const uint32_t> code, 
-														size_t id) const;
-	vk::UniquePipelineLayout			createPipelineLayout(const vk::PipelineLayoutCreateInfo& createInfo) const;
-	vk::PipelineLayout					createPipelineLayout(	const vk::PipelineLayoutCreateInfo& createInfo, 
-																size_t id) const;
 	vk::UniquePipeline					createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& createInfo ) const;
 	vk::UniqueFramebuffer				createFramebuffer(const vk::FramebufferCreateInfo& createInfo) const;
 	vk::UniqueCommandPool				createCommandPool(const vk::CommandPoolCreateInfo& createInfo) const;
 	vk::UniqueBuffer					createBuffer(const vk::BufferCreateInfo& createInfo) const;
-	vk::UniqueDescriptorSetLayout		createDescriptorSetLayout(	const vk::DescriptorSetLayoutCreateInfo& createInfo) const;
-	vk::DescriptorSetLayout				createDescriptorSetLayout(	const vk::DescriptorSetLayoutCreateInfo& createInfo,
-																	size_t id) const;
 	vk::UniqueDescriptorPool			createDescriptorPool(const vk::DescriptorPoolCreateInfo& createInfo) const;
 	vk::UniqueSemaphore					createSemaphore() const;
 	vk::UniqueFence						createFence(bool signaled = false) const;
+
+	vk::UniqueShaderModule				createShaderModule(Utils::BufferView<const uint32_t> code) const;
+	vk::ShaderModule					createShaderModule(size_t id) const;
+	vk::ShaderModule					createShaderModule(	size_t id, 
+															Utils::BufferView<const uint32_t> code ) const;
+	vk::UniquePipelineLayout			createPipelineLayout(const vk::PipelineLayoutCreateInfo& createInfo) const;
+	vk::PipelineLayout					createPipelineLayout(size_t id) const;
+	vk::PipelineLayout					createPipelineLayout(	size_t id,
+																const vk::PipelineLayoutCreateInfo& createInfo ) const;
+	vk::UniqueDescriptorSetLayout		createDescriptorSetLayout(	const vk::DescriptorSetLayoutCreateInfo& createInfo) const;
+	vk::DescriptorSetLayout				createDescriptorSetLayout(size_t id) const;
+	vk::DescriptorSetLayout				createDescriptorSetLayout(	size_t id,
+																	const vk::DescriptorSetLayoutCreateInfo& createInfo ) const;
 
 	std::vector<vk::UniqueCommandBuffer>allocateCommnadBuffers(const vk::CommandBufferAllocateInfo& allocInfo) const;
 	vk::UniqueDeviceMemory				allocateMemory(const vk::MemoryAllocateInfo& allocInfo) const;

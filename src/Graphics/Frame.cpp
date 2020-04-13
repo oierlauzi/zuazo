@@ -259,38 +259,46 @@ std::shared_ptr<Buffer> Frame::createColorTransferBuffer( 	const Vulkan& vulkan,
 
 vk::DescriptorSetLayout	Frame::getDescriptorSetLayout(	const Vulkan& vulkan,
 														vk::Filter filt) {
-	constexpr std::array<Utils::StaticId, VK_FILTER_RANGE_SIZE> ids;
+	static const std::array<Utils::StaticId, VK_FILTER_RANGE_SIZE> ids;
 	const size_t id = ids[static_cast<size_t>(filt)];
 
-	std::array<vk::Sampler, IMAGE_COUNT> inmutableSamplers;
-	for(size_t j = 0; j < inmutableSamplers.size(); j++){
-		inmutableSamplers[j] = vulkan.getSampler(filt);
+	auto result = vulkan.createDescriptorSetLayout(id);
+
+	if(!result) {
+		//Descriptor set was not previously created. Create it
+
+		std::array<vk::Sampler, IMAGE_COUNT> inmutableSamplers;
+		for(size_t j = 0; j < inmutableSamplers.size(); j++){
+			inmutableSamplers[j] = vulkan.getSampler(filt);
+		}
+
+		//Create the bindings
+		const std::array bindings = {
+			vk::DescriptorSetLayoutBinding( //Sampled image binding
+				IMAGE_BINDING,									//Binding
+				vk::DescriptorType::eCombinedImageSampler,		//Type
+				IMAGE_COUNT,									//Count
+				vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
+				inmutableSamplers.data()						//Inmutable samplers
+			), 
+			vk::DescriptorSetLayoutBinding(	//Color transfer binding
+				COLOR_TRANSFER_BINDING,							//Binding
+				vk::DescriptorType::eUniformBuffer,				//Type
+				1,												//Count
+				vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
+				nullptr											//Inmutable samplers
+			), 
+		};
+
+		const vk::DescriptorSetLayoutCreateInfo createInfo(
+			{},
+			bindings.size(), bindings.data()
+		);
+
+		result = vulkan.createDescriptorSetLayout(id, createInfo);
 	}
 
-	//Create the bindings
-	const std::array bindings = {
-		vk::DescriptorSetLayoutBinding( //Sampled image binding
-			IMAGE_BINDING,									//Binding
-			vk::DescriptorType::eCombinedImageSampler,		//Type
-			IMAGE_COUNT,									//Count
-			vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
-			inmutableSamplers.data()						//Inmutable samplers
-		), 
-		vk::DescriptorSetLayoutBinding(	//Color transfer binding
-			COLOR_TRANSFER_BINDING,							//Binding
-			vk::DescriptorType::eUniformBuffer,				//Type
-			1,												//Count
-			vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
-			nullptr											//Inmutable samplers
-		), 
-	};
-
-	const vk::DescriptorSetLayoutCreateInfo createInfo(
-		{},
-		bindings.size(), bindings.data()
-	);
-
-	return vulkan.createDescriptorSetLayout(createInfo, id);
+	return result;
 }
 
 

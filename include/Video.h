@@ -9,8 +9,13 @@
 #include "Resolution.h"
 #include "Math/Rational.h"
 #include "Timing/Chrono.h"
+#include "Graphics/Frame.h"
+
+#include <memory>
 
 namespace Zuazo {
+
+using Video = std::shared_ptr<const Graphics::Frame>;
 
 struct VideoMode {
 	Resolution				resolution = Resolution(0, 0);

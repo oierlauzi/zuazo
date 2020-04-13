@@ -60,7 +60,7 @@ Graphics::Frame::Descriptor Uploader::getDescriptor(	const Vulkan& vulkan,
 	//Obtain the resolutions of each plane
 	result.extents[0] = toVulkan(resolution);
 	if(planeCount > 1 && planeCount <= 3) {
-		const auto chromaSize = toVulkan(getChromaResolution(subsampling, resolution));
+		const auto chromaSize = toVulkan(getSubsampledResolution(subsampling, resolution));
 
 		for(size_t i = 1; i < planeCount; i++){
 			result.extents[i] = chromaSize;

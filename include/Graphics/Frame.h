@@ -46,7 +46,7 @@ public:
 	const vk::Fence&				getReadyFence() const;
 
 	static std::shared_ptr<Buffer> 	createColorTransferBuffer(	const Vulkan& vulkan,
-																		const ColorTransfer& colorTransfer );
+																const ColorTransfer& colorTransfer );
 
 	static vk::DescriptorSetLayout	getDescriptorSetLayout(	const Vulkan& vulkan,
 															vk::Filter filt );

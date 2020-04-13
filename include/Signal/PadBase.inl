@@ -37,12 +37,12 @@ inline const std::string& Layout::PadProxy<PadBase>::getName() const {
 
 template <typename T>
 inline T& Layout::PadProxy<PadBase>::get() {
-	return static_cast<T>(m_pad);
+	return static_cast<T&>(m_pad);
 }
 
 template <typename T>
 inline const T& Layout::PadProxy<PadBase>::get() const {
-	return static_cast<T>(m_pad);
+	return static_cast<const T&>(m_pad);
 }
 
 }

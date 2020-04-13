@@ -178,52 +178,6 @@ struct Vulkan::Impl {
 		return device->createRenderPassUnique(createInfo, nullptr, dispatcher);
 	}
 
-	vk::UniqueShaderModule createShader(Utils::BufferView<const uint32_t> code) const
-	{
-		const vk::ShaderModuleCreateInfo createInfo(
-			{},												//Flags
-			code.size() * sizeof(uint32_t), code.data()		//Code
-		);
-
-		return device->createShaderModuleUnique(createInfo, nullptr, dispatcher);
-	}
-
-	vk::ShaderModule createShader(	Utils::BufferView<const uint32_t> code,
-									size_t id ) const
-	{
-		auto ite = shaders.find(id);
-
-		if(ite == shaders.cend()){	
-			std::tie(ite, std::ignore) = shaders.emplace(
-				id,
-				createShader(code)
-			);
-		}
-
-		assert(ite != shaders.cend());
-		return *(ite->second);
-	}
-
-	vk::UniquePipelineLayout createPipelineLayout(const vk::PipelineLayoutCreateInfo& createInfo) const {
-		return device->createPipelineLayoutUnique(createInfo, nullptr, dispatcher);
-	}
-
-	vk::PipelineLayout createPipelineLayout(const vk::PipelineLayoutCreateInfo& createInfo,
-											size_t id ) const
-	{
-		auto ite = pipelineLayouts.find(id);
-
-		if(ite == pipelineLayouts.cend()){
-			std::tie(ite, std::ignore) = pipelineLayouts.emplace(
-				id,
-				createPipelineLayout(createInfo)
-			);
-		}
-
-		assert(ite != pipelineLayouts.cend());
-		return *(ite->second);
-	}
-
 	vk::UniquePipeline createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& createInfo ) const 
 	{
 		return device->createGraphicsPipelineUnique(*pipelineCache, createInfo, nullptr, dispatcher);
@@ -257,22 +211,79 @@ struct Vulkan::Impl {
 		return device->createFenceUnique(createInfo, nullptr, dispatcher);
 	}
 
+
+
+	vk::UniqueShaderModule createShaderModule(Utils::BufferView<const uint32_t> code) const
+	{
+		const vk::ShaderModuleCreateInfo createInfo(
+			{},												//Flags
+			code.size() * sizeof(uint32_t), code.data()		//Code
+		);
+
+		return device->createShaderModuleUnique(createInfo, nullptr, dispatcher);
+	}
+
+	vk::ShaderModule createShaderModule(size_t id) const {
+		auto ite = shaders.find(id);
+		if(ite != shaders.cend()) return *(ite->second);
+		else return {};	
+	}
+
+	vk::ShaderModule createShaderModule(size_t id, 
+										Utils::BufferView<const uint32_t> code ) const
+	{
+		auto [ite, result] = shaders.emplace(
+			id,
+			createShaderModule(code)
+		);
+
+		assert(result);
+		assert(ite != shaders.cend());
+		return *(ite->second);
+	}
+
+	vk::UniquePipelineLayout createPipelineLayout(const vk::PipelineLayoutCreateInfo& createInfo) const {
+		return device->createPipelineLayoutUnique(createInfo, nullptr, dispatcher);
+	}
+
+	vk::PipelineLayout createPipelineLayout(size_t id) const {
+		auto ite = pipelineLayouts.find(id);
+		if(ite != pipelineLayouts.cend()) return *(ite->second);
+		else return {};	
+	}
+
+	vk::PipelineLayout createPipelineLayout(size_t id, 
+											const vk::PipelineLayoutCreateInfo& createInfo ) const
+	{
+		auto [ite, result] = pipelineLayouts.emplace(
+			id,
+			createPipelineLayout(createInfo)
+		);
+
+		assert(result);
+		assert(ite != pipelineLayouts.cend());
+		return *(ite->second);
+	}
+
 	vk::UniqueDescriptorSetLayout createDescriptorSetLayout(const vk::DescriptorSetLayoutCreateInfo& createInfo) const {
 		return device->createDescriptorSetLayoutUnique(createInfo, nullptr, dispatcher);
 	}
 
-	vk::DescriptorSetLayout createDescriptorSetLayout(	const vk::DescriptorSetLayoutCreateInfo& createInfo,
-														size_t id) const 
-	{
+	vk::DescriptorSetLayout createDescriptorSetLayout(size_t id) const {
 		auto ite = descriptorSetLayouts.find(id);
+		if(ite != descriptorSetLayouts.cend()) return *(ite->second);
+		else return {};	
+	}
 
-		if(ite == descriptorSetLayouts.cend()){
-			std::tie(ite, std::ignore) = descriptorSetLayouts.emplace(
-				id,
-				createDescriptorSetLayout(createInfo)
-			);
-		}
+	vk::DescriptorSetLayout createDescriptorSetLayout(	size_t id, 
+														const vk::DescriptorSetLayoutCreateInfo& createInfo ) const
+	{
+		auto [ite, result] = descriptorSetLayouts.emplace(
+			id,
+			createDescriptorSetLayout(createInfo)
+		);
 
+		assert(result);
 		assert(ite != descriptorSetLayouts.cend());
 		return *(ite->second);
 	}
@@ -923,26 +934,6 @@ vk::UniqueRenderPass Vulkan::createRenderPass(const vk::RenderPassCreateInfo& cr
 	return m_impl->createRenderPass(createInfo);
 }
 
-vk::UniqueShaderModule Vulkan::createShader(Utils::BufferView<const uint32_t> code) const {
-	return m_impl->createShader(code);
-}
-
-vk::ShaderModule Vulkan::createShader(	Utils::BufferView<const uint32_t> code,
-										size_t id ) const
-{
-	return m_impl->createShader(code, id);
-}
-
-vk::UniquePipelineLayout Vulkan::createPipelineLayout(const vk::PipelineLayoutCreateInfo& createInfo) const {
-	return m_impl->createPipelineLayout(createInfo);
-}
-
-vk::PipelineLayout Vulkan::createPipelineLayout(const vk::PipelineLayoutCreateInfo& createInfo,
-												size_t id ) const
-{
-	return m_impl->createPipelineLayout(createInfo, id);
-}
-
 vk::UniquePipeline Vulkan::createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& createInfo ) const 
 {
 	return m_impl->createGraphicsPipeline(createInfo);
@@ -960,16 +951,6 @@ vk::UniqueBuffer Vulkan::createBuffer(const vk::BufferCreateInfo& createInfo) co
 	return m_impl->createBuffer(createInfo);
 }
 
-vk::UniqueDescriptorSetLayout Vulkan::createDescriptorSetLayout(const vk::DescriptorSetLayoutCreateInfo& createInfo) const {
-	return m_impl->createDescriptorSetLayout(createInfo);
-}
-
-vk::DescriptorSetLayout Vulkan::createDescriptorSetLayout(	const vk::DescriptorSetLayoutCreateInfo& createInfo,
-															size_t id) const
-{
-	return m_impl->createDescriptorSetLayout(createInfo, id);
-}
-
 vk::UniqueDescriptorPool Vulkan::createDescriptorPool(const vk::DescriptorPoolCreateInfo& createInfo) const{
 	return m_impl->createDescriptorPool(createInfo);
 }
@@ -980,6 +961,50 @@ vk::UniqueSemaphore Vulkan::createSemaphore() const {
 
 vk::UniqueFence Vulkan::createFence(bool signaled) const {
 	return m_impl->createFence(signaled);
+}
+
+
+
+vk::UniqueShaderModule Vulkan::createShaderModule(Utils::BufferView<const uint32_t> code) const  {
+	return m_impl->createShaderModule(code);
+}
+
+vk::ShaderModule Vulkan::createShaderModule(size_t id) const  {
+	return m_impl->createShaderModule(id);
+}
+
+vk::ShaderModule Vulkan::createShaderModule(size_t id, 
+											Utils::BufferView<const uint32_t> code ) const 
+{
+	return m_impl->createShaderModule(id, code);
+}
+
+vk::UniquePipelineLayout Vulkan::createPipelineLayout(const vk::PipelineLayoutCreateInfo& createInfo) const {
+	return m_impl->createPipelineLayout(createInfo);
+}
+
+vk::PipelineLayout Vulkan::createPipelineLayout(size_t id) const {
+	return m_impl->createPipelineLayout(id);
+}
+
+vk::PipelineLayout Vulkan::createPipelineLayout(size_t id,
+												const vk::PipelineLayoutCreateInfo& createInfo ) const
+{
+	return m_impl->createPipelineLayout(id, createInfo);
+}
+
+vk::UniqueDescriptorSetLayout Vulkan::createDescriptorSetLayout(const vk::DescriptorSetLayoutCreateInfo& createInfo) const {
+	return m_impl->createDescriptorSetLayout(createInfo);
+}
+
+vk::DescriptorSetLayout Vulkan::createDescriptorSetLayout(size_t id) const {
+	return m_impl->createDescriptorSetLayout(id);
+}
+
+vk::DescriptorSetLayout Vulkan::createDescriptorSetLayout(	size_t id,
+															const vk::DescriptorSetLayoutCreateInfo& createInfo ) const
+{
+	return m_impl->createDescriptorSetLayout(id, createInfo);
 }
 
 

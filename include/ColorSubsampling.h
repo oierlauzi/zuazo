@@ -20,6 +20,7 @@ enum class ColorSubsampling {
 	CHROMA_411,					///<1 luminance sample per 4 chominance samples on even and odd lines.
 	CHROMA_410,					///<1 luminance sample per 4 chominance samples on even lines. No chominance samples on odd lines.
 	CHROMA_311,					///<1 luminance sample per 3 chominance samples on even and odd lines.
+	BAYER,						///<RGB color is stored as a Bayer pattern. 1 R and 1 B per 2 G
 
 	//Add here
 
@@ -30,7 +31,7 @@ ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorSubsampling)
 ZUAZO_ENUM_COMP_OPERATORS(ColorSubsampling)	
 
 constexpr std::string_view toString(ColorSubsampling colorSubsampling);
-constexpr Resolution getChromaResolution(ColorSubsampling subs, const Resolution& res);
+constexpr Resolution getSubsampledResolution(ColorSubsampling subs, const Resolution& res);
 
 }
 
