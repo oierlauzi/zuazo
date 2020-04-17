@@ -3,12 +3,13 @@
 #include "Chrono.h"
 
 #include <functional>
+#include <array>
 
 namespace Zuazo::Timing {
 
 class EventBase {
 public:
-	using UpdateCbk = std::function<void()>;
+	using Callback = std::function<void()>;
 
 	EventBase() = default;
 	EventBase(const EventBase& other) = default;
@@ -18,18 +19,36 @@ public:
 	EventBase& 			operator=(const EventBase& other) = default;
 	EventBase& 			operator=(EventBase&& other) = default;
 
-	virtual void        enable();
-	virtual void        disable();
-	bool                isEnabled() const;
+	void        		update() const;
 
-	void				setCallback(UpdateCbk&& cbk);
-	const UpdateCbk&	getCallback() const;
+	template <typename Cbk>
+	void				setPreUpdateCallback(Cbk&& cbk);
+	const Callback&		setPreUpdateCallback() const;
+
+	template <typename Cbk>
+	void				setPostUpdateCallback(Cbk&& cbk);
+	const Callback&		setPostUpdateCallback() const;
+
 protected:
-	void        		update();
-	
+	template <typename Cbk>
+	void				setUpdateCallback(Cbk&& cbk);
+	const Callback&		setUpdateCallback() const;
+
 private:
-	bool                m_isEnabled = false;
-	UpdateCbk			m_callback;
+	enum Moments {
+		PRE_UPDATE,
+		UPDATE,
+		POST_UPDATE,
+
+		COUNT
+	};
+
+	using Callbacks = std::array<Callback, COUNT>;
+
+	Callbacks			m_callbacks;
+
 };
 
 }
+
+#include "EventBase.inl"

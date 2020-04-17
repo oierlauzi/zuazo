@@ -22,8 +22,8 @@ public:
 
 	using PadSet = std::vector<std::unique_ptr<PadBase>>;
 
-	template<typename Str, typename... Pads>
-	Layout(Str&& name, Pads&&... pads);
+	template<typename Str, typename Pads>
+	Layout(Str&& name, Pads&& pads);
 	Layout(const Layout& other) = delete;
 	Layout(Layout&& other) = default;
 	virtual ~Layout() = default;

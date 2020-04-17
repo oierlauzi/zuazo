@@ -6,6 +6,7 @@
 #include <type_traits>
 #include <cassert>
 #include <algorithm>
+#include <tuple>
 
 namespace Zuazo::Signal {
 
@@ -13,11 +14,15 @@ namespace Zuazo::Signal {
  * Layout
  */
 
-template<typename Str, typename... Pads>
-inline Layout::Layout(Str&& name, Pads&&... pads)
+template<typename Str, typename Pads>
+inline Layout::Layout(Str&& name, Pads&& pads)
 	: m_name(std::forward<Str>(name))
-	, m_pads{std::make_unique<Pads>(std::forward<Pads>(pads))...}
 {
+	const auto addPadFunc = [=] (auto&&... x) {
+		(this->addPad(std::forward<decltype(x)>(x)), ...);
+	};
+
+	std::apply(addPadFunc, std::forward<Pads>(pads));
 }
 
 template<typename Str>

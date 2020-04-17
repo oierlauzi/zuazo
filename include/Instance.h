@@ -4,13 +4,15 @@
 #include "Version.h"
 #include "Verbosity.h"
 #include "Video.h"
-#include "Utils/Pimpl.h"
 #include "Graphics/Vulkan.h"
-#include "Timing/Scheduler.h"
-#include "Timing/MainLoop.h"
+#include "Timing/Chrono.h"
+#include "Timing/EventBase.h"
+#include "Utils/Pimpl.h"
 
 #include <functional>
 #include <vector>
+#include <limits>
+
 
 namespace Zuazo {
 
@@ -48,6 +50,18 @@ public:
 		Resolution maxOutputResolution;
 	};
 
+	/**
+	 * Priority defines in which order Events will be updated, high priority meaning that
+	 * it will be updated early, whilst low priority means that it will be updated late.
+	 */
+	enum class Priority : int {
+		LOWEST_PRIORITY = std::numeric_limits<int>::min(),
+		HIGHEST_PRIORITY = std::numeric_limits<int>::max(),
+		OUTPUT_PRIORITY = LOWEST_PRIORITY / 2,
+		PROCESSOR_PRIORITY = 0,
+		INPUT_PRIORITY = HIGHEST_PRIORITY / 2,
+	};
+
 	Instance(ApplicationInfo&& applicationInfo);
 	Instance(const Instance& other) = delete;
 	Instance(Instance&& other);
@@ -58,11 +72,19 @@ public:
 
 	const ApplicationInfo&		getApplicationInfo() const;
 	const Graphics::Vulkan&		getVulkan() const;
-	const Timing::Scheduler&	getScheduler() const;
-	const Timing::MainLoop&		getMainLoop() const;
 
 	const FormatSupport& 		getFormatSupport() const;
 	const ResolutionSupport&	getResolutionSupport() const;
+
+	void						addRegularEvent(const Timing::EventBase& event, Priority prior);
+	void						removeRegularEvent(const Timing::EventBase& event);
+
+	void						addPeriodicEvent(const Timing::EventBase& event, Priority prior, Timing::Duration period);
+	void						removePeriodicEvent(const Timing::EventBase& event);
+
+	Timing::TimePoint			getTime() const;
+	Timing::TimePoint			getEpoch() const;
+	Timing::Duration			getDeltaT() const;
 
 	static void 				defaultLogFunc(	const Instance& inst, 
 												Verbosity severity, 
@@ -70,6 +92,7 @@ public:
 
 	static uint32_t				defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp, 
 														vk::PhysicalDevice device );
+
 private:
 	struct Impl;
 	Utils::Pimpl<Impl>			m_impl;

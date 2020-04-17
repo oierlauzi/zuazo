@@ -3,10 +3,13 @@
 namespace Zuazo {
 
 
-template<typename Str>
-inline ZuazoBase::ZuazoBase(const Instance& instance, Str&& name)
-	: Signal::Layout(std::forward<Str>(name))
+template<typename Str, typename Pads>
+inline ZuazoBase::ZuazoBase(const Instance& instance, 
+							Str&& name, 
+							Pads&& pads)
+	: Signal::Layout(std::forward<Str>(name), std::forward<Pads>(pads))
 	, m_instance(instance)
+	, m_isOpen(false)
 {
 }
 
@@ -33,8 +36,5 @@ inline void ZuazoBase::close() {
 inline bool ZuazoBase::isOpen() const {
 	return m_isOpen;
 }
-
-	
-};
 
 }

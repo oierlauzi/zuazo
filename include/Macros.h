@@ -17,12 +17,6 @@
 #define ZUAZO_IS_64BIT (__WORDSIZE == 64)
 #define ZUAZO_BYTE_SIZE (CHAR_BIT)
 
-#ifdef NDEBUG
-	#define ZUAZO_IS_DEBUG (false)
-#else
-	#define ZUAZO_IS_DEBUG (true)
-#endif
-
 #if ZUAZO_IS_BIG_ENDIAN
 	#define ZUAZO_BE_LE(be, le)	(be)
 #elif ZUAZO_IS_LITTLE_ENDIAN
@@ -30,6 +24,17 @@
 #else
 	#define ZUAZO_BE_LE(be, le)	({})
 #endif
+
+#ifdef NDEBUG
+	#define ZUAZO_IS_DEBUG (false)
+#else
+	#define ZUAZO_IS_DEBUG (true)
+#endif
+
+#define ZUAZO_CPP_VER (__cplusplus)
+#define ZUAZO_IS_CPP11 (ZUAZO_CPP_VER >= 201103L)
+#define ZUAZO_IS_CPP14 (ZUAZO_CPP_VER >= 201402L)
+#define ZUAZO_IS_CPP17 (ZUAZO_CPP_VER >= 201703L)
 
 
 #define ZUAZO_ENUM_BIT_OPERATORS(T)																																					\
@@ -58,8 +63,8 @@
 	constexpr bool operator<= (T a, T b) { return static_cast<std::underlying_type<T>::type>(a) <= static_cast<std::underlying_type<T>::type>(b); }									\
 	constexpr bool operator>= (T a, T b) { return static_cast<std::underlying_type<T>::type>(a) >= static_cast<std::underlying_type<T>::type>(b); }
 
-#define ZUAZO_ENUM2STR_CASE(ns, e) case ns::e: return ZUAZO_TO_STRING(e);
-
 #define ZUAZO_DEFAULT_ASSIGMENT_OPERATORS(T)	\
 	T& operator=(const T& other) = default; 	\
 	T& operator=(T&& other) = default;
+
+#define ZUAZO_ENUM2STR_CASE(ns, e) case ns::e: return ZUAZO_TO_STRING(e);

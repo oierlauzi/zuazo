@@ -1,13 +1,14 @@
 #include <Instance.h>
 
 #include "Graphics/VulkanUtils.h"
+#include "Timing/MainLoop.h"
+#include "Timing/Scheduler.h"
 
 #include <Zuazo.h>
 #include <Graphics/VulkanConversions.h>
-#include <Timing/MainLoop.h>
-#include <Timing/Scheduler.h>
 #include <Graphics/GLFW.h>
 
+#include <mutex>
 #include <iostream>
 #include <sstream>
 
@@ -18,6 +19,8 @@ struct Instance::Impl {
 	
 	Graphics::GLFW				glfw;
 	Graphics::Vulkan			vulkan;
+
+	std::mutex					mutex;
 	Timing::Scheduler			scheduler;
 	Timing::MainLoop			loop;
 
@@ -32,8 +35,9 @@ struct Instance::Impl {
 			Graphics::toVulkan(applicationInfo.version), 
 			applicationInfo.deviceScoreFunc
 		)
+		, mutex()
 		, scheduler()
-		, loop(scheduler)
+		, loop(scheduler, mutex)
 		, formatSupport(queryFormatSupport(vulkan))
 		, resolutionSupport(queryResolutionSupport(vulkan))
 	{
@@ -43,10 +47,6 @@ struct Instance::Impl {
 
 	const Instance::ApplicationInfo& getApplicationInfo() const {
 		return applicationInfo;
-	}
-
-	const Timing::MainLoop& getMainLoop() const{
-		return loop;
 	}
 
 	const Graphics::Vulkan& getVulkan() const{
@@ -60,6 +60,43 @@ struct Instance::Impl {
 	const ResolutionSupport& getResolutionSupport() const {
 		return resolutionSupport;
 	}
+
+	void addRegularEvent(const Timing::EventBase& event, Priority prior) {
+		scheduler.addRegularEvent(	event, 
+									static_cast<std::underlying_type<Priority>::type>(prior) );
+		loop.interrupt();
+	}
+
+	void removeRegularEvent(const Timing::EventBase& event) {
+		scheduler.removeRegularEvent(event);
+		loop.interrupt();
+	}
+
+	void addPeriodicEvent(const Timing::EventBase& event, Priority prior, Timing::Duration period) {
+		scheduler.addPeriodicEvent(	event, 
+									static_cast<std::underlying_type<Priority>::type>(prior), 
+									period );
+		loop.interrupt();
+	}
+
+	void removePeriodicEvent(const Timing::EventBase& event) {
+		scheduler.removePeriodicEvent(event);
+		loop.interrupt();
+	}
+
+	Timing::TimePoint getTime() const {
+		return scheduler.getTime();
+	}
+
+	Timing::TimePoint getEpoch() const {
+		return scheduler.getEpoch();
+	}
+
+	Timing::Duration getDeltaT() const {
+		return scheduler.getDeltaT();
+	}
+
+
 
 	std::string	generateInitMessage() const {
 		std::ostringstream message;
@@ -182,10 +219,6 @@ const Instance::ApplicationInfo& Instance::getApplicationInfo() const {
 	return m_impl->getApplicationInfo();
 }
 
-const Timing::MainLoop& Instance::getMainLoop() const{
-	return m_impl->getMainLoop();
-}
-
 const Graphics::Vulkan& Instance::getVulkan() const{
 	return m_impl->getVulkan();
 }
@@ -197,6 +230,36 @@ const Instance::FormatSupport& Instance::getFormatSupport() const {
 const Instance::ResolutionSupport& Instance::getResolutionSupport() const {
 	return m_impl->getResolutionSupport();
 }
+
+void Instance::addRegularEvent(const Timing::EventBase& event, Priority prior) {
+	m_impl->addRegularEvent(event, prior);
+}
+
+void Instance::removeRegularEvent(const Timing::EventBase& event) {
+	m_impl->removeRegularEvent(event);
+}
+
+void Instance::addPeriodicEvent(const Timing::EventBase& event, Priority prior, Timing::Duration period) {
+	m_impl->addPeriodicEvent(event, prior, period);
+}
+
+void Instance::removePeriodicEvent(const Timing::EventBase& event) {
+	m_impl->removePeriodicEvent(event);
+}
+
+Timing::TimePoint Instance::getTime() const {
+	return m_impl->getTime();
+}
+
+Timing::TimePoint Instance::getEpoch() const {
+	return m_impl->getEpoch();
+}
+
+Timing::Duration Instance::getDeltaT() const {
+	return m_impl->getDeltaT();
+}
+
+
 
 void Instance::defaultLogFunc(const Instance& inst, Verbosity severity, std::string_view msg){
 	std::ostream& output = std::cerr;

@@ -2,16 +2,18 @@
 
 #include "Instance.h"
 #include "Signal/Layout.h"
+#include "Timing/EventBase.h"
 
 #include <utility>
 
 namespace Zuazo {
 
 class ZuazoBase 
-	: public Signal::Layout {
+	: public Signal::Layout
+	, public Timing::EventBase {
 public:
-	template<typename Str>
-	ZuazoBase(const Instance& instance, Str&& name);
+	template<typename Str, typename Pads>
+	ZuazoBase(const Instance& instance, Str&& name, Pads&& pads);
 	ZuazoBase(const ZuazoBase& other) = delete;
 	ZuazoBase(ZuazoBase&& other) = default;
 	virtual ~ZuazoBase() = default;
