@@ -123,7 +123,7 @@ public:
 	using FocusCallback = std::function<void(bool)>;
 
 	Window() = default;
-	Window(	const Math::Vec2i& size, 
+	Window(	Math::Vec2i size, 
 			std::string_view name );
 	Window(const Window& other) = delete;
 	Window(Window&& other);

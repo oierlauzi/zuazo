@@ -1,37 +1,30 @@
 #pragma once
 
 #include "Vulkan.h"
+#include "VulkanConversions.h"
 #include "ColorTransfer.h"
 #include "Image.h"
 #include "Buffer.h"
 #include "../Resolution.h"
 #include "../Utils/BufferView.h"
+#include "../Math/Vector.h"
 
 #include <memory>
+#include <array>
 
 namespace Zuazo::Graphics {
 
 class Frame {
-public:	
-	using PixelData = std::array<Utils::BufferView<std::byte>, IMAGE_COUNT>;
-
-	struct Descriptor {
-		using Extents = std::array<vk::Extent2D, IMAGE_COUNT>;
-		using Formats = std::array<std::tuple<vk::Format, vk::ComponentMapping>, IMAGE_COUNT>;
-
-		Extents extents;
-		Formats colorFormat;
-		ColorTransfer colorTransfer;
-	};
-
+public:
 	class Geometry;
 
 	Frame(	const Vulkan& vulkan,
-			const Descriptor& desc,
+			Math::Vec2f size,
+			Utils::BufferView<const Image::PlaneDescriptor> planes,
 			const std::shared_ptr<const Buffer>& colorTransfer );
 	Frame(const Frame& other) = delete;
 	Frame(Frame&& other) = default;
-	virtual ~Frame();
+	virtual ~Frame() = default;
 
 	Frame& 							operator=(const Frame& other) = delete;
 
@@ -40,10 +33,12 @@ public:
 											uint32_t index,
 											vk::Filter filter );
 
-	const Descriptor&				getDescriptor() const;
+	const Math::Vec2f&				getSize() const;
 	const Image&					getImage() const;
 	const Buffer&					getColorTransfer() const;
 	const vk::Fence&				getReadyFence() const;
+
+	static Math::Vec2f				getFrameSize(Resolution resolution, AspectRatio par);
 
 	static std::shared_ptr<Buffer> 	createColorTransferBuffer(	const Vulkan& vulkan,
 																const ColorTransfer& colorTransfer );
@@ -58,7 +53,7 @@ private:
 	static constexpr size_t DESCRIPTOR_COUNT = VK_FILTER_RANGE_SIZE;
 	using DescriptorSets = std::array<vk::DescriptorSet, DESCRIPTOR_COUNT>;
 
-	Descriptor						m_descriptor;
+	Math::Vec2f						m_size;
 	Image							m_image;
 	std::shared_ptr<const Buffer>	m_colorTransfer;
 
@@ -68,7 +63,7 @@ private:
 	vk::UniqueFence					m_readyFence;
 
 	static Image					createImage(const Vulkan& vulkan,
-												const Descriptor& desc);
+												Utils::BufferView<const Image::PlaneDescriptor> planes );
 	static vk::UniqueDescriptorPool	createDescriptorPool(const Vulkan& vulkan);
 	static DescriptorSets			allocateDescriptorSets(	const Vulkan& vulkan,
 															vk::DescriptorPool pool );
@@ -88,18 +83,23 @@ public:
 
 	Geometry(	const Vulkan& vulkan, 
 				uint32_t binding, 
-				const Resolution& resolution);
+				Math::Vec2f targetExtent);
 	Geometry(const Geometry& other) = delete;
 	Geometry(Geometry&& other) = default;
 	~Geometry() = default;
 
-	void					upd() { updateVertexBuffer(); } //TODO testing
+	void							setTargetSize(Math::Vec2f res);
+	const Math::Vec2f&				getTargetSize() const;
+
+	void							setSourceSize(Math::Vec2f res);
+	const Math::Vec2f&				getSourceSize() const;
 
 	vk::VertexInputBindingDescription getBindingDescription() const;
 	std::array<vk::VertexInputAttributeDescription, ATTRIBUTE_COUNT> getAttributeDescriptions(	uint32_t posLocation, 
 																								uint32_t texLocation ) const;
 
-	void bind(vk::CommandBuffer cmd) const;
+	void							useFrame(const Frame& frame);
+	void 							bind(vk::CommandBuffer cmd) const;
 	
 private:
 	struct Vertex {
@@ -114,8 +114,8 @@ private:
 
 	uint32_t						m_binding;
 
-	Resolution 						m_srcResolution;
-	Resolution						m_dstResolution;
+	Math::Vec2f						m_targetSize;
+	Math::Vec2f 					m_sourceSize;
 
 	Buffer							m_vertexBuffer;
 	Buffer							m_stagingBuffer;

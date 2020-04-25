@@ -5,12 +5,14 @@
 #include "Timing/Scheduler.h"
 
 #include <Zuazo.h>
+#include <ZuazoBase.h>
 #include <Graphics/VulkanConversions.h>
 #include <Graphics/GLFW.h>
 
 #include <mutex>
 #include <iostream>
 #include <sstream>
+#include <type_traits>
 
 namespace Zuazo {
 
@@ -27,6 +29,8 @@ struct Instance::Impl {
 	FormatSupport				formatSupport;
 	ResolutionSupport			resolutionSupport;
 
+	ScheduledCallback			presentImages;
+
 	Impl(ApplicationInfo&& appInfo)
 		: applicationInfo(std::move(appInfo))
 		, glfw()
@@ -41,6 +45,9 @@ struct Instance::Impl {
 		, formatSupport(queryFormatSupport(vulkan))
 		, resolutionSupport(queryResolutionSupport(vulkan))
 	{
+		std::lock_guard<Impl> lock(*this);
+		presentImages = std::bind(&Graphics::Vulkan::presentAll, std::cref(vulkan));
+		addRegularCallback(presentImages, PRESENT_PRIORITY);
 	}
 
 	~Impl() = default;
@@ -61,26 +68,23 @@ struct Instance::Impl {
 		return resolutionSupport;
 	}
 
-	void addRegularEvent(const Timing::EventBase& event, Priority prior) {
-		scheduler.addRegularEvent(	event, 
-									static_cast<std::underlying_type<Priority>::type>(prior) );
+	void addRegularCallback(const ScheduledCallback& cbk, Priority prior) {
+		scheduler.addRegularCallback(cbk, prior);
 		loop.interrupt();
 	}
 
-	void removeRegularEvent(const Timing::EventBase& event) {
-		scheduler.removeRegularEvent(event);
+	void removeRegularCallback(const ScheduledCallback& cbk) {
+		scheduler.removeRegularCallback(cbk);
 		loop.interrupt();
 	}
 
-	void addPeriodicEvent(const Timing::EventBase& event, Priority prior, Timing::Duration period) {
-		scheduler.addPeriodicEvent(	event, 
-									static_cast<std::underlying_type<Priority>::type>(prior), 
-									period );
+	void addPeriodicCallback(const ScheduledCallback& cbk, Priority prior, Timing::Duration period) {
+		scheduler.addPeriodicCallback(cbk, prior, period);
 		loop.interrupt();
 	}
 
-	void removePeriodicEvent(const Timing::EventBase& event) {
-		scheduler.removePeriodicEvent(event);
+	void removePeriodicCallback(const ScheduledCallback& cbk) {
+		scheduler.removePeriodicCallback(cbk);
 		loop.interrupt();
 	}
 
@@ -97,15 +101,25 @@ struct Instance::Impl {
 	}
 
 
+	void lock() {
+		mutex.lock();
+	}
+
+	bool try_lock() {
+		return mutex.try_lock();
+	}
+
+	void unlock() {
+		mutex.unlock();
+	}
+
+
 
 	std::string	generateInitMessage() const {
 		std::ostringstream message;
 
 		//Show Version
-		message << "Instantiated Zuazo " 
-				<< runtimeVersion.getMajor() << "." 
-				<< runtimeVersion.getMinor() << "." 
-				<< runtimeVersion.getPatch() << "\n";
+		message << "Instantiated Zuazo " << toString(runtimeVersion) << "\n";
 
 		//Show selected device
 		const auto deviceProperties = vulkan.getPhysicalDevice().getProperties(vulkan.getDispatcher());
@@ -206,7 +220,7 @@ private:
 Instance::Instance(ApplicationInfo&& applicationInfo)
 	: m_impl(std::move(applicationInfo))
 {
-	ZUAZO_LOG(*this, Verbosity::INFO, m_impl->generateInitMessage());
+	ZUAZO_LOG(*this, Severity::INFO, m_impl->generateInitMessage());
 }
 
 Instance::Instance(Instance&& other) = default;
@@ -231,20 +245,26 @@ const Instance::ResolutionSupport& Instance::getResolutionSupport() const {
 	return m_impl->getResolutionSupport();
 }
 
-void Instance::addRegularEvent(const Timing::EventBase& event, Priority prior) {
-	m_impl->addRegularEvent(event, prior);
+void Instance::addRegularCallback(	const ScheduledCallback& cbk, 
+									Priority prior ) 
+{
+	m_impl->addRegularCallback(cbk, prior);
 }
 
-void Instance::removeRegularEvent(const Timing::EventBase& event) {
-	m_impl->removeRegularEvent(event);
+void Instance::removeRegularCallback(const ScheduledCallback& cbk) {
+	m_impl->removeRegularCallback(cbk);
 }
 
-void Instance::addPeriodicEvent(const Timing::EventBase& event, Priority prior, Timing::Duration period) {
-	m_impl->addPeriodicEvent(event, prior, period);
+
+void Instance::addPeriodicCallback(	const ScheduledCallback& cbk, 
+									Priority prior, 
+									Timing::Duration period ) 
+{
+	m_impl->addPeriodicCallback(cbk, prior, period );
 }
 
-void Instance::removePeriodicEvent(const Timing::EventBase& event) {
-	m_impl->removePeriodicEvent(event);
+void Instance::removePeriodicCallback(const ScheduledCallback& cbk) {
+	m_impl->removePeriodicCallback(cbk);
 }
 
 Timing::TimePoint Instance::getTime() const {
@@ -261,17 +281,45 @@ Timing::Duration Instance::getDeltaT() const {
 
 
 
-void Instance::defaultLogFunc(const Instance& inst, Verbosity severity, std::string_view msg){
+void Instance::lock() {
+	m_impl->lock();
+}
+
+bool Instance::try_lock() {
+	return m_impl->try_lock();
+}
+
+void Instance::unlock() {
+	m_impl->unlock();
+}
+
+
+
+
+void Instance::defaultInstanceLogFunc(	const Instance& inst, 
+										Severity severity, 
+										std::string_view msg )
+{
 	std::ostream& output = std::cerr;
 
-	switch(severity){
-		case Verbosity::INFO: output << "[INFO] "; break;
-		case Verbosity::WARNING: output << "[WARN] "; break;
-		case Verbosity::ERROR: output << "[ERRO] "; break;
-		default: break;
-	}
+	output << "[" << toString(severity) << "] ";
+	output << &inst << " (" << inst.getApplicationInfo().name << "): ";
+	output << msg;
+	output << std::endl;
+}
 
-	output << &inst << ": " << msg << std::endl;
+void Instance::defaultElementLogFunc(	const ZuazoBase& base, 
+										Severity severity, 
+										std::string_view msg )
+{
+	std::ostream& output = std::cerr;
+	Instance& inst = base.getInstance();
+
+	output << "[" << toString(severity) << "] ";
+	output << &inst << " (" << inst.getApplicationInfo().name << "): ";
+	output << "on " << &base << " (" << base.getName() << "): ";
+	output << msg;
+	output << std::endl;
 }
 
 uint32_t Instance::defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp,

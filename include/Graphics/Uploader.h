@@ -22,7 +22,14 @@ public:
 	class Frame;
 
 	Uploader(	const Vulkan& vulkan, 
-				const Graphics::Frame::Descriptor& descriptor );
+				Resolution resolution,
+				AspectRatio par,
+				ColorSubsampling subsampling,
+				ColorFormat format,
+				ColorRange range,
+				ColorTransferFunction transferFunction,
+				ColorModel model,
+				ColorPrimaries primaries );
 	Uploader(const Uploader& other) = delete;
 	Uploader(Uploader&& other) = default;
 	~Uploader() = default;
@@ -32,17 +39,12 @@ public:
 	const std::shared_ptr<Frame>&				acquireFrame() const;
 	void										clear();
 
-	static Graphics::Frame::Descriptor			getDescriptor(	const Vulkan& vulkan,
-																Resolution resolution,
-																ColorSubsampling subsampling,
-																ColorFormat format,
-																ColorRange range,
-																ColorTransferFunction transferFunction,
-																ColorModel model,
-																ColorPrimaries primaries );
 private:
 	const Vulkan& 								m_vulkan;
-	Graphics::Frame::Descriptor					m_descriptor;
+
+	Math::Vec2f									m_frameSize;
+	ColorTransfer								m_colorTransfer;
+	std::vector<Image::PlaneDescriptor>			m_planeDescriptors;
 
 	mutable std::vector<std::shared_ptr<Frame>>	m_frames;
 
@@ -51,26 +53,32 @@ private:
 
 	const std::shared_ptr<Frame>&				getUniqueFrame() const;
 
+	static std::vector<Image::PlaneDescriptor>	createPlaneDescriptors(	const Vulkan& vulkan, 
+																		Resolution resolution,
+																		ColorSubsampling subsampling,
+																		ColorFormat format, 
+																		ColorTransfer& colorTransfer);
 	static std::shared_ptr<vk::UniqueCommandPool> createCommandPool(const Vulkan& vulkan);
 };
 
 class Uploader::Frame : public Graphics::Frame {
 public:
 	Frame(	const Vulkan& vulkan,
-			const Descriptor& desc,
+			Math::Vec2f size,
+			Utils::BufferView<const Image::PlaneDescriptor> planes,
 			const std::shared_ptr<const Buffer>& colorTransfer,
 			const std::shared_ptr<const vk::UniqueCommandPool>& cmdPool );
 	Frame(const Frame& other) = delete;
 	Frame(Frame&& other) = default;
-	virtual ~Frame() = default; 
+	virtual ~Frame(); 
 
 	Frame& 										operator=(const Frame& other) = delete;
 
-	const PixelData&							getPixelData();
+	const Image::PixelData &					getPixelData();
 	void										flush();
 private:
 	Buffer										m_stagingBuffer;
-	PixelData 									m_pixelData;
+	Image::PixelData 							m_pixelData;
 		
 	std::shared_ptr<const vk::UniqueCommandPool>m_commandPool;
 	vk::UniqueCommandBuffer						m_commandBuffer;
@@ -78,11 +86,11 @@ private:
 
 	static Buffer								createStagingBuffer(const Vulkan& vulkan,
 																	const Image& image );
-	static PixelData							getPixelData(	const Vulkan& vulkan,
+	static Image::PixelData 					getPixelData(	const Vulkan& vulkan,
 																const Image& image,
 																const Buffer& buffer );
 	static vk::UniqueCommandBuffer				createCommandBuffer(const Vulkan& vulkan,
-																	const Descriptor& desc,
+																	Utils::BufferView<const Image::PlaneDescriptor> planes,
 																	vk::CommandPool cmdPool,
 																	const Image& image,
 																	const Buffer& stagingBuffer );

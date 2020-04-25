@@ -1,13 +1,13 @@
 namespace Zuazo::Timing {
 
 constexpr Duration getPeriod(const Rate& rate) {
-	constexpr auto fromSec = 1 / Rate(Duration::period());
-	return Duration(static_cast<Duration::rep>( (1 / rate) * fromSec ));
+	constexpr auto fromSec = Rate(1L) / Rate(Duration::period());
+	return Duration(static_cast<Duration::rep>( (Rate(1L) / rate) * fromSec ));
 }
 
 constexpr Rate getRate(const Duration& period) {
 	constexpr auto toSec = Rate(Duration::period());
-	return 1 / ( period.count() * toSec );
+	return Rate(1L) / ( Rate(period.count()) * toSec );
 }
 
 inline TimePoint now() {

@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <array>
+#include <utility>
 
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #define VULKAN_HPP_DEFAULT_DISPATCHER void()
@@ -21,6 +22,11 @@ public:
 	struct FormatSupport {
 		std::vector<vk::Format>	sampler;
 		std::vector<vk::Format>	framebuffer;
+	};
+
+	struct AggregatedAllocation {
+		vk::UniqueDeviceMemory memory;
+		std::vector<std::pair<size_t, size_t>> offsets;
 	};
 
 	Vulkan(	std::string_view appName, 
@@ -47,7 +53,6 @@ public:
 	uint32_t							getPresentationQueueIndex() const;
 	vk::Queue							getPresentationQueue() const;
 	vk::PipelineCache					getPipelineCache() const;
-	vk::Sampler							getSampler(vk::Filter filter) const;
 	const FormatSupport&				getFormatSupport() const;
 	
 	vk::FormatProperties				getFormatFeatures(vk::Format format) const;
@@ -72,14 +77,21 @@ public:
 	vk::PipelineLayout					createPipelineLayout(size_t id) const;
 	vk::PipelineLayout					createPipelineLayout(	size_t id,
 																const vk::PipelineLayoutCreateInfo& createInfo ) const;
-	vk::UniqueDescriptorSetLayout		createDescriptorSetLayout(	const vk::DescriptorSetLayoutCreateInfo& createInfo) const;
+	vk::UniqueDescriptorSetLayout		createDescriptorSetLayout(const vk::DescriptorSetLayoutCreateInfo& createInfo) const;
 	vk::DescriptorSetLayout				createDescriptorSetLayout(size_t id) const;
 	vk::DescriptorSetLayout				createDescriptorSetLayout(	size_t id,
 																	const vk::DescriptorSetLayoutCreateInfo& createInfo ) const;
 
+	vk::UniqueSampler					createSampler(const vk::SamplerCreateInfo& createInfo) const;
+	vk::Sampler							createSampler(size_t id) const;
+	vk::Sampler							createSampler(	size_t id,
+														const vk::SamplerCreateInfo& createInfo ) const;
+
 	std::vector<vk::UniqueCommandBuffer>allocateCommnadBuffers(const vk::CommandBufferAllocateInfo& allocInfo) const;
 	vk::UniqueDeviceMemory				allocateMemory(const vk::MemoryAllocateInfo& allocInfo) const;
 	vk::UniqueDeviceMemory				allocateMemory(	const vk::MemoryRequirements& requirements,
+														vk::MemoryPropertyFlags properties ) const;
+	AggregatedAllocation				allocateMemory(	Utils::BufferView<const vk::MemoryRequirements> requirements,
 														vk::MemoryPropertyFlags properties ) const;
 
 	std::byte*							mapMemory(const vk::MappedMemoryRange& range) const;

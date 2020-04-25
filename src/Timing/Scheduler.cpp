@@ -21,39 +21,42 @@ void Scheduler::gotoTime(TimePoint tp) {
 		m_currTime = tp;
 
 		//Clear the update set to start over
-		m_updates.clear();
+		m_calls.clear();
 
 		//Insert the regular updates
-		m_updates.insert(
-			m_updates.cend(), 
-			m_regularEvents.cbegin(), 
-			m_regularEvents.cend()
+		m_calls.insert(
+			m_calls.cend(), 
+			m_regularCallbacks.cbegin(), 
+			m_regularCallbacks.cend()
 		);
 
-		//Insert the periodic updates
-		for(const auto& period : m_periodicEvents){
+		//Insert the periodic callbacks
+		for(const auto& period : m_periodicCallbacks){
 			if((m_currTime - m_epoch) % period.first == Duration::zero()){
 				//This period needs to be updated
-				m_updates.insert(
-					m_updates.cend(),
+				m_calls.insert(
+					m_calls.cend(),
 					period.second.cbegin(), 
 					period.second.cend()
 				);
 			}
 		}
 
-		//Sort the events from higher priorities to lower ones
-		std::sort(
-			m_updates.begin(), 
-			m_updates.end(), 
+		//Sort the callbacks from higher priorities to lower ones
+		std::stable_sort(
+			m_calls.begin(), 
+			m_calls.end(), 
 			[](const auto& a, const auto& b) -> bool {
 				return std::get<Priority>(a) > std::get<Priority>(b);
 			}
 		);
 
-		//Update all
-		for(const auto& event : m_updates){
-			std::get<EventBaseRef>(event).get().update();
+		//Call all
+		for(const auto& c : m_calls){
+			const Callback& cbk = std::get<CallbackRef>(c);
+			if(cbk) {
+				cbk();
+			}
 		}
 }
 
@@ -70,7 +73,7 @@ Duration Scheduler::getTimeForNextEvent() const {
 	//Calculate the minumum remaining time
 	auto result = Duration::max();
 
-	for(const auto& period : m_periodicEvents) {
+	for(const auto& period : m_periodicCallbacks) {
 		const auto nextUpdate = ((m_currTime - m_epoch) / period.first + 1) * period.first + m_epoch;
 		const auto remaining = nextUpdate - m_currTime;
 
@@ -82,52 +85,52 @@ Duration Scheduler::getTimeForNextEvent() const {
 	return result;
 }
 
-void Scheduler::addRegularEvent(const EventBase& event, Priority prior) {
-	m_regularEvents.emplace_back(event, prior);
+void Scheduler::addRegularCallback(const Callback& cbk, Priority prior) {
+	m_regularCallbacks.emplace_back(cbk, prior);
 }
 
-void Scheduler::removeRegularEvent(const EventBase& event) {
+void Scheduler::removeRegularCallback(const Callback& cbk) {
 	auto end = std::remove_if(
-		m_regularEvents.begin(), 
-		m_regularEvents.end(), 
+		m_regularCallbacks.begin(), 
+		m_regularCallbacks.end(), 
 		[&] (const auto& e) -> bool {
-			return &std::get<EventBaseRef>(e).get() == &event; //Compare event's pointers
+			return &std::get<CallbackRef>(e).get() == &cbk; //Compare callback's pointers
 		}
 	);
-	m_regularEvents.erase(end, m_regularEvents.end());
+	m_regularCallbacks.erase(end, m_regularCallbacks.end());
 }
 
 
-void Scheduler::addPeriodicEvent(const EventBase& event, Priority prior, Duration period) {
-	auto ite = m_periodicEvents.find(period);
+void Scheduler::addPeriodicCallback(const Callback& cbk, Priority prior, Duration period) {
+	auto ite = m_periodicCallbacks.find(period);
 
-	if(ite == m_periodicEvents.cend()){
+	if(ite == m_periodicCallbacks.cend()){
 		//Period does not exist. Create it.
 
-		m_periodicEvents.emplace(	period, 
-									EventSet{Event(event, prior)} );			
+		m_periodicCallbacks.emplace(period, 
+									CallbackSet{CallbackSet::value_type(cbk, prior)} );			
 	} else {
-		ite->second.emplace_back(event, prior);
+		ite->second.emplace_back(cbk, prior);
 	}
 }
 
-void Scheduler::removePeriodicEvent(const EventBase& event) {
-	auto ite = m_periodicEvents.begin();
+void Scheduler::removePeriodicCallback(const Callback& cbk) {
+	auto ite = m_periodicCallbacks.begin();
 
-	while(ite != m_periodicEvents.end()) {
+	while(ite != m_periodicCallbacks.end()) {
 		//Erase it
 		auto end = std::remove_if(
 			ite->second.begin(), 
 			ite->second.end(), 
 			[&] (const auto& e) -> bool {
-				return &std::get<EventBaseRef>(e).get() == &event; //Compare event's pointers
+				return &std::get<CallbackRef>(e).get() == &cbk; //Compare callback's pointers
 			}
 		);
 		ite->second.erase(end, ite->second.end());
 
 		if(ite->second.size() == 0){
-			//No more events of this period
-			ite = m_periodicEvents.erase(ite);
+			//No more callbacks of this period
+			ite = m_periodicCallbacks.erase(ite);
 		} else {
 			++ite; //Advance
 		}

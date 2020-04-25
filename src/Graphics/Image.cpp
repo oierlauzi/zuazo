@@ -1,5 +1,7 @@
 #include <Graphics/Image.h>
 
+#include <Graphics/VulkanConversions.h>
+
 #include <cassert>
 #include <iostream>
 
@@ -8,7 +10,7 @@ namespace Zuazo::Graphics {
 Image::Image(	const Vulkan& vulkan,
 				vk::ImageUsageFlags usage,
 				vk::MemoryPropertyFlags memoryProperties,
-				const Utils::BufferView<PlaneDescriptor>& imagePlanes )
+				Utils::BufferView<const PlaneDescriptor> imagePlanes )
 	: m_images(createImages(vulkan, usage, imagePlanes))
 	, m_memory(allocateMemory(vulkan, memoryProperties, m_images))
 	, m_imageViews(createImageViews(vulkan, imagePlanes, m_images))
@@ -19,8 +21,8 @@ const std::vector<vk::UniqueImage>& Image::getImages() const{
 	return m_images;
 }
 
-const std::vector<std::pair<size_t, size_t>>& Image::getPlanes() const {
-	return m_memory.planes;
+const std::vector<Image::PlaneOffset>& Image::getPlanes() const {
+	return m_memory.offsets;
 }
 
 const vk::DeviceMemory& Image::getMemory() const {
@@ -33,10 +35,51 @@ const std::vector<vk::UniqueImageView>&	Image::getImageViews() const{
 }
 
 
+std::vector<Image::PlaneDescriptor> Image::getPlaneDescriptors(	Resolution resolution,
+																ColorSubsampling subsampling,
+																ColorFormat format )
+{
+	const auto planeCount = getPlaneCount(format);
+	std::vector<Image::PlaneDescriptor> result;
+	result.reserve(planeCount);
+
+	const auto formats = toVulkan(format);
+	const auto extent = toVulkan(resolution);
+	const auto subsampledExtent = toVulkan(getSubsampledResolution(subsampling, resolution));
+
+	assert(planeCount <= formats.size());
+
+	for(size_t i = 0; i < planeCount; i++) {
+		result.push_back(
+			PlaneDescriptor {
+				(i == 0) ? extent : subsampledExtent,
+				std::get<vk::Format>(formats[i]),
+				std::get<vk::ComponentMapping>(formats[i])
+			}
+		);
+	}
+
+	return result;
+}
+
+Image::PixelData Image::slice(	std::byte* data, 
+								Utils::BufferView<const PlaneOffset> offsets )
+{
+	PixelData result;
+	result.reserve(offsets.size());
+
+	for(size_t i = 0; i < offsets.size(); i++) {
+		result.emplace_back(data + offsets[i].first, offsets[i].second);
+	}
+
+	return result;
+}
+
+
 
 std::vector<vk::UniqueImage> Image::createImages(	const Vulkan& vulkan,
 													vk::ImageUsageFlags usage,
-													const Utils::BufferView<PlaneDescriptor>& imagePlanes )
+													Utils::BufferView<const PlaneDescriptor> imagePlanes )
 {
 	std::vector<vk::UniqueImage> result;
 	result.reserve(imagePlanes.size());
@@ -63,42 +106,30 @@ std::vector<vk::UniqueImage> Image::createImages(	const Vulkan& vulkan,
 	return result;
 }
 
-Image::Memory Image::allocateMemory(const Vulkan& vulkan,
-									vk::MemoryPropertyFlags memoryProperties,
-									const std::vector<vk::UniqueImage>& images )
+Vulkan::AggregatedAllocation Image::allocateMemory(	const Vulkan& vulkan,
+													vk::MemoryPropertyFlags memoryProperties,
+													const std::vector<vk::UniqueImage>& images )
 {
-	Memory result;
-	vk::MemoryRequirements requirements(0, 1, ~(0U));
+	std::vector<vk::MemoryRequirements> requirements;
+	requirements.reserve(images.size());
 
-	result.planes.reserve(images.size());
-
-	//Combine all fields and evaluate offsets
-	for(size_t i = 0; i < images.size(); i++){
-		const auto req = vulkan.getDevice().getImageMemoryRequirements(*(images[i]), vulkan.getDispatcher());
-
-		if(requirements.size % req.alignment){
-			//Padding is required for alignment
-			requirements.size = (requirements.size / req.alignment + 1) * req.alignment;
-		}
-		result.planes.emplace_back(requirements.size, req.size);
-
-		requirements.size += req.size;
-		requirements.memoryTypeBits &= req.memoryTypeBits;
-		requirements.alignment = std::max(requirements.alignment, req.alignment);
+	for(size_t i = 0; i < images.size(); i++) {
+		requirements.push_back(vulkan.getDevice().getImageMemoryRequirements(*(images[i]), vulkan.getDispatcher()));
 	}
 
-	result.memory = vulkan.allocateMemory(requirements, memoryProperties);
+	auto result = vulkan.allocateMemory(requirements, memoryProperties);
+	assert(result.offsets.size() == images.size());
 
 	//Bind image's memory
 	for(size_t i = 0; i < images.size(); i++){
-		vulkan.getDevice().bindImageMemory(*(images[i]), *result.memory, result.planes[i].first, vulkan.getDispatcher());
+		vulkan.getDevice().bindImageMemory(*(images[i]), *result.memory, result.offsets[i].first, vulkan.getDispatcher());
 	}
 
 	return result;
 }
 
 std::vector<vk::UniqueImageView> Image::createImageViews(	const Vulkan& vulkan,
-															const Utils::BufferView<PlaneDescriptor>& imagePlanes ,
+															Utils::BufferView<const PlaneDescriptor> imagePlanes,
 															const std::vector<vk::UniqueImage>& images )
 {
 	assert(imagePlanes.size() == images.size());

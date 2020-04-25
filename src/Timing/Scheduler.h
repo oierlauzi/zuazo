@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Timing/EventBase.h>
 #include <Timing/Chrono.h>
 
 #include <limits>
@@ -14,6 +13,7 @@ namespace Zuazo::Timing {
 class Scheduler {
 public:
 	using Priority = int32_t;
+	using Callback = std::function<void()>;
 
 	Scheduler() = default;
 	Scheduler(const Scheduler& other) = delete;
@@ -32,25 +32,24 @@ public:
 
 	Duration               	getTimeForNextEvent() const;
 
-	void					addRegularEvent(const EventBase& event, Priority prior);
-	void					removeRegularEvent(const EventBase& event);
+	void					addRegularCallback(const Callback& cbk, Priority prior);
+	void					removeRegularCallback(const Callback& cbk);
 
-	void					addPeriodicEvent(const EventBase& event, Priority prior, Duration period);
-	void					removePeriodicEvent(const EventBase& event);
+	void					addPeriodicCallback(const Callback& cbk, Priority prior, Duration period);
+	void					removePeriodicCallback(const Callback& cbk);
 
 private:
-	using EventBaseRef = std::reference_wrapper<const EventBase>;
-	using Event = std::tuple<EventBaseRef, Priority>;
-	using EventSet = std::vector<Event>;
-	using PeriodMap = std::map<Duration, EventSet>;
+	using CallbackRef = std::reference_wrapper<const Callback>;
+	using CallbackSet = std::vector<std::tuple<CallbackRef, Priority>>;
+	using PeriodMap = std::map<Duration, CallbackSet>;
 
 	TimePoint				m_epoch;
 	TimePoint 				m_currTime;
 	Duration 				m_deltaT;
-	EventSet 				m_updates;
+	CallbackSet 			m_calls;
 
-	EventSet 				m_regularEvents;
-	PeriodMap 				m_periodicEvents;
+	CallbackSet 			m_regularCallbacks;
+	PeriodMap 				m_periodicCallbacks;
 	
 };
 

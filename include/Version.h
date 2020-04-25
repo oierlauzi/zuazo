@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <string>
 
 namespace Zuazo {
 
@@ -46,6 +47,9 @@ private:
 	static constexpr DataType MINOR_MASK = static_cast<DataType>(-1) >> (DATA_BITS - MINOR_BITS) << MINOR_OFF;
 	static constexpr DataType PATCH_MASK = static_cast<DataType>(-1) >> (DATA_BITS - PATCH_BITS) << PATCH_OFF;
 };
+
+std::string toString(Version ver);
+
 }
 
 #include "Version.inl"

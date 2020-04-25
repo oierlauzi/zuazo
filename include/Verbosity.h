@@ -2,16 +2,43 @@
 
 #include "Macros.h"
 
+#include <string_view>
+
 namespace Zuazo {
 
-enum class Verbosity {
-	SILENT,
+enum class Severity {
 	ERROR,
 	WARNING,
 	INFO,
 	VERBOSE
 };
 
-ZUAZO_ENUM_COMP_OPERATORS(Verbosity)
+constexpr std::string_view toString(Severity verb);
+
+enum class Verbosity {
+	SILENT 		= 0,
+	ERROR		= ZUAZO_BIT(static_cast<int>(Severity::ERROR)),
+	WARNING		= ZUAZO_BIT(static_cast<int>(Severity::WARNING)),
+	INFO		= ZUAZO_BIT(static_cast<int>(Severity::INFO)),
+	VERBOSE		= ZUAZO_BIT(static_cast<int>(Severity::VERBOSE)),
+
+	LE_ERROR	= SILENT,
+	LEQ_ERROR	= LE_ERROR | ERROR,
+	LE_WARINING	= LEQ_ERROR,
+	LEQ_WARNING	= LE_WARINING | WARNING,
+	LE_INFO		= LEQ_WARNING,
+	LEQ_INFO	= LE_INFO | INFO,
+	LE_VERBOSE	= LEQ_INFO,
+	LEQ_VERBOSE	= LE_VERBOSE | VERBOSE,
+
+	ALL			= LEQ_VERBOSE
+};
+
+ZUAZO_ENUM_BIT_OPERATORS(Verbosity)
+
+constexpr Verbosity operator& (Verbosity a, Severity b);
+constexpr Verbosity operator& (Severity a, Verbosity b);
 
 }
+
+#include "Verbosity.inl"

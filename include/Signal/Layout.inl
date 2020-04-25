@@ -61,11 +61,12 @@ inline const Layout::PadProxy<T> Layout::getPad(std::string_view str) const {
 
 template <typename Pad>
 inline void Layout::addPad(Pad&& pad){
-	m_pads.emplace_back(std::make_unique<Pad>(std::forward<Pad>(pad))); 
+	using ResultPad = typename std::remove_cv<typename std::remove_reference<Pad>::type>::type;
+	m_pads.push_back(std::make_unique<ResultPad>(std::forward<Pad>(pad))); 
 }
 
 inline void Layout::removePad(PadBase& pad){
-	const auto cond = [=] (const std::unique_ptr<PadBase> ptr) -> bool {
+	const auto cond = [&] (const std::unique_ptr<PadBase>& ptr) -> bool {
 		return ptr.get() == &pad;
 	};
 

@@ -47,4 +47,12 @@ constexpr uint32_t Version::getPatch() const {
 }
 
 
+
+inline std::string toString(Version ver) {
+	return 	std::to_string(ver.getMajor()) + "." +
+			std::to_string(ver.getMinor()) + "." +
+			std::to_string(ver.getPatch());
+}
+
+
 }

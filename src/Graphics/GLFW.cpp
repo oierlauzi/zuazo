@@ -405,13 +405,13 @@ private:
 		using Ret = typename std::invoke_result<Func, Args...>::type;
 
 		if(std::this_thread::get_id() == thread.get_id()){
-			return func(std::forward<Args>(args)...); //We are on the main thread. Simply execute it
+			return std::forward<Func>(func)(std::forward<Args>(args)...); //We are on the main thread. Simply execute it
 		}else {
 			std::unique_lock<std::mutex> lock(mutex);
 
 			//Create a future object to pass it to the main thread
 			std::packaged_task<Ret(Args...)> task(std::forward<Func>(func));
-			executions.emplace([&] { task(std::forward<Args>(args)...); });
+			executions.push(std::bind(std::ref(task), std::forward<Args>(args)...));
 			
 			//Wait until execution is complete
 			threadContinue();
@@ -543,7 +543,6 @@ private:
 		glfwSetWindowMaximizeCallback(win, Callbacks::maximizeCbk);
 		glfwSetFramebufferSizeCallback(win, Callbacks::framebufferCbk);
 		glfwSetWindowContentScaleCallback(win, Callbacks::scaleCbk);
-
 
 		windowCount.fetch_add(1);
 		return win;
@@ -902,7 +901,7 @@ std::vector<GLFW::Monitor::Mode> GLFW::Monitor::getModes() const {
  * GLFW::Window
  */
 
-GLFW::Window::Window(	const  Math::Vec2i& size, 
+GLFW::Window::Window(	Math::Vec2i size, 
 						std::string_view name )
 	: m_window(s_impl->createWindow(
 		size, name, this

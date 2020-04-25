@@ -2,16 +2,17 @@
 
 #include <Exception.h>
 #include <Utils/StaticId.h>
-
+#include <Graphics/ColorTransfer.h>
 
 namespace Zuazo::Graphics {
 
 Frame::Frame(	const Vulkan& vulkan,
-				const Descriptor& desc,
+				Math::Vec2f size,
+				Utils::BufferView<const Image::PlaneDescriptor> planes,
 				const std::shared_ptr<const Buffer>& colorTransfer )
 	: m_vulkan(vulkan)
-	, m_descriptor(desc)
-	, m_image(createImage(m_vulkan, m_descriptor))
+	, m_size(size)
+	, m_image(createImage(m_vulkan, planes))
 	, m_colorTransfer(colorTransfer)
 	, m_descriptorPool(createDescriptorPool(m_vulkan))
 	, m_descriptorSets(allocateDescriptorSets(m_vulkan, *m_descriptorPool))
@@ -21,7 +22,7 @@ Frame::Frame(	const Vulkan& vulkan,
 	for(size_t i = 0; i < m_descriptorSets.size(); i++){
 		//Update all images. As nullptr images can't be passed, repeat available images		
 		const auto& imageViews = m_image.getImageViews();
-		std::array<vk::DescriptorImageInfo, IMAGE_COUNT> images;
+		std::array<vk::DescriptorImageInfo, MAX_PLANE_COUNT> images;
 		for(size_t j = 0; j < images.size(); j++){
 			images[j] = vk::DescriptorImageInfo(
 				nullptr,												//Sampler
@@ -41,7 +42,7 @@ Frame::Frame(	const Vulkan& vulkan,
 		const std::array writeDescriptorSets ={
 			vk::WriteDescriptorSet( //Image descriptor
 				m_descriptorSets[i],									//Descriptor set
-				IMAGE_BINDING,											//Binding
+				ColorTransfer::getSamplerBinding(),						//Binding
 				0, 														//Index
 				images.size(), 											//Descriptor count
 				vk::DescriptorType::eCombinedImageSampler,				//Descriptor type
@@ -51,7 +52,7 @@ Frame::Frame(	const Vulkan& vulkan,
 			),
 			vk::WriteDescriptorSet( //Ubo descriptor set
 				m_descriptorSets[i],									//Descriptor set
-				COLOR_TRANSFER_BINDING,									//Binding
+				ColorTransfer::getDataBinding(),						//Binding
 				0, 														//Index
 				buffers.size(),											//Descriptor count		
 				vk::DescriptorType::eUniformBuffer,						//Descriptor type
@@ -65,16 +66,6 @@ Frame::Frame(	const Vulkan& vulkan,
 	}
 
 }
-
-Frame::~Frame(){
-	m_vulkan.getDevice().waitForFences(
-		*m_readyFence,
-		true,
-		std::numeric_limits<uint64_t>::max(),
-		m_vulkan.getDispatcher()
-	);
-}
-
 
 
 void Frame::bind( 	vk::CommandBuffer cmd,
@@ -97,9 +88,8 @@ void Frame::bind( 	vk::CommandBuffer cmd,
 }
 
 
-
-const Frame::Descriptor& Frame::getDescriptor() const {
-	return m_descriptor;
+const Math::Vec2f& Frame::getSize() const {
+	return m_size;
 }
 
 const Image& Frame::getImage() const {
@@ -116,6 +106,12 @@ const vk::Fence& Frame::getReadyFence() const {
 
 
 
+Math::Vec2f Frame::getFrameSize(Resolution resolution, AspectRatio par) {
+	return Math::Vec2f(
+		static_cast<float>(par) * resolution.x,
+		static_cast<float>(resolution.y)
+	);
+}
 
 std::shared_ptr<Buffer> Frame::createColorTransferBuffer( 	const Vulkan& vulkan,
 															const ColorTransfer& colorTransfer )
@@ -128,13 +124,11 @@ std::shared_ptr<Buffer> Frame::createColorTransferBuffer( 	const Vulkan& vulkan,
 	constexpr vk::MemoryPropertyFlags memoryFlags =
 		vk::MemoryPropertyFlagBits::eDeviceLocal;
 
-	constexpr size_t size = sizeof(ColorTransfer);
-
 	Buffer result(
 		vulkan,
 		usageFlags,
 		memoryFlags,
-		size
+		ColorTransfer::size()
 	);
  
 	//Create a staging buffer. Using this technique due to preferably having
@@ -150,7 +144,7 @@ std::shared_ptr<Buffer> Frame::createColorTransferBuffer( 	const Vulkan& vulkan,
 		vulkan,
 		stagingUsageFlags,
 		stagingMemoryFlags,
-		size
+		ColorTransfer::size()
 	);
 
 	//Upload the contents to the staging buffer
@@ -162,8 +156,8 @@ std::shared_ptr<Buffer> Frame::createColorTransferBuffer( 	const Vulkan& vulkan,
 	auto* stagingBufferData = vulkan.mapMemory(range);
 	std::memcpy(
 		stagingBufferData,
-		&colorTransfer,
-		size
+		colorTransfer.data(),
+		ColorTransfer::size()
 	);
 
 	//Create a command pool and a command buffer for uploading it
@@ -197,7 +191,7 @@ std::shared_ptr<Buffer> Frame::createColorTransferBuffer( 	const Vulkan& vulkan,
 		cmdBuffer.copyBuffer(
 			stagingBuffer.getBuffer(),
 			result.getBuffer(),
-			vk::BufferCopy(0, 0, size),
+			vk::BufferCopy(0, 0, ColorTransfer::size()),
 			vulkan.getDispatcher()
 		);
 
@@ -258,31 +252,51 @@ std::shared_ptr<Buffer> Frame::createColorTransferBuffer( 	const Vulkan& vulkan,
 }
 
 vk::DescriptorSetLayout	Frame::getDescriptorSetLayout(	const Vulkan& vulkan,
-														vk::Filter filt) {
+														vk::Filter filter) {
 	static const std::array<Utils::StaticId, VK_FILTER_RANGE_SIZE> ids;
-	const size_t id = ids[static_cast<size_t>(filt)];
+	const size_t id = ids[static_cast<size_t>(filter)];
 
 	auto result = vulkan.createDescriptorSetLayout(id);
 
 	if(!result) {
 		//Descriptor set was not previously created. Create it
+		auto sampler = vulkan.createSampler(id);
+		if(!sampler) {
+			//Sampler does not exist, create it
+			const vk::SamplerCreateInfo createInfo(
+				{},														//Flags
+				filter, filter,											//Min/Mag filter
+				vk::SamplerMipmapMode::eNearest,						//Mipmap mode
+				vk::SamplerAddressMode::eClampToEdge,					//U address mode
+				vk::SamplerAddressMode::eClampToEdge,					//V address mode
+				vk::SamplerAddressMode::eClampToEdge,					//W address mode
+				0.0f,													//Mip LOD bias
+				false,													//Enable anisotropy
+				0.0f,													//Max anisotropy
+				false,													//Compare enable
+				vk::CompareOp::eNever,									//Compare operation
+				0.0f, 0.0f,												//Min/Max LOD
+				vk::BorderColor::eFloatTransparentBlack,				//Boreder color
+				false													//Unormalized coords
+			);
 
-		std::array<vk::Sampler, IMAGE_COUNT> inmutableSamplers;
-		for(size_t j = 0; j < inmutableSamplers.size(); j++){
-			inmutableSamplers[j] = vulkan.getSampler(filt);
+			sampler = vulkan.createSampler(id, createInfo);
 		}
+
+		//Create the sampler array
+		std::vector<vk::Sampler> inmutableSamplers(ColorTransfer::getSamplerCount(), sampler);
 
 		//Create the bindings
 		const std::array bindings = {
 			vk::DescriptorSetLayoutBinding( //Sampled image binding
-				IMAGE_BINDING,									//Binding
+				ColorTransfer::getSamplerBinding(),				//Binding
 				vk::DescriptorType::eCombinedImageSampler,		//Type
-				IMAGE_COUNT,									//Count
+				inmutableSamplers.size(),						//Count
 				vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
 				inmutableSamplers.data()						//Inmutable samplers
 			), 
 			vk::DescriptorSetLayoutBinding(	//Color transfer binding
-				COLOR_TRANSFER_BINDING,							//Binding
+				ColorTransfer::getDataBinding(),				//Binding
 				vk::DescriptorType::eUniformBuffer,				//Type
 				1,												//Count
 				vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
@@ -304,7 +318,7 @@ vk::DescriptorSetLayout	Frame::getDescriptorSetLayout(	const Vulkan& vulkan,
 
 
 Image Frame::createImage(	const Vulkan& vulkan,
-							const Descriptor& desc )
+							Utils::BufferView<const Image::PlaneDescriptor> planes )
 {
 	constexpr vk::ImageUsageFlags usageFlags =
 		vk::ImageUsageFlagBits::eSampled |
@@ -313,27 +327,11 @@ Image Frame::createImage(	const Vulkan& vulkan,
 	constexpr vk::MemoryPropertyFlags memoryFlags =
 		vk::MemoryPropertyFlagBits::eDeviceLocal;
 
-	//Get the plane descriptor array
-	std::vector<Image::PlaneDescriptor> planeDescriptors;
-	for(size_t i = 0; i < desc.colorFormat.size(); i++){
-		if(std::get<vk::Format>(desc.colorFormat[i]) != vk::Format::eUndefined){
-			planeDescriptors.emplace_back(
-				Image::PlaneDescriptor {
-					desc.extents[i],
-					std::get<vk::Format>(desc.colorFormat[i]),
-					std::get<vk::ComponentMapping>(desc.colorFormat[i])
-				}
-			);
-		} else {
-			break;
-		}
-	}
-
 	return Image(
 		vulkan,
 		usageFlags,
 		memoryFlags,
-		planeDescriptors
+		planes
 	);
 }
 
@@ -344,7 +342,7 @@ vk::UniqueDescriptorPool Frame::createDescriptorPool(const Vulkan& vulkan){
 	const std::array poolSizes = {
 		vk::DescriptorPoolSize(
 			vk::DescriptorType::eCombinedImageSampler,			//Descriptor type
-			DESCRIPTOR_COUNT * IMAGE_COUNT						//Descriptor count
+			DESCRIPTOR_COUNT * ColorTransfer::getSamplerCount()	//Descriptor count
 		),
 		vk::DescriptorPoolSize(
 			vk::DescriptorType::eUniformBuffer,					//Descriptor type
@@ -388,20 +386,16 @@ Frame::DescriptorSets Frame::allocateDescriptorSets(const Vulkan& vulkan,
 
 
 
-
-
-
-
-
-
-
+/*
+ * Frame::Geometry
+ */
 
 Frame::Geometry::Geometry(	const Vulkan& vulkan, 
 							uint32_t binding, 
-							const Resolution& resolution )
+							Math::Vec2f  targetSize )
 	: m_vulkan(vulkan)
 	, m_binding(binding)
-	, m_dstResolution(resolution)
+	, m_targetSize(targetSize)
 	, m_vertexBuffer(createVertexBuffer(m_vulkan))
 	, m_stagingBuffer(createStagingBuffer(m_vulkan))
 	, m_vertices(mapStagingBuffer(m_vulkan, m_stagingBuffer))
@@ -414,6 +408,30 @@ Frame::Geometry::Geometry(	const Vulkan& vulkan,
 	, m_uploadCommandSubmit(createSubmitInfo(m_uploadCommand))
 {
 }
+
+
+void Frame::Geometry::setTargetSize(Math::Vec2f size) {
+	if(size != m_targetSize) {
+		m_targetSize = size;
+		m_sourceSize = Math::Vec2f(0.0f); //So that it gets recalculated
+	}
+}
+const Math::Vec2f& Frame::Geometry::getTargetSize() const {
+	return m_targetSize;
+}
+
+
+void Frame::Geometry::setSourceSize(Math::Vec2f size) {
+	if(size != m_sourceSize) {
+		m_sourceSize = size;
+		updateVertexBuffer(); //Recalculate the vertices
+	}
+}
+
+const Math::Vec2f& Frame::Geometry::getSourceSize() const {
+	return m_sourceSize;
+}
+
 
 vk::VertexInputBindingDescription Frame::Geometry::getBindingDescription() const{
 	return vk::VertexInputBindingDescription(
@@ -442,6 +460,11 @@ std::array<vk::VertexInputAttributeDescription, Frame::Geometry::ATTRIBUTE_COUNT
 	};
 }
 
+
+void Frame::Geometry::useFrame(const Frame& frame) {
+	setSourceSize(frame.getSize());
+}
+
 void Frame::Geometry::bind(vk::CommandBuffer cmd) const {
 	cmd.bindVertexBuffers(
 		m_binding,									//Binding
@@ -451,8 +474,10 @@ void Frame::Geometry::bind(vk::CommandBuffer cmd) const {
 	);
 }
 
+
+
 void Frame::Geometry::updateVertexBuffer() {
-	auto scale = static_cast<Math::Vec2f>(m_dstResolution) / static_cast<Math::Vec2f>(m_srcResolution); 
+	//auto scale = static_cast<Math::Vec2f>(m_dstResolution) / static_cast<Math::Vec2f>(m_srcResolution); 
 
 	//TODO modify scale to fit
 

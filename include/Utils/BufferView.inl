@@ -42,6 +42,13 @@ constexpr BufferView<T>::BufferView(std::initializer_list<Q> list)
 
 template <typename T>
 template <typename Q, size_t N>
+constexpr BufferView<T>::BufferView(const std::array<Q, N>& arr)
+	: BufferView(arr.data(), arr.size())
+{
+}
+
+template <typename T>
+template <typename Q, size_t N>
 constexpr BufferView<T>::BufferView(std::array<Q, N>& arr)
 	: BufferView(arr.data(), arr.size())
 {
@@ -49,8 +56,29 @@ constexpr BufferView<T>::BufferView(std::array<Q, N>& arr)
 
 template <typename T>
 template <typename Q>
+constexpr BufferView<T>::BufferView(const std::vector<Q>& vec)
+	: BufferView(vec.data(), vec.size())
+{
+}
+
+template <typename T>
+template <typename Q>
 constexpr BufferView<T>::BufferView(std::vector<Q>& vec)
 	: BufferView(vec.data(), vec.size())
+{
+}
+
+template <typename T>
+template <typename Q>
+constexpr BufferView<T>::BufferView(const std::valarray<Q>& vec)
+	: BufferView(std::begin(vec), std::end(vec))
+{
+}
+
+template <typename T>
+template <typename Q>
+constexpr BufferView<T>::BufferView(std::valarray<Q>& vec)
+	: BufferView(std::begin(vec), std::end(vec))
 {
 }
 
@@ -74,6 +102,26 @@ constexpr T* BufferView<T>::data() const {
 template <typename T>
 constexpr size_t BufferView<T>::size() const {
 	return m_size;
+}
+
+template <typename T>
+constexpr T* BufferView<T>::begin() const {
+	return data();
+}
+
+template <typename T>
+constexpr T* BufferView<T>::cbegin() const {
+	return begin();
+}
+
+template <typename T>
+constexpr T* BufferView<T>::end() const {
+	return data() + size();
+}
+
+template <typename T>
+constexpr T* BufferView<T>::cend() const {
+	return end();
 }
 
 template <typename T>

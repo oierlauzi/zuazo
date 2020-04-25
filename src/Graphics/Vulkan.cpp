@@ -4,7 +4,6 @@
 
 #include <Graphics/GLFW.h>
 #include <Graphics/VulkanConversions.h>
-#include <Graphics/ColorTransfer.h>
 #include <Zuazo.h>
 #include <Exception.h>
 #include <Macros.h>
@@ -41,9 +40,6 @@ struct Vulkan::Impl {
 		QUEUE_NUM
 	};
 
-	using Samplers = std::array<vk::UniqueSampler, VK_FILTER_RANGE_SIZE>;
-	using ColorTransferDescriporSetLayouts = std::array<vk::UniqueDescriptorSetLayout, VK_FILTER_RANGE_SIZE>;
-
 	vk::DynamicLoader								loader;
 	vk::DispatchLoaderDynamic						dispatcher;
 	vk::UniqueInstance								instance;
@@ -53,7 +49,6 @@ struct Vulkan::Impl {
 	vk::UniqueDevice								device;
 	std::array<vk::Queue, QUEUE_NUM>				queues;
 	vk::UniquePipelineCache							pipelineCache;
-	Samplers										samplers;
 	FormatSupport									formatSupport;
 
 	/*
@@ -66,6 +61,7 @@ struct Vulkan::Impl {
 	mutable HashMap<vk::UniqueShaderModule>			shaders;
 	mutable HashMap<vk::UniquePipelineLayout>		pipelineLayouts;
 	mutable HashMap<vk::UniqueDescriptorSetLayout>	descriptorSetLayouts;
+	mutable HashMap<vk::UniqueSampler>				samplers;
 
 	mutable std::vector<vk::SwapchainKHR>			presentSwapchains;
 	mutable std::vector<uint32_t>					presentIndices;
@@ -85,7 +81,6 @@ struct Vulkan::Impl {
 		, queueIndices(getQueueIndices(dispatcher, *instance, physicalDevice))
 		, device(createDevice(dispatcher, physicalDevice, queueIndices))
 		, queues(getQueues(dispatcher, *device, queueIndices))
-		, samplers(createSamplers(dispatcher, *device))
 		, formatSupport(getFormatSupport(dispatcher, physicalDevice))
 	{
 	}
@@ -146,10 +141,6 @@ struct Vulkan::Impl {
 
 	vk::PipelineCache getPipelineCache() const {
 		return *pipelineCache;
-	}
-
-	vk::Sampler getSampler(vk::Filter filter) const {
-		return *(samplers[static_cast<size_t>(filter)]);
 	}
 
 	const FormatSupport& getFormatSupport() const{
@@ -288,6 +279,29 @@ struct Vulkan::Impl {
 		return *(ite->second);
 	}
 
+	vk::UniqueSampler createSampler(const vk::SamplerCreateInfo& createInfo) const {
+		return device->createSamplerUnique(createInfo, nullptr, dispatcher);
+	}
+
+	vk::Sampler createSampler(size_t id) const {
+		auto ite = samplers.find(id);
+		if(ite != samplers.cend()) return *(ite->second);
+		else return {};	
+	}
+
+	vk::Sampler createSampler(	size_t id,
+								const vk::SamplerCreateInfo& createInfo ) const 
+	{
+		auto [ite, result] = samplers.emplace(
+			id,
+			createSampler(createInfo)
+		);
+
+		assert(result);
+		assert(ite != samplers.cend());
+		return *(ite->second);
+	}
+
 
 
 	std::vector<vk::UniqueCommandBuffer> allocateCommnadBuffers(const vk::CommandBufferAllocateInfo& allocInfo) const{
@@ -324,6 +338,38 @@ struct Vulkan::Impl {
 		);
 
 		return allocateMemory(allocInfo);
+	}
+
+	AggregatedAllocation allocateMemory(Utils::BufferView<const vk::MemoryRequirements> requirements,
+										vk::MemoryPropertyFlags properties ) const
+	{
+		AggregatedAllocation result;
+		vk::MemoryRequirements combinedRequirements(0, 1, ~(0U)); //Size, aligment, flags
+
+		result.offsets.reserve(requirements.size());
+		auto space = std::numeric_limits<size_t>::max();
+
+		//Combine all fields and evaluate offsets
+		for(size_t i = 0; i < requirements.size(); i++){
+			//Align the storage
+			void* offset = reinterpret_cast<void*>(combinedRequirements.size);
+			std::align(
+				requirements[i].alignment,
+				requirements[i].size,
+				offset,
+				space 
+			);
+			combinedRequirements.size = reinterpret_cast<uintptr_t>(offset);
+
+			result.offsets.emplace_back(combinedRequirements.size, requirements[i].size);
+
+			combinedRequirements.size += requirements[i].size; //Increment the size
+			combinedRequirements.memoryTypeBits &= requirements[i].memoryTypeBits; //Restrict the flags
+			combinedRequirements.alignment = std::max(combinedRequirements.alignment, requirements[i].alignment); //Restrict the alignment
+		}
+
+		result.memory = allocateMemory(combinedRequirements, properties);
+		return result;
 	}
 
 
@@ -652,37 +698,6 @@ private:
 		return device.createPipelineCacheUnique(createInfo, nullptr, disp);
 	}
 
-	static Samplers	createSamplers(	const vk::DispatchLoaderDynamic& disp, 
-									vk::Device device )
-	{
-		Samplers result;
-
-		for(size_t i = 0; i < result.size(); i++){
-			const auto filter = static_cast<vk::Filter>(i);
-
-			const vk::SamplerCreateInfo createInfo(
-				{},														//Flags
-				filter, filter,											//Min/Mag filter
-				vk::SamplerMipmapMode::eNearest,						//Mipmap mode
-				vk::SamplerAddressMode::eClampToEdge,					//U address mode
-				vk::SamplerAddressMode::eClampToEdge,					//V address mode
-				vk::SamplerAddressMode::eClampToEdge,					//W address mode
-				0.0f,													//Mip LOD bias
-				false,													//Enable anisotropy
-				0.0f,													//Max anisotropy
-				false,													//Compare enable
-				vk::CompareOp::eNever,									//Compare operation
-				0.0f, 0.0f,												//Min/Max LOD
-				vk::BorderColor::eFloatTransparentBlack,				//Boreder color
-				false													//Unormalized coords
-			);
-
-			result[i] = device.createSamplerUnique(createInfo, nullptr, disp);
-		}
-
-		return result;
-	}
-
 	static FormatSupport getFormatSupport(	const vk::DispatchLoaderDynamic& disp, 
 											vk::PhysicalDevice physicalDevice )
 	{
@@ -906,10 +921,6 @@ vk::PipelineCache Vulkan::getPipelineCache() const {
 	return m_impl->getPipelineCache();
 }
 
-vk::Sampler Vulkan::getSampler(vk::Filter filter) const {
-	return m_impl->getSampler(filter);
-}
-
 const Vulkan::FormatSupport& Vulkan::getFormatSupport() const {
 	return m_impl->getFormatSupport();
 }
@@ -1007,6 +1018,20 @@ vk::DescriptorSetLayout Vulkan::createDescriptorSetLayout(	size_t id,
 	return m_impl->createDescriptorSetLayout(id, createInfo);
 }
 
+vk::UniqueSampler Vulkan::createSampler(const vk::SamplerCreateInfo& createInfo) const {
+	return m_impl->createSampler(createInfo);
+}
+
+vk::Sampler Vulkan::createSampler(size_t id) const {
+	return m_impl->createSampler(id);
+}
+
+vk::Sampler Vulkan::createSampler(	size_t id,
+									const vk::SamplerCreateInfo& createInfo ) const 
+{
+	return m_impl->createSampler(id, createInfo);
+}
+
 
 
 std::vector<vk::UniqueCommandBuffer> Vulkan::allocateCommnadBuffers(const vk::CommandBufferAllocateInfo& allocInfo) const{
@@ -1023,6 +1048,11 @@ vk::UniqueDeviceMemory Vulkan::allocateMemory(	const vk::MemoryRequirements& req
 	return m_impl->allocateMemory(requirements, properties);
 }
 
+Vulkan::AggregatedAllocation Vulkan::allocateMemory(Utils::BufferView<const vk::MemoryRequirements> requirements,
+													vk::MemoryPropertyFlags properties ) const
+{
+	return m_impl->allocateMemory(requirements, properties);
+}
 
 
 std::byte* Vulkan::mapMemory(const vk::MappedMemoryRange& range) const{

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Vulkan.h"
-#include "ColorTransfer.h"
 
 #include "../Version.h"
 #include "../Verbosity.h"
@@ -12,27 +11,39 @@
 #include "../ColorTransferFunction.h"
 #include "../ColorModel.h"
 #include "../ColorPrimaries.h"
+#include "../Utils/BufferView.h"
 
 #include <tuple>
 
 namespace Zuazo::Graphics {
 
-uint32_t toVulkan(Version version);
+constexpr size_t MAX_PLANE_COUNT = 4;
 
-vk::Extent2D toVulkan(const Resolution& res);
-Resolution fromVulkan(const vk::Extent2D& res);
+constexpr uint32_t toVulkan(Version version);
 
-std::array<std::tuple<vk::Format, vk::ComponentMapping>, IMAGE_COUNT> toVulkan(ColorFormat fmt);
-std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format fmt);
+constexpr vk::Extent2D toVulkan(Resolution res);
+constexpr Resolution fromVulkan(vk::Extent2D res);
 
-vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction enc);
-std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::ColorSpaceKHR space);
+constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COUNT> toVulkan(ColorFormat fmt);
+constexpr std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format fmt);
 
-int32_t toVulkan(ColorRange range, ColorModel model);
+constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction enc);
+constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::ColorSpaceKHR space);
 
-int32_t toVulkan(ColorTransferFunction transferFunction);
+constexpr std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std::tuple<vk::Format, vk::ComponentMapping>& fmt);
+std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std::tuple<vk::Format, vk::ComponentMapping>& fmt,
+															Utils::BufferView<const vk::Format> supportedFormats );
 
-std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std::tuple<vk::Format, vk::ComponentMapping>& fmt);
-std::tuple<vk::Format, int32_t> optimizeFormat(vk::Format fmt, int32_t trf, int32_t range);
+constexpr vk::ComponentSwizzle getComponentDefaultValue(char component);
+constexpr vk::ComponentSwizzle getComponentSwizzle(char swizzle);
+constexpr vk::ComponentSwizzle getComponentSwizzle(char component, std::string_view vulkanFromat, std::string_view memoryFormat);
+
+constexpr vk::ComponentMapping swizzle(std::string_view swizzle);
+constexpr vk::ComponentMapping swizzle(std::string_view src, std::string_view dst);
+
+constexpr vk::Format toSrgb(vk::Format format);
+constexpr vk::Format fromSrgb(vk::Format format);
 
 }
+
+#include "VulkanConversions.inl"

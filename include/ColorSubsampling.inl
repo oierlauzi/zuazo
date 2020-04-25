@@ -17,10 +17,11 @@ constexpr std::string_view toString(ColorSubsampling colorSubsampling){
 	}
 }
 
-constexpr Resolution getSubsampledResolution(ColorSubsampling subs, const Resolution& res){
+constexpr Resolution getSubsampledResolution(ColorSubsampling subs, Resolution res){
 	switch(subs){
 
 	case ColorSubsampling::CHROMA_444: 
+	case ColorSubsampling::NONE:
 		return res;
 	case ColorSubsampling::CHROMA_422: 
 	case ColorSubsampling::BAYER: 

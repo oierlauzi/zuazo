@@ -4,6 +4,7 @@
 #include <initializer_list>
 #include <array>
 #include <vector>
+#include <valarray>
 
 namespace Zuazo::Utils {
 
@@ -28,10 +29,22 @@ public:
 	constexpr BufferView(std::initializer_list<Q> list);
 
 	template <typename Q, size_t N>
+	constexpr BufferView(const std::array<Q, N>& arr);
+
+	template <typename Q, size_t N>
 	constexpr BufferView(std::array<Q, N>& arr);
 
 	template <typename Q>
+	constexpr BufferView(const std::vector<Q>& vec);
+
+	template <typename Q>
 	constexpr BufferView(std::vector<Q>& vec);
+
+	template <typename Q>
+	constexpr BufferView(const std::valarray<Q>& vec);
+
+	template <typename Q>
+	constexpr BufferView(std::valarray<Q>& vec);
 
 	constexpr BufferView(const BufferView& other) = default;
 
@@ -47,6 +60,11 @@ public:
 
 	constexpr T*			data() const;
 	constexpr size_t		size() const;
+
+	constexpr T*			begin() const;
+	constexpr T*			cbegin() const;
+	constexpr T*			end() const;
+	constexpr T*			cend() const;
 
 	constexpr T&			operator[](size_t i) const;
 	constexpr T&			front() const;

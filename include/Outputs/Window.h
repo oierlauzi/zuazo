@@ -1,55 +1,46 @@
 #pragma once
 
 #include "../ZuazoBase.h"
-#include "../Graphics/GLFW.h"
-#include "../Graphics/Vulkan.h"
-#include "../Graphics/Frame.h"
+#include "../Video.h"
+#include "../Utils/Pimpl.h"
 #include "../Signal/Input.h"
 
-#include <memory>
+#include <tuple>
 
 namespace Zuazo::Outputs{
 
-class Window 
+class Window final
 	: public ZuazoBase
 {
 public:
-	using ZuazoBase::ZuazoBase;
-	using ZuazoBase::operator=;
+	Window(Instance& instance, const std::string& name);
+	Window(Instance& instance, std::string&& name);
+	Window(const Window& other) = delete;
+	Window(Window&& other);
+	virtual ~Window();
 
-	virtual void 								open() override;
-	virtual void 								close() override;
+	Window&					operator=(const Window& other) = delete;
+	Window&					operator=(Window&& other);
+
+	virtual void 			open()  final;
+	virtual void 			close() final;
 	
-	virtual void 								setVideoMode(const VideoMode& videoMode) override;
+	virtual void 			setVideoMode(const VideoMode& videoMode) final;
+
+	inline static const auto PADS = std::make_tuple(Signal::Input<Video>("videoIn0"));
 private:
-	struct Implementation {
-		Graphics::GLFW::Window						window;
-		Graphics::Frame::Geometry					geometry;
-		vk::UniqueSurfaceKHR						surface;
-		vk::UniqueSwapchainKHR						swapchain;
-		std::vector<vk::UniqueImageView>			swapchainImageViews;
-		vk::UniqueRenderPass						renderPass;
-		vk::PipelineLayout							pipelineLayout;
-		vk::UniquePipeline							pipeline;
-		std::vector<vk::UniqueFramebuffer>			framebuffers;
-		vk::UniqueCommandPool						commandPool;
-		std::vector<vk::UniqueCommandBuffer>		commandBuffers;
-		vk::UniqueSemaphore 						imageAvailableSemaphore;
-		vk::UniqueSemaphore							renderFinishedSemaphore;
-		vk::UniqueFence								renderFinishedFence;
-	};
-		
-	static constexpr auto NO_TIMEOUT = std::numeric_limits<uint64_t>::max();
-	static constexpr uint32_t SHADER_SAMPLER_BINDING = 0;
-	static constexpr uint32_t VERTEX_BUFFER_BINDING = 0;
-	static constexpr uint32_t VERTEX_POSITION = 0;
-	static constexpr uint32_t VERTEX_TEXCOORD = 1;
-	static const size_t typeIndentfier;
+	struct Impl;
+	Utils::Pimpl<Impl>		m_impl;
 
-	mutable std::mutex							m_resizeMutex;//TODO only for testing
 
-	Signal::Input<int>							m_input = Signal::Input<int>("videoIn0", this); //TODO modify to be frames
-	std::unique_ptr<Implementation>				m_implementation;
+
+
+
+
+
+
+
+
 
 	std::tuple<vk::Extent2D, vk::SurfaceFormatKHR> getVulkanVideoMode() const;
 	void										recreate();

@@ -6,7 +6,6 @@
 #include "Video.h"
 #include "Graphics/Vulkan.h"
 #include "Timing/Chrono.h"
-#include "Timing/EventBase.h"
 #include "Utils/Pimpl.h"
 
 #include <functional>
@@ -16,15 +15,19 @@
 
 namespace Zuazo {
 
+class ZuazoBase;
+
 class Instance {
 public:
-	using LogFunc = std::function<void(const Instance&, Verbosity, std::string_view)>;
+	using InstanceLogFunc = std::function<void(const Instance&, Severity, std::string_view)>;
+	using ElementLogFunc = std::function<void(const ZuazoBase&, Severity, std::string_view)>;
 	using DeviceScoreFunc = Graphics::Vulkan::DeviceScoreFunc;
+	using ScheduledCallback = std::function<void()>;
 
 	struct ApplicationInfo {
-		std::string		name;
-		Version			version;
-		Verbosity		verbosity = ZUAZO_IS_DEBUG ? Verbosity::INFO : Verbosity::SILENT;
+		std::string		name = "Zuazo Application";
+		Version			version = Version(0, 1, 0);
+		Verbosity		verbosity = ZUAZO_IS_DEBUG ? Verbosity::LEQ_INFO : Verbosity::SILENT;
 		VideoMode		defaultVideoMode = {
 							Resolution(1280, 720),
 							AspectRatio(1, 1),
@@ -36,7 +39,8 @@ public:
 							ColorRange::FULL,
 							ColorFormat::B8G8R8A8
 						};
-		LogFunc			logFunc = defaultLogFunc;
+		InstanceLogFunc	instanceLogFunc = defaultInstanceLogFunc;
+		ElementLogFunc	elementLogFunc = defaultElementLogFunc;
 		DeviceScoreFunc	deviceScoreFunc = defaultDeviceScoreFunc;
 	};
 	
@@ -54,10 +58,13 @@ public:
 	 * Priority defines in which order Events will be updated, high priority meaning that
 	 * it will be updated early, whilst low priority means that it will be updated late.
 	 */
-	enum class Priority : int {
-		LOWEST_PRIORITY = std::numeric_limits<int>::min(),
-		HIGHEST_PRIORITY = std::numeric_limits<int>::max(),
+	using Priority = int32_t;
+
+	enum {
+		LOWEST_PRIORITY = std::numeric_limits<Priority>::min(),
+		HIGHEST_PRIORITY = std::numeric_limits<Priority>::max(),
 		OUTPUT_PRIORITY = LOWEST_PRIORITY / 2,
+		PRESENT_PRIORITY = OUTPUT_PRIORITY - 64,
 		PROCESSOR_PRIORITY = 0,
 		INPUT_PRIORITY = HIGHEST_PRIORITY / 2,
 	};
@@ -76,19 +83,27 @@ public:
 	const FormatSupport& 		getFormatSupport() const;
 	const ResolutionSupport&	getResolutionSupport() const;
 
-	void						addRegularEvent(const Timing::EventBase& event, Priority prior);
-	void						removeRegularEvent(const Timing::EventBase& event);
+	void						addRegularCallback(const ScheduledCallback& cbk, Priority prior);
+	void						removeRegularCallback(const ScheduledCallback& cbk);
 
-	void						addPeriodicEvent(const Timing::EventBase& event, Priority prior, Timing::Duration period);
-	void						removePeriodicEvent(const Timing::EventBase& event);
+	void						addPeriodicCallback(const ScheduledCallback& cbk, Priority prior, Timing::Duration period);
+	void						removePeriodicCallback(const ScheduledCallback& cbk);
 
 	Timing::TimePoint			getTime() const;
 	Timing::TimePoint			getEpoch() const;
 	Timing::Duration			getDeltaT() const;
 
-	static void 				defaultLogFunc(	const Instance& inst, 
-												Verbosity severity, 
-												std::string_view msg );
+	void						lock();
+	bool						try_lock();
+	void						unlock();
+
+	static void 				defaultInstanceLogFunc(	const Instance& inst, 
+														Severity severity, 
+														std::string_view msg );
+
+	static void 				defaultElementLogFunc(	const ZuazoBase& base, 
+														Severity severity, 
+														std::string_view msg );
 
 	static uint32_t				defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp, 
 														vk::PhysicalDevice device );
@@ -99,12 +114,12 @@ private:
 
 };
 
-#define ZUAZO_LOG(instance, severity, message)									\
-	if(																			\
-		(instance).getApplicationInfo().logFunc && 								\
-		((severity) <= (instance).getApplicationInfo().verbosity) ) 			\
-	{																			\
-		(instance).getApplicationInfo().logFunc(instance, severity, message);	\
+
+#define ZUAZO_LOG(instance, severity, message)												\
+	if(	(instance).getApplicationInfo().instanceLogFunc && 									\
+		((severity) & (instance).getApplicationInfo().verbosity) != Verbosity::SILENT ) 	\
+	{																						\
+		(instance).getApplicationInfo().instanceLogFunc(instance, severity, message);		\
 	}
 
 }
