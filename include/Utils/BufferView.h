@@ -21,6 +21,8 @@ public:
 
 	template <typename Q>
 	constexpr BufferView(Q* begin, Q* end);
+	
+	constexpr BufferView(T& element);
 
 	template <typename Q, size_t N>
 	constexpr BufferView(Q (&arr)[N]);

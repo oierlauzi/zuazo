@@ -308,6 +308,12 @@ struct Vulkan::Impl {
 		return device->allocateCommandBuffersUnique(allocInfo, dispatcher);
 	}
 
+	vk::UniqueCommandBuffer allocateCommnadBuffer(const vk::CommandBufferAllocateInfo& allocInfo) const {
+		assert(allocInfo.commandBufferCount == 1);
+		auto vec = device->allocateCommandBuffersUnique(allocInfo, dispatcher);
+		return std::move(vec[0]);
+	}
+
 	vk::UniqueDeviceMemory allocateMemory(const vk::MemoryAllocateInfo& allocInfo) const{
 		return device->allocateMemoryUnique(allocInfo, nullptr, dispatcher);
 	}
@@ -389,6 +395,60 @@ struct Vulkan::Impl {
 			range,
 			dispatcher
 		);
+	}
+
+
+
+	void waitIdle() const {
+		device->waitIdle(dispatcher);
+	}
+
+	void waitForFences(	Utils::BufferView<const vk::Fence> fences,
+						bool waitAll,
+						uint64_t timeout ) const
+	{
+		using FenceArray = vk::ArrayProxy<const vk::Fence>;
+
+		device->waitForFences(
+			FenceArray(fences.size(), fences.data()),		//Fences
+			waitAll,										//Wait all
+			timeout,										//Timeout
+			dispatcher										//Dispatcher
+		);
+	}
+
+	void resetFences(Utils::BufferView<const vk::Fence> fences) const { 
+		using FenceArray = vk::ArrayProxy<const vk::Fence>;
+
+		device->resetFences(
+			FenceArray(fences.size(), fences.data()),		//Fences
+			dispatcher										//Dispatcher
+		);
+	}
+
+
+	void submit(vk::Queue queue,
+				Utils::BufferView<const vk::SubmitInfo> subInfo,
+				vk::Fence fence ) const
+	{
+		using SubInfoArray = vk::ArrayProxy<const vk::SubmitInfo>;
+
+		queue.submit(
+			SubInfoArray(subInfo.size(), subInfo.data()),	//Submit infos
+			fence,											//Fence
+			dispatcher										//Dispatcher
+		);
+	}
+
+
+	void begin(	vk::CommandBuffer cmd,
+				const vk::CommandBufferBeginInfo& beginInfo ) const
+	{
+		cmd.begin(beginInfo, dispatcher);
+	}
+
+	void end(vk::CommandBuffer cmd) const {
+		cmd.end(dispatcher);
 	}
 
 
@@ -521,7 +581,7 @@ private:
 	static vk::UniqueDebugUtilsMessengerEXT	createMessenger(const vk::DispatchLoaderDynamic& disp, 
 															vk::Instance instance )
 	{
-		#ifdef ZUAZO_ENABLE_VALIDATION_LAYERS //TODO move to impl
+		#ifdef ZUAZO_ENABLE_VALIDATION_LAYERS
 			constexpr auto msgSeverity =
 				vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
 				vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
@@ -1038,6 +1098,10 @@ std::vector<vk::UniqueCommandBuffer> Vulkan::allocateCommnadBuffers(const vk::Co
 	return m_impl->allocateCommnadBuffers(allocInfo);
 }
 
+vk::UniqueCommandBuffer Vulkan::allocateCommnadBuffer(const vk::CommandBufferAllocateInfo& allocInfo) const{
+	return m_impl->allocateCommnadBuffer(allocInfo);
+}
+
 vk::UniqueDeviceMemory Vulkan::allocateMemory(const vk::MemoryAllocateInfo& allocInfo) const{
 	return m_impl->allocateMemory(allocInfo);
 }
@@ -1061,6 +1125,43 @@ std::byte* Vulkan::mapMemory(const vk::MappedMemoryRange& range) const{
 
 void Vulkan::flushMappedMemory(const vk::MappedMemoryRange& range) const {
 	return m_impl->flushMappedMemory(range);
+}
+
+
+
+void Vulkan::waitIdle() const {
+	m_impl->waitIdle();
+}
+
+void Vulkan::waitForFences(	Utils::BufferView<const vk::Fence> fences,
+							bool waitAll,
+							uint64_t timeout ) const
+{
+	m_impl->waitForFences(fences, waitAll, timeout);
+}
+
+void Vulkan::resetFences(Utils::BufferView<const vk::Fence> fences) const {
+	m_impl->resetFences(fences);
+}
+
+
+
+void Vulkan::submit(vk::Queue queue,
+					Utils::BufferView<const vk::SubmitInfo> subInfo,
+					vk::Fence fence ) const
+{
+	m_impl->submit(queue, subInfo, fence);
+}
+
+
+void Vulkan::begin(	vk::CommandBuffer cmd,
+					const vk::CommandBufferBeginInfo& beginInfo ) const
+{
+	m_impl->begin(cmd, beginInfo);
+}
+
+void Vulkan::end(vk::CommandBuffer cmd) const {
+	m_impl->end(cmd);
 }
 
 

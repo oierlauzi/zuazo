@@ -45,7 +45,13 @@ public:
 	PadProxy<T>					getPad(std::string_view str);
 
 	template<typename T>
+	PadProxy<T>					getPad(const T& pad);
+
+	template<typename T>
 	const PadProxy<T>			getPad(std::string_view str) const;
+
+	template<typename T>
+	const PadProxy<T>			getPad(const T& pad) const;
 
 protected:
 	template <typename Pad>
@@ -54,6 +60,9 @@ protected:
 
 	template <typename T>
 	T&							findPad(std::string_view str) const;
+
+	template <typename T>
+	T&							findPad(const T& pad) const;
 
 	template <typename T>
 	std::vector<std::reference_wrapper<T>>	findPads() const;

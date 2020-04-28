@@ -36,7 +36,8 @@ public:
 													Utils::BufferView<const vk::Format> supportedFormats );
 
 	const std::byte*					data() const;
-	Utils::BufferView<const std::byte>	getData() const;
+
+	Buffer								createBuffer(const Vulkan& vulkan) const;
 
 	static uint32_t 					getSamplerCount();
 	static uint32_t 					getSamplerBinding();

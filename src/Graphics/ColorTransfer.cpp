@@ -75,8 +75,138 @@ struct ColorTransfer::Impl {
 		return reinterpret_cast<const std::byte*>(&transferData);
 	}
 
-	Utils::BufferView<const std::byte> getData() const {
-		return { data(), size() };
+	Buffer createBuffer(const Vulkan& vulkan) const {
+		//Create the buffer itself
+		constexpr vk::BufferUsageFlags usageFlags =
+			vk::BufferUsageFlagBits::eUniformBuffer |
+			vk::BufferUsageFlagBits::eTransferDst;
+
+		constexpr vk::MemoryPropertyFlags memoryFlags =
+			vk::MemoryPropertyFlagBits::eDeviceLocal;
+
+		Buffer result(
+			vulkan,
+			usageFlags,
+			memoryFlags,
+			size()
+		);
+	
+		//Create a staging buffer. Using this technique due to preferably having
+		//device memory allocated for the UBO, as it will be only written once and
+		//read frequently
+		constexpr vk::BufferUsageFlags stagingUsageFlags =
+			vk::BufferUsageFlagBits::eTransferSrc;
+
+		constexpr vk::MemoryPropertyFlags stagingMemoryFlags =
+			vk::MemoryPropertyFlagBits::eHostVisible;
+
+		Buffer stagingBuffer(
+			vulkan,
+			stagingUsageFlags,
+			stagingMemoryFlags,
+			size()
+		);
+
+		//Upload the contents to the staging buffer
+		const vk::MappedMemoryRange range(
+			stagingBuffer.getDeviceMemory(),
+			0, VK_WHOLE_SIZE
+		);
+
+		auto* stagingBufferData = vulkan.mapMemory(range);
+		std::memcpy(
+			stagingBufferData,
+			data(),
+			size()
+		);
+
+		//Create a command pool and a command buffer for uploading it
+		const vk::CommandPoolCreateInfo cpCreateInfo(
+			{},													//Flags
+			vulkan.getTransferQueueIndex()						//Queue index
+		);
+
+		const auto commandPool = vulkan.createCommandPool(cpCreateInfo);
+
+		const vk::CommandBufferAllocateInfo cbAllocInfo(
+			*commandPool,
+			vk::CommandBufferLevel::ePrimary,
+			1
+		);
+
+		const auto cmdBuffer = vulkan.allocateCommnadBuffer(cbAllocInfo);
+
+		//Record the command buffer
+		constexpr vk::CommandBufferUsageFlags cbUsage =
+			vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+
+		const vk::CommandBufferBeginInfo cbBeginInfo(
+			cbUsage,
+			nullptr
+		);
+
+		vulkan.begin(*cmdBuffer, cbBeginInfo);
+		{
+			cmdBuffer->copyBuffer(
+				stagingBuffer.getBuffer(),
+				result.getBuffer(),
+				vk::BufferCopy(0, 0, size()),
+				vulkan.getDispatcher()
+			);
+
+			//Insert a memory barrier
+			const bool queueOwnershipTransfer = vulkan.getTransferQueueIndex() != vulkan.getGraphicsQueueIndex();
+			const auto srcFamily = queueOwnershipTransfer ? vulkan.getTransferQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
+			const auto dstFamily = queueOwnershipTransfer ? vulkan.getGraphicsQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
+			constexpr vk::AccessFlags srcAccess = {};
+			constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eShaderRead;
+
+			const vk::BufferMemoryBarrier memoryBarrier(
+				srcAccess,						//Old access mask
+				dstAccess,						//New access mask
+				srcFamily,						//Old queue family
+				dstFamily, 						//New queue family
+				result.getBuffer(),				//Buffer
+				0, VK_WHOLE_SIZE				//Range
+			);
+
+			constexpr vk::PipelineStageFlags sourceStages = 
+				vk::PipelineStageFlagBits::eTransfer;
+
+			constexpr vk::PipelineStageFlags destinationStages = 
+				vk::PipelineStageFlagBits::eAllGraphics;
+			
+			cmdBuffer->pipelineBarrier(
+				sourceStages,					//Generating stages
+				destinationStages,				//Consuming stages
+				{},								//dependency flags
+				{},								//Memory barriers
+				memoryBarrier,					//Buffer memory barriers
+				{},								//Image memory barriers
+				vulkan.getDispatcher()
+			);
+		}
+		vulkan.end(*cmdBuffer);
+
+		//Submit the command buffer
+		const auto uploadFence = vulkan.createFence();
+		const vk::SubmitInfo submitInfo(
+			0, nullptr,							//Wait semaphores
+			nullptr,							//Pipeline stages
+			1, &(*cmdBuffer),					//Command buffers
+			0, nullptr							//Signal semaphores
+		);
+
+		vulkan.submit(
+			vulkan.getTransferQueue(),
+			submitInfo,
+			*uploadFence
+		);
+
+		//Wait for completion
+		vulkan.waitForFences(*uploadFence);
+
+		return result;
 	}
 
 private:
@@ -163,11 +293,10 @@ const std::byte* ColorTransfer::data() const {
 	return m_impl->data();
 }
 
-Utils::BufferView<const std::byte> ColorTransfer::getData() const {
-	return m_impl->getData();
+
+Buffer ColorTransfer::createBuffer(const Vulkan& vulkan) const {
+	return m_impl->createBuffer(vulkan);
 }
-
-
 
 
 
@@ -186,5 +315,9 @@ uint32_t ColorTransfer::getDataBinding() {
 size_t ColorTransfer::size() {
 	return sizeof(ct_data);
 }
+
+
+Buffer 		createColorTransferBuffer(	const Vulkan& vulkan,
+																	const ColorTransfer& colorTransfer );
 
 }

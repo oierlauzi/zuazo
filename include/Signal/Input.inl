@@ -18,12 +18,12 @@ inline Input<T>::Input(Str&& name)
 
 
 template <typename T>
-inline void Input<T>::setSource(Output<T>* src){
+inline void Input<T>::setSource(const Output<T>* src){
 	m_source = src;
 }
 
 template <typename T>
-inline Output<T>* Input<T>::getSource() const{
+inline const Output<T>* Input<T>::getSource() const{
 	return m_source;
 }
 
@@ -88,8 +88,12 @@ inline Layout::PadProxy<Input<T>>::PadProxy(Input<T>& pad)
 }
 
 template <typename T>
-inline void Layout::PadProxy<Input<T>>::setSource(Layout::PadProxy<Output<T>>* src) {
-	return get<Input<T>>().setSource(src->template get<Output<T>>());
+inline void Layout::PadProxy<Input<T>>::setSource(const Layout::PadProxy<Output<T>>* src) {
+	if(src) {
+		get<Input<T>>().setSource(&(src->template get<Output<T>>()));
+	} else {
+		get<Input<T>>().setSource(nullptr);
+	}
 }
 
 template <typename T>
@@ -98,7 +102,7 @@ inline Layout::PadProxy<Output<T>>* Layout::PadProxy<Input<T>>::getSource() cons
 }
 
 template <typename T>
-inline void Layout::PadProxy<Input<T>>::operator<<(Layout::PadProxy<Output<T>>& src) {
+inline void Layout::PadProxy<Input<T>>::operator<<(const Layout::PadProxy<Output<T>>& src) {
 	setSource(&src);
 }
 

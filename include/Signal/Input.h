@@ -32,8 +32,8 @@ public:
 	Input&						operator=(Input&& other);
 
 
-	void						setSource(Output<T>* src);
-	Output<T>*					getSource() const;
+	void						setSource(const Output<T>* src);
+	const Output<T>*			getSource() const;
 
 	void						setNoSignalAction(NoSignalAction nsa);
 	NoSignalAction				getNoSignalAction() const;
@@ -45,7 +45,7 @@ public:
 	static const T				NO_SIGNAL;
 
 private:
-	Output<T>*					m_source = nullptr;
+	const Output<T>*			m_source = nullptr;
 
 	mutable T					m_lastElement;
 	NoSignalAction				m_onNoSignal = NoSignalAction::RETURN_EMPTY;
@@ -63,10 +63,10 @@ public:
 
 	PadProxy& 					operator=(const PadProxy& other) = delete;
 
-	void						setSource(PadProxy<Output<T>>* src);
+	void						setSource(const PadProxy<Output<T>>* src);
 	PadProxy<Output<T>>* 		getSource() const;
 
-	void 						operator<<(PadProxy<Output<T>>& src);
+	void 						operator<<(const PadProxy<Output<T>>& src);
 	void 						operator<<(NoSignal);
 
 	void						setNoSignalAction(NoSignalAction hold);

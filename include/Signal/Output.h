@@ -8,11 +8,11 @@
 namespace Zuazo::Signal {
 
 template <typename T>
-class InputPad;
+class Input;
 
 template <typename T>
 class Output : public PadBase {
-	friend InputPad<T>;
+	friend Input<T>;
 public:
 	Output() = default;
 	template<typename Str>
@@ -36,7 +36,7 @@ private:
 
 template <typename T>
 class Layout::PadProxy<Output<T>> : public Layout::PadProxy<PadBase> {
-	friend Layout::PadProxy<InputPad<T>>;
+	friend Layout::PadProxy<Input<T>>;
 public:
 	PadProxy(Output<T>& pad);
 	PadProxy(const PadProxy& other) = delete;

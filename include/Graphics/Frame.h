@@ -31,7 +31,7 @@ public:
 	void							bind(	vk::CommandBuffer cmd,
 											vk::PipelineLayout layout,
 											uint32_t index,
-											vk::Filter filter );
+											vk::Filter filter ) const;
 
 	const Math::Vec2f&				getSize() const;
 	const Image&					getImage() const;
@@ -39,9 +39,6 @@ public:
 	const vk::Fence&				getReadyFence() const;
 
 	static Math::Vec2f				getFrameSize(Resolution resolution, AspectRatio par);
-
-	static std::shared_ptr<Buffer> 	createColorTransferBuffer(	const Vulkan& vulkan,
-																const ColorTransfer& colorTransfer );
 
 	static vk::DescriptorSetLayout	getDescriptorSetLayout(	const Vulkan& vulkan,
 															vk::Filter filt );

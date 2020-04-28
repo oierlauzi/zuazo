@@ -44,13 +44,16 @@ struct Instance::Impl {
 		, loop(scheduler, mutex)
 		, formatSupport(queryFormatSupport(vulkan))
 		, resolutionSupport(queryResolutionSupport(vulkan))
+		, presentImages(std::bind(&Graphics::Vulkan::presentAll, std::cref(vulkan)))
 	{
 		std::lock_guard<Impl> lock(*this);
-		presentImages = std::bind(&Graphics::Vulkan::presentAll, std::cref(vulkan));
 		addRegularCallback(presentImages, PRESENT_PRIORITY);
 	}
 
-	~Impl() = default;
+	~Impl() {
+		std::lock_guard<Impl> lock(*this);
+		removeRegularCallback(presentImages);
+	}
 
 	const Instance::ApplicationInfo& getApplicationInfo() const {
 		return applicationInfo;

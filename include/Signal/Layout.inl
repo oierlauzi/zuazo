@@ -54,9 +54,20 @@ inline Layout::PadProxy<T> Layout::getPad(std::string_view str) {
 }
 
 template<typename T>
+inline Layout::PadProxy<T> Layout::getPad(const T& pad) {
+	return findPad(pad);
+}
+
+template<typename T>
 inline const Layout::PadProxy<T> Layout::getPad(std::string_view str) const {
 	return findPad<T>(str);
 }
+
+template<typename T>
+inline const Layout::PadProxy<T> Layout::getPad(const T& pad) const {
+	return findPad(pad);
+}
+
 
 
 template <typename Pad>
@@ -87,6 +98,11 @@ inline T& Layout::findPad(std::string_view str) const {
 	}
 
 	throw Exception("Requested pad not found");
+}
+
+template <typename T>
+T& Layout::findPad(const T& pad) const {
+	return findPad<T>(pad.getName());
 }
 
 template <typename T>

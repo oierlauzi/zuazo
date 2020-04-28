@@ -88,6 +88,7 @@ public:
 														const vk::SamplerCreateInfo& createInfo ) const;
 
 	std::vector<vk::UniqueCommandBuffer>allocateCommnadBuffers(const vk::CommandBufferAllocateInfo& allocInfo) const;
+	vk::UniqueCommandBuffer				allocateCommnadBuffer(const vk::CommandBufferAllocateInfo& allocInfo) const;
 	vk::UniqueDeviceMemory				allocateMemory(const vk::MemoryAllocateInfo& allocInfo) const;
 	vk::UniqueDeviceMemory				allocateMemory(	const vk::MemoryRequirements& requirements,
 														vk::MemoryPropertyFlags properties ) const;
@@ -96,6 +97,20 @@ public:
 
 	std::byte*							mapMemory(const vk::MappedMemoryRange& range) const;
 	void								flushMappedMemory(const vk::MappedMemoryRange& range) const;
+
+	void								waitIdle() const;
+	void								waitForFences(	Utils::BufferView<const vk::Fence> fences,
+														bool waitAll = false,
+														uint64_t timeout = std::numeric_limits<uint64_t>::max()) const;
+	void								resetFences(Utils::BufferView<const vk::Fence> fences) const;
+
+	void								submit(	vk::Queue queue,
+												Utils::BufferView<const vk::SubmitInfo> subInfo,
+												vk::Fence fence ) const;
+
+	void								begin(	vk::CommandBuffer cmd,
+												const vk::CommandBufferBeginInfo& beginInfo ) const;
+	void								end(vk::CommandBuffer cmd) const;
 
 	void								present(vk::SwapchainKHR swapchain,
 												uint32_t imageIndex,

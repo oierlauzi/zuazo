@@ -19,7 +19,7 @@ Uploader::Uploader(	const Vulkan& vulkan,
 	, m_colorTransfer(format, range, transferFunction, model, primaries)
 	, m_planeDescriptors(createPlaneDescriptors(vulkan, resolution, subsampling, format, m_colorTransfer))
 	, m_commandPool(createCommandPool(m_vulkan))
-	, m_colorTransferBuffer(Frame::createColorTransferBuffer(m_vulkan, m_colorTransfer))
+	, m_colorTransferBuffer(std::make_shared<Buffer>(m_colorTransfer.createBuffer(m_vulkan)))
 {
 }
 
@@ -28,12 +28,7 @@ const std::shared_ptr<Uploader::Frame>& Uploader::acquireFrame() const {
 	const auto& frame = getUniqueFrame();
 
 	//Wait for completion of previous uplaods
-	m_vulkan.getDevice().waitForFences(
-		frame->getReadyFence(),							//Fence
-		true,											//Wait all
-		std::numeric_limits<uint64_t>::max(),			//Timeout
-		m_vulkan.getDispatcher()						//Dispatcher
-	);
+	m_vulkan.waitForFences(frame->getReadyFence());
 
 	return frame;
 }
@@ -123,12 +118,7 @@ Uploader::Frame::Frame(	const Vulkan& vulkan,
 }
 
 Uploader::Frame::~Frame() {
-	m_vulkan.getDevice().waitForFences(
-		getReadyFence(),
-		true,
-		std::numeric_limits<uint64_t>::max(),
-		m_vulkan.getDispatcher()
-	);
+	m_vulkan.waitForFences(getReadyFence());
 }
 
 const Image::PixelData& Uploader::Frame::getPixelData() {
@@ -144,11 +134,11 @@ void Uploader::Frame::flush() {
 	m_vulkan.flushMappedMemory(range);
 
 	//Send it to the queue
-	m_vulkan.getDevice().resetFences(getReadyFence(), m_vulkan.getDispatcher());
-	m_vulkan.getTransferQueue().submit(
+	m_vulkan.resetFences(getReadyFence());
+	m_vulkan.submit(
+		m_vulkan.getTransferQueue(),
 		m_commandBufferSubmit,
-		getReadyFence(),
-		m_vulkan.getDispatcher()
+		getReadyFence()
 	);
 }
 
@@ -210,7 +200,7 @@ vk::UniqueCommandBuffer Uploader::Frame::createCommandBuffer(	const Vulkan& vulk
 		nullptr
 	);
 
-	cmdBuffer.begin(cbBeginInfo, vulkan.getDispatcher()); 
+	vulkan.begin(cmdBuffer, cbBeginInfo);
 	{
 		const bool queueOwnershipTransfer = vulkan.getTransferQueueIndex() != vulkan.getGraphicsQueueIndex();
 		const auto& images = image.getImages();
@@ -307,7 +297,7 @@ vk::UniqueCommandBuffer Uploader::Frame::createCommandBuffer(	const Vulkan& vulk
 			vulkan.getDispatcher()
 		);
 	}
-	cmdBuffer.end(vulkan.getDispatcher());
+	vulkan.end(cmdBuffer);
 
 	return std::move(cmdBuffers[0]);
 }

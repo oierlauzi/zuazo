@@ -20,8 +20,6 @@ namespace Zuazo::Outputs {
  * Window::Impl
  */
 struct Window::Impl {
-	static constexpr uint64_t NO_TIMEOUT = std::numeric_limits<uint64_t>::max();
-
 	static constexpr uint32_t UBO_BINDING = 0;
 	static constexpr uint32_t SHADER_SAMPLER_BINDING = 0;
 
@@ -29,10 +27,7 @@ struct Window::Impl {
 	static constexpr uint32_t VERTEX_POSITION = 0;
 	static constexpr uint32_t VERTEX_TEXCOORD = 1;
 
-
-
 	struct Open {
-		const Graphics::Vulkan&						vulkan;
 		Graphics::GLFW::Window						window;
 		vk::Extent2D								extent;
 		Graphics::Frame::Geometry					geometry;
@@ -50,6 +45,8 @@ struct Window::Impl {
 		vk::PipelineLayout							pipelineLayout;
 		vk::UniquePipeline							pipeline;
 
+		Graphics::Buffer							colorTransferBuffer;
+
 	
 		Open(	const Graphics::Vulkan& vulkan,
 				Math::Vec2i size,
@@ -57,8 +54,7 @@ struct Window::Impl {
 				vk::Format format,
 				vk::ColorSpaceKHR colorSpace,
 				const Graphics::ColorTransfer& colorTransfer ) 
-			: vulkan(vulkan)
-			, window(size, name)
+			: window(size, name)
 			, extent(Graphics::toVulkan(window.getResolution()))
 			, geometry(vulkan, VERTEX_BUFFER_BINDING, Math::Vec2f(extent.width, extent.height))
 			, surface(window.getSurface(vulkan))
@@ -72,20 +68,16 @@ struct Window::Impl {
 			, renderPass(createRenderPass(vulkan, format))
 			, framebuffers(createFramebuffers(vulkan, *renderPass, swapchainImageViews, extent))
 			, pipelineLayout(createPipelineLayout(vulkan, vk::Filter::eNearest))
-			, pipeline(createPipeline(vulkan, geometry, *renderPass, pipelineLayout, extent)) 
+			, pipeline(createPipeline(vulkan, geometry, *renderPass, pipelineLayout, extent))
+			, colorTransferBuffer(colorTransfer.createBuffer(vulkan))
 
 		{
 		}
 
-		~Open() {
-			//Wait until the rendering has finished
-			vulkan.getDevice().waitForFences(	*renderFinishedFence, 
-												true, 
-												NO_TIMEOUT, 
-												vulkan.getDispatcher() );
-		}
+		~Open() = default;
 
-		void recreateSwapchain(	vk::Format format,
+		void recreateSwapchain(	const Graphics::Vulkan& vulkan,
+								vk::Format format,
 								vk::ColorSpaceKHR colorSpace ) 
 		{
 			swapchain = createSwapchain(vulkan, *surface, extent, format, colorSpace, *swapchain);
@@ -94,11 +86,22 @@ struct Window::Impl {
 			framebuffers = createFramebuffers(vulkan, *renderPass, swapchainImageViews, extent);
 			pipeline = createPipeline(vulkan, geometry, *renderPass, pipelineLayout, extent);
 		}
+
+		void waitCompletion(const Graphics::Vulkan& vulkan) {
+			vulkan.waitForFences(*renderFinishedFence);
+		}
 	};
 
+	const Graphics::Vulkan&						vulkan;
+	const Signal::Input<Video>&					videoIn;
 	std::unique_ptr<Open>						opened;
 
-	Impl() = default;
+	Impl(	const Graphics::Vulkan& vulkan,
+			const Signal::Input<Video>& videoIn )
+		: vulkan(vulkan)
+		, videoIn(videoIn)
+	{
+	}
 	~Impl() = default;
 
 	void open(	const Graphics::Vulkan& vulkan, 
@@ -174,54 +177,30 @@ struct Window::Impl {
 	}
 
 	void close() {
+		opened->waitCompletion(vulkan);
 		opened.reset();
 	}
 
 	void update() {
 		assert(opened);
-		printf("Hola\n");
+		printf("Hola\n"); //TODO only to test
 		
-		const auto& vulkan = opened->vulkan;
-
-		Graphics::Uploader uplo(
-			vulkan,
-			Resolution(1280, 720),
-			AspectRatio(1, 1),
-			ColorSubsampling::NONE,
-			ColorFormat::R8G8B8A8,
-			ColorRange::FULL,
-			ColorTransferFunction::LINEAR,
-			ColorModel::RGB,
-			ColorPrimaries::BT709
-		);
-		const auto frame = uplo.acquireFrame();
-		const auto& pixels = frame->getPixelData();
-		for(size_t i = 0; i < pixels[0].size(); i+=4){
-			pixels[0][i + 0] = static_cast<std::byte>(rand());
-			pixels[0][i + 1] = static_cast<std::byte>(rand());
-			pixels[0][i + 2] = static_cast<std::byte>(rand());
-			pixels[0][i + 3] = static_cast<std::byte>(0xff);
-		}
-
-		frame->flush();
-
 		//Wait for the previous rendering to be completed
-		vulkan.getDevice().waitForFences(	*(opened->renderFinishedFence), 
-											true, 
-											NO_TIMEOUT, 
-											vulkan.getDispatcher() );
+		opened->waitCompletion(vulkan);
 
 		//Acquire an image from the swapchain
 		const auto index = vulkan.getDevice().acquireNextImageKHR(
 			*(opened->swapchain), 						
-			NO_TIMEOUT,
+			std::numeric_limits<uint64_t>::max(),
 			*(opened->imageAvailableSemaphore),
 			nullptr,
 			vulkan.getDispatcher()
 		);
 
+		const auto& frame = videoIn.pull();
+
 		//Resize the geometry if needed
-		opened->geometry.useFrame(*frame);
+		if(frame) opened->geometry.useFrame(*frame);
 
 		const auto& cmdBuffer = opened->commandBuffer;
 		const auto& frameBuffer = *(opened->framebuffers[index.value]);
@@ -245,18 +224,21 @@ struct Window::Impl {
 		);
 
 		cmdBuffer.beginRenderPass(rendBegin, vk::SubpassContents::eInline, vulkan.getDispatcher());
-		cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *(opened->pipeline), vulkan.getDispatcher());
 
-		opened->geometry.bind(cmdBuffer);
+		if(frame) {
+			cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *(opened->pipeline), vulkan.getDispatcher());
+
+			opened->geometry.bind(cmdBuffer);
 
 
-		frame->bind(
-			cmdBuffer,
-			opened->pipelineLayout,
-			0,
-			vk::Filter::eNearest
-		);
-		cmdBuffer.draw(4, 1, 0, 0, vulkan.getDispatcher());
+			frame->bind(
+				cmdBuffer,
+				opened->pipelineLayout,
+				0,
+				vk::Filter::eNearest
+			);
+			cmdBuffer.draw(4, 1, 0, 0, vulkan.getDispatcher());
+		}
 
 		cmdBuffer.endRenderPass(vulkan.getDispatcher());
 		cmdBuffer.end(vulkan.getDispatcher());
@@ -765,14 +747,14 @@ private:
 
 Window::Window(Instance& instance, const std::string& name)
 	: ZuazoBase(instance, name, PADS)
-	, m_impl()
+	, m_impl(instance.getVulkan(), findPad(std::get<0>(PADS)))
 {
 	setUpdateCallback(std::bind(&Impl::update, std::ref(*m_impl)));
 }
 
 Window::Window(Instance& instance, std::string&& name)
 	: ZuazoBase(instance, std::move(name), PADS)
-	, m_impl()
+	, m_impl(instance.getVulkan(), findPad(std::get<0>(PADS)))
 {
 	setUpdateCallback(std::bind(&Impl::update, std::ref(*m_impl)));
 }

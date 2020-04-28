@@ -27,6 +27,12 @@ constexpr BufferView<T>::BufferView(Q* begin, Q* end)
 }
 
 template <typename T>
+constexpr BufferView<T>:: BufferView(T& element)
+	: BufferView(&element, 1)
+{
+}
+
+template <typename T>
 template <typename Q, size_t N>
 constexpr BufferView<T>::BufferView(Q (&arr)[N])
 	: BufferView(arr, N)
