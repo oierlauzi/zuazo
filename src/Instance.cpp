@@ -106,15 +106,25 @@ struct Instance::Impl {
 
 
 	void lock() {
+		glfw.disableCallbacks();
 		mutex.lock();
 	}
 
 	bool try_lock() {
-		return mutex.try_lock();
+		glfw.disableCallbacks();
+		const bool success = mutex.try_lock();
+
+		//Undo all changes
+		if(!success) {
+			glfw.enableCallbacks();
+		}
+
+		return success;
 	}
 
 	void unlock() {
 		mutex.unlock();
+		glfw.enableCallbacks();
 	}
 
 

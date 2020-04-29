@@ -11,6 +11,7 @@ namespace Zuazo::Outputs{
 
 class Window final
 	: public ZuazoBase
+	, public VideoBase
 {
 public:
 	Window(Instance& instance, const std::string& name);
@@ -24,6 +25,8 @@ public:
 
 	virtual void 			open()  final;
 	virtual void 			close() final;
+
+	virtual VideoModeCompatibility getVideoModeCompatibility() const final;
 	
 	virtual void 			setVideoMode(const VideoMode& videoMode) final;
 

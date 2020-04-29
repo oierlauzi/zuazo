@@ -29,4 +29,26 @@ struct VideoMode {
 	ColorFormat				colorFormat = ColorFormat::NONE;
 };
 
+class VideoModeCompatibility {
+
+};
+
+class VideoBase {
+public:
+	VideoBase(const VideoMode& videoMode);
+	VideoBase(const VideoBase& other);
+	virtual ~VideoBase();
+
+	VideoBase&				operator=(const VideoBase& other);
+
+	virtual VideoModeCompatibility getVideoModeCompatibility() const = 0;
+
+	virtual void			setVideoMode(const VideoMode& videoMode) = 0;
+	const VideoMode&		getVideoMode() const;
+
+private:
+	VideoMode				m_videoMode;
+
+};
+
 }

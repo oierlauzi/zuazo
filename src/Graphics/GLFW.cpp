@@ -216,10 +216,15 @@ struct GLFW::Impl {
 	}
 
 	void setCallbacksEnabled(bool ena) {
-		std::unique_lock<std::mutex> lock(mutex);
-		threadContinue();
-		Callbacks::enabled = ena; //Important to be after threadContinue()!
-		completeCondition.wait(lock); //Wait for any cbk to finish
+		//Handle reentrancy if it gets called from a callback
+		if(std::this_thread::get_id() != thread.get_id()){
+			std::unique_lock<std::mutex> lock(mutex);
+			threadContinue();
+			Callbacks::enabled = ena; //Important to be after threadContinue()!
+			completeCondition.wait(lock); //Wait for any cbk to finish
+		} else {
+			Callbacks::enabled = ena;
+		}
 	}
 
 	bool getCallbacksEnabled() const {

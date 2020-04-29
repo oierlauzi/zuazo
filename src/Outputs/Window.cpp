@@ -296,7 +296,7 @@ struct Window::Impl {
 private:
 	void resizeCallback(Resolution res) {
 		const auto& vulkan = instance.getVulkan();
-		std::lock_guard<Instance> lock(instance); //FIXME might lead to dead-lock
+		std::lock_guard<Instance> lock(instance);
 
 		opened->waitCompletion(vulkan);
 		opened->extent = Graphics::toVulkan(res);
@@ -775,6 +775,7 @@ private:
 
 Window::Window(Instance& instance, const std::string& name)
 	: ZuazoBase(instance, name, PADS)
+	, VideoBase(instance.getApplicationInfo().defaultVideoMode)
 	, m_impl(instance, findPad(std::get<0>(PADS)))
 {
 	setUpdateCallback(std::bind(&Impl::update, std::ref(*m_impl)));
@@ -782,6 +783,7 @@ Window::Window(Instance& instance, const std::string& name)
 
 Window::Window(Instance& instance, std::string&& name)
 	: ZuazoBase(instance, std::move(name), PADS)
+	, VideoBase(instance.getApplicationInfo().defaultVideoMode)
 	, m_impl(instance, findPad(std::get<0>(PADS)))
 {
 	setUpdateCallback(std::bind(&Impl::update, std::ref(*m_impl)));
@@ -798,7 +800,7 @@ Window::~Window() {
 Window& Window::operator=(Window&& other) = default;
 
 void Window::open() {
-	const auto& videoMode = getInstance().getApplicationInfo().defaultVideoMode; //TODO
+	const auto& videoMode = getVideoMode();
 
 	m_impl->open(getInstance().getVulkan(), videoMode, getName());
 	ZuazoBase::enablePeriodicUpdate(Instance::OUTPUT_PRIORITY, 
@@ -810,6 +812,11 @@ void Window::close() {
 	ZuazoBase::disablePeriodicUpdate();
 	m_impl->close();
 	ZuazoBase::close();
+}
+
+
+VideoModeCompatibility Window::getVideoModeCompatibility() const {
+	return VideoModeCompatibility(); //TODO
 }
 
 void Window::setVideoMode(const VideoMode& videoMode) {
