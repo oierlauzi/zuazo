@@ -45,7 +45,8 @@ public:
 																				const vk::PhysicalDevice& device, 
 																				uint32_t queueCount);
 
-	static void									setCallbacksEnabled(bool ena);
+	static void									enableCallbacks();
+	static void									disableCallbacks();
 	static bool									getCallbacksEnabled();
 
 	static const Monitor NO_MONITOR;

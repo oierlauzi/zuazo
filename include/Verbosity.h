@@ -7,20 +7,20 @@
 namespace Zuazo {
 
 enum class Severity {
-	ERROR,
-	WARNING,
-	INFO,
-	VERBOSE
+	ERROR		= ZUAZO_BIT(0),
+	WARNING		= ZUAZO_BIT(1),
+	INFO		= ZUAZO_BIT(2),
+	VERBOSE		= ZUAZO_BIT(3),
 };
 
 constexpr std::string_view toString(Severity verb);
 
 enum class Verbosity {
 	SILENT 		= 0,
-	ERROR		= ZUAZO_BIT(static_cast<int>(Severity::ERROR)),
-	WARNING		= ZUAZO_BIT(static_cast<int>(Severity::WARNING)),
-	INFO		= ZUAZO_BIT(static_cast<int>(Severity::INFO)),
-	VERBOSE		= ZUAZO_BIT(static_cast<int>(Severity::VERBOSE)),
+	ERROR		= static_cast<int>(Severity::ERROR),
+	WARNING		= static_cast<int>(Severity::WARNING),
+	INFO		= static_cast<int>(Severity::INFO),
+	VERBOSE		= static_cast<int>(Severity::VERBOSE),
 
 	LE_ERROR	= SILENT,
 	LEQ_ERROR	= LE_ERROR | ERROR,

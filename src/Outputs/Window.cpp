@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <limits>
 #include <set>
+#include <mutex>
 
 namespace Zuazo::Outputs {
 
@@ -29,14 +30,19 @@ struct Window::Impl {
 
 	struct Open {
 		Graphics::GLFW::Window						window;
-		vk::Extent2D								extent;
-		Graphics::Frame::Geometry					geometry;
 		vk::UniqueSurfaceKHR						surface;
 		vk::UniqueCommandPool						commandPool;
 		vk::CommandBuffer							commandBuffer;
 		vk::UniqueSemaphore 						imageAvailableSemaphore;
 		vk::UniqueSemaphore							renderFinishedSemaphore;
 		vk::UniqueFence								renderFinishedFence;
+
+		vk::Extent2D								extent;
+		vk::Format 									format;
+		vk::ColorSpaceKHR 							colorSpace;
+		vk::Filter									filter;
+		Graphics::Frame::Geometry					geometry;
+		Graphics::Buffer							colorTransferBuffer;
 
 		vk::UniqueSwapchainKHR						swapchain;
 		std::vector<vk::UniqueImageView>			swapchainImageViews;
@@ -45,45 +51,51 @@ struct Window::Impl {
 		vk::PipelineLayout							pipelineLayout;
 		vk::UniquePipeline							pipeline;
 
-		Graphics::Buffer							colorTransferBuffer;
-
 	
 		Open(	const Graphics::Vulkan& vulkan,
 				Math::Vec2i size,
 				std::string_view name,
 				vk::Format format,
 				vk::ColorSpaceKHR colorSpace,
+				vk::Filter filter,
 				const Graphics::ColorTransfer& colorTransfer ) 
 			: window(size, name)
-			, extent(Graphics::toVulkan(window.getResolution()))
-			, geometry(vulkan, VERTEX_BUFFER_BINDING, Math::Vec2f(extent.width, extent.height))
 			, surface(window.getSurface(vulkan))
 			, commandPool(createCommandPool(vulkan))
 			, commandBuffer(createCommandBuffer(vulkan, *commandPool))
 			, imageAvailableSemaphore(vulkan.createSemaphore())
 			, renderFinishedSemaphore(vulkan.createSemaphore())
 			, renderFinishedFence(vulkan.createFence(true))
+
+			, extent(Graphics::toVulkan(window.getResolution()))
+			, format(format)
+			, colorSpace(colorSpace)
+			, filter(filter)
+			, geometry(vulkan, VERTEX_BUFFER_BINDING, Math::Vec2f(extent.width, extent.height))
+			, colorTransferBuffer(colorTransfer.createBuffer(vulkan))
+
 			, swapchain(createSwapchain(vulkan, *surface, extent, format, colorSpace, {}))
 			, swapchainImageViews(createImageViews(vulkan, *swapchain, format))
 			, renderPass(createRenderPass(vulkan, format))
 			, framebuffers(createFramebuffers(vulkan, *renderPass, swapchainImageViews, extent))
-			, pipelineLayout(createPipelineLayout(vulkan, vk::Filter::eNearest))
+			, pipelineLayout(createPipelineLayout(vulkan, filter))
 			, pipeline(createPipeline(vulkan, geometry, *renderPass, pipelineLayout, extent))
-			, colorTransferBuffer(colorTransfer.createBuffer(vulkan))
 
 		{
 		}
 
 		~Open() = default;
 
-		void recreateSwapchain(	const Graphics::Vulkan& vulkan,
-								vk::Format format,
-								vk::ColorSpaceKHR colorSpace ) 
-		{
+		void recreateSwapchain(const Graphics::Vulkan& vulkan) {
 			swapchain = createSwapchain(vulkan, *surface, extent, format, colorSpace, *swapchain);
 			swapchainImageViews = createImageViews(vulkan, *swapchain, format);
 			renderPass = createRenderPass(vulkan, format);
 			framebuffers = createFramebuffers(vulkan, *renderPass, swapchainImageViews, extent);
+			pipeline = createPipeline(vulkan, geometry, *renderPass, pipelineLayout, extent);
+		}
+
+		void recreatePipelineLayout(const Graphics::Vulkan& vulkan) {
+			pipelineLayout = createPipelineLayout(vulkan, filter);
 			pipeline = createPipeline(vulkan, geometry, *renderPass, pipelineLayout, extent);
 		}
 
@@ -92,13 +104,13 @@ struct Window::Impl {
 		}
 	};
 
-	const Graphics::Vulkan&						vulkan;
+	Instance&									instance;
 	const Signal::Input<Video>&					videoIn;
 	std::unique_ptr<Open>						opened;
 
-	Impl(	const Graphics::Vulkan& vulkan,
+	Impl(	Instance& instance,
 			const Signal::Input<Video>& videoIn )
-		: vulkan(vulkan)
+		: instance(instance)
 		, videoIn(videoIn)
 	{
 	}
@@ -172,109 +184,125 @@ struct Window::Impl {
 			name,
 			f.format,
 			colorSpace,
+			vk::Filter::eNearest,
 			colorTransfer
 		);
+
+		//Set the callback
+		opened->window.setResolutionCallback(std::bind(&Impl::resizeCallback, std::ref(*this), std::placeholders::_1));
 	}
 
 	void close() {
-		opened->waitCompletion(vulkan);
+		opened->waitCompletion(instance.getVulkan());
 		opened.reset();
 	}
 
 	void update() {
 		assert(opened);
-		printf("Hola\n"); //TODO only to test
-		
-		//Wait for the previous rendering to be completed
-		opened->waitCompletion(vulkan);
 
-		//Acquire an image from the swapchain
-		const auto index = vulkan.getDevice().acquireNextImageKHR(
-			*(opened->swapchain), 						
-			std::numeric_limits<uint64_t>::max(),
-			*(opened->imageAvailableSemaphore),
-			nullptr,
-			vulkan.getDispatcher()
-		);
+		if(videoIn.hasChanged()) {
+			const auto& vulkan = instance.getVulkan();
 
-		const auto& frame = videoIn.pull();
+			//Input has changed, pull a frame from it
+			const auto& frame = videoIn.pull();
 
-		//Resize the geometry if needed
-		if(frame) opened->geometry.useFrame(*frame);
+			//Wait for the previous rendering to be completed
+			opened->waitCompletion(vulkan);
 
-		const auto& cmdBuffer = opened->commandBuffer;
-		const auto& frameBuffer = *(opened->framebuffers[index.value]);
-
-		//Begin creating the command buffer
-		const vk::CommandBufferBeginInfo cmdBegin(
-			vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 
-			nullptr
-		);
-		cmdBuffer.begin(cmdBegin, vulkan.getDispatcher());
-
-		const std::array clearValue = {
-			vk::ClearValue(std::array{ 0.0f, 0.0f, 0.0f, 0.0f })
-		};
-
-		const vk::RenderPassBeginInfo rendBegin(
-			*(opened->renderPass),
-			frameBuffer,
-			vk::Rect2D({0, 0}, opened->extent),
-			clearValue.size(), clearValue.data()
-		);
-
-		cmdBuffer.beginRenderPass(rendBegin, vk::SubpassContents::eInline, vulkan.getDispatcher());
-
-		if(frame) {
-			cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *(opened->pipeline), vulkan.getDispatcher());
-
-			opened->geometry.bind(cmdBuffer);
-
-
-			frame->bind(
-				cmdBuffer,
-				opened->pipelineLayout,
-				0,
-				vk::Filter::eNearest
+			//Acquire an image from the swapchain
+			const auto index = vulkan.getDevice().acquireNextImageKHR(
+				*(opened->swapchain), 						
+				std::numeric_limits<uint64_t>::max(),
+				*(opened->imageAvailableSemaphore),
+				nullptr,
+				vulkan.getDispatcher()
 			);
-			cmdBuffer.draw(4, 1, 0, 0, vulkan.getDispatcher());
+
+			//Check that the index was successfuly obtained
+			if(	index.result != vk::Result::eSuccess &&
+				index.result != vk::Result::eErrorOutOfDateKHR ) 
+			{
+				return;
+			}
+
+
+			//Resize the geometry if needed
+			if(frame) opened->geometry.useFrame(*frame);
+
+			const auto& cmdBuffer = opened->commandBuffer;
+			const auto& frameBuffer = *(opened->framebuffers[index.value]);
+
+
+			//Begin writing to the command buffer. //TODO maybe reset pool?
+			constexpr vk::CommandBufferBeginInfo cmdBegin(
+				vk::CommandBufferUsageFlagBits::eOneTimeSubmit, 
+				nullptr
+			);
+			vulkan.begin(cmdBuffer, cmdBegin);
+
+			//Begin a render pass
+			const std::array clearValue = {
+				vk::ClearValue(std::array{ 0.0f, 0.0f, 0.0f, 0.0f })
+			};
+			const vk::RenderPassBeginInfo rendBegin(
+				*(opened->renderPass),												//Renderpass
+				frameBuffer,														//Target framebuffer
+				vk::Rect2D({0, 0}, opened->extent),									//Extent
+				clearValue.size(), clearValue.data()								//Attachment clear values
+			);
+			cmdBuffer.beginRenderPass(rendBegin, vk::SubpassContents::eInline, vulkan.getDispatcher());
+
+
+			//If it is a valid frame, draw it.
+			if(frame) {
+				cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *(opened->pipeline), vulkan.getDispatcher());
+
+				opened->geometry.bind(cmdBuffer);
+				frame->bind(cmdBuffer, opened->pipelineLayout, 0, opened->filter);
+				cmdBuffer.draw(4, 1, 0, 0, vulkan.getDispatcher());
+			}
+
+			//End everything
+			cmdBuffer.endRenderPass(vulkan.getDispatcher());
+			cmdBuffer.end(vulkan.getDispatcher());
+
+			//Send it to the queue
+			const std::array imageAvailableSemaphores = {
+				*(opened->imageAvailableSemaphore)
+			};
+			const std::array renderFinishedSemaphores = {
+				*(opened->renderFinishedSemaphore)
+			};
+			const std::array commandBuffers = {
+				cmdBuffer
+			};
+			const std::array pipelineStages = {
+				vk::PipelineStageFlags(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+			};
+			const vk::SubmitInfo subInfo(
+				imageAvailableSemaphores.size(), imageAvailableSemaphores.data(),	//Wait semaphores
+				pipelineStages.data(),												//Pipeline stages
+				commandBuffers.size(), commandBuffers.data(),						//Command buffers
+				renderFinishedSemaphores.size(), renderFinishedSemaphores.data()	//Signal semaphores
+			);
+			vulkan.resetFences(*(opened->renderFinishedFence));
+			vulkan.submit(vulkan.getGraphicsQueue(), subInfo, *(opened->renderFinishedFence));
+
+			//Present it
+			vulkan.present(*(opened->swapchain), index.value, renderFinishedSemaphores.front());
 		}
-
-		cmdBuffer.endRenderPass(vulkan.getDispatcher());
-		cmdBuffer.end(vulkan.getDispatcher());
-
-		//Send it to the queue
-		const std::array imageAvailableSemaphores = {
-			*(opened->imageAvailableSemaphore)
-		};
-		
-		const std::array renderFinishedSemaphores = {
-			*(opened->renderFinishedSemaphore)
-		};
-
-		const std::array commandBuffers = {
-			cmdBuffer
-		};
-
-		const std::array pipelineStages = {
-			vk::PipelineStageFlags(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-		};
-
-		const vk::SubmitInfo subInfo(
-			imageAvailableSemaphores.size(), imageAvailableSemaphores.data(),	//Wait semaphores
-			pipelineStages.data(),												//Pipeline stages
-			commandBuffers.size(), commandBuffers.data(),						//Command buffers
-			renderFinishedSemaphores.size(), renderFinishedSemaphores.data()	//Signal semaphores
-		);
-
-		vulkan.getDevice().resetFences(*(opened->renderFinishedFence), vulkan.getDispatcher());
-		vulkan.getGraphicsQueue().submit(subInfo, *(opened->renderFinishedFence), vulkan.getDispatcher());
-
-		//Present it
-		vulkan.present(*(opened->swapchain), index.value, renderFinishedSemaphores.front());
 	}
 
 private:
+	void resizeCallback(Resolution res) {
+		const auto& vulkan = instance.getVulkan();
+		std::lock_guard<Instance> lock(instance); //FIXME might lead to dead-lock
+
+		opened->waitCompletion(vulkan);
+		opened->extent = Graphics::toVulkan(res);
+		opened->recreateSwapchain(vulkan);
+	}
+
 	static vk::UniqueCommandPool createCommandPool(const Graphics::Vulkan& vulkan)
 	{
 		constexpr auto createFlags = 
@@ -747,14 +775,14 @@ private:
 
 Window::Window(Instance& instance, const std::string& name)
 	: ZuazoBase(instance, name, PADS)
-	, m_impl(instance.getVulkan(), findPad(std::get<0>(PADS)))
+	, m_impl(instance, findPad(std::get<0>(PADS)))
 {
 	setUpdateCallback(std::bind(&Impl::update, std::ref(*m_impl)));
 }
 
 Window::Window(Instance& instance, std::string&& name)
 	: ZuazoBase(instance, std::move(name), PADS)
-	, m_impl(instance.getVulkan(), findPad(std::get<0>(PADS)))
+	, m_impl(instance, findPad(std::get<0>(PADS)))
 {
 	setUpdateCallback(std::bind(&Impl::update, std::ref(*m_impl)));
 }

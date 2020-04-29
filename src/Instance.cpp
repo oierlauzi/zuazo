@@ -31,13 +31,14 @@ struct Instance::Impl {
 
 	ScheduledCallback			presentImages;
 
-	Impl(ApplicationInfo&& appInfo)
+	Impl(	ApplicationInfo&& appInfo,
+			const DeviceScoreFunc& deviceScoreFunc )
 		: applicationInfo(std::move(appInfo))
 		, glfw()
 		, vulkan(
 			applicationInfo.name.c_str(), 
 			Graphics::toVulkan(applicationInfo.version), 
-			applicationInfo.deviceScoreFunc
+			deviceScoreFunc
 		)
 		, mutex()
 		, scheduler()
@@ -148,64 +149,12 @@ struct Instance::Impl {
 
 private:
 	static FormatSupport queryFormatSupport(const Graphics::Vulkan& vulkan) {
-		FormatSupport result;
-
 		const auto& supported = vulkan.getFormatSupport();
 
-		//So that they can be binary searched:
-		assert(std::is_sorted(supported.sampler.cbegin(), supported.sampler.cend()));
-		assert(std::is_sorted(supported.framebuffer.cbegin(), supported.framebuffer.cend()));
-
-		for(auto i = ColorFormat::NONE; i < ColorFormat::COUNT; i++){
-			auto format = Graphics::toVulkan(i);
-
-			//It needs to have at least one valid format
-			if(std::get<vk::Format>(format[0]) == vk::Format::eUndefined){
-				continue; //Not supported
-			}
-
-			//Check if all members are supported by the sampler
-			bool samplerSupport = true;
-			for(size_t j = 0; j < format.size(); j++){
-				if(std::get<vk::Format>(format[j]) == vk::Format::eUndefined){
-					break; //End
-				}
-
-				//Check if it is supported
-				if(!std::binary_search(	supported.sampler.cbegin(), 
-										supported.sampler.cend(), 
-										std::get<vk::Format>(format[j]) ))
-				{
-					samplerSupport = false;
-					break;
-				}
-			}
-
-			if(samplerSupport){
-				//It can be sampled!
-				result.inputFormats.emplace_back(i);
-			}
-
-			//In order to be able to render to it, it needs to have only one plane
-			if(std::get<vk::Format>(format[1]) == vk::Format::eUndefined){
-
-				//In order to be able to render to it, it must not have any swizzle
-				format[0] = Graphics::optimizeFormat(format[0]);
-				if(std::get<vk::ComponentMapping>(format[0]) == vk::ComponentMapping()) {
-
-					//Check if it is supported
-					if(std::binary_search(	supported.framebuffer.cbegin(), 
-											supported.framebuffer.cend(), 
-											std::get<vk::Format>(format[0]) ))
-					{
-						//It can be used as a render target!
-						result.outputFormats.emplace_back(i);
-					}
-				}
-			}
-		}
-
-		return result;
+		return { 
+			Graphics::getSamplerFormats(supported.sampler), 
+			Graphics::getFramebufferFormats(supported.framebuffer)
+		};
 	}
 
 	static ResolutionSupport queryResolutionSupport(const Graphics::Vulkan& vulkan) {
@@ -220,8 +169,9 @@ private:
 };
 
 
-Instance::Instance(ApplicationInfo&& applicationInfo)
-	: m_impl(std::move(applicationInfo))
+Instance::Instance(	ApplicationInfo&& applicationInfo,
+					const DeviceScoreFunc& deviceScoreFunc )
+	: m_impl(std::move(applicationInfo), deviceScoreFunc)
 {
 	ZUAZO_LOG(*this, Severity::INFO, m_impl->generateInitMessage());
 }

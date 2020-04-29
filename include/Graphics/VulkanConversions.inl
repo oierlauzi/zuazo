@@ -4,6 +4,7 @@
 
 #include <utility>
 #include <cassert>
+#include <algorithm>
 
 namespace Zuazo::Graphics {
 
@@ -14,6 +15,30 @@ constexpr uint32_t toVulkan(Version version){
 		version.getPatch()
 	);
 }
+
+constexpr vk::DebugUtilsMessageSeverityFlagsEXT toVulkan(Verbosity ver) {
+	vk::DebugUtilsMessageSeverityFlagsEXT result = {};
+
+	if((ver & Verbosity::ERROR) != Verbosity::SILENT) 	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
+	if((ver & Verbosity::WARNING) != Verbosity::SILENT)	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
+	if((ver & Verbosity::INFO) != Verbosity::SILENT) 	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
+	if((ver & Verbosity::VERBOSE) != Verbosity::SILENT)	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose;
+
+	return result;
+}
+
+constexpr Verbosity fromVulkan(vk::DebugUtilsMessageSeverityFlagsEXT sev) {
+	constexpr auto silent = vk::DebugUtilsMessageSeverityFlagsEXT();
+	Verbosity result = Verbosity::SILENT;
+
+	if((sev & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError) != silent)		result |= Verbosity::ERROR;
+	if((sev & vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning) != silent)	result |= Verbosity::WARNING;
+	if((sev & vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo) != silent)		result |= Verbosity::INFO;
+	if((sev & vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose) != silent)	result |= Verbosity::VERBOSE;
+
+	return result;
+}	
+
 
 constexpr vk::Extent2D toVulkan(Resolution res){
 	return vk::Extent2D(
@@ -403,42 +428,55 @@ constexpr std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format f
 	}
 }
 
+inline std::vector<ColorFormat> getFramebufferFormats(Utils::BufferView<const vk::Format> supported) {
+	std::vector<ColorFormat> result;
 
+	//To use binary search:
+	assert(std::is_sorted(supported.cbegin(), supported.cend()));
 
-constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction enc){
-	constexpr vk::ColorSpaceKHR ERROR = static_cast<vk::ColorSpaceKHR>(-1);
+	for(ColorFormat format = ColorFormat::NONE; format < ColorFormat::COUNT; format++) {
+		if(getPlaneCount(format) != 1) continue;
 
-	switch(enc){
-	case ColorTransferFunction::LINEAR:
-		//Linear encoding
-		switch(prim){
-		case ColorPrimaries::BT709: 	return vk::ColorSpaceKHR::eBt709LinearEXT;
-		case ColorPrimaries::BT2020:	return vk::ColorSpaceKHR::eBt2020LinearEXT;
-		case ColorPrimaries::SMPTE432:	return vk::ColorSpaceKHR::eDisplayP3LinearEXT;
-		case ColorPrimaries::ADOBE_RGB:	return vk::ColorSpaceKHR::eAdobergbLinearEXT;
-		default: return ERROR;
-		}
-	case ColorTransferFunction::IEC61966_2_1:
-		//IEC61966_2_1 non linear encoding
-		switch(prim){
-		case ColorPrimaries::BT709: 	return vk::ColorSpaceKHR::eSrgbNonlinear;
-		case ColorPrimaries::SMPTE432:	return vk::ColorSpaceKHR::eDisplayP3NonlinearEXT;
-		default: return ERROR;
-		}
-	default: return ERROR;
+		auto planes = toVulkan(format);
+		assert(std::get<vk::Format>(planes[1]) == vk::Format::eUndefined);
+
+		auto& plane = planes[0];
+		plane = optimizeFormat(plane);
+
+		if(std::get<vk::ComponentMapping>(plane) != vk::ComponentMapping()) continue;
+		if(!std::binary_search(supported.cbegin(), supported.cend(), std::get<vk::Format>(plane))) continue;
+
+		result.push_back(format);
 	}
+
+	return result;
 }
 
-constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::ColorSpaceKHR space){
-	switch(space){
-	case vk::ColorSpaceKHR::eBt709LinearEXT: return { ColorPrimaries::BT709, ColorTransferFunction::LINEAR };
-	case vk::ColorSpaceKHR::eBt2020LinearEXT: return { ColorPrimaries::BT2020, ColorTransferFunction::LINEAR};
-	case vk::ColorSpaceKHR::eDisplayP3LinearEXT: return { ColorPrimaries::SMPTE432, ColorTransferFunction::LINEAR };
-	case vk::ColorSpaceKHR::eAdobergbLinearEXT: return { ColorPrimaries::ADOBE_RGB, ColorTransferFunction::LINEAR };
-	case vk::ColorSpaceKHR::eSrgbNonlinear: return { ColorPrimaries::BT709, ColorTransferFunction::IEC61966_2_1 };
-	case vk::ColorSpaceKHR::eDisplayP3NonlinearEXT: return { ColorPrimaries::SMPTE432, ColorTransferFunction::IEC61966_2_1 };
-	default: return {};
+inline std::vector<ColorFormat> getSamplerFormats(Utils::BufferView<const vk::Format> supported) {
+	std::vector<ColorFormat> result;
+
+	//To use binary search:
+	assert(std::is_sorted(supported.cbegin(), supported.cend()));
+
+	for(ColorFormat format = ColorFormat::NONE; format < ColorFormat::COUNT; format++) {
+		const auto planes = toVulkan(format);
+		if(std::get<vk::Format>(planes[0]) == vk::Format::eUndefined) continue;
+
+		bool support = true;
+		for(const auto& plane : planes) {
+			if(std::get<vk::Format>(plane) != vk::Format::eUndefined) {
+				if(!std::binary_search(supported.cbegin(), supported.cend(), std::get<vk::Format>(plane))){
+					support = false;
+					break;
+				}
+			}
+		}
+		if(!support) continue;
+
+		result.push_back(format);
 	}
+
+	return result;
 }
 
 
@@ -543,6 +581,44 @@ inline std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(	const std::t
 	}
 
 	return fmt;
+}
+
+
+
+constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction enc){
+	constexpr vk::ColorSpaceKHR ERROR = static_cast<vk::ColorSpaceKHR>(-1);
+
+	switch(enc){
+	case ColorTransferFunction::LINEAR:
+		//Linear encoding
+		switch(prim){
+		case ColorPrimaries::BT709: 	return vk::ColorSpaceKHR::eBt709LinearEXT;
+		case ColorPrimaries::BT2020:	return vk::ColorSpaceKHR::eBt2020LinearEXT;
+		case ColorPrimaries::SMPTE432:	return vk::ColorSpaceKHR::eDisplayP3LinearEXT;
+		case ColorPrimaries::ADOBE_RGB:	return vk::ColorSpaceKHR::eAdobergbLinearEXT;
+		default: return ERROR;
+		}
+	case ColorTransferFunction::IEC61966_2_1:
+		//IEC61966_2_1 non linear encoding
+		switch(prim){
+		case ColorPrimaries::BT709: 	return vk::ColorSpaceKHR::eSrgbNonlinear;
+		case ColorPrimaries::SMPTE432:	return vk::ColorSpaceKHR::eDisplayP3NonlinearEXT;
+		default: return ERROR;
+		}
+	default: return ERROR;
+	}
+}
+
+constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::ColorSpaceKHR space){
+	switch(space){
+	case vk::ColorSpaceKHR::eBt709LinearEXT: return { ColorPrimaries::BT709, ColorTransferFunction::LINEAR };
+	case vk::ColorSpaceKHR::eBt2020LinearEXT: return { ColorPrimaries::BT2020, ColorTransferFunction::LINEAR};
+	case vk::ColorSpaceKHR::eDisplayP3LinearEXT: return { ColorPrimaries::SMPTE432, ColorTransferFunction::LINEAR };
+	case vk::ColorSpaceKHR::eAdobergbLinearEXT: return { ColorPrimaries::ADOBE_RGB, ColorTransferFunction::LINEAR };
+	case vk::ColorSpaceKHR::eSrgbNonlinear: return { ColorPrimaries::BT709, ColorTransferFunction::IEC61966_2_1 };
+	case vk::ColorSpaceKHR::eDisplayP3NonlinearEXT: return { ColorPrimaries::SMPTE432, ColorTransferFunction::IEC61966_2_1 };
+	default: return {};
+	}
 }
 
 

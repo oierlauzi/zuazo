@@ -173,6 +173,7 @@ struct GLFW::Impl {
 
 	std::atomic<bool>				exit;
 	std::atomic<size_t>				windowCount;	
+	std::atomic<size_t>				callbackDisableCount;
 
 	std::mutex						mutex;
 	std::condition_variable			continueCondition;
@@ -183,6 +184,7 @@ struct GLFW::Impl {
 	Impl()
 		: exit(false)
 		, windowCount(0)
+		, callbackDisableCount(0)
 		, thread(&Impl::threadFunc, this)
 	{
 		//Wait for completion
@@ -201,16 +203,27 @@ struct GLFW::Impl {
 	}
 
 
+	void enableCallbacks(){
+		if(callbackDisableCount.fetch_sub(1) == 1){
+			setCallbacksEnabled(true);
+		}
+	}
 
-	void setCallbacksEnabled(bool ena){
+	void disableCallbacks(){
+		if(callbackDisableCount.fetch_add(1) == 0){
+			setCallbacksEnabled(false);
+		}
+	}
+
+	void setCallbacksEnabled(bool ena) {
 		std::unique_lock<std::mutex> lock(mutex);
 		threadContinue();
-		Callbacks::enabled.store(ena); //Important to be after threadContinue()!
+		Callbacks::enabled = ena; //Important to be after threadContinue()!
 		completeCondition.wait(lock); //Wait for any cbk to finish
 	}
 
 	bool getCallbacksEnabled() const {
-		return Callbacks::enabled.load();
+		return Callbacks::enabled;
 	}
 
 
@@ -374,7 +387,7 @@ private:
 			completeCondition.notify_all();
 
 			//Wait until an event arises
-			if(windowCount.load() > 0 && Callbacks::enabled.load()){
+			if(glfwWaitCond()){
 				lock.unlock();
 				glfwWaitEvents();
 				lock.lock();
@@ -383,22 +396,31 @@ private:
 			}
 
 			//Execute all pending executions
+			bool ena = Callbacks::enabled;
+
+			Callbacks::enabled = false;
 			while(executions.size() > 0){
 				executions.front()();
 				executions.pop();
 			}
+			Callbacks::enabled = ena;
 		}
 
 		glfwTerminate();
 	}
 
 	void threadContinue(){
-		if(windowCount.load() > 0 && Callbacks::enabled.load()){
+		if(glfwWaitCond()){
 			glfwPostEmptyEvent();
 		} else {
 			continueCondition.notify_all();
 		}
 	}
+
+	bool glfwWaitCond() const {
+		return (windowCount.load() > 0) && getCallbacksEnabled();
+	}
+
 
 	template<typename Func, typename... Args>
 	typename std::invoke_result<Func, Args...>::type execute(Func&& func, Args&&... args) {
@@ -850,8 +872,12 @@ std::vector<uint32_t> GLFW::getPresentationQueueFamilies(	const vk::Instance& in
 	return result;
 }
 
-void GLFW::setCallbacksEnabled(bool ena){
-	s_impl->setCallbacksEnabled(ena);
+void GLFW::enableCallbacks() {
+	s_impl->enableCallbacks();
+}
+
+void GLFW::disableCallbacks() {
+	s_impl->disableCallbacks();
 }
 
 bool GLFW::getCallbacksEnabled(){

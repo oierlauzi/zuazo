@@ -31,7 +31,6 @@ public:
 		VideoMode		defaultVideoMode = Instance::defaultVideoMode;
 		InstanceLogFunc	instanceLogFunc = defaultInstanceLogFunc;
 		ElementLogFunc	elementLogFunc = defaultElementLogFunc;
-		DeviceScoreFunc	deviceScoreFunc = defaultDeviceScoreFunc;
 	};
 	
 	struct FormatSupport {
@@ -59,7 +58,8 @@ public:
 		INPUT_PRIORITY = HIGHEST_PRIORITY / 2,
 	};
 
-	Instance(ApplicationInfo&& applicationInfo);
+	Instance(	ApplicationInfo&& applicationInfo, 
+				const DeviceScoreFunc& deviceScoreFunc = defaultDeviceScoreFunc);
 	Instance(const Instance& other) = delete;
 	Instance(Instance&& other);
 	~Instance();
