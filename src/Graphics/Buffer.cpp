@@ -45,10 +45,10 @@ vk::UniqueDeviceMemory Buffer::allocateMemory(	const Vulkan& vulkan,
 												vk::MemoryPropertyFlags properties )
 {
 
-	const auto requirements = vulkan.getDevice().getBufferMemoryRequirements(buffer, vulkan.getDispatcher());
+	const auto requirements = vulkan.getMemoryRequirements(buffer);
 
 	auto deviceMemory = vulkan.allocateMemory(requirements, properties);
-	vulkan.getDevice().bindBufferMemory(buffer, *deviceMemory, 0, vulkan.getDispatcher());
+	vulkan.bindMemory(buffer, *deviceMemory, 0);
 	return deviceMemory;
 }
 

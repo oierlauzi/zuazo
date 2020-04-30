@@ -63,9 +63,25 @@ struct Vulkan::Impl {
 	mutable HashMap<vk::UniqueDescriptorSetLayout>	descriptorSetLayouts;
 	mutable HashMap<vk::UniqueSampler>				samplers;
 
+	/*
+	 * Deferred present
+	 */
+
 	mutable std::vector<vk::SwapchainKHR>			presentSwapchains;
 	mutable std::vector<uint32_t>					presentIndices;
 	mutable std::vector<vk::Semaphore>				presentSemaphores;
+
+	/*
+	 * Staged upload
+	 */
+
+	using StagingBuffer = std::tuple<vk::UniqueBuffer, vk::UniqueDeviceMemory>;
+
+	mutable StagingBuffer							stagingBuffer;
+	mutable Utils::BufferView<std::byte>			stagingBufferData;
+	mutable vk::UniqueFence							stagingComplete;
+	mutable vk::UniqueCommandPool					stagingCommandPool;
+	mutable vk::CommandBuffer						stagingCommandBuffer;
 
 	/*
 	 * Methods
@@ -314,6 +330,13 @@ struct Vulkan::Impl {
 		return std::move(vec[0]);
 	}
 
+	void resetCommandPool(	vk::CommandPool cmdPool, 
+							vk::CommandPoolResetFlags flags ) const
+	{
+		device->resetCommandPool(cmdPool, flags, dispatcher);
+	}
+
+
 	vk::UniqueDeviceMemory allocateMemory(const vk::MemoryAllocateInfo& allocInfo) const{
 		return device->allocateMemoryUnique(allocInfo, nullptr, dispatcher);
 	}
@@ -353,20 +376,15 @@ struct Vulkan::Impl {
 		vk::MemoryRequirements combinedRequirements(0, 1, ~(0U)); //Size, aligment, flags
 
 		result.offsets.reserve(requirements.size());
-		auto space = std::numeric_limits<size_t>::max();
 
 		//Combine all fields and evaluate offsets
 		for(size_t i = 0; i < requirements.size(); i++){
 			//Align the storage
-			void* offset = reinterpret_cast<void*>(combinedRequirements.size);
-			std::align(
-				requirements[i].alignment,
-				requirements[i].size,
-				offset,
-				space 
-			);
-			combinedRequirements.size = reinterpret_cast<uintptr_t>(offset);
+			if(combinedRequirements.size % requirements[i].alignment) {
+				combinedRequirements.size = (combinedRequirements.size / requirements[i].alignment + 1) * requirements[i].alignment;
+			}
 
+			//Previous size will be the new offset
 			result.offsets.emplace_back(combinedRequirements.size, requirements[i].size);
 
 			combinedRequirements.size += requirements[i].size; //Increment the size
@@ -380,14 +398,41 @@ struct Vulkan::Impl {
 
 
 
+	vk::MemoryRequirements getMemoryRequirements(vk::Buffer buf) const {
+		return device->getBufferMemoryRequirements(buf, dispatcher);
+	}
+
+	vk::MemoryRequirements getMemoryRequirements(vk::Image img) const {
+		return device->getImageMemoryRequirements(img, dispatcher);
+	}
+
+
+
+	void bindMemory(vk::Buffer buf, vk::DeviceMemory mem, size_t off) const {
+		device->bindBufferMemory(buf, mem, off, dispatcher);
+	}
+
+	void bindMemory(vk::Image img, vk::DeviceMemory mem, size_t off) const {
+		device->bindImageMemory(img, mem, off, dispatcher);
+	}
+
+
+
 	std::byte* mapMemory(const vk::MappedMemoryRange& range) const{
 		return static_cast<std::byte*>(device->mapMemory(
 			range.memory,												//Memory allocation
 			range.offset,												//Offset
 			range.size,													//Size
 			{},															//Flags
-			dispatcher												//Dispatcher
+			dispatcher													//Dispatcher
 		));
+	}
+
+	std::byte* mapMemory(	vk::DeviceMemory memory, 
+							size_t off, 
+							size_t size ) const
+	{
+		return mapMemory(vk::MappedMemoryRange(memory, off, size));
 	}
 
 	void flushMappedMemory(const vk::MappedMemoryRange& range) const {
@@ -396,6 +441,14 @@ struct Vulkan::Impl {
 			dispatcher
 		);
 	}
+
+	void flushMappedMemory(	vk::DeviceMemory memory, 
+							size_t off, 
+							size_t size ) const
+	{
+		flushMappedMemory(vk::MappedMemoryRange(memory, off, size));
+	}
+
 
 
 
@@ -493,6 +546,164 @@ struct Vulkan::Impl {
 			assert(presentIndices.size() == 0);
 		}
 	}
+
+
+
+	void stagedUpload(	vk::Buffer buffer,
+						size_t off,
+						Utils::BufferView<const std::byte> data,
+						uint32_t queueIndex,
+						vk::PipelineStageFlags dstStages ) const
+	{
+		//Check if the fence exists
+		if(stagingComplete) {
+			waitForFences(*stagingComplete, false, NO_TIMEOUT);
+			resetFences(*stagingComplete);
+		} else {
+			stagingComplete = createFence(false);
+		}
+
+		//Check if the buffer has enough size
+		if(stagingBufferData.size() < data.size()){
+			//Create the buffer
+			constexpr vk::BufferUsageFlags usageFlags =
+				vk::BufferUsageFlagBits::eTransferSrc;
+
+			const vk::BufferCreateInfo createInfo(
+				{},										//Flags
+				data.size(),							//Size
+				usageFlags,								//Buffer usage
+				vk::SharingMode::eExclusive,			//Sharing mode
+				0, nullptr								//Queue family indices
+			);
+
+			auto buffer = createBuffer(createInfo);
+
+
+			//Allocate the buffer
+			constexpr vk::MemoryPropertyFlags memoryFlags =
+				vk::MemoryPropertyFlagBits::eHostVisible;
+
+			const auto requirements = getMemoryRequirements(*buffer);
+
+			auto deviceMemory = allocateMemory(requirements, memoryFlags);
+
+			//Bind them
+			bindMemory(*buffer, *deviceMemory, 0);
+
+			stagingBuffer = { 
+				std::move(buffer), 
+				std::move(deviceMemory) 
+			};
+
+			//Map it
+			stagingBufferData = { 
+				mapMemory(*std::get<vk::UniqueDeviceMemory>(stagingBuffer), 0, VK_WHOLE_SIZE),
+				data.size() 
+			};
+		}
+
+
+		//Copy to the staging buffer
+		std::memcpy(
+			stagingBufferData.data(),
+			data.data(),
+			data.size()
+		);
+		flushMappedMemory(*std::get<vk::UniqueDeviceMemory>(stagingBuffer), 0, VK_WHOLE_SIZE);
+
+
+		//Check if the command buffer exists
+		if(!stagingCommandPool) {
+			//Create the command pool
+			constexpr vk::CommandPoolCreateFlags createFlags = 
+				vk::CommandPoolCreateFlagBits::eTransient;
+
+			const vk::CommandPoolCreateInfo createInfo(
+				createFlags,										//Flags
+				getTransferQueueIndex()								//Queue index
+			);
+
+			stagingCommandPool = createCommandPool(createInfo);
+
+			//Allocate a command buffer from it
+			const vk::CommandBufferAllocateInfo allocInfo(
+				*stagingCommandPool,
+				vk::CommandBufferLevel::ePrimary,
+				1
+			);
+
+			stagingCommandBuffer = allocateCommnadBuffer(allocInfo).release();
+		} else {
+			//Reset it in order to be able to record to de command buffer
+			resetCommandPool(*stagingCommandPool, {});
+		}
+
+
+		//Record the command buffer
+		constexpr vk::CommandBufferUsageFlags cmdBufferUsage =
+			vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+			
+		constexpr vk::CommandBufferBeginInfo cmdBufferBeginInfo(
+			cmdBufferUsage,
+			nullptr
+		);
+
+		begin(stagingCommandBuffer, cmdBufferBeginInfo);
+		{
+			stagingCommandBuffer.copyBuffer(
+				*std::get<vk::UniqueBuffer>(stagingBuffer),
+				buffer,
+				vk::BufferCopy(0, off, data.size()),
+				dispatcher
+			);
+			
+			//Insert a memory barrier
+			const bool queueOwnershipTransfer = getTransferQueueIndex() != queueIndex;
+			const auto srcFamily = queueOwnershipTransfer ? getTransferQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
+			const auto dstFamily = queueOwnershipTransfer ? queueIndex : VK_QUEUE_FAMILY_IGNORED;
+			constexpr vk::AccessFlags srcAccess = vk::AccessFlagBits::eTransferWrite;
+			constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eMemoryRead;
+
+			const vk::BufferMemoryBarrier memoryBarrier(
+				srcAccess,						//Old access mask
+				dstAccess,						//New access mask
+				srcFamily,						//Old queue family
+				dstFamily, 						//New queue family
+				buffer,							//Buffer
+				0, VK_WHOLE_SIZE				//Range
+			);
+
+			constexpr vk::PipelineStageFlags srcStages = 
+				vk::PipelineStageFlagBits::eTransfer;
+			
+			stagingCommandBuffer.pipelineBarrier(
+				srcStages,						//Generating stages
+				dstStages,						//Consuming stages
+				{},								//dependency flags
+				{},								//Memory barriers
+				memoryBarrier,					//Buffer memory barriers
+				{},								//Image memory barriers
+				dispatcher
+			);
+		}
+		end(stagingCommandBuffer);
+
+		//Submit the command buffer
+		const vk::SubmitInfo submitInfo(
+			0, nullptr,							//Wait semaphores
+			nullptr,							//Pipeline stages
+			1, &stagingCommandBuffer,			//Command buffers
+			0, nullptr							//Signal semaphores
+		);
+
+		submit(
+			getTransferQueue(),
+			submitInfo,
+			*stagingComplete
+		);
+	}
+
 
 
 
@@ -1102,6 +1313,13 @@ vk::UniqueCommandBuffer Vulkan::allocateCommnadBuffer(const vk::CommandBufferAll
 	return m_impl->allocateCommnadBuffer(allocInfo);
 }
 
+void Vulkan::resetCommandPool(	vk::CommandPool cmdPool, 
+								vk::CommandPoolResetFlags flags ) const
+{
+	m_impl->resetCommandPool(cmdPool, flags);
+}
+
+
 vk::UniqueDeviceMemory Vulkan::allocateMemory(const vk::MemoryAllocateInfo& allocInfo) const{
 	return m_impl->allocateMemory(allocInfo);
 }
@@ -1119,12 +1337,47 @@ Vulkan::AggregatedAllocation Vulkan::allocateMemory(Utils::BufferView<const vk::
 }
 
 
+
+vk::MemoryRequirements Vulkan::getMemoryRequirements(vk::Buffer buf) const {
+	return m_impl->getMemoryRequirements(buf);
+}
+
+vk::MemoryRequirements Vulkan::getMemoryRequirements(vk::Image img) const {
+	return m_impl->getMemoryRequirements(img);
+}
+
+
+void Vulkan::bindMemory(vk::Buffer buf, vk::DeviceMemory mem, size_t off) const {
+	m_impl->bindMemory(buf, mem, off);
+}
+
+void Vulkan::bindMemory(vk::Image img, vk::DeviceMemory mem, size_t off) const {
+	m_impl->bindMemory(img, mem, off);
+}
+
+
+
+
 std::byte* Vulkan::mapMemory(const vk::MappedMemoryRange& range) const{
 	return m_impl->mapMemory(range);
 }
 
+std::byte* Vulkan::mapMemory(	vk::DeviceMemory memory, 
+								size_t off, 
+								size_t size ) const
+{
+	return m_impl->mapMemory(memory, off, size);
+}
+
 void Vulkan::flushMappedMemory(const vk::MappedMemoryRange& range) const {
-	return m_impl->flushMappedMemory(range);
+	m_impl->flushMappedMemory(range);
+}
+
+void Vulkan::flushMappedMemory(	vk::DeviceMemory memory, 
+								size_t off, 
+								size_t size ) const
+{
+	m_impl->flushMappedMemory(memory, off, size);
 }
 
 
@@ -1175,6 +1428,17 @@ void Vulkan::present(	vk::SwapchainKHR swapchain,
 
 void Vulkan::presentAll() const {
 	m_impl->presentAll();
+}
+
+
+
+void Vulkan::stagedUpload(	vk::Buffer buffer,
+							size_t off,
+							Utils::BufferView<const std::byte> data,
+							uint32_t queueIndex,
+							vk::PipelineStageFlags dstStages ) const
+{
+	m_impl->stagedUpload(buffer, off, data, queueIndex, dstStages);
 }
 
 }

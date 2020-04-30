@@ -114,7 +114,7 @@ Vulkan::AggregatedAllocation Image::allocateMemory(	const Vulkan& vulkan,
 	requirements.reserve(images.size());
 
 	for(size_t i = 0; i < images.size(); i++) {
-		requirements.push_back(vulkan.getDevice().getImageMemoryRequirements(*(images[i]), vulkan.getDispatcher()));
+		requirements.push_back(vulkan.getMemoryRequirements(*images[i]));
 	}
 
 	auto result = vulkan.allocateMemory(requirements, memoryProperties);
@@ -122,7 +122,7 @@ Vulkan::AggregatedAllocation Image::allocateMemory(	const Vulkan& vulkan,
 
 	//Bind image's memory
 	for(size_t i = 0; i < images.size(); i++){
-		vulkan.getDevice().bindImageMemory(*(images[i]), *result.memory, result.offsets[i].first, vulkan.getDispatcher());
+		vulkan.bindMemory(*images[i], *result.memory, result.offsets[i].first);
 	}
 
 	return result;

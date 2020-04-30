@@ -148,7 +148,7 @@ vk::DescriptorSetLayout	Frame::getDescriptorSetLayout(	const Vulkan& vulkan,
 		}
 
 		//Create the sampler array
-		std::vector<vk::Sampler> inmutableSamplers(ColorTransfer::getSamplerCount(), sampler);
+		const std::vector<vk::Sampler> inmutableSamplers(ColorTransfer::getSamplerCount(), sampler);
 
 		//Create the bindings
 		const std::array bindings = {

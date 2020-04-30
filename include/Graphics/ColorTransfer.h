@@ -32,6 +32,9 @@ public:
 	ColorTransfer&						operator=(const ColorTransfer& other) = delete;
 	ColorTransfer&						operator=(ColorTransfer&& other);
 
+	bool								operator==(const ColorTransfer& other) const;
+	bool								operator!=(const ColorTransfer& other) const;
+
 	void								optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
 													Utils::BufferView<const vk::Format> supportedFormats );
 

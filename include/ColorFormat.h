@@ -115,8 +115,8 @@ enum class ColorFormat {
 	G8B8G8R8, ///<\note This format must have 4:2:2 or bayer color subsampling
 
 	G8_B8_R8,
-	G8_R8B8,
 	G8_B8R8,
+	G8_R8B8,
 
 
 	//10 BIT COMPONENTS
@@ -150,8 +150,8 @@ enum class ColorFormat {
 	G10X6B10X6G10X6R10X6_16, ///<\note This format must have 4:2:2 or bayer color subsampling
 
 	G10X6_B10X6_R10X6_16,
-	G10X6_R10X6B10X6_16,
 	G10X6_B10X6R10X6_16,
+	G10X6_R10X6B10X6_16,
 
 
 	//12 BIT COMPONENTS
@@ -175,8 +175,8 @@ enum class ColorFormat {
 	G12X4B12X4G12X4R12X4_16, ///<\note This format must have 4:2:2 or bayer color subsampling
 
 	G12X4_B12X4_R12X4_16,
-	G12X4_R12X4B12X4_16,
 	G12X4_B12X4R12X4_16,
+	G12X4_R12X4B12X4_16,
 
 
 	//16 BIT COMPONENTS
@@ -224,8 +224,8 @@ enum class ColorFormat {
 	G16B16G16R16, 	///<\note This format must have 4:2:2 or bayer color subsampling
 
 	G16_B16_R16,
-	G16_R16B16,
 	G16_B16R16,
+	G16_R16B16,
 
 
 	//32 BIT COMPONENTS

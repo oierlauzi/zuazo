@@ -185,14 +185,13 @@ vk::UniqueCommandBuffer Uploader::Frame::createCommandBuffer(	const Vulkan& vulk
 																const Image& image,
 																const Buffer& stagingBuffer )
 {
-	const vk::CommandBufferAllocateInfo cbAllocInfo(
+	const vk::CommandBufferAllocateInfo allocInfo(
 		cmdPool,
 		vk::CommandBufferLevel::ePrimary,
 		1
 	);
 
-	auto cmdBuffers = vulkan.allocateCommnadBuffers(cbAllocInfo);
-	auto& cmdBuffer = *(cmdBuffers[0]);
+	auto cmdBuffer = vulkan.allocateCommnadBuffer(allocInfo);
 
 	//Record the command buffer
 	const vk::CommandBufferBeginInfo cbBeginInfo(
@@ -200,10 +199,12 @@ vk::UniqueCommandBuffer Uploader::Frame::createCommandBuffer(	const Vulkan& vulk
 		nullptr
 	);
 
-	vulkan.begin(cmdBuffer, cbBeginInfo);
+	vulkan.begin(*cmdBuffer, cbBeginInfo);
 	{
 		const bool queueOwnershipTransfer = vulkan.getTransferQueueIndex() != vulkan.getGraphicsQueueIndex();
 		const auto& images = image.getImages();
+		const auto& offsets = image.getPlanes();
+		assert(images.size() == offsets.size());
 		assert(images.size() == planes.size());
 
 		std::vector<vk::ImageMemoryBarrier> memoryBarriers(images.size());
@@ -232,7 +233,7 @@ vk::UniqueCommandBuffer Uploader::Frame::createCommandBuffer(	const Vulkan& vulk
 			);
 		}
 
-		cmdBuffer.pipelineBarrier(
+		cmdBuffer->pipelineBarrier(
 			vk::PipelineStageFlagBits::eTopOfPipe,		//Generating stages
 			vk::PipelineStageFlagBits::eTransfer,		//Consuming stages
 			{},											//dependency flags
@@ -245,7 +246,7 @@ vk::UniqueCommandBuffer Uploader::Frame::createCommandBuffer(	const Vulkan& vulk
 		//Copy the buffer to the image
 		for(size_t i = 0; i < images.size(); i++){
 			const vk::BufferImageCopy region(
-				0, 										//Buffer offset
+				offsets[i].first, 						//Buffer offset
 				0,										//Buffer line stride
 				0,										//Buffer image lines
 				vk::ImageSubresourceLayers(				//Image subresource
@@ -258,7 +259,7 @@ vk::UniqueCommandBuffer Uploader::Frame::createCommandBuffer(	const Vulkan& vulk
 				vk::Extent3D(planes[i].extent, 1)		//Image extent
 			);
 
-			cmdBuffer.copyBufferToImage(
+			cmdBuffer->copyBufferToImage(
 				stagingBuffer.getBuffer(),
 				*(images[i]),
 				vk::ImageLayout::eTransferDstOptimal,
@@ -287,7 +288,7 @@ vk::UniqueCommandBuffer Uploader::Frame::createCommandBuffer(	const Vulkan& vulk
 			);
 		}
 
-		cmdBuffer.pipelineBarrier(
+		cmdBuffer->pipelineBarrier(
 			vk::PipelineStageFlagBits::eTransfer,		//Generating stages
 			vk::PipelineStageFlagBits::eAllGraphics,	//Consuming stages
 			{},											//Dependency flags
@@ -297,9 +298,9 @@ vk::UniqueCommandBuffer Uploader::Frame::createCommandBuffer(	const Vulkan& vulk
 			vulkan.getDispatcher()
 		);
 	}
-	vulkan.end(cmdBuffer);
+	vulkan.end(*cmdBuffer);
 
-	return std::move(cmdBuffers[0]);
+	return cmdBuffer;
 }
 
 vk::SubmitInfo Uploader::Frame::createSubmitInfo(const vk::CommandBuffer& cmdBuffer)

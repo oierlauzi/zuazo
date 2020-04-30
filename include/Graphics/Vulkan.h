@@ -29,6 +29,8 @@ public:
 		std::vector<std::pair<size_t, size_t>> offsets;
 	};
 
+	static constexpr uint64_t NO_TIMEOUT = std::numeric_limits<uint64_t>::max();
+
 	Vulkan(	std::string_view appName, 
 			Version appVersion,
 			const DeviceScoreFunc& scoreFunc );
@@ -89,19 +91,38 @@ public:
 
 	std::vector<vk::UniqueCommandBuffer>allocateCommnadBuffers(const vk::CommandBufferAllocateInfo& allocInfo) const;
 	vk::UniqueCommandBuffer				allocateCommnadBuffer(const vk::CommandBufferAllocateInfo& allocInfo) const;
+	void								resetCommandPool(	vk::CommandPool cmdPool, 
+															vk::CommandPoolResetFlags flags ) const;
+
 	vk::UniqueDeviceMemory				allocateMemory(const vk::MemoryAllocateInfo& allocInfo) const;
 	vk::UniqueDeviceMemory				allocateMemory(	const vk::MemoryRequirements& requirements,
 														vk::MemoryPropertyFlags properties ) const;
 	AggregatedAllocation				allocateMemory(	Utils::BufferView<const vk::MemoryRequirements> requirements,
 														vk::MemoryPropertyFlags properties ) const;
 
+	vk::MemoryRequirements				getMemoryRequirements(vk::Buffer buf) const;
+	vk::MemoryRequirements				getMemoryRequirements(vk::Image img) const;
+
+	void								bindMemory(	vk::Buffer buf, 
+													vk::DeviceMemory mem,
+													size_t off = 0) const;
+	void								bindMemory(	vk::Image img, 
+													vk::DeviceMemory mem, 
+													size_t off = 0) const;
+
 	std::byte*							mapMemory(const vk::MappedMemoryRange& range) const;
+	std::byte*							mapMemory(	vk::DeviceMemory memory, 
+													size_t off = 0, 
+													size_t size = VK_WHOLE_SIZE ) const;
 	void								flushMappedMemory(const vk::MappedMemoryRange& range) const;
+	void								flushMappedMemory(	vk::DeviceMemory memory, 
+															size_t off = 0, 
+															size_t size = VK_WHOLE_SIZE) const;
 
 	void								waitIdle() const;
 	void								waitForFences(	Utils::BufferView<const vk::Fence> fences,
 														bool waitAll = false,
-														uint64_t timeout = std::numeric_limits<uint64_t>::max()) const;
+														uint64_t timeout = NO_TIMEOUT) const;
 	void								resetFences(Utils::BufferView<const vk::Fence> fences) const;
 
 	void								submit(	vk::Queue queue,
@@ -117,6 +138,12 @@ public:
 												vk::Semaphore waitSemaphore ) const;
 
 	void								presentAll() const;
+
+	void								stagedUpload(	vk::Buffer buffer,
+														size_t off,
+														Utils::BufferView<const std::byte> data,
+														uint32_t queueIndex,
+														vk::PipelineStageFlags dstStages ) const;
 
 private:
 	struct Impl;

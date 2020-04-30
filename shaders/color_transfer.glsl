@@ -5,7 +5,7 @@ vec4 ct_sample(in int planeFormat, in sampler2D images[ct_SAMPLER_COUNT], in vec
 
 	switch(planeFormat){
 	case ct_PLANE_FORMAT_G_BR:
-		result.r = texture(images[0], texCoords).r;
+		result.g = texture(images[0], texCoords).r;
 		result.br = texture(images[1], texCoords).rg;
 		result.a = 1.0f;
 		break;
@@ -33,15 +33,15 @@ vec4 ct_contract(in int range, in vec4 color){
 
 	switch(range){
 	case ct_COLOR_RANGE_FULL_YCBCR:
-		result.ra = color.ra;
-		result.gb = color.gb + vec2(0.5f);
+		result.ga = color.ga;
+		result.rb = color.rb + vec2(0.5f);
 		break;
 	case ct_COLOR_RANGE_ITU_NARROW_RGB:
 		result = color * (MAX_Y - MIN_Y) + vec4(MIN_Y);
 		break;
 	case ct_COLOR_RANGE_ITU_NARROW_YCBCR:
-		result.ra = color.ra * (MAX_Y - MIN_Y) + vec2(MIN_Y);
-		result.gb = (color.gb + vec2(0.5f)) * (MAX_C - MIN_C) + vec2(MIN_Y);
+		result.ga = color.ga * (MAX_Y - MIN_Y) + vec2(MIN_Y);
+		result.rb = (color.rb + vec2(0.5f)) * (MAX_C - MIN_C) + vec2(MIN_C);
 		break;
 	default: //ct_COLOR_RANGE_FULL_RGB
 		result = color;
@@ -61,15 +61,15 @@ vec4 ct_expand(in int range, in vec4 color){
 
 	switch(range){
 	case ct_COLOR_RANGE_FULL_YCBCR:
-		result.ra = color.ra;
-		result.gb = color.gb - vec2(0.5f);
+		result.ga = color.ga;
+		result.rb = color.rb - vec2(0.5f);
 		break;
 	case ct_COLOR_RANGE_ITU_NARROW_RGB:
 		result = (color - vec4(MIN_Y)) / (MAX_Y - MIN_Y);
 		break;
 	case ct_COLOR_RANGE_ITU_NARROW_YCBCR:
-		result.ra = (color.ra - vec2(MIN_Y)) / (MAX_Y - MIN_Y);
-		result.gb = (color.gb - vec2(MIN_C)) / (MAX_C - MIN_C) - vec2(0.5f);
+		result.ga = (color.ga - vec2(MIN_Y)) / (MAX_Y - MIN_Y);
+		result.rb = (color.rb - vec2(MIN_C)) / (MAX_C - MIN_C) - vec2(0.5f);
 		break;
 	default: //ct_COLOR_RANGE_FULL_RGB
 		result = color;
@@ -134,10 +134,10 @@ vec4 ct_linearize(in int encoding, in vec4 color){
 vec4 ct_readColor(in ct_data inputProp, in ct_data outputProp, in vec4 color){
 	vec4 result = color;
 
-	result = ct_expand(inputProp.colorRange, result);
-	result = inverse(inputProp.colorModel) * result;
-	result = ct_linearize(inputProp.colorTransferFunction, result);
-	result = outputProp.colorPrimaries * inverse(inputProp.colorPrimaries) * result;
+	result = ct_expand(inputProp.colorRange, result); //Normalize the values into [0.0, 1.0]
+	result = inverse(inputProp.colorModel) * result; //Convert it into RGB color model
+	result = ct_linearize(inputProp.colorTransferFunction, result); //Undo all gamma-like compressions
+	result = outputProp.colorPrimaries * inverse(inputProp.colorPrimaries) * result; //Convert the destination's color primaries
 
 	return result;
 }
@@ -145,9 +145,9 @@ vec4 ct_readColor(in ct_data inputProp, in ct_data outputProp, in vec4 color){
 vec4 ct_writeColor(in ct_data outputProp, in vec4 color){
 	vec4 result = color;
 
-	result = ct_unlinearize(outputProp.colorTransferFunction, result);
-	result = outputProp.colorModel * result;
-	result = ct_contract(outputProp.colorRange, result);
+	result = ct_unlinearize(outputProp.colorTransferFunction, result); //Apply a gamma-like compression
+	result = outputProp.colorModel * result; //Convert it into the destination color model
+	result = ct_contract(outputProp.colorRange, result); //Convert it into the corresponding range
 
 	return result;
 }
