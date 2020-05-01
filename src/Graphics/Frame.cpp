@@ -259,6 +259,7 @@ Frame::Geometry::Geometry(	const Vulkan& vulkan,
 							Math::Vec2f  targetSize )
 	: m_vulkan(vulkan)
 	, m_binding(binding)
+	, m_scalingMode(ScalingMode::BOXED)
 	, m_targetSize(targetSize)
 	, m_vertexBuffer(createVertexBuffer(m_vulkan))
 	, m_stagingBuffer(createStagingBuffer(m_vulkan))
@@ -270,7 +271,20 @@ Frame::Geometry::Geometry(	const Vulkan& vulkan,
 		m_stagingBuffer,
 		m_vertexBuffer ))
 	, m_uploadCommandSubmit(createSubmitInfo(m_uploadCommand))
+	, m_uploadComplete(vulkan.createFence(true))
 {
+}
+
+
+void Frame::Geometry::setScalingMode(ScalingMode scaling) {
+	if(scaling != m_scalingMode) {
+		m_scalingMode = scaling;
+		m_sourceSize = Math::Vec2f(0.0f); //So that it gets recalculated
+	}
+}	
+
+Frame::Geometry::ScalingMode Frame::Geometry::getScalingMode() const {
+	return m_scalingMode;
 }
 
 
@@ -341,27 +355,43 @@ void Frame::Geometry::bind(vk::CommandBuffer cmd) const {
 
 
 void Frame::Geometry::updateVertexBuffer() {
-	//auto scale = static_cast<Math::Vec2f>(m_dstResolution) / static_cast<Math::Vec2f>(m_srcResolution); 
+	auto scale = m_targetSize / m_sourceSize; 
 
-	//TODO modify scale to fit
+	switch(m_scalingMode){
+	case ScalingMode::BOXED:
+		scale = Math::Vec2f(std::min(scale.x, scale.y));
+		break;
+	case ScalingMode::CROPPED:
+		scale = Math::Vec2f(std::max(scale.x, scale.y));
+		break;
+	case ScalingMode::CLAMP_HORIZONTALLY:
+		scale = Math::Vec2f(scale.x);
+		break;
+	case ScalingMode::CLAMP_VERTICALLY:
+		scale = Math::Vec2f(scale.y);
+		break;
+	default: //ScalingMode::STRETCH
+		break;
+	}
 
-	/*auto resolution = static_cast<Math::Vec2f>(m_srcResolution) * scale;
-	auto texSize = static_cast<Math::Vec2f>(m_dstResolution) / resolution;
-	resolution = glm::max(resolution, static_cast<Math::Vec2f>(m_dstResolution));*/
-	auto resolution = Math::Vec2f(1.0);
-	auto texSize = Math::Vec2f(1.0);
+	//Scale accordingly and clamp its value
+	auto recSize = m_sourceSize * scale;
+	auto texSize = m_targetSize / recSize;
+	recSize = glm::clamp(recSize, Math::Vec2f(0.0f), m_targetSize);
+	texSize = glm::clamp(texSize, Math::Vec2f(0.0f), Math::Vec2f(1.0f));
 
-	constexpr std::array<glm::vec2, VERTEX_COUNT> vertexPositions = {
-		glm::vec2(-1.0f, -1.0f),
-		glm::vec2(-1.0f, +1.0f),
-		glm::vec2(+1.0f, -1.0f),
-		glm::vec2(+1.0f, +1.0f),
+	constexpr std::array<Math::Vec2f, VERTEX_COUNT> vertexPositions = {
+		Math::Vec2f(-1.0f, -1.0f),
+		Math::Vec2f(-1.0f, +1.0f),
+		Math::Vec2f(+1.0f, -1.0f),
+		Math::Vec2f(+1.0f, +1.0f),
 	};
 
+	m_vulkan.waitForFences(*m_uploadComplete);
 	for(size_t i = 0; i < vertexPositions.size(); i++){
 		m_vertices[i] = Vertex{
-			resolution * vertexPositions[i] * m_targetSize,
-			texSize * vertexPositions[i] / 2.0f + glm::vec2(0.5f)
+			recSize * vertexPositions[i],
+			texSize * vertexPositions[i] / 2.0f + Math::Vec2f(0.5f)
 		};
 	}
 
@@ -371,9 +401,11 @@ void Frame::Geometry::updateVertexBuffer() {
 		0, VK_WHOLE_SIZE
 	);
 	m_vulkan.flushMappedMemory(range);
+
+	m_vulkan.resetFences(*m_uploadComplete);
 	m_vulkan.getTransferQueue().submit(
 		m_uploadCommandSubmit,
-		nullptr,
+		*m_uploadComplete,
 		m_vulkan.getDispatcher()
 	);
 }

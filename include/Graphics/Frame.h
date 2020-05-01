@@ -87,6 +87,9 @@ public:
 	Geometry(Geometry&& other) = default;
 	~Geometry() = default;
 
+	void							setScalingMode(ScalingMode scaling);
+	ScalingMode						getScalingMode() const;
+
 	void							setTargetSize(Math::Vec2f res);
 	const Math::Vec2f&				getTargetSize() const;
 
@@ -113,6 +116,7 @@ private:
 
 	uint32_t						m_binding;
 
+	ScalingMode						m_scalingMode;
 	Math::Vec2f						m_targetSize;
 	Math::Vec2f 					m_sourceSize;
 
@@ -123,6 +127,7 @@ private:
 	vk::UniqueCommandPool			m_commandPool;
 	vk::CommandBuffer				m_uploadCommand;
 	vk::SubmitInfo 					m_uploadCommandSubmit;
+	vk::UniqueFence					m_uploadComplete;
 
 	void							updateVertexBuffer();
 

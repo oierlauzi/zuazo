@@ -394,6 +394,8 @@ private:
 
 		opened->waitCompletion(vulkan);
 		opened->extent = Graphics::toVulkan(res);
+		opened->geometry.setTargetSize(Math::Vec2f(res.x, res.y));
+		opened->updateViewportUniform(vulkan);
 		opened->recreateSwapchain(vulkan);
 	}
 
