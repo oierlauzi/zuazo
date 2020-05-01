@@ -4,6 +4,7 @@
 
 #include <Graphics/GLFW.h>
 #include <Graphics/VulkanConversions.h>
+#include <Utils/Functions.h>
 #include <Zuazo.h>
 #include <Exception.h>
 #include <Macros.h>
@@ -380,9 +381,7 @@ struct Vulkan::Impl {
 		//Combine all fields and evaluate offsets
 		for(size_t i = 0; i < requirements.size(); i++){
 			//Align the storage
-			if(combinedRequirements.size % requirements[i].alignment) {
-				combinedRequirements.size = (combinedRequirements.size / requirements[i].alignment + 1) * requirements[i].alignment;
-			}
+			combinedRequirements.size = Utils::align(combinedRequirements.size, requirements[i].alignment);
 
 			//Previous size will be the new offset
 			result.offsets.emplace_back(combinedRequirements.size, requirements[i].size);

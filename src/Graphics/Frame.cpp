@@ -18,53 +18,7 @@ Frame::Frame(	const Vulkan& vulkan,
 	, m_descriptorSets(allocateDescriptorSets(m_vulkan, *m_descriptorPool))
 	, m_readyFence(m_vulkan.createFence(true))
 {
-	//Update the descriptors
-	for(size_t i = 0; i < m_descriptorSets.size(); i++){
-		//Update all images. As nullptr images can't be passed, repeat available images		
-		const auto& imageViews = m_image.getImageViews();
-		std::array<vk::DescriptorImageInfo, MAX_PLANE_COUNT> images;
-		for(size_t j = 0; j < images.size(); j++){
-			images[j] = vk::DescriptorImageInfo(
-				nullptr,												//Sampler
-				*(imageViews[j % imageViews.size()]),					//Image views
-				vk::ImageLayout::eShaderReadOnlyOptimal					//Layout
-			);
-		}
-
-		const std::array buffers = {
-			vk::DescriptorBufferInfo(
-				m_colorTransfer->getBuffer(),							//Buffer
-				0,														//Offset
-				sizeof(ColorTransfer)									//Size
-			)
-		};
-
-		const std::array writeDescriptorSets ={
-			vk::WriteDescriptorSet( //Image descriptor
-				m_descriptorSets[i],									//Descriptor set
-				ColorTransfer::getSamplerBinding(),						//Binding
-				0, 														//Index
-				images.size(), 											//Descriptor count
-				vk::DescriptorType::eCombinedImageSampler,				//Descriptor type
-				images.data(), 											//Images
-				nullptr, 												//Buffers
-				nullptr													//Texel buffers
-			),
-			vk::WriteDescriptorSet( //Ubo descriptor set
-				m_descriptorSets[i],									//Descriptor set
-				ColorTransfer::getDataBinding(),						//Binding
-				0, 														//Index
-				buffers.size(),											//Descriptor count		
-				vk::DescriptorType::eUniformBuffer,						//Descriptor type
-				nullptr, 												//Images 
-				buffers.data(), 										//Buffers
-				nullptr													//Texel buffers
-			)
-		};
-
-		m_vulkan.getDevice().updateDescriptorSets(writeDescriptorSets, {}, m_vulkan.getDispatcher());
-	}
-
+	writeDescriptorSets();
 }
 
 
@@ -73,15 +27,13 @@ void Frame::bind( 	vk::CommandBuffer cmd,
 					uint32_t index,
 					vk::Filter filter ) const
 {
-	const std::array descriptorSets = {
-		m_descriptorSets[static_cast<size_t>(filter)]
-	};
+	const auto& descriptorSet = m_descriptorSets[static_cast<size_t>(filter)];
 
 	cmd.bindDescriptorSets(
 		vk::PipelineBindPoint::eGraphics,	//Pipeline bind point
 		layout,								//Pipeline layout
 		index,								//First index
-		descriptorSets,						//Descriptor sets
+		descriptorSet,						//Descriptor sets
 		{},									//Dynamic offsets
 		m_vulkan.getDispatcher()
 	);
@@ -248,6 +200,54 @@ Frame::DescriptorSets Frame::allocateDescriptorSets(const Vulkan& vulkan,
 	return descriptorSets;
 }
 
+void Frame::writeDescriptorSets() {
+	for(size_t i = 0; i < m_descriptorSets.size(); i++){
+		//Update all images. As nullptr images can't be passed, repeat available images		
+		const auto& imageViews = m_image.getImageViews();
+		std::array<vk::DescriptorImageInfo, MAX_PLANE_COUNT> images;
+		for(size_t j = 0; j < images.size(); j++){
+			images[j] = vk::DescriptorImageInfo(
+				nullptr,												//Sampler
+				*(imageViews[j % imageViews.size()]),					//Image views
+				vk::ImageLayout::eShaderReadOnlyOptimal					//Layout
+			);
+		}
+
+		const std::array buffers = {
+			vk::DescriptorBufferInfo(
+				m_colorTransfer->getBuffer(),							//Buffer
+				0,														//Offset
+				ColorTransfer::size()									//Size
+			)
+		};
+
+		const std::array writeDescriptorSets ={
+			vk::WriteDescriptorSet( //Image descriptor
+				m_descriptorSets[i],									//Descriptor set
+				ColorTransfer::getSamplerBinding(),						//Binding
+				0, 														//Index
+				images.size(), 											//Descriptor count
+				vk::DescriptorType::eCombinedImageSampler,				//Descriptor type
+				images.data(), 											//Images
+				nullptr, 												//Buffers
+				nullptr													//Texel buffers
+			),
+			vk::WriteDescriptorSet( //Ubo descriptor set
+				m_descriptorSets[i],									//Descriptor set
+				ColorTransfer::getDataBinding(),						//Binding
+				0, 														//Index
+				buffers.size(),											//Descriptor count		
+				vk::DescriptorType::eUniformBuffer,						//Descriptor type
+				nullptr, 												//Images 
+				buffers.data(), 										//Buffers
+				nullptr													//Texel buffers
+			)
+		};
+
+		m_vulkan.getDevice().updateDescriptorSets(writeDescriptorSets, {}, m_vulkan.getDispatcher());
+	}
+}
+
 
 
 /*
@@ -352,16 +352,16 @@ void Frame::Geometry::updateVertexBuffer() {
 	auto texSize = Math::Vec2f(1.0);
 
 	constexpr std::array<glm::vec2, VERTEX_COUNT> vertexPositions = {
-		glm::vec2(-0.5f, -0.5f),
-		glm::vec2(-0.5f, +0.5f),
-		glm::vec2(+0.5f, -0.5f),
-		glm::vec2(+0.5f, +0.5f),
+		glm::vec2(-1.0f, -1.0f),
+		glm::vec2(-1.0f, +1.0f),
+		glm::vec2(+1.0f, -1.0f),
+		glm::vec2(+1.0f, +1.0f),
 	};
 
 	for(size_t i = 0; i < vertexPositions.size(); i++){
 		m_vertices[i] = Vertex{
-			resolution * vertexPositions[i],
-			texSize * vertexPositions[i] + glm::vec2(0.5f)
+			resolution * vertexPositions[i] * m_targetSize,
+			texSize * vertexPositions[i] / 2.0f + glm::vec2(0.5f)
 		};
 	}
 

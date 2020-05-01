@@ -7,8 +7,6 @@
 #define ZUAZO_MACRO_EXPAND(x) (x)
 #define ZUAZO_TO_STRING(x) #x
 
-#define ZUAZO_BIT(x) (1 << (x))
-
 #define ZUAZO_IGNORE_PARAM(x) (void)(x)
 
 #define ZUAZO_IS_BIG_ENDIAN (BYTE_ORDER == BIG_ENDIAN)

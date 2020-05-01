@@ -8,6 +8,7 @@
 #include <Graphics/ColorTransfer.h>
 #include <Graphics/Uploader.h>
 #include <Utils/StaticId.h>
+#include <Utils/Functions.h>
 
 #include <cmath>
 #include <algorithm>
@@ -21,18 +22,39 @@ namespace Zuazo::Outputs {
  * Window::Impl
  */
 struct Window::Impl {
-	static constexpr uint32_t UBO_BINDING = 0;
-	static constexpr uint32_t SHADER_SAMPLER_BINDING = 0;
+	enum DescriptorLayouts {
+		DESCRIPTOR_LAYOUT_WINDOW,
+		DESCRIPTOR_LAYOUT_FRAME,
+
+		DESCRIPTOR_LAYOUT_COUNT
+	};
+
+	enum WindowDescriptors {
+		WINDOW_DESCRIPTOR_VIEWPORT,
+		WINDOW_DESCRIPTOR_COLOR_TRANSFER,
+
+		WINDOW_DESCRIPTOR_COUNT
+	};
 
 	static constexpr uint32_t VERTEX_BUFFER_BINDING = 0;
 	static constexpr uint32_t VERTEX_POSITION = 0;
 	static constexpr uint32_t VERTEX_TEXCOORD = 1;
+
+	static constexpr size_t COLOR_TRANSFER_UNIFORM_OFFSET = 0;
+	static inline const size_t COLOR_TRANSFER_UNIFORM_SIZE = Graphics::ColorTransfer::size();
+	static inline const size_t VIEWPORT_UNIFORM_OFFSET = Utils::align(COLOR_TRANSFER_UNIFORM_OFFSET + COLOR_TRANSFER_UNIFORM_SIZE, 0x100); //256 is the maximum
+	static constexpr size_t VIEWPORT_UNIFORM_SIZE = sizeof(glm::vec2);
+
+	static inline const size_t UNIFORM_BUFFER_SIZE = VIEWPORT_UNIFORM_OFFSET + VIEWPORT_UNIFORM_SIZE;
 
 	struct Open {
 		Graphics::GLFW::Window						window;
 		vk::UniqueSurfaceKHR						surface;
 		vk::UniqueCommandPool						commandPool;
 		vk::CommandBuffer							commandBuffer;
+		Graphics::Buffer							uniformBuffer;
+		vk::UniqueDescriptorPool					descriptorPool;
+		vk::DescriptorSet							descriptorSet;
 		vk::UniqueSemaphore 						imageAvailableSemaphore;
 		vk::UniqueSemaphore							renderFinishedSemaphore;
 		vk::UniqueFence								renderFinishedFence;
@@ -40,9 +62,9 @@ struct Window::Impl {
 		vk::Extent2D								extent;
 		vk::Format 									format;
 		vk::ColorSpaceKHR 							colorSpace;
+		Graphics::ColorTransfer						colorTransfer;
 		vk::Filter									filter;
 		Graphics::Frame::Geometry					geometry;
-		Graphics::Buffer							colorTransferBuffer;
 
 		vk::UniqueSwapchainKHR						swapchain;
 		std::vector<vk::UniqueImageView>			swapchainImageViews;
@@ -58,11 +80,14 @@ struct Window::Impl {
 				vk::Format format,
 				vk::ColorSpaceKHR colorSpace,
 				vk::Filter filter,
-				const Graphics::ColorTransfer& colorTransfer ) 
+				Graphics::ColorTransfer&& colorTransfer ) 
 			: window(size, name)
 			, surface(window.getSurface(vulkan))
 			, commandPool(createCommandPool(vulkan))
 			, commandBuffer(createCommandBuffer(vulkan, *commandPool))
+			, uniformBuffer(createUniformBuffer(vulkan))
+			, descriptorPool(createDescriptorPool(vulkan))
+			, descriptorSet(createDescriptorSet(vulkan, *descriptorPool))
 			, imageAvailableSemaphore(vulkan.createSemaphore())
 			, renderFinishedSemaphore(vulkan.createSemaphore())
 			, renderFinishedFence(vulkan.createFence(true))
@@ -70,9 +95,9 @@ struct Window::Impl {
 			, extent(Graphics::toVulkan(window.getResolution()))
 			, format(format)
 			, colorSpace(colorSpace)
+			, colorTransfer(std::move(colorTransfer))
 			, filter(filter)
 			, geometry(vulkan, VERTEX_BUFFER_BINDING, Math::Vec2f(extent.width, extent.height))
-			, colorTransferBuffer(colorTransfer.createBuffer(vulkan))
 
 			, swapchain(createSwapchain(vulkan, *surface, extent, format, colorSpace, {}))
 			, swapchainImageViews(createImageViews(vulkan, *swapchain, format))
@@ -82,6 +107,9 @@ struct Window::Impl {
 			, pipeline(createPipeline(vulkan, geometry, *renderPass, pipelineLayout, extent))
 
 		{
+			writeDescriptorSets(vulkan);
+			updateViewportUniform(vulkan);
+			updateColorTransferUniform(vulkan);
 		}
 
 		~Open() = default;
@@ -99,8 +127,71 @@ struct Window::Impl {
 			pipeline = createPipeline(vulkan, geometry, *renderPass, pipelineLayout, extent);
 		}
 
+		void updateViewportUniform(const Graphics::Vulkan& vulkan) {
+			vulkan.stagedUpload(
+				uniformBuffer.getBuffer(),
+				VIEWPORT_UNIFORM_OFFSET,
+				{ reinterpret_cast<const std::byte*>(&geometry.getTargetSize()), VIEWPORT_UNIFORM_SIZE },
+				vulkan.getGraphicsQueueIndex(),
+				vk::PipelineStageFlagBits::eVertexShader
+			);
+		}
+
+		void updateColorTransferUniform(const Graphics::Vulkan& vulkan) {
+			vulkan.stagedUpload(
+				uniformBuffer.getBuffer(),
+				COLOR_TRANSFER_UNIFORM_OFFSET,
+				{ colorTransfer.data(), colorTransfer.size() },
+				vulkan.getGraphicsQueueIndex(),
+				vk::PipelineStageFlagBits::eFragmentShader
+			);
+		}
+
 		void waitCompletion(const Graphics::Vulkan& vulkan) {
 			vulkan.waitForFences(*renderFinishedFence);
+		}
+	
+	private:
+		void writeDescriptorSets(const Graphics::Vulkan& vulkan) {
+			const std::array viewportBuffers = {
+				vk::DescriptorBufferInfo(
+					uniformBuffer.getBuffer(),								//Buffer
+					VIEWPORT_UNIFORM_OFFSET,								//Offset
+					VIEWPORT_UNIFORM_SIZE									//Size
+				)
+			};
+			const std::array colorTransferBuffers = {
+				vk::DescriptorBufferInfo(
+					uniformBuffer.getBuffer(),								//Buffer
+					COLOR_TRANSFER_UNIFORM_OFFSET,							//Offset
+					COLOR_TRANSFER_UNIFORM_SIZE								//Size
+				)
+			};
+
+			const std::array writeDescriptorSets ={
+				vk::WriteDescriptorSet( //Viewport UBO
+					descriptorSet,											//Descriptor set
+					WINDOW_DESCRIPTOR_VIEWPORT,								//Binding
+					0, 														//Index
+					viewportBuffers.size(),									//Descriptor count		
+					vk::DescriptorType::eUniformBuffer,						//Descriptor type
+					nullptr, 												//Images 
+					viewportBuffers.data(), 								//Buffers
+					nullptr													//Texel buffers
+				),
+				vk::WriteDescriptorSet( //ColorTransfer UBO
+					descriptorSet,											//Descriptor set
+					WINDOW_DESCRIPTOR_COLOR_TRANSFER,						//Binding
+					0, 														//Index
+					colorTransferBuffers.size(),							//Descriptor count		
+					vk::DescriptorType::eUniformBuffer,						//Descriptor type
+					nullptr, 												//Images 
+					colorTransferBuffers.data(), 							//Buffers
+					nullptr													//Texel buffers
+				)
+			};
+
+			vulkan.getDevice().updateDescriptorSets(writeDescriptorSets, {}, vulkan.getDispatcher());
 		}
 	};
 
@@ -185,7 +276,7 @@ struct Window::Impl {
 			f.format,
 			colorSpace,
 			vk::Filter::eNearest,
-			colorTransfer
+			std::move(colorTransfer)
 		);
 
 		//Set the callback
@@ -217,14 +308,6 @@ struct Window::Impl {
 				nullptr,
 				vulkan.getDispatcher()
 			);
-
-			//Check that the index was successfuly obtained
-			if(	index.result != vk::Result::eSuccess &&
-				index.result != vk::Result::eErrorOutOfDateKHR ) 
-			{
-				return;
-			}
-
 
 			//Resize the geometry if needed
 			if(frame) opened->geometry.useFrame(*frame);
@@ -258,7 +341,18 @@ struct Window::Impl {
 				cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *(opened->pipeline), vulkan.getDispatcher());
 
 				opened->geometry.bind(cmdBuffer);
-				frame->bind(cmdBuffer, opened->pipelineLayout, 0, opened->filter);
+
+				cmdBuffer.bindDescriptorSets(
+					vk::PipelineBindPoint::eGraphics,	//Pipeline bind point
+					opened->pipelineLayout,				//Pipeline layout
+					DESCRIPTOR_LAYOUT_WINDOW,			//First index
+					opened->descriptorSet,				//Descriptor sets
+					{},									//Dynamic offsets
+					vulkan.getDispatcher()
+				);
+
+				frame->bind(cmdBuffer, opened->pipelineLayout, DESCRIPTOR_LAYOUT_FRAME, opened->filter);
+
 				cmdBuffer.draw(4, 1, 0, 0, vulkan.getDispatcher());
 			}
 
@@ -333,9 +427,103 @@ private:
 		return result;
 	}
 
+	static Graphics::Buffer createUniformBuffer(const Graphics::Vulkan& vulkan) {
+		constexpr vk::BufferUsageFlags usage =
+			vk::BufferUsageFlagBits::eUniformBuffer |
+			vk::BufferUsageFlagBits::eTransferDst;
+
+		constexpr vk::MemoryPropertyFlags memory =
+			vk::MemoryPropertyFlagBits::eDeviceLocal;
+
+		return Graphics::Buffer(
+			vulkan,
+			usage, 
+			memory, 
+			UNIFORM_BUFFER_SIZE
+		);
+	}
+
+	static vk::DescriptorSetLayout createDescriptorSetLayout(const Graphics::Vulkan& vulkan) {
+		static const Utils::StaticId id;
+
+		auto result = vulkan.createDescriptorSetLayout(id);
+
+		if(!result) {
+			//Create the bindings
+			const std::array bindings = {
+				vk::DescriptorSetLayoutBinding(	//UBO binding
+					WINDOW_DESCRIPTOR_VIEWPORT,						//Binding
+					vk::DescriptorType::eUniformBuffer,				//Type
+					1,												//Count
+					vk::ShaderStageFlagBits::eVertex,				//Shader stage
+					nullptr											//Inmutable samplers
+				), 
+				vk::DescriptorSetLayoutBinding(	//UBO binding
+					WINDOW_DESCRIPTOR_COLOR_TRANSFER,				//Binding
+					vk::DescriptorType::eUniformBuffer,				//Type
+					1,												//Count
+					vk::ShaderStageFlagBits::eFragment,				//Shader stage
+					nullptr											//Inmutable samplers
+				), 
+			};
+
+			const vk::DescriptorSetLayoutCreateInfo createInfo(
+				{},
+				bindings.size(), bindings.data()
+			);
+
+			result = vulkan.createDescriptorSetLayout(id, createInfo);
+		}
+
+		return result;
+	}
+
+	static vk::UniqueDescriptorPool createDescriptorPool(const Graphics::Vulkan& vulkan){
+		const std::array poolSizes = {
+			vk::DescriptorPoolSize(
+				vk::DescriptorType::eUniformBuffer,					//Descriptor type
+				WINDOW_DESCRIPTOR_COUNT								//Descriptor count
+			)
+		};
+
+		const vk::DescriptorPoolCreateInfo createInfo(
+			{},														//Flags
+			1,														//Descriptor set count
+			poolSizes.size(), poolSizes.data()						//Pool sizes
+		);
+
+		return vulkan.createDescriptorPool(createInfo);
+	}
+
+	static vk::DescriptorSet createDescriptorSet(	const Graphics::Vulkan& vulkan,
+													vk::DescriptorPool pool )
+	{
+		const std::array layouts {
+			createDescriptorSetLayout(vulkan)
+		};
+
+		const vk::DescriptorSetAllocateInfo allocInfo(
+			pool,													//Pool
+			layouts.size(), layouts.data()							//Layouts
+		);
+
+		//Allocate it
+		vk::DescriptorSet descriptorSet;
+		static_assert(layouts.size() == 1);
+		const auto result = vulkan.getDevice().allocateDescriptorSets(&allocInfo, &descriptorSet, vulkan.getDispatcher());
+
+		if(result != vk::Result::eSuccess){
+			throw Exception("Error allocating descriptor sets");
+		}
+
+		return descriptorSet;
+	}
+
+
+
 	static vk::UniqueSwapchainKHR createSwapchain(	const Graphics::Vulkan& vulkan, 
 													vk::SurfaceKHR surface, 
-													vk::Extent2D windowExtent, 
+													vk::Extent2D& extent, 
 													vk::Format format,
 													vk::ColorSpaceKHR colorSpace,
 													vk::SwapchainKHR old )
@@ -348,7 +536,7 @@ private:
 
 		const auto capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface, vulkan.getDispatcher());
 		const auto imageCount = getImageCount(capabilities);
-		const auto extent = getExtent(capabilities, windowExtent);
+		extent = getExtent(capabilities, extent);
 
 		const auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(surface, vulkan.getDispatcher());
 		const auto surfaceFormat = getSurfaceFormat(surfaceFormats, vk::SurfaceFormatKHR(format, colorSpace));
@@ -493,34 +681,6 @@ private:
 		return result;
 	}
 
-	static vk::DescriptorSetLayout createDescriptorSetLayout(const Graphics::Vulkan& vulkan) {
-		static const Utils::StaticId id;
-
-		auto result = vulkan.createDescriptorSetLayout(id);
-
-		if(!result) {
-			//Create the bindings
-			const std::array bindings = {
-				vk::DescriptorSetLayoutBinding(	//UBO binding
-					UBO_BINDING,									//Binding
-					vk::DescriptorType::eUniformBuffer,				//Type
-					1,												//Count
-					vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
-					nullptr											//Inmutable samplers
-				), 
-			};
-
-			const vk::DescriptorSetLayoutCreateInfo createInfo(
-				{},
-				bindings.size(), bindings.data()
-			);
-
-			result = vulkan.createDescriptorSetLayout(id, createInfo);
-		}
-
-		return result;
-	}
-
 	static vk::PipelineLayout createPipelineLayout(	const Graphics::Vulkan& vulkan, 
 													vk::Filter filter ) 
 	{
@@ -531,8 +691,8 @@ private:
 
 		if(!result) {
 			const std::array layouts = {
-				Graphics::Frame::getDescriptorSetLayout(vulkan, filter),
-				//createDescriptorSetLayout(vulkan)
+				createDescriptorSetLayout(vulkan),
+				Graphics::Frame::getDescriptorSetLayout(vulkan, filter)
 			};
 
 			const vk::PipelineLayoutCreateInfo createInfo(
@@ -770,7 +930,6 @@ private:
 
 		return std::vector<uint32_t>(families.cbegin(), families.cend());
 	}
-
 };
 
 Window::Window(Instance& instance, const std::string& name)

@@ -1,16 +1,16 @@
 #pragma once
 
-#include "Macros.h"
+#include "Utils/Functions.h"
 
 #include <string_view>
 
 namespace Zuazo {
 
 enum class Severity {
-	ERROR		= ZUAZO_BIT(0),
-	WARNING		= ZUAZO_BIT(1),
-	INFO		= ZUAZO_BIT(2),
-	VERBOSE		= ZUAZO_BIT(3),
+	ERROR		= Utils::bit(0),
+	WARNING		= Utils::bit(1),
+	INFO		= Utils::bit(2),
+	VERBOSE		= Utils::bit(3),
 };
 
 constexpr std::string_view toString(Severity verb);

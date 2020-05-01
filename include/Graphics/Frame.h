@@ -64,6 +64,8 @@ private:
 	static vk::UniqueDescriptorPool	createDescriptorPool(const Vulkan& vulkan);
 	static DescriptorSets			allocateDescriptorSets(	const Vulkan& vulkan,
 															vk::DescriptorPool pool );
+
+	void							writeDescriptorSets();
 };
 
 class Frame::Geometry {
