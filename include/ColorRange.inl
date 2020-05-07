@@ -2,6 +2,10 @@
 
 namespace Zuazo {
 
+}
+
+namespace Zuazo::Utils {
+
 constexpr std::string_view toString(ColorRange colorRange){
 	switch(colorRange){
 

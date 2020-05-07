@@ -48,6 +48,10 @@ private:
 	static constexpr DataType PATCH_MASK = static_cast<DataType>(-1) >> (DATA_BITS - PATCH_BITS) << PATCH_OFF;
 };
 
+}
+
+namespace Zuazo::Utils {
+	
 std::string toString(Version ver);
 
 }

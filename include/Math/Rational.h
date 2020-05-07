@@ -6,6 +6,7 @@
 #include <numeric>
 #include <type_traits>
 #include <ratio>
+#include <string>
 
 namespace Zuazo::Math {
 
@@ -17,16 +18,18 @@ namespace Zuazo::Math {
  * A fractional number represented by two integers of type T. It is always represented 
  * in the most reduced form. Sign will always be assigned to the numerator.
  * 
- * \arg T
- * Type of integer to be used. 
- * It must be a signed integer
+ * \arg num_t
+ * Type of the numerator to be used
+ *
+ * \arg den_t
+ * Type of the denominator to be used
  */
 
-template<typename T = int_fast32_t>
+template<typename num_t = int_fast32_t, typename den_t = num_t>
 class Rational{
 public:
-	static_assert(std::is_integral<T>::value, "Template parameter must be an integer type");
-	static_assert(std::is_signed<T>::value, "Template parameter must a signed type");
+	static_assert(std::is_integral<num_t>::value, "num_t must be an integer");
+	static_assert(std::is_integral<den_t>::value, "den_t must be an integer");
 
 	//////////////////////////////////////////////
 	//				TYPE DEFINITIONS			//
@@ -34,15 +37,31 @@ public:
 
 	/**
 	 * \brief
+	 * Type used to represent the numerator.
+	 */
+	using Num = num_t;
+
+		/**
+	 * \brief
+	 * Type used to represent the denominator.
+	 */
+	using Den = den_t;
+
+	/**
+	 * \brief
 	 * Type used to represent integers.
 	 */
-	using Integer = T;
+	using Integer = intmax_t;
 
 	/**
 	 * \brief
 	 * Type used to represent real numbers.
 	 */
 	using Real = double;
+
+	template<typename num_t2, typename den_t2>
+	using CommonType = Rational<typename std::common_type<Num, num_t2>::type,
+								typename std::common_type<Den, den_t2>::type>;
 
 	//////////////////////////////////////////////
 	//				CONSTRUCTORS				//
@@ -68,7 +87,7 @@ public:
 	 * \param[in] den
 	 * The denominator part of the fraction
 	 */
-	constexpr Rational(Integer num, Integer den);
+	constexpr Rational(Num num, Den den);
 
 	/**
 	 * \brief
@@ -77,7 +96,7 @@ public:
 	 * \param[in] number
 	 * The integer which will get assigned to the rational number
 	 */
-	constexpr Rational(Integer number);
+	constexpr Rational(Num number);
 
 	/**
 	 * \brief
@@ -119,8 +138,8 @@ public:
 	 * \param[in] rat
 	 * The rational to be copied
 	 */
-	template<typename Q>
-	constexpr Rational(const Rational<Q>& rat);
+	template<typename num_t2, typename den_t2>
+	constexpr Rational(const Rational<num_t2, den_t2>& rat);
 
 	/**
 	 * \brief
@@ -147,7 +166,7 @@ public:
 	 * \returns
 	 * The numerator part of the rational number
 	 */
-	constexpr Integer getNumerator() const;
+	constexpr Num getNumerator() const;
 
 	/**
 	 * \brief
@@ -156,7 +175,7 @@ public:
 	 * \returns
 	 * The denominator part of the rational number
 	 */
-	constexpr Integer getDenominator() const;
+	constexpr Den getDenominator() const;
 
 	/**
 	 * \brief
@@ -169,45 +188,61 @@ public:
 	//////////////////////////////////////////////
 
 	constexpr operator bool() const;
-	explicit constexpr operator Integer() const;
+	explicit constexpr operator Num() const;
 	explicit constexpr operator Real() const;
 
 	//////////////////////////////////////////////
 	//			ARITHMETIC OPERATORS			//
 	//////////////////////////////////////////////
 
-	template<typename Q>
-	friend constexpr Rational<Q> operator+(const Rational<Q>& left, const Rational<Q>& right);
-	template<typename Q>
-	friend constexpr Rational<Q> operator-(const Rational<Q>& left, const Rational<Q>& right);
-	template<typename Q>
-	friend constexpr Rational<Q> operator*(const Rational<Q>& left, const Rational<Q>& right);
-	template<typename Q>
-	friend constexpr Rational<Q> operator/(const Rational<Q>& left, const Rational<Q>& right);
+	constexpr Rational operator-();
+	constexpr Rational& operator+=(const Rational& right);
+	constexpr Rational& operator-=(const Rational& right);
+	constexpr Rational& operator*=(const Rational& right);
+	constexpr Rational& operator/=(const Rational& right);
 
-	constexpr Rational<T> operator-();
-	constexpr Rational<T>& operator+=(const Rational<T>& right);
-	constexpr Rational<T>& operator-=(const Rational<T>& right);
-	constexpr Rational<T>& operator*=(const Rational<T>& right);
-	constexpr Rational<T>& operator/=(const Rational<T>& right);
+	template<typename num_t2, typename den_t2>
+	constexpr CommonType<num_t2, den_t2> operator+(const Rational<num_t2, den_t2>& right) const;
+	template<typename num_t2, typename den_t2>
+	constexpr CommonType<num_t2, den_t2> operator-(const Rational<num_t2, den_t2>& right) const;
+	template<typename num_t2, typename den_t2>
+	constexpr CommonType<num_t2, den_t2> operator*(const Rational<num_t2, den_t2>& right) const;
+	template<typename num_t2, typename den_t2>
+	constexpr CommonType<num_t2, den_t2> operator/(const Rational<num_t2, den_t2>& right) const;
 
-	template<typename Q>
-	friend constexpr int operator==(const Rational<Q>& left, const Rational<Q>& right);
-	template<typename Q>
-	friend constexpr int operator!=(const Rational<Q>& left, const Rational<Q>& right);
-	template<typename Q>
-	friend constexpr int operator<(const Rational<Q>& left, const Rational<Q>& right);
-	template<typename Q>
-	friend constexpr int operator<=(const Rational<Q>& left, const Rational<Q>& right);
-	template<typename Q>
-	friend constexpr int operator>(const Rational<Q>& left, const Rational<Q>& right);
-	template<typename Q>
-	friend constexpr int operator>=(const Rational<Q>& left, const Rational<Q>& right);
+	//////////////////////////////////////////////
+	//				COMPARE OPERATORS			//
+	//////////////////////////////////////////////
+
+	template<typename num_t2, typename den_t2>
+	constexpr int operator==(const Rational<num_t2, den_t2>& right) const;
+	template<typename num_t2, typename den_t2>
+	constexpr int operator!=(const Rational<num_t2, den_t2>& right) const;
+	template<typename num_t2, typename den_t2>
+	constexpr int operator<(const Rational<num_t2, den_t2>& right) const;
+	template<typename num_t2, typename den_t2>
+	constexpr int operator<=(const Rational<num_t2, den_t2>& right) const;
+	template<typename num_t2, typename den_t2>
+	constexpr int operator>(const Rational<num_t2, den_t2>& right) const;
+	template<typename num_t2, typename den_t2>
+	constexpr int operator>=(const Rational<num_t2, den_t2>& right) const;
+	
 private:
-	Integer m_num;
-	Integer m_den;
+	Num m_num;
+	Den m_den;
 };
 
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> inv(const Rational<num_t, den_t>& r);
+
 }
+
+namespace Zuazo::Utils {
+
+template<typename T>
+std::string	toString(const Math::Rational<T>& rat);
+
+}
+
 
 #include "Rational.inl"

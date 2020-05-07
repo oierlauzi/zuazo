@@ -2,13 +2,14 @@
 
 #include "Math/Vector.h"
 #include "Math/Rational.h"
+#include "Utils/Functions.h"
 
 #include <sys/types.h>
 #include <string>
 
 namespace Zuazo {
 
-using AspectRatio = Math::Rational<int32_t>;
+using AspectRatio = Math::Rational<uint32_t>;
 
 struct Resolution{
     union {
@@ -30,6 +31,10 @@ struct Resolution{
 
     constexpr bool operator==(const Resolution& other) const;
     constexpr bool operator!=(const Resolution& other) const;
+    constexpr bool operator<(const Resolution& other) const;
+    constexpr bool operator<=(const Resolution& other) const;
+    constexpr bool operator>(const Resolution& other) const;
+    constexpr bool operator>=(const Resolution& other) const;
 
     template<typename T>
     constexpr operator Math::Vec2<T>() const;
@@ -38,6 +43,13 @@ struct Resolution{
 	constexpr AspectRatio getAspectRatio() const;
 };
 
+}
+
+namespace Zuazo::Utils {
+
+constexpr Resolution min(Resolution a, Resolution b);
+constexpr Resolution max(Resolution a, Resolution b);
+constexpr Resolution clamp(Resolution val, Resolution lo, Resolution hi);
 std::string toString(Resolution res);
 
 }

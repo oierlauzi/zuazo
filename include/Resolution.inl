@@ -1,5 +1,7 @@
 #include "Resolution.h"
 
+#include <tuple>
+
 namespace Zuazo {
 
 constexpr Resolution::Resolution() :
@@ -21,36 +23,75 @@ constexpr Resolution::Resolution(const Math::Vec2<T>& res) :
 {
 }
 
-
 constexpr bool Resolution::operator==(const Resolution& other) const {
-    return (width == other.width) && (height == other.height);
+    return std::tie(x, y) == std::tie(other.x, other.y);
 }
 
 constexpr bool Resolution::operator!=(const Resolution& other) const {
-    return !(*this == other);
+    return std::tie(x, y) != std::tie(other.x, other.y);
+}
+
+constexpr bool Resolution::operator<(const Resolution& other) const {
+    return std::tie(x, y) < std::tie(other.x, other.y);
+}
+
+constexpr bool Resolution::operator<=(const Resolution& other) const {
+    return std::tie(x, y) <= std::tie(other.x, other.y);
+}
+
+constexpr bool Resolution::operator>(const Resolution& other) const {
+    return std::tie(x, y) > std::tie(other.x, other.y);
+}
+
+constexpr bool Resolution::operator>=(const Resolution& other) const {
+    return std::tie(x, y) >= std::tie(other.x, other.y);
 }
 
 template<typename T>
 constexpr Resolution::operator Math::Vec2<T>() const {
     return Math::Vec2<T>(
-        static_cast<T>(width),
-        static_cast<T>(height)
+        static_cast<T>(x),
+        static_cast<T>(y)
     );
 }
 
 constexpr Resolution::operator bool() const{
-    return (width > 0) && (height > 0);
+    return (x > 0) && (y > 0);
 }
 
 constexpr AspectRatio Resolution::getAspectRatio() const {
-    return AspectRatio(
-        width,
-        height
+    return AspectRatio(x, y);
+}
+
+}
+
+
+
+namespace Zuazo::Utils {
+    
+constexpr Resolution min(Resolution a, Resolution b) {
+    return Resolution(
+        min(a.x, b.x),
+        min(a.y, b.y)
+    );
+}
+
+constexpr Resolution max(Resolution a, Resolution b) {
+    return Resolution(
+        max(a.x, b.x),
+        max(a.y, b.y)
+    );
+}
+
+constexpr Resolution clamp(Resolution val, Resolution lo, Resolution hi) {
+    return Resolution(
+        clamp(val.x, lo.x, hi.x),
+        clamp(val.y, lo.y, hi.y)
     );
 }
 
 inline std::string toString(Resolution res) {
-    return std::to_string(res.width) + "x" + std::to_string(res.height);
+    return toString(res.width) + "x" + toString(res.height);
 }
 
 }

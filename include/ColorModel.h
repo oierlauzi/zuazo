@@ -27,8 +27,13 @@ enum class ColorModel {
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorModel)
 ZUAZO_ENUM_COMP_OPERATORS(ColorModel)
 
-constexpr std::string_view toString(ColorModel colorModel);
 constexpr Math::Mat4x4f getConversionMatrix(ColorModel colorModel);
+
+}
+
+namespace Zuazo::Utils {
+
+constexpr std::string_view toString(ColorModel colorModel);
 
 }
 

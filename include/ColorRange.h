@@ -27,7 +27,11 @@ enum class ColorRange {
 
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorRange)
 ZUAZO_ENUM_COMP_OPERATORS(ColorRange)	
-	
+
+}
+
+namespace Zuazo::Utils {
+
 constexpr std::string_view toString(ColorRange colorRange);
 
 }

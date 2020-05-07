@@ -28,8 +28,13 @@ enum class ColorPrimaries {
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorPrimaries)
 ZUAZO_ENUM_COMP_OPERATORS(ColorPrimaries)	
 
-constexpr std::string_view toString(ColorPrimaries colorPrim);
 constexpr Math::Mat4x4f getConversionMatrix(ColorPrimaries colorPrim);
+
+}
+
+namespace Zuazo::Utils {
+
+constexpr std::string_view toString(ColorPrimaries colorPrim);
 
 }
 

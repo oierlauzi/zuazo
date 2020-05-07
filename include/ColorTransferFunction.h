@@ -23,9 +23,13 @@ enum class ColorTransferFunction {
 
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorTransferFunction)
 ZUAZO_ENUM_COMP_OPERATORS(ColorTransferFunction)	
-
-constexpr std::string_view toString(ColorTransferFunction colorSubsampling);
 	
+}
+
+namespace Zuazo::Utils {
+	
+constexpr std::string_view toString(ColorTransferFunction colorSubsampling);
+
 }
 
 #include "ColorTransferFunction.inl"

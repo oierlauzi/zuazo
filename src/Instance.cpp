@@ -133,7 +133,7 @@ struct Instance::Impl {
 		std::ostringstream message;
 
 		//Show Version
-		message << "Instantiated Zuazo " << toString(runtimeVersion) << "\n";
+		message << "Instantiated Zuazo " << Utils::toString(runtimeVersion) << "\n";
 
 		//Show selected device
 		const auto deviceProperties = vulkan.getPhysicalDevice().getProperties(vulkan.getDispatcher());
@@ -142,17 +142,17 @@ struct Instance::Impl {
 		//Show supported formats
 		message << "\t- Supported input pixel formats:\n";
 		for(const auto& fmt : formatSupport.inputFormats ){
-			message << "\t\t- " << toString(fmt) << "\n";
+			message << "\t\t- " << Utils::toString(fmt) << "\n";
 		}
 
 		message << "\t- Supported output pixel formats:\n";
 		for(const auto& fmt : formatSupport.outputFormats ){
-			message << "\t\t- " << toString(fmt) << "\n";
+			message << "\t\t- " << Utils::toString(fmt) << "\n";
 		}
 
 		//Show resolution limits
-		message << "\t- Maximum input resolution: " <<  toString(resolutionSupport.maxInputResolution) << "\n";
-		message << "\t- Maximum output resolution: " <<  toString(resolutionSupport.maxOutputResolution) << "\n";
+		message << "\t- Maximum input resolution: " <<  Utils::toString(resolutionSupport.maxInputResolution) << "\n";
+		message << "\t- Maximum output resolution: " <<  Utils::toString(resolutionSupport.maxOutputResolution) << "\n";
 
 		return message.str();
 	}
@@ -265,7 +265,7 @@ void Instance::defaultInstanceLogFunc(	const Instance& inst,
 {
 	std::ostream& output = std::cerr;
 
-	output << "[" << toString(severity) << "] ";
+	output << "[" << Utils::toString(severity) << "] ";
 	output << &inst << " (" << inst.getApplicationInfo().name << "): ";
 	output << msg;
 	output << std::endl;
@@ -278,7 +278,7 @@ void Instance::defaultElementLogFunc(	const ZuazoBase& base,
 	std::ostream& output = std::cerr;
 	Instance& inst = base.getInstance();
 
-	output << "[" << toString(severity) << "] ";
+	output << "[" << Utils::toString(severity) << "] ";
 	output << &inst << " (" << inst.getApplicationInfo().name << "): ";
 	output << "on " << &base << " (" << base.getName() << "): ";
 	output << msg;

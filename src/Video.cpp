@@ -3,13 +3,6 @@
 namespace Zuazo {
 
 
-
-/*
- * VideoModeCompatibility
- */
-
-
-
 /*
  * VideoBase
  */
@@ -25,8 +18,8 @@ VideoBase::~VideoBase() = default;
 
 VideoBase& VideoBase::operator=(const VideoBase& other) = default;
 
-VideoModeCompatibility VideoBase::getVideoModeCompatibility() const {
-	return VideoModeCompatibility();
+VideoMode::Compatibilities VideoBase::getVideoModeCompatibility() const {
+	return VideoMode::Compatibilities();
 }
 
 void VideoBase::setVideoMode(const VideoMode& videoMode) {

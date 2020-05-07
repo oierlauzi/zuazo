@@ -976,8 +976,8 @@ void Window::close() {
 }
 
 
-VideoModeCompatibility Window::getVideoModeCompatibility() const {
-	return VideoModeCompatibility(); //TODO
+VideoMode::Compatibility Window::getVideoModeCompatibility() const {
+	return VideoMode::Compatibility(); //TODO
 }
 
 void Window::setVideoMode(const VideoMode& videoMode) {

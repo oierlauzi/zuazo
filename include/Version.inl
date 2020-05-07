@@ -1,5 +1,7 @@
 #include "Version.h"
 
+#include "Utils/Functions.h"
+
 namespace Zuazo {
 
 constexpr Version::Version(uint32_t major, uint32_t minor, uint32_t patch) :
@@ -46,13 +48,14 @@ constexpr uint32_t Version::getPatch() const {
 	return ((m_data & PATCH_MASK) >> PATCH_OFF);
 }
 
-
-
-inline std::string toString(Version ver) {
-	return 	std::to_string(ver.getMajor()) + "." +
-			std::to_string(ver.getMinor()) + "." +
-			std::to_string(ver.getPatch());
 }
 
+namespace Zuazo::Utils {
+	
+inline std::string toString(Version ver) {
+	return 	toString(ver.getMajor()) + "." +
+			toString(ver.getMinor()) + "." +
+			toString(ver.getPatch());
+}
 
 }

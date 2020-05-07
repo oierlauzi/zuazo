@@ -10,28 +10,38 @@
 #include "Math/Rational.h"
 #include "Timing/Chrono.h"
 #include "Graphics/Frame.h"
+#include "Utils/Configuration.h"
 
 #include <memory>
+#include <variant>
+#include <vector>
 
 namespace Zuazo {
 
+enum class VideoModeParameters {
+	RESOLUTION,
+	ASPECT_RATIO,
+	FRAME_RATE,
+	COLOR_PRIMARIES,
+	COLOR_MODEL,
+	COLOR_TRANSFER_FUNCTION,
+	COLOR_SUBSAMPLING,
+	COLOR_RANGE,
+	COLOR_FORMAT
+};
+
 using Video = std::shared_ptr<const Graphics::Frame>;
+using VideoMode = Utils::Configuration<	VideoModeParameters,
+										Resolution,
+										AspectRatio,
+										Timing::Rate,
+										ColorPrimaries,
+										ColorModel,
+										ColorTransferFunction,
+										ColorSubsampling,
+										ColorRange,
+										ColorFormat	>;
 
-struct VideoMode {
-	Resolution				resolution = Resolution(0, 0);
-	AspectRatio 			pixelAspectRatio = AspectRatio(1, 1);
-	Timing::Rate 			frameRate = Timing::Rate(0, 1);
-	ColorPrimaries			colorPrimaries = ColorPrimaries::NONE;
-	ColorModel				colorModel = ColorModel::NONE;
-	ColorTransferFunction	colorTransferFunction = ColorTransferFunction::NONE;
-	ColorSubsampling		colorSubsampling = ColorSubsampling::NONE;
-	ColorRange				colorRange = ColorRange::NONE;
-	ColorFormat				colorFormat = ColorFormat::NONE;
-};
-
-class VideoModeCompatibility {
-
-};
 
 class VideoBase {
 public:
@@ -39,15 +49,15 @@ public:
 	VideoBase(const VideoBase& other);
 	virtual ~VideoBase();
 
-	VideoBase&				operator=(const VideoBase& other);
+	VideoBase&							operator=(const VideoBase& other);
 
-	virtual VideoModeCompatibility getVideoModeCompatibility() const = 0;
+	virtual VideoMode::Compatibilities 	getVideoModeCompatibility() const = 0;
 
-	virtual void			setVideoMode(const VideoMode& videoMode) = 0;
-	const VideoMode&		getVideoMode() const;
+	virtual void						setVideoMode(const VideoMode& videoMode) = 0;
+	const VideoMode&					getVideoMode() const;
 
 private:
-	VideoMode				m_videoMode;
+	VideoMode							m_videoMode;
 
 };
 

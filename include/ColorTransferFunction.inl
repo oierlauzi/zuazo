@@ -1,6 +1,10 @@
 #include "ColorTransferFunction.h"
 
 namespace Zuazo {
+	
+}
+
+namespace Zuazo::Utils {
 
 constexpr std::string_view toString(ColorTransferFunction colorSubsampling) {
 	switch(colorSubsampling){
@@ -11,5 +15,5 @@ constexpr std::string_view toString(ColorTransferFunction colorSubsampling) {
 	default: return "";
 	}
 }	
-	
+
 }

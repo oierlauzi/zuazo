@@ -13,8 +13,6 @@ enum class Severity {
 	VERBOSE		= Utils::bit(3),
 };
 
-constexpr std::string_view toString(Severity verb);
-
 enum class Verbosity {
 	SILENT 		= 0,
 	ERROR		= static_cast<int>(Severity::ERROR),
@@ -38,6 +36,12 @@ ZUAZO_ENUM_BIT_OPERATORS(Verbosity)
 
 constexpr Verbosity operator& (Verbosity a, Severity b);
 constexpr Verbosity operator& (Severity a, Verbosity b);
+
+}
+
+namespace Zuazo::Utils {
+	
+constexpr std::string_view toString(Severity verb);
 
 }
 

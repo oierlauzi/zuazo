@@ -2,7 +2,34 @@
 
 namespace Zuazo {
 
-constexpr  std::string_view toString(ColorFormat format){
+constexpr size_t getPlaneCount(ColorFormat format){
+	switch(format){
+		case ColorFormat::G8_B8_R8:
+		case ColorFormat::G10X6_B10X6_R10X6_16:
+		case ColorFormat::G12X4_B12X4_R12X4_16:
+		case ColorFormat::G16_B16_R16:
+			return 3;
+		case ColorFormat::G8_R8B8:
+		case ColorFormat::G8_B8R8:
+		case ColorFormat::G10X6_R10X6B10X6_16:
+		case ColorFormat::G10X6_B10X6R10X6_16:
+		case ColorFormat::G12X4_R12X4B12X4_16:
+		case ColorFormat::G12X4_B12X4R12X4_16:
+		case ColorFormat::G16_R16B16:
+		case ColorFormat::G16_B16R16:
+			return 2;
+		case ColorFormat::NONE:
+			return 0;
+		default:
+			return 1;
+	}
+}
+
+}
+
+namespace Zuazo::Utils {
+
+constexpr std::string_view toString(ColorFormat format){
 	switch(format){
 
 	ZUAZO_ENUM2STR_CASE( ColorFormat, Y4X4_8 )
@@ -193,29 +220,6 @@ constexpr  std::string_view toString(ColorFormat format){
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G64fB64fR64fA64f )
 
 	default: return "";
-	}
-}
-
-constexpr size_t getPlaneCount(ColorFormat format){
-	switch(format){
-		case ColorFormat::G8_B8_R8:
-		case ColorFormat::G10X6_B10X6_R10X6_16:
-		case ColorFormat::G12X4_B12X4_R12X4_16:
-		case ColorFormat::G16_B16_R16:
-			return 3;
-		case ColorFormat::G8_R8B8:
-		case ColorFormat::G8_B8R8:
-		case ColorFormat::G10X6_R10X6B10X6_16:
-		case ColorFormat::G10X6_B10X6R10X6_16:
-		case ColorFormat::G12X4_R12X4B12X4_16:
-		case ColorFormat::G12X4_B12X4R12X4_16:
-		case ColorFormat::G16_R16B16:
-		case ColorFormat::G16_B16R16:
-			return 2;
-		case ColorFormat::NONE:
-			return 0;
-		default:
-			return 1;
 	}
 }
 

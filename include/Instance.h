@@ -98,15 +98,15 @@ public:
 	static uint32_t				defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp, 
 														vk::PhysicalDevice device );
 
-	static inline const VideoMode defaultVideoMode = {	Resolution(1280, 720),
-														AspectRatio(1, 1),
-														Timing::Rate(30, 1),
-														ColorPrimaries::BT709,
-														ColorModel::RGB,
-														ColorTransferFunction::IEC61966_2_1,
-														ColorSubsampling::NONE,
-														ColorRange::FULL,
-														ColorFormat::B8G8R8A8 };
+	static constexpr VideoMode 	defaultVideoMode = VideoMode(	Resolution(1280, 720),
+																AspectRatio(1, 1),
+																Timing::Rate(30, 1),
+																ColorPrimaries::BT709,
+																ColorModel::RGB,
+																ColorTransferFunction::IEC61966_2_1,
+																ColorSubsampling::NONE,
+																ColorRange::FULL,
+																ColorFormat::B8G8R8A8 );
 
 private:
 	struct Impl;

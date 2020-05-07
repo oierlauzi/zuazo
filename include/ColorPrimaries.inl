@@ -2,18 +2,6 @@
 
 namespace Zuazo {
 
-constexpr std::string_view toString(ColorPrimaries colorPrim){
-	switch(colorPrim){
-
-	ZUAZO_ENUM2STR_CASE( ColorPrimaries, BT709 )
-	ZUAZO_ENUM2STR_CASE( ColorPrimaries, BT2020 )
-	ZUAZO_ENUM2STR_CASE( ColorPrimaries, SMPTE432 )
-	ZUAZO_ENUM2STR_CASE( ColorPrimaries, ADOBE_RGB )
-
-	default: return "";
-	}
-}
-
 constexpr Math::Mat4x4f getConversionMatrix(ColorPrimaries colorPrim){
 	switch(colorPrim){
 		
@@ -51,4 +39,20 @@ constexpr Math::Mat4x4f getConversionMatrix(ColorPrimaries colorPrim){
 	}
 }
 	
+}
+
+namespace Zuazo::Utils {
+	
+constexpr std::string_view toString(ColorPrimaries colorPrim){
+	switch(colorPrim){
+
+	ZUAZO_ENUM2STR_CASE( ColorPrimaries, BT709 )
+	ZUAZO_ENUM2STR_CASE( ColorPrimaries, BT2020 )
+	ZUAZO_ENUM2STR_CASE( ColorPrimaries, SMPTE432 )
+	ZUAZO_ENUM2STR_CASE( ColorPrimaries, ADOBE_RGB )
+
+	default: return "";
+	}
+}
+
 }

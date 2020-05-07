@@ -2,18 +2,6 @@
 
 namespace Zuazo {
 
-constexpr std::string_view toString(ColorModel colorModel){
-	switch(colorModel){
-
-	ZUAZO_ENUM2STR_CASE( ColorModel, RGB )
-	ZUAZO_ENUM2STR_CASE( ColorModel, BT601 )
-	ZUAZO_ENUM2STR_CASE( ColorModel, BT709 )
-	ZUAZO_ENUM2STR_CASE( ColorModel, BT2020 )
-
-	default: return "";
-	}
-}
-
 constexpr Math::Mat4x4f getConversionMatrix(ColorModel colorModel){
 	switch(colorModel){
 
@@ -46,5 +34,20 @@ constexpr Math::Mat4x4f getConversionMatrix(ColorModel colorModel){
 	}
 }
 
+}
+
+namespace Zuazo::Utils {
+
+constexpr std::string_view toString(ColorModel colorModel){
+	switch(colorModel){
+
+	ZUAZO_ENUM2STR_CASE( ColorModel, RGB )
+	ZUAZO_ENUM2STR_CASE( ColorModel, BT601 )
+	ZUAZO_ENUM2STR_CASE( ColorModel, BT709 )
+	ZUAZO_ENUM2STR_CASE( ColorModel, BT2020 )
+
+	default: return "";
+	}
+}
 
 }
