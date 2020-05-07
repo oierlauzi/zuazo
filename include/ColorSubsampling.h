@@ -32,10 +32,6 @@ ZUAZO_ENUM_COMP_OPERATORS(ColorSubsampling)
 
 constexpr Resolution getSubsampledResolution(ColorSubsampling subs, Resolution res);
 
-}
-
-namespace Zuazo::Utils {
-
 constexpr std::string_view toString(ColorSubsampling colorSubsampling);
 
 }

@@ -63,6 +63,12 @@ constexpr AspectRatio Resolution::getAspectRatio() const {
     return AspectRatio(x, y);
 }
 
+
+
+inline std::string toString(Resolution res) {
+    return toString(res.width) + "x" + toString(res.height);
+}
+
 }
 
 
@@ -88,10 +94,6 @@ constexpr Resolution clamp(Resolution val, Resolution lo, Resolution hi) {
         clamp(val.x, lo.x, hi.x),
         clamp(val.y, lo.y, hi.y)
     );
-}
-
-inline std::string toString(Resolution res) {
-    return toString(res.width) + "x" + toString(res.height);
 }
 
 }

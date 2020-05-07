@@ -19,16 +19,18 @@
 namespace Zuazo {
 
 enum class VideoModeParameters {
-	RESOLUTION,
-	ASPECT_RATIO,
-	FRAME_RATE,
-	COLOR_PRIMARIES,
-	COLOR_MODEL,
-	COLOR_TRANSFER_FUNCTION,
-	COLOR_SUBSAMPLING,
-	COLOR_RANGE,
-	COLOR_FORMAT
+	resolution,
+	pixelAspectRatio,
+	frameRate,
+	colorPrimaries,
+	colorModel,
+	colorTransferFunction,
+	colorSubsampling,
+	colorRange,
+	colorFormat
 };
+
+std::string_view toString(VideoModeParameters par);
 
 using Video = std::shared_ptr<const Graphics::Frame>;
 using VideoMode = Utils::Configuration<	VideoModeParameters,
@@ -62,3 +64,5 @@ private:
 };
 
 }
+
+

@@ -76,13 +76,6 @@ constexpr bool isInRange(const T& val, const T& lo, const T& hi) {
 
 
 
-template<typename T>
-inline std::string toString(const T& a) {
-	return std::to_string(a);
-}
-
-
-
 namespace details {
 
 template<typename Func, typename Tuples, size_t I>
@@ -118,4 +111,49 @@ constexpr auto elementwiseOperation(Func&& op, Tuple1&& first, Tuplen&&... rest)
         std::make_index_sequence<ARG_COUNT>()
     );
 }
+
+}
+
+namespace Zuazo {
+	
+inline std::string toString(uint8_t x) {
+	return std::to_string(x);
+}
+
+inline std::string toString(int8_t x) {
+	return std::to_string(x);
+}
+
+inline std::string toString(uint16_t x) {
+	return std::to_string(x);
+}
+
+inline std::string toString(int16_t x) {
+	return std::to_string(x);
+}
+
+inline std::string toString(uint32_t x) {
+	return std::to_string(x);
+}
+
+inline std::string toString(int32_t x) {
+	return std::to_string(x);
+}
+
+inline std::string toString(uint64_t x) {
+	return std::to_string(x);
+}
+
+inline std::string toString(int64_t x) {
+	return std::to_string(x);
+}
+
+inline std::string toString(float x) {
+	return std::to_string(x);
+}
+
+inline std::string toString(double x) {
+	return std::to_string(x);
+}
+
 }

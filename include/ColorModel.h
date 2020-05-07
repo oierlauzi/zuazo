@@ -29,10 +29,6 @@ ZUAZO_ENUM_COMP_OPERATORS(ColorModel)
 
 constexpr Math::Mat4x4f getConversionMatrix(ColorModel colorModel);
 
-}
-
-namespace Zuazo::Utils {
-
 constexpr std::string_view toString(ColorModel colorModel);
 
 }

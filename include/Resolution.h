@@ -43,6 +43,8 @@ struct Resolution{
 	constexpr AspectRatio getAspectRatio() const;
 };
 
+std::string toString(Resolution res);
+
 }
 
 namespace Zuazo::Utils {
@@ -50,7 +52,6 @@ namespace Zuazo::Utils {
 constexpr Resolution min(Resolution a, Resolution b);
 constexpr Resolution max(Resolution a, Resolution b);
 constexpr Resolution clamp(Resolution val, Resolution lo, Resolution hi);
-std::string toString(Resolution res);
 
 }
 

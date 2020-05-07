@@ -25,9 +25,7 @@ constexpr size_t getPlaneCount(ColorFormat format){
 	}
 }
 
-}
 
-namespace Zuazo::Utils {
 
 constexpr std::string_view toString(ColorFormat format){
 	switch(format){

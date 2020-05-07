@@ -237,12 +237,11 @@ constexpr Rational<den_t, num_t> inv(const Rational<num_t, den_t>& r);
 
 }
 
-namespace Zuazo::Utils {
+namespace Zuazo {
 
-template<typename T>
-std::string	toString(const Math::Rational<T>& rat);
+template<typename num_t, typename den_t>
+std::string	toString(const Math::Rational<num_t, den_t>& rat);
 
 }
-
 
 #include "Rational.inl"

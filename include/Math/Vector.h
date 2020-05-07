@@ -40,6 +40,13 @@ using Vec4u = Vec<glm::u32, 4>;
 
 }
 
+namespace Zuazo {
+
+template<typename T, intmax_t dim>
+std::string	toString(const T& a);
+
+}
+
 namespace Zuazo::Utils {
 
 template<typename T, intmax_t dim>
@@ -50,10 +57,6 @@ Math::Vec<T, dim> max(const Math::Vec<T, dim>& a, const Math::Vec<T, dim>& b);
 
 template<typename T, intmax_t dim>
 Math::Vec<T, dim> clamp(const Math::Vec<T, dim>& val, const Math::Vec<T, dim>& lo, const Math::Vec<T, dim>& hi);
-
-
-template<typename T, intmax_t dim>
-std::string	toString(const T& a);
 
 }
 

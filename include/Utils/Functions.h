@@ -37,12 +37,23 @@ constexpr bool isInRange(const T& val, const T& min, const T& max);
 
 
 
-template<typename T>
-std::string	toString(const T& a);
-
-
 template<typename Func, typename Tuple1, typename... Tuplen>
 constexpr auto elementwiseOperation(Func&& op, Tuple1&& first, Tuplen&&... rest);
+
+}
+
+namespace Zuazo {
+	
+std::string	toString(uint8_t x);
+std::string	toString(int8_t x);
+std::string	toString(uint16_t x);
+std::string	toString(int16_t x);
+std::string	toString(uint32_t x);
+std::string	toString(int32_t x);
+std::string	toString(uint64_t x);
+std::string	toString(int64_t x);
+std::string	toString(float x);
+std::string	toString(double x);
 
 }
 

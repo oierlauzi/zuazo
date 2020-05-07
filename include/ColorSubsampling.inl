@@ -24,10 +24,8 @@ constexpr Resolution getSubsampledResolution(ColorSubsampling subs, Resolution r
 	}
 }
 
-}
 
-namespace Zuazo::Utils {
-	
+
 constexpr std::string_view toString(ColorSubsampling colorSubsampling){
 	switch(colorSubsampling){
 

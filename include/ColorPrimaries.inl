@@ -38,11 +38,9 @@ constexpr Math::Mat4x4f getConversionMatrix(ColorPrimaries colorPrim){
 	default: return {};
 	}
 }
-	
-}
 
-namespace Zuazo::Utils {
-	
+
+
 constexpr std::string_view toString(ColorPrimaries colorPrim){
 	switch(colorPrim){
 

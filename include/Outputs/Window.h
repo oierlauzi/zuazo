@@ -26,7 +26,7 @@ public:
 	virtual void 			open()  final;
 	virtual void 			close() final;
 
-	virtual VideoMode::Compatibility getVideoModeCompatibility() const final;
+	virtual VideoMode::Compatibilities getVideoModeCompatibility() const final;
 	
 	virtual void 			setVideoMode(const VideoMode& videoMode) final;
 

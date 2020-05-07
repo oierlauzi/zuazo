@@ -48,10 +48,8 @@ constexpr uint32_t Version::getPatch() const {
 	return ((m_data & PATCH_MASK) >> PATCH_OFF);
 }
 
-}
 
-namespace Zuazo::Utils {
-	
+
 inline std::string toString(Version ver) {
 	return 	toString(ver.getMajor()) + "." +
 			toString(ver.getMinor()) + "." +

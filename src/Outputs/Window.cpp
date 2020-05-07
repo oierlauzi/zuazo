@@ -212,25 +212,25 @@ struct Window::Impl {
 				std::string_view name ) 
 	{
 		//Check pixel aspect ratio support
-		if(videoMode.pixelAspectRatio != AspectRatio(1, 1)) {
+		if(videoMode.get<VideoMode::Parameters::pixelAspectRatio>() != AspectRatio(1, 1)) {
 			throw Exception("Only 1:1 PAR is supported");
 		}
 
 		//Check color model support
-		if(videoMode.colorModel != ColorModel::RGB) {
+		if(videoMode.get<VideoMode::Parameters::colorModel>() != ColorModel::RGB) {
 			throw Exception("Unsupported color model");
 		}
 
 		//Check color subsampling support
-		if(videoMode.colorSubsampling != ColorSubsampling::NONE) {
+		if(videoMode.get<VideoMode::Parameters::colorSubsampling>() != ColorSubsampling::NONE) {
 			throw Exception("Color subsampling is not supported");
 		}
 
 		//Check color format support
 		auto formats = Graphics::Image::getPlaneDescriptors(
-			videoMode.resolution,
-			videoMode.colorSubsampling,
-			videoMode.colorFormat
+			videoMode.get<VideoMode::Parameters::resolution>(),
+			videoMode.get<VideoMode::Parameters::colorSubsampling>(),
+			videoMode.get<VideoMode::Parameters::colorFormat>()
 		);
 
 		if(formats.size() != 1) {
@@ -252,26 +252,29 @@ struct Window::Impl {
 		}
 
 		//Check color range support
-		if(videoMode.colorRange != ColorRange::FULL) {
+		if(videoMode.get<VideoMode::Parameters::colorRange>() != ColorRange::FULL) {
 			throw Exception("Only full range color is supported");
 		} 
 
-		const auto colorSpace = Graphics::toVulkan(videoMode.colorPrimaries, videoMode.colorTransferFunction);
+		const auto colorSpace = Graphics::toVulkan(
+			videoMode.get<VideoMode::Parameters::colorPrimaries>(), 
+			videoMode.get<VideoMode::Parameters::colorTransferFunction>()
+		);
 
 		//Create the color transfer characteristics
 		Graphics::ColorTransfer colorTransfer(
-			videoMode.colorFormat,
-			videoMode.colorRange,
-			videoMode.colorTransferFunction,
-			videoMode.colorModel,
-			videoMode.colorPrimaries
+			videoMode.get<VideoMode::Parameters::colorFormat>(),
+			videoMode.get<VideoMode::Parameters::colorRange>(),
+			videoMode.get<VideoMode::Parameters::colorTransferFunction>(),
+			videoMode.get<VideoMode::Parameters::colorModel>(),
+			videoMode.get<VideoMode::Parameters::colorPrimaries>()
 		);
 		colorTransfer.optimize(formats, supportedFormats);
 
 		//Try to open it
 		opened = std::make_unique<Impl::Open>(
 			vulkan,
-			videoMode.resolution,
+			videoMode.get<VideoMode::Parameters::resolution>(),
 			name,
 			f.format,
 			colorSpace,
@@ -965,7 +968,7 @@ void Window::open() {
 
 	m_impl->open(getInstance().getVulkan(), videoMode, getName());
 	ZuazoBase::enablePeriodicUpdate(Instance::OUTPUT_PRIORITY, 
-									Timing::getPeriod(videoMode.frameRate) );
+									Timing::getPeriod(videoMode.get<VideoMode::Parameters::frameRate>()) );
 	ZuazoBase::open();
 }
 
@@ -976,8 +979,8 @@ void Window::close() {
 }
 
 
-VideoMode::Compatibility Window::getVideoModeCompatibility() const {
-	return VideoMode::Compatibility(); //TODO
+VideoMode::Compatibilities Window::getVideoModeCompatibility() const {
+	return VideoMode::Compatibilities(); //TODO
 }
 
 void Window::setVideoMode(const VideoMode& videoMode) {
