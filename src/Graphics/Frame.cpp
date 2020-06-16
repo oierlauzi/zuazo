@@ -3,23 +3,304 @@
 #include <Exception.h>
 #include <Utils/StaticId.h>
 #include <Graphics/ColorTransfer.h>
+#include <Graphics/StagedBuffer.h>
+
+#include <vector>
 
 namespace Zuazo::Graphics {
 
+struct Frame::Impl {
+	static constexpr size_t DESCRIPTOR_COUNT = VK_FILTER_RANGE_SIZE;
+	using DescriptorSets = std::array<vk::DescriptorSet, DESCRIPTOR_COUNT>;
+
+	const Vulkan&						vulkan;
+
+	Math::Vec2f 						size;
+	std::shared_ptr<const Buffer> 		colorTransfer;
+
+	std::vector<vk::UniqueImage> 		images;
+	Vulkan::AggregatedAllocation		memory;
+	std::vector<vk::UniqueImageView>	imageViews;
+
+	vk::UniqueDescriptorPool			descriptorPool;
+	DescriptorSets						descriptorSets;
+
+	mutable std::vector<vk::Fence> 		dependencies;
+
+	Impl(	const Vulkan& vulkan,
+			Math::Vec2f size,
+			const std::shared_ptr<const Buffer>& colorTransfer,
+			Utils::BufferView<const PlaneDescriptor> planes,
+			vk::ImageUsageFlags usage )
+		: vulkan(vulkan)
+		, size(size)
+		, colorTransfer(colorTransfer)
+		, images(createImages(vulkan, usage, planes))
+		, memory(allocateMemory(vulkan, images))
+		, imageViews(createImageViews(vulkan, planes, images))
+		, descriptorPool(createDescriptorPool(vulkan))
+		, descriptorSets(allocateDescriptorSets(vulkan, *descriptorPool))
+	{
+		writeDescriptorSets();
+	}
+
+	~Impl() {
+		waitDependecies(Vulkan::NO_TIMEOUT);
+	}
+
+
+	void bind(	vk::CommandBuffer cmd,
+				vk::PipelineLayout layout,
+				uint32_t index,
+				vk::Filter filter ) const
+	{
+		const auto& descriptorSet = descriptorSets[static_cast<size_t>(filter)];
+
+		cmd.bindDescriptorSets(
+			vk::PipelineBindPoint::eGraphics,	//Pipeline bind point
+			layout,								//Pipeline layout
+			index,								//First index
+			descriptorSet,						//Descriptor sets
+			{},									//Dynamic offsets
+			vulkan.getDispatcher()
+		);
+	}
+
+
+
+	void addDependecy(vk::Fence fence) {
+		dependencies.push_back(fence);
+	}
+
+	void waitDependecies(uint64_t timeo) const {
+		if(dependencies.size()) {
+			vulkan.waitForFences(dependencies, true, timeo);
+			dependencies.clear();
+		}
+	}
+
+
+	const Vulkan& getVulkan() const { 
+		return vulkan;
+	}
+
+	const Math::Vec2f& getSize() const {
+		return size;
+	}
+
+	const std::vector<vk::UniqueImage>& getImages() const {
+		return images;
+	}
+
+	const std::vector<vk::UniqueImageView>& getImageViews() const {
+		return imageViews;
+	}
+
+	const std::vector<Utils::Area>& getPlaneAreas() const {
+		return memory.areas;
+	}
+
+	const vk::DeviceMemory& getMemory() const {
+		return *(memory.memory);
+	}
+
+
+private:
+	void writeDescriptorSets() {
+		for(size_t i = 0; i < descriptorSets.size(); i++){
+			//Update all images. As nullptr images can't be passed, repeat available images		
+			std::array<vk::DescriptorImageInfo, MAX_PLANE_COUNT> images;
+			for(size_t j = 0; j < images.size(); j++){
+				images[j] = vk::DescriptorImageInfo(
+					nullptr,												//Sampler
+					*(imageViews[j % imageViews.size()]),					//Image views
+					vk::ImageLayout::eShaderReadOnlyOptimal					//Layout
+				);
+			}
+
+			const std::array buffers = {
+				vk::DescriptorBufferInfo(
+					colorTransfer->getBuffer(),								//Buffer
+					0,														//Offset
+					ColorTransfer::size()									//Size
+				)
+			};
+
+			const std::array writeDescriptorSets ={
+				vk::WriteDescriptorSet( //Image descriptor
+					descriptorSets[i],										//Descriptor set
+					ColorTransfer::getSamplerBinding(),						//Binding
+					0, 														//Index
+					images.size(), 											//Descriptor count
+					vk::DescriptorType::eCombinedImageSampler,				//Descriptor type
+					images.data(), 											//Images
+					nullptr, 												//Buffers
+					nullptr													//Texel buffers
+				),
+				vk::WriteDescriptorSet( //Ubo descriptor set
+					descriptorSets[i],										//Descriptor set
+					ColorTransfer::getDataBinding(),						//Binding
+					0, 														//Index
+					buffers.size(),											//Descriptor count		
+					vk::DescriptorType::eUniformBuffer,						//Descriptor type
+					nullptr, 												//Images 
+					buffers.data(), 										//Buffers
+					nullptr													//Texel buffers
+				)
+			};
+
+			vulkan.updateDescriptorSets(Utils::BufferView<const vk::WriteDescriptorSet>(writeDescriptorSets));
+		}
+	}
+
+	static std::vector<vk::UniqueImage> createImages(	const Vulkan& vulkan,
+														vk::ImageUsageFlags usage,
+														Utils::BufferView<const PlaneDescriptor> imagePlanes )
+	{
+		std::vector<vk::UniqueImage> result;
+		result.reserve(imagePlanes.size());
+
+		usage |= vk::ImageUsageFlagBits::eSampled; //Ensure sampled is set
+
+		for(size_t i = 0; i < imagePlanes.size(); i++){
+			const vk::ImageCreateInfo createInfo(
+				{},											//Flags
+				vk::ImageType::e2D,							//Image type
+				imagePlanes[i].format,						//Pixel format
+				vk::Extent3D(imagePlanes[i].extent, 1), 	//Extent
+				1,											//Mip levels
+				1,											//Array layers
+				vk::SampleCountFlagBits::e1,				//Sample count
+				vk::ImageTiling::eOptimal,					//Tiling
+				usage,										//Usage
+				vk::SharingMode::eExclusive,				//Sharing mode
+				0, nullptr,									//Queue family indices
+				vk::ImageLayout::eUndefined					//Initial layout
+			);
+
+			result.emplace_back(vulkan.createImage(createInfo));
+		}
+		
+		return result;
+	}
+
+	static Vulkan::AggregatedAllocation	allocateMemory(	const Vulkan& vulkan,
+														const std::vector<vk::UniqueImage>& images )
+	{
+		constexpr vk::MemoryPropertyFlags memoryProperties =
+			vk::MemoryPropertyFlagBits::eDeviceLocal;
+
+		std::vector<vk::MemoryRequirements> requirements;
+		requirements.reserve(images.size());
+
+		for(size_t i = 0; i < images.size(); i++) {
+			requirements.push_back(vulkan.getMemoryRequirements(*images[i]));
+		}
+
+		auto result = vulkan.allocateMemory(requirements, memoryProperties);
+		assert(result.areas.size() == images.size());
+
+		//Bind image's memory
+		for(size_t i = 0; i < images.size(); i++){
+			vulkan.bindMemory(*images[i], *result.memory, result.areas[i].offset());
+		}
+
+		return result;
+	}
+
+	static std::vector<vk::UniqueImageView>	createImageViews(	const Vulkan& vulkan,
+																Utils::BufferView<const PlaneDescriptor> imagePlanes,
+																const std::vector<vk::UniqueImage>& images )
+	{
+		assert(imagePlanes.size() == images.size());
+		std::vector<vk::UniqueImageView> result;
+		result.reserve(images.size());
+
+		for(size_t i = 0; i < images.size(); i++){
+			const vk::ImageViewCreateInfo createInfo(
+				{},												//Flags
+				*(images[i]),									//Image
+				vk::ImageViewType::e2D,							//ImageView type
+				imagePlanes[i].format,							//Image format
+				imagePlanes[i].swizzle,							//Swizzle
+				vk::ImageSubresourceRange(						//Image subresources
+					vk::ImageAspectFlagBits::eColor,				//Aspect mask
+					0, 1, 0, 1										//Base mipmap level, mipmap levels, base array layer, layers
+				)
+			);
+
+			result.emplace_back(vulkan.createImageView(createInfo));
+		}
+
+		return result;
+	}
+
+	static vk::UniqueDescriptorPool	createDescriptorPool(const Vulkan& vulkan) {
+		//A descriptor pool is created, from which 2 descriptor sets, each one with 
+		//one combined image sampler and one uniform buffer. Threrefore, 2 descriptors
+		//of each type will be required.
+		const std::array poolSizes = {
+			vk::DescriptorPoolSize(
+				vk::DescriptorType::eCombinedImageSampler,			//Descriptor type
+				DESCRIPTOR_COUNT * ColorTransfer::getSamplerCount()	//Descriptor count
+			),
+			vk::DescriptorPoolSize(
+				vk::DescriptorType::eUniformBuffer,					//Descriptor type
+				DESCRIPTOR_COUNT									//Descriptor count
+			)
+		};
+
+		const vk::DescriptorPoolCreateInfo createInfo(
+			{},														//Flags
+			DESCRIPTOR_COUNT,										//Descriptor set count
+			poolSizes.size(), poolSizes.data()						//Pool sizes
+		);
+
+		return vulkan.createDescriptorPool(createInfo);
+	}
+
+	static DescriptorSets allocateDescriptorSets(	const Vulkan& vulkan,
+													vk::DescriptorPool pool )
+	{
+		std::array<vk::DescriptorSetLayout, DESCRIPTOR_COUNT> layouts;
+		for(size_t i = 0; i < layouts.size(); i++){
+			const auto filter = static_cast<vk::Filter>(i);
+			layouts[i] = getDescriptorSetLayout(vulkan, filter);
+		}
+
+		const vk::DescriptorSetAllocateInfo allocInfo(
+			pool,													//Pool
+			layouts.size(), layouts.data()							//Layouts
+		);
+
+		DescriptorSets descriptorSets;
+		static_assert(descriptorSets.size() == layouts.size());
+		const auto result = vulkan.getDevice().allocateDescriptorSets(&allocInfo, descriptorSets.data(), vulkan.getDispatcher());
+
+		if(result != vk::Result::eSuccess){
+			throw Exception("Error allocating descriptor sets");
+		}
+
+		return descriptorSets;
+	}
+};
+
+
 Frame::Frame(	const Vulkan& vulkan,
 				Math::Vec2f size,
-				Utils::BufferView<const Image::PlaneDescriptor> planes,
-				const std::shared_ptr<const Buffer>& colorTransfer )
-	: m_vulkan(vulkan)
-	, m_size(size)
-	, m_image(createImage(m_vulkan, planes))
-	, m_colorTransfer(colorTransfer)
-	, m_descriptorPool(createDescriptorPool(m_vulkan))
-	, m_descriptorSets(allocateDescriptorSets(m_vulkan, *m_descriptorPool))
-	, m_readyFence(m_vulkan.createFence(true))
+				const std::shared_ptr<const Buffer>& colorTransfer,
+				Utils::BufferView<const PlaneDescriptor> planes,
+				vk::ImageUsageFlags usage )
+	: m_impl(vulkan, size, colorTransfer, planes, usage)
 {
-	writeDescriptorSets();
 }
+
+Frame::Frame(Frame&& other) = default;
+
+Frame::~Frame() = default;
+
+Frame& Frame::operator=(Frame&& other) = default;
+
 
 
 void Frame::bind( 	vk::CommandBuffer cmd,
@@ -27,45 +308,95 @@ void Frame::bind( 	vk::CommandBuffer cmd,
 					uint32_t index,
 					vk::Filter filter ) const
 {
-	const auto& descriptorSet = m_descriptorSets[static_cast<size_t>(filter)];
-
-	cmd.bindDescriptorSets(
-		vk::PipelineBindPoint::eGraphics,	//Pipeline bind point
-		layout,								//Pipeline layout
-		index,								//First index
-		descriptorSet,						//Descriptor sets
-		{},									//Dynamic offsets
-		m_vulkan.getDispatcher()
-	);
-}
-
-
-const Math::Vec2f& Frame::getSize() const {
-	return m_size;
-}
-
-const Image& Frame::getImage() const {
-	return m_image;
-}
-
-const Buffer& Frame::getColorTransfer() const {
-	return *m_colorTransfer;
-}
-
-const vk::Fence& Frame::getReadyFence() const {
-	return *m_readyFence;
+	m_impl->bind(cmd, layout, index, filter);
 }
 
 
 
-Math::Vec2f Frame::getFrameSize(Resolution resolution, AspectRatio par) {
+void Frame::addDependecy(vk::Fence fence) {
+	m_impl->addDependecy(fence);
+}
+
+void Frame::waitDependecies(uint64_t timeo) const {
+	m_impl->waitDependecies(timeo);
+}
+
+
+const Vulkan& Frame::getVulkan() const { 
+	return m_impl->getVulkan();
+}
+
+const Math::Vec2f& Frame::getSize() const{
+	return m_impl->getSize();
+}
+
+
+const std::vector<vk::UniqueImage>& Frame::getImages() const {
+	return m_impl->getImages();
+}
+
+const std::vector<vk::UniqueImageView>& Frame::getImageViews() const {
+	return m_impl->getImageViews();
+}
+
+const std::vector<Utils::Area>& Frame::getPlaneAreas() const {
+	return m_impl->getPlaneAreas();
+}
+
+const vk::DeviceMemory& Frame::getMemory() const {
+	return m_impl->getMemory();
+}
+
+
+
+Math::Vec2f Frame::calculateSize(Resolution res, AspectRatio par) {
 	return Math::Vec2f(
-		static_cast<float>(par) * resolution.x,
-		static_cast<float>(resolution.y)
+		static_cast<float>(par) * res.x,
+		static_cast<float>(res.y)
 	);
 }
 
+std::shared_ptr<Buffer> Frame::createColorTransferBuffer(	const Vulkan& vulkan,
+																const ColorTransfer& colorTransfer )
+{
+	constexpr vk::BufferUsageFlags usage =
+		vk::BufferUsageFlagBits::eUniformBuffer;
 
+	auto result = std::make_unique<StagedBuffer>(vulkan, colorTransfer.size(), usage);
+
+	//Copy the data onto it
+	std::memcpy(result->data(), colorTransfer.data(), colorTransfer.size());
+	result->flushData(vulkan, vulkan.getGraphicsQueueIndex(), vk::PipelineStageFlagBits::eAllGraphics);
+
+	return std::move(result); //Move it so that count does not increment when casting.
+}
+
+std::vector<Frame::PlaneDescriptor> Frame::getPlaneDescriptors(	Resolution resolution,
+																ColorSubsampling subsampling,
+																ColorFormat format )
+{
+	const auto planeCount = getPlaneCount(format);
+	std::vector<PlaneDescriptor> result;
+	result.reserve(planeCount);
+
+	const auto formats = toVulkan(format);
+	const auto extent = toVulkan(resolution);
+	const auto subsampledExtent = toVulkan(getSubsampledResolution(subsampling, resolution));
+
+	assert(planeCount <= formats.size());
+
+	for(size_t i = 0; i < planeCount; i++) {
+		result.push_back(
+			PlaneDescriptor {
+				(i == 0) ? extent : subsampledExtent,
+				std::get<vk::Format>(formats[i]),
+				std::get<vk::ComponentMapping>(formats[i])
+			}
+		);
+	}
+
+	return result;
+}
 
 vk::DescriptorSetLayout	Frame::getDescriptorSetLayout(	const Vulkan& vulkan,
 														vk::Filter filter) {
@@ -132,452 +463,79 @@ vk::DescriptorSetLayout	Frame::getDescriptorSetLayout(	const Vulkan& vulkan,
 }
 
 
-
-Image Frame::createImage(	const Vulkan& vulkan,
-							Utils::BufferView<const Image::PlaneDescriptor> planes )
-{
-	constexpr vk::ImageUsageFlags usageFlags =
-		vk::ImageUsageFlagBits::eSampled |
-		vk::ImageUsageFlagBits::eTransferDst;
-
-	constexpr vk::MemoryPropertyFlags memoryFlags =
-		vk::MemoryPropertyFlagBits::eDeviceLocal;
-
-	return Image(
-		vulkan,
-		usageFlags,
-		memoryFlags,
-		planes
-	);
-}
-
-vk::UniqueDescriptorPool Frame::createDescriptorPool(const Vulkan& vulkan){
-	//A descriptor pool is created, from which 2 descriptor sets, each one with 
-	//one combined image sampler and one uniform buffer. Threrefore, 2 descriptors
-	//of each type will be required.
-	const std::array poolSizes = {
-		vk::DescriptorPoolSize(
-			vk::DescriptorType::eCombinedImageSampler,			//Descriptor type
-			DESCRIPTOR_COUNT * ColorTransfer::getSamplerCount()	//Descriptor count
-		),
-		vk::DescriptorPoolSize(
-			vk::DescriptorType::eUniformBuffer,					//Descriptor type
-			DESCRIPTOR_COUNT									//Descriptor count
-		)
-	};
-
-	const vk::DescriptorPoolCreateInfo createInfo(
-		{},														//Flags
-		DESCRIPTOR_COUNT,										//Descriptor set count
-		poolSizes.size(), poolSizes.data()						//Pool sizes
-	);
-
-	return vulkan.createDescriptorPool(createInfo);
-}
-
-Frame::DescriptorSets Frame::allocateDescriptorSets(const Vulkan& vulkan,
-													vk::DescriptorPool pool )
-{
-	std::array<vk::DescriptorSetLayout, DESCRIPTOR_COUNT> layouts;
-	for(size_t i = 0; i < layouts.size(); i++){
-		const auto filter = static_cast<vk::Filter>(i);
-		layouts[i] = getDescriptorSetLayout(vulkan, filter);
-	}
-
-	const vk::DescriptorSetAllocateInfo allocInfo(
-		pool,													//Pool
-		layouts.size(), layouts.data()							//Layouts
-	);
-
-	DescriptorSets descriptorSets;
-	static_assert(descriptorSets.size() == layouts.size());
-	const auto result = vulkan.getDevice().allocateDescriptorSets(&allocInfo, descriptorSets.data(), vulkan.getDispatcher());
-
-	if(result != vk::Result::eSuccess){
-		throw Exception("Error allocating descriptor sets");
-	}
-
-	return descriptorSets;
-}
-
-void Frame::writeDescriptorSets() {
-	for(size_t i = 0; i < m_descriptorSets.size(); i++){
-		//Update all images. As nullptr images can't be passed, repeat available images		
-		const auto& imageViews = m_image.getImageViews();
-		std::array<vk::DescriptorImageInfo, MAX_PLANE_COUNT> images;
-		for(size_t j = 0; j < images.size(); j++){
-			images[j] = vk::DescriptorImageInfo(
-				nullptr,												//Sampler
-				*(imageViews[j % imageViews.size()]),					//Image views
-				vk::ImageLayout::eShaderReadOnlyOptimal					//Layout
-			);
-		}
-
-		const std::array buffers = {
-			vk::DescriptorBufferInfo(
-				m_colorTransfer->getBuffer(),							//Buffer
-				0,														//Offset
-				ColorTransfer::size()									//Size
-			)
-		};
-
-		const std::array writeDescriptorSets ={
-			vk::WriteDescriptorSet( //Image descriptor
-				m_descriptorSets[i],									//Descriptor set
-				ColorTransfer::getSamplerBinding(),						//Binding
-				0, 														//Index
-				images.size(), 											//Descriptor count
-				vk::DescriptorType::eCombinedImageSampler,				//Descriptor type
-				images.data(), 											//Images
-				nullptr, 												//Buffers
-				nullptr													//Texel buffers
-			),
-			vk::WriteDescriptorSet( //Ubo descriptor set
-				m_descriptorSets[i],									//Descriptor set
-				ColorTransfer::getDataBinding(),						//Binding
-				0, 														//Index
-				buffers.size(),											//Descriptor count		
-				vk::DescriptorType::eUniformBuffer,						//Descriptor type
-				nullptr, 												//Images 
-				buffers.data(), 										//Buffers
-				nullptr													//Texel buffers
-			)
-		};
-
-		m_vulkan.getDevice().updateDescriptorSets(writeDescriptorSets, {}, m_vulkan.getDispatcher());
-	}
-}
-
-
-
 /*
  * Frame::Geometry
  */
 
-Frame::Geometry::Geometry(	const Vulkan& vulkan, 
-							uint32_t binding, 
-							Math::Vec2f  targetSize )
-	: m_vulkan(vulkan)
-	, m_binding(binding)
-	, m_scalingMode(ScalingMode::BOXED)
+Frame::Geometry::Geometry(	std::byte* data,
+							size_t stride,
+							size_t positionOffset,
+							size_t texCoordOffset,
+							ScalingMode scaling,
+							Math::Vec2f targetSize )
+	: m_data(data)
+	, m_stride(stride)
+	, m_positionOffset(positionOffset)
+	, m_texCoordOffset(texCoordOffset)
+	, m_scalingMode(scaling)
 	, m_targetSize(targetSize)
-	, m_vertexBuffer(createVertexBuffer(m_vulkan))
-	, m_stagingBuffer(createStagingBuffer(m_vulkan))
-	, m_vertices(mapStagingBuffer(m_vulkan, m_stagingBuffer))
-	, m_commandPool(createCommandPool(m_vulkan))
-	, m_uploadCommand(createCommandBuffer(
-		m_vulkan,
-		*m_commandPool,
-		m_stagingBuffer,
-		m_vertexBuffer ))
-	, m_uploadCommandSubmit(createSubmitInfo(m_uploadCommand))
-	, m_uploadComplete(vulkan.createFence(true))
+	, m_sourceSize(0.0f)
 {
 }
 
-
 void Frame::Geometry::setScalingMode(ScalingMode scaling) {
-	if(scaling != m_scalingMode) {
-		m_scalingMode = scaling;
-		m_sourceSize = Math::Vec2f(0.0f); //So that it gets recalculated
-	}
-}	
+	m_scalingMode = scaling;
+	m_sourceSize = Math::Vec2f(0.0f); //So that it gets recalculated
+}
 
-Frame::Geometry::ScalingMode Frame::Geometry::getScalingMode() const {
+ScalingMode Frame::Geometry::getScalingMode() const {
 	return m_scalingMode;
 }
 
 
 void Frame::Geometry::setTargetSize(Math::Vec2f size) {
-	if(size != m_targetSize) {
-		m_targetSize = size;
-		m_sourceSize = Math::Vec2f(0.0f); //So that it gets recalculated
-	}
+	m_targetSize = size;
+	m_sourceSize = Math::Vec2f(0.0f); //So that it gets recalculated
 }
+
 const Math::Vec2f& Frame::Geometry::getTargetSize() const {
 	return m_targetSize;
 }
 
 
-void Frame::Geometry::setSourceSize(Math::Vec2f size) {
-	if(size != m_sourceSize) {
-		m_sourceSize = size;
-		updateVertexBuffer(); //Recalculate the vertices
+bool Frame::Geometry::useFrame(const Frame& frame) {
+	if(m_sourceSize != frame.getSize()) {
+		m_sourceSize = frame.getSize();
+		updateBuffer();
+		return true;
+	} else {
+		return false;
 	}
 }
 
-const Math::Vec2f& Frame::Geometry::getSourceSize() const {
-	return m_sourceSize;
-}
-
-
-vk::VertexInputBindingDescription Frame::Geometry::getBindingDescription() const{
-	return vk::VertexInputBindingDescription(
-		m_binding,
-		sizeof(Vertex),
-		vk::VertexInputRate::eVertex
-	);
-}
-
-std::array<vk::VertexInputAttributeDescription, Frame::Geometry::ATTRIBUTE_COUNT> Frame::Geometry::getAttributeDescriptions(uint32_t posLocation, 
-																															uint32_t texLocation ) const
-{
-	return{
-		vk::VertexInputAttributeDescription(
-			posLocation,
-			m_binding,
-			vk::Format::eR32G32Sfloat,
-			offsetof(Vertex, position)
-		),
-		vk::VertexInputAttributeDescription(
-			texLocation,
-			m_binding,
-			vk::Format::eR32G32Sfloat,
-			offsetof(Vertex, texCoord)
-		)
-	};
-}
-
-
-void Frame::Geometry::useFrame(const Frame& frame) {
-	setSourceSize(frame.getSize());
-}
-
-void Frame::Geometry::bind(vk::CommandBuffer cmd) const {
-	cmd.bindVertexBuffers(
-		m_binding,									//Binding
-		m_vertexBuffer.getBuffer(),					//Vertex buffers
-		0UL,										//Offsets
-		m_vulkan.getDispatcher()					//Dispathcer
-	);
-}
-
-
-
-void Frame::Geometry::updateVertexBuffer() {
-	auto scale = m_targetSize / m_sourceSize; 
-
-	switch(m_scalingMode){
-	case ScalingMode::BOXED:
-		scale = Math::Vec2f(std::min(scale.x, scale.y));
-		break;
-	case ScalingMode::CROPPED:
-		scale = Math::Vec2f(std::max(scale.x, scale.y));
-		break;
-	case ScalingMode::CLAMP_HORIZONTALLY:
-		scale = Math::Vec2f(scale.x);
-		break;
-	case ScalingMode::CLAMP_VERTICALLY:
-		scale = Math::Vec2f(scale.y);
-		break;
-	default: //ScalingMode::STRETCH
-		break;
-	}
-
+void Frame::Geometry::updateBuffer() { 
 	//Scale accordingly and clamp its value
-	auto recSize = m_sourceSize * scale;
+	auto recSize = scale(m_sourceSize, m_targetSize, m_scalingMode);
 	auto texSize = m_targetSize / recSize;
-	recSize = glm::clamp(recSize, Math::Vec2f(0.0f), m_targetSize);
-	texSize = glm::clamp(texSize, Math::Vec2f(0.0f), Math::Vec2f(1.0f));
+	recSize = Math::clamp(recSize, Math::Vec2f(0.0f), m_targetSize);
+	texSize = Math::clamp(texSize, Math::Vec2f(0.0f), Math::Vec2f(1.0f));
 
-	constexpr std::array<Math::Vec2f, VERTEX_COUNT> vertexPositions = {
+	constexpr std::array vertexPositions {
 		Math::Vec2f(-1.0f, -1.0f),
 		Math::Vec2f(-1.0f, +1.0f),
 		Math::Vec2f(+1.0f, -1.0f),
 		Math::Vec2f(+1.0f, +1.0f),
 	};
 
-	m_vulkan.waitForFences(*m_uploadComplete);
-	for(size_t i = 0; i < vertexPositions.size(); i++){
-		m_vertices[i] = Vertex{
-			recSize * vertexPositions[i],
-			texSize * vertexPositions[i] / 2.0f + Math::Vec2f(0.5f)
-		};
+	static_assert(vertexPositions.size() == VERTEX_COUNT, "Vertex count does not match");
+
+	for(size_t i = 0; i < vertexPositions.size(); i++) {
+		auto& position = *(reinterpret_cast<Math::Vec2f*>(m_data + (i * m_stride) + m_positionOffset));
+		auto& texCoord = *(reinterpret_cast<Math::Vec2f*>(m_data + (i * m_stride) + m_texCoordOffset));
+
+		position = recSize * vertexPositions[i];
+		texCoord = texSize * vertexPositions[i] / 2.0f + Math::Vec2f(0.5f);
 	}
-
-	//Flush it
-	const vk::MappedMemoryRange range(
-		m_stagingBuffer.getDeviceMemory(),
-		0, VK_WHOLE_SIZE
-	);
-	m_vulkan.flushMappedMemory(range);
-
-	m_vulkan.resetFences(*m_uploadComplete);
-	m_vulkan.getTransferQueue().submit(
-		m_uploadCommandSubmit,
-		*m_uploadComplete,
-		m_vulkan.getDispatcher()
-	);
-}
-
-
-
-Buffer Frame::Geometry::createVertexBuffer(const Vulkan& vulkan) {
-	constexpr vk::BufferUsageFlags usageFlags =
-		vk::BufferUsageFlagBits::eTransferDst |
-		vk::BufferUsageFlagBits::eVertexBuffer;
-
-	constexpr vk::MemoryPropertyFlags memoryFlags =
-		vk::MemoryPropertyFlagBits::eDeviceLocal;
-
-	return Buffer(
-		vulkan,
-		usageFlags,
-		memoryFlags,
-		BUFFER_SIZE
-	);
-}
-
-Buffer Frame::Geometry::createStagingBuffer(const Vulkan& vulkan) {
-	constexpr vk::BufferUsageFlags usageFlags =
-		vk::BufferUsageFlagBits::eTransferSrc;
-
-	constexpr vk::MemoryPropertyFlags memoryFlags =
-		vk::MemoryPropertyFlagBits::eHostVisible;
-
-	return Buffer(
-		vulkan,
-		usageFlags,
-		memoryFlags,
-		BUFFER_SIZE
-	);
-}
-
-Utils::BufferView<Frame::Geometry::Vertex> Frame::Geometry::mapStagingBuffer(	const Vulkan& vulkan, 
-																				const Buffer& stagingBuffer )
-{
-	//Map its memory
-	const vk::MappedMemoryRange range(
-		stagingBuffer.getDeviceMemory(),
-		0, VK_WHOLE_SIZE
-	);
-	auto* data = vulkan.mapMemory(range);
-
-	return Utils::BufferView<Vertex>( 
-		reinterpret_cast<Vertex*>(data), 
-		VERTEX_COUNT 
-	);
-}
-
-vk::UniqueCommandPool Frame::Geometry::createCommandPool(const Vulkan& vulkan) {
-	const vk::CommandPoolCreateInfo createInfo(
-		{},													//Flags
-		vulkan.getTransferQueueIndex()						//Queue index
-	);
-
-	return vulkan.createCommandPool(createInfo);
-}
-
-vk::CommandBuffer Frame::Geometry::createCommandBuffer(	const Vulkan& vulkan,
-														vk::CommandPool cmdPool,
-														const Buffer& stagingBuffer,
-														const Buffer& vertexBuffer )
-{
-	const vk::CommandBufferAllocateInfo cbAllocInfo(
-		cmdPool,
-		vk::CommandBufferLevel::ePrimary,
-		1
-	);
-
-	auto cmdBuffers = vulkan.allocateCommnadBuffers(cbAllocInfo);
-	auto& cmdBuffer = *(cmdBuffers[0]);
-
-	//Record the command buffer
-	const vk::CommandBufferBeginInfo cbBeginInfo(
-		{},
-		nullptr
-	);
-
-	cmdBuffer.begin(cbBeginInfo, vulkan.getDispatcher()); 
-	{
-		const bool queueOwnershipTransfer = vulkan.getTransferQueueIndex() != vulkan.getGraphicsQueueIndex();
-
-		{
-			//Insert a memory barrier to acquire buffer's ownership
-			const auto srcFamily = VK_QUEUE_FAMILY_IGNORED;
-			const auto dstFamily = queueOwnershipTransfer ? vulkan.getGraphicsQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
-			constexpr vk::AccessFlags srcAccess = {};
-			constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eTransferWrite;
-
-			const vk::BufferMemoryBarrier memoryBarrier(
-				srcAccess,						//Old access mask
-				dstAccess,						//New access mask
-				srcFamily,						//Old queue family
-				dstFamily, 						//New queue family
-				vertexBuffer.getBuffer(),		//Buffer
-				0, VK_WHOLE_SIZE				//Range
-			);
-
-			constexpr vk::PipelineStageFlags sourceStages = 
-				vk::PipelineStageFlagBits::eTopOfPipe;
-
-			constexpr vk::PipelineStageFlags destinationStages = 
-				vk::PipelineStageFlagBits::eTransfer;
-			
-			cmdBuffer.pipelineBarrier(
-				sourceStages,					//Generating stages
-				destinationStages,				//Consuming stages
-				{},								//dependency flags
-				{},								//Memory barriers
-				memoryBarrier,					//Buffer memory barriers
-				{},								//Image memory barriers
-				vulkan.getDispatcher()
-			);
-		}
-
-		//Copy the data into the vertex buffer
-		cmdBuffer.copyBuffer(
-			stagingBuffer.getBuffer(),
-			vertexBuffer.getBuffer(),
-			vk::BufferCopy(0, 0, BUFFER_SIZE),
-			vulkan.getDispatcher()
-		);
-
-		//Insert a memory barrier, so that changes are visible
-		{
-			const auto srcFamily = queueOwnershipTransfer ? vulkan.getTransferQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
-			const auto dstFamily = queueOwnershipTransfer ? vulkan.getGraphicsQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
-			constexpr vk::AccessFlags srcAccess = vk::AccessFlagBits::eTransferWrite;
-			constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eVertexAttributeRead;
-
-			const vk::BufferMemoryBarrier memoryBarrier(
-				srcAccess,						//Old access mask
-				dstAccess,						//New access mask
-				srcFamily,						//Old queue family
-				dstFamily, 						//New queue family
-				vertexBuffer.getBuffer(),		//Buffer
-				0, VK_WHOLE_SIZE				//Range
-			);
-
-			constexpr vk::PipelineStageFlags sourceStages = 
-				vk::PipelineStageFlagBits::eTransfer;
-
-			constexpr vk::PipelineStageFlags destinationStages = 
-				vk::PipelineStageFlagBits::eAllGraphics;
-			
-			cmdBuffer.pipelineBarrier(
-				sourceStages,					//Generating stages
-				destinationStages,				//Consuming stages
-				{},								//dependency flags
-				{},								//Memory barriers
-				memoryBarrier,					//Buffer memory barriers
-				{},								//Image memory barriers
-				vulkan.getDispatcher()
-			);
-		}
-	}
-	cmdBuffer.end(vulkan.getDispatcher());
-
-	return cmdBuffers[0].release();
-}
-
-vk::SubmitInfo Frame::Geometry::createSubmitInfo(const vk::CommandBuffer& cmdBuffer){
-	return vk::SubmitInfo(
-		0, nullptr,							//Wait semaphores
-		nullptr,							//Pipeline stages
-		1, &cmdBuffer,						//Command buffers
-		0, nullptr							//Signal semaphores
-	);
 }
 
 }

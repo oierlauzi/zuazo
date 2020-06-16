@@ -38,25 +38,24 @@ using Vec3u = Vec<glm::u32, 3>;
 using Vec4u = Vec<glm::u32, 4>;
 
 
+template<typename T, int dim>
+constexpr Math::Vec<T, dim> min(const Math::Vec<T, dim>& a, const Math::Vec<T, dim>& b);
+
+template<typename T, int dim>
+constexpr Math::Vec<T, dim> max(const Math::Vec<T, dim>& a, const Math::Vec<T, dim>& b);
+
+template<typename T, int dim>
+constexpr Math::Vec<T, dim> clamp(const Math::Vec<T, dim>& val, const Math::Vec<T, dim>& lo, const Math::Vec<T, dim>& hi);
+
+template<typename T, int dim, typename Q>
+constexpr Math::Vec<T, dim> lerp(const Math::Vec<T, dim>& a, const Math::Vec<T, dim>& b, const Q& r);
+
 }
 
 namespace Zuazo {
 
 template<typename T, intmax_t dim>
 std::string	toString(const T& a);
-
-}
-
-namespace Zuazo::Utils {
-
-template<typename T, intmax_t dim>
-Math::Vec<T, dim> min(const Math::Vec<T, dim>& a, const Math::Vec<T, dim>& b);
-
-template<typename T, intmax_t dim>
-Math::Vec<T, dim> max(const Math::Vec<T, dim>& a, const Math::Vec<T, dim>& b);
-
-template<typename T, intmax_t dim>
-Math::Vec<T, dim> clamp(const Math::Vec<T, dim>& val, const Math::Vec<T, dim>& lo, const Math::Vec<T, dim>& hi);
 
 }
 

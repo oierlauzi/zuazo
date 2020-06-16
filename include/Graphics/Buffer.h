@@ -15,7 +15,7 @@ public:
 			size_t size );
 	Buffer(const Buffer& other) = delete;
 	Buffer(Buffer&& other) = default;
-	~Buffer() = default;
+	virtual ~Buffer() = default;
 
 	Buffer& 						operator=(const Buffer& other) = delete;
 	Buffer& 						operator=(Buffer&& other) = default;

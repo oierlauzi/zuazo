@@ -5,6 +5,8 @@
 #include <string>
 #include <variant>
 #include <type_traits>
+#include <array>
+#include <bitset>
 
 namespace Zuazo::Utils {
 
@@ -42,12 +44,11 @@ public:
 	using Compatibility = std::tuple<Limit<Types>...>;
 	using Compatibilities = std::vector<Compatibility>;
 
-	template<typename T>
-	using ResultArray = std::array<T, sizeof...(Types)>;
+	using Validation = std::bitset<sizeof...(Types)>;
 
 	constexpr Configuration() = default;
 	template <typename... T>
-	constexpr Configuration(T&&... params);
+	constexpr explicit Configuration(T&&... params);
 	constexpr Configuration(const Configuration& other) = default;
 	constexpr Configuration(Configuration&& other) = default;
 	~Configuration() = default;
@@ -61,6 +62,8 @@ public:
 	constexpr int					operator<=(const Configuration& other) const;
 	constexpr int					operator>(const Configuration& other) const;
 	constexpr int					operator>=(const Configuration& other) const;
+
+	constexpr						operator bool() const;
 
 	template <Parameters param, typename T>
 	constexpr void					set(T&& val);
@@ -82,8 +85,10 @@ public:
 	static constexpr bool 			validate(const T& value, None<T> limit);
 	template <typename T>
 	static constexpr bool 			validate(const T& value, const Limit<T>& limit);
-	static constexpr ResultArray<bool>	validate(	const Configuration& conf,
+	static constexpr Validation		validate(	const Configuration& conf,
 													const Compatibility& comp);
+	static constexpr Validation		validate(	const Configuration& conf,
+												const Compatibilities& comp);
 
 
 	template <typename T>

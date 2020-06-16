@@ -11,6 +11,7 @@
 #include <functional>
 #include <vector>
 #include <limits>
+#include <memory>
 
 
 namespace Zuazo {
@@ -73,11 +74,11 @@ public:
 	const FormatSupport& 		getFormatSupport() const;
 	const ResolutionSupport&	getResolutionSupport() const;
 
-	void						addRegularCallback(const ScheduledCallback& cbk, Priority prior);
-	void						removeRegularCallback(const ScheduledCallback& cbk);
+	void						addRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior);
+	void						removeRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk);
 
-	void						addPeriodicCallback(const ScheduledCallback& cbk, Priority prior, Timing::Duration period);
-	void						removePeriodicCallback(const ScheduledCallback& cbk);
+	void						addPeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior, Timing::Duration period);
+	void						removePeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk);
 
 	Timing::TimePoint			getTime() const;
 	Timing::TimePoint			getEpoch() const;

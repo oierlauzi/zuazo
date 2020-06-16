@@ -73,18 +73,6 @@ struct Vulkan::Impl {
 	mutable std::vector<vk::Semaphore>				presentSemaphores;
 
 	/*
-	 * Staged upload
-	 */
-
-	using StagingBuffer = std::tuple<vk::UniqueBuffer, vk::UniqueDeviceMemory>;
-
-	mutable StagingBuffer							stagingBuffer;
-	mutable Utils::BufferView<std::byte>			stagingBufferData;
-	mutable vk::UniqueFence							stagingComplete;
-	mutable vk::UniqueCommandPool					stagingCommandPool;
-	mutable vk::CommandBuffer						stagingCommandBuffer;
-
-	/*
 	 * Methods
 	 */
 	Impl(	std::string_view appName, 
@@ -376,7 +364,7 @@ struct Vulkan::Impl {
 		AggregatedAllocation result;
 		vk::MemoryRequirements combinedRequirements(0, 1, ~(0U)); //Size, aligment, flags
 
-		result.offsets.reserve(requirements.size());
+		result.areas.reserve(requirements.size());
 
 		//Combine all fields and evaluate offsets
 		for(size_t i = 0; i < requirements.size(); i++){
@@ -384,7 +372,7 @@ struct Vulkan::Impl {
 			combinedRequirements.size = Utils::align(combinedRequirements.size, requirements[i].alignment);
 
 			//Previous size will be the new offset
-			result.offsets.emplace_back(combinedRequirements.size, requirements[i].size);
+			result.areas.emplace_back(combinedRequirements.size, requirements[i].size);
 
 			combinedRequirements.size += requirements[i].size; //Increment the size
 			combinedRequirements.memoryTypeBits &= requirements[i].memoryTypeBits; //Restrict the flags
@@ -448,6 +436,25 @@ struct Vulkan::Impl {
 		flushMappedMemory(vk::MappedMemoryRange(memory, off, size));
 	}
 
+
+
+	void updateDescriptorSets(	Utils::BufferView<const vk::WriteDescriptorSet> write,
+								Utils::BufferView<const vk::CopyDescriptorSet> copy ) const
+	{
+		device->updateDescriptorSets(
+			toVulkan(write),
+			toVulkan(copy),
+			dispatcher
+		);
+	}
+
+	void updateDescriptorSets(Utils::BufferView<const vk::WriteDescriptorSet> write) const {
+		updateDescriptorSets(write, {});
+	}
+
+	void updateDescriptorSets(Utils::BufferView<const vk::CopyDescriptorSet> copy) const {
+		updateDescriptorSets({}, copy);
+	}
 
 
 
@@ -545,165 +552,6 @@ struct Vulkan::Impl {
 			assert(presentIndices.size() == 0);
 		}
 	}
-
-
-
-	void stagedUpload(	vk::Buffer buffer,
-						size_t off,
-						Utils::BufferView<const std::byte> data,
-						uint32_t queueIndex,
-						vk::PipelineStageFlags dstStages ) const
-	{
-		//Check if the fence exists
-		if(stagingComplete) {
-			waitForFences(*stagingComplete, false, NO_TIMEOUT);
-			resetFences(*stagingComplete);
-		} else {
-			stagingComplete = createFence(false);
-		}
-
-		//Check if the buffer has enough size
-		if(stagingBufferData.size() < data.size()){
-			//Create the buffer
-			constexpr vk::BufferUsageFlags usageFlags =
-				vk::BufferUsageFlagBits::eTransferSrc;
-
-			const vk::BufferCreateInfo createInfo(
-				{},										//Flags
-				data.size(),							//Size
-				usageFlags,								//Buffer usage
-				vk::SharingMode::eExclusive,			//Sharing mode
-				0, nullptr								//Queue family indices
-			);
-
-			auto buffer = createBuffer(createInfo);
-
-
-			//Allocate the buffer
-			constexpr vk::MemoryPropertyFlags memoryFlags =
-				vk::MemoryPropertyFlagBits::eHostVisible;
-
-			const auto requirements = getMemoryRequirements(*buffer);
-
-			auto deviceMemory = allocateMemory(requirements, memoryFlags);
-
-			//Bind them
-			bindMemory(*buffer, *deviceMemory, 0);
-
-			stagingBuffer = { 
-				std::move(buffer), 
-				std::move(deviceMemory) 
-			};
-
-			//Map it
-			stagingBufferData = { 
-				mapMemory(*std::get<vk::UniqueDeviceMemory>(stagingBuffer), 0, VK_WHOLE_SIZE),
-				data.size() 
-			};
-		}
-
-
-		//Copy to the staging buffer
-		std::memcpy(
-			stagingBufferData.data(),
-			data.data(),
-			data.size()
-		);
-		flushMappedMemory(*std::get<vk::UniqueDeviceMemory>(stagingBuffer), 0, VK_WHOLE_SIZE);
-
-
-		//Check if the command buffer exists
-		if(!stagingCommandPool) {
-			//Create the command pool
-			constexpr vk::CommandPoolCreateFlags createFlags = 
-				vk::CommandPoolCreateFlagBits::eTransient;
-
-			const vk::CommandPoolCreateInfo createInfo(
-				createFlags,										//Flags
-				getTransferQueueIndex()								//Queue index
-			);
-
-			stagingCommandPool = createCommandPool(createInfo);
-
-			//Allocate a command buffer from it
-			const vk::CommandBufferAllocateInfo allocInfo(
-				*stagingCommandPool,
-				vk::CommandBufferLevel::ePrimary,
-				1
-			);
-
-			stagingCommandBuffer = allocateCommnadBuffer(allocInfo).release();
-		} else {
-			//Reset it in order to be able to record to de command buffer
-			resetCommandPool(*stagingCommandPool, {});
-		}
-
-
-		//Record the command buffer
-		constexpr vk::CommandBufferUsageFlags cmdBufferUsage =
-			vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
-			
-		constexpr vk::CommandBufferBeginInfo cmdBufferBeginInfo(
-			cmdBufferUsage,
-			nullptr
-		);
-
-		begin(stagingCommandBuffer, cmdBufferBeginInfo);
-		{
-			stagingCommandBuffer.copyBuffer(
-				*std::get<vk::UniqueBuffer>(stagingBuffer),
-				buffer,
-				vk::BufferCopy(0, off, data.size()),
-				dispatcher
-			);
-			
-			//Insert a memory barrier
-			const bool queueOwnershipTransfer = getTransferQueueIndex() != queueIndex;
-			const auto srcFamily = queueOwnershipTransfer ? getTransferQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
-			const auto dstFamily = queueOwnershipTransfer ? queueIndex : VK_QUEUE_FAMILY_IGNORED;
-			constexpr vk::AccessFlags srcAccess = vk::AccessFlagBits::eTransferWrite;
-			constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eMemoryRead;
-
-			const vk::BufferMemoryBarrier memoryBarrier(
-				srcAccess,						//Old access mask
-				dstAccess,						//New access mask
-				srcFamily,						//Old queue family
-				dstFamily, 						//New queue family
-				buffer,							//Buffer
-				0, VK_WHOLE_SIZE				//Range
-			);
-
-			constexpr vk::PipelineStageFlags srcStages = 
-				vk::PipelineStageFlagBits::eTransfer;
-			
-			stagingCommandBuffer.pipelineBarrier(
-				srcStages,						//Generating stages
-				dstStages,						//Consuming stages
-				{},								//dependency flags
-				{},								//Memory barriers
-				memoryBarrier,					//Buffer memory barriers
-				{},								//Image memory barriers
-				dispatcher
-			);
-		}
-		end(stagingCommandBuffer);
-
-		//Submit the command buffer
-		const vk::SubmitInfo submitInfo(
-			0, nullptr,							//Wait semaphores
-			nullptr,							//Pipeline stages
-			1, &stagingCommandBuffer,			//Command buffers
-			0, nullptr							//Signal semaphores
-		);
-
-		submit(
-			getTransferQueue(),
-			submitInfo,
-			*stagingComplete
-		);
-	}
-
-
 
 
 private:
@@ -1381,6 +1229,22 @@ void Vulkan::flushMappedMemory(	vk::DeviceMemory memory,
 
 
 
+void Vulkan::updateDescriptorSets(	Utils::BufferView<const vk::WriteDescriptorSet> write,
+									Utils::BufferView<const vk::CopyDescriptorSet> copy ) const
+{
+	m_impl->updateDescriptorSets(write, copy);
+}
+
+void Vulkan::updateDescriptorSets(Utils::BufferView<const vk::WriteDescriptorSet> write) const {
+	m_impl->updateDescriptorSets(write);
+}
+
+void Vulkan::updateDescriptorSets(Utils::BufferView<const vk::CopyDescriptorSet> copy) const {
+	m_impl->updateDescriptorSets(copy);
+}
+
+
+
 void Vulkan::waitIdle() const {
 	m_impl->waitIdle();
 }
@@ -1427,17 +1291,6 @@ void Vulkan::present(	vk::SwapchainKHR swapchain,
 
 void Vulkan::presentAll() const {
 	m_impl->presentAll();
-}
-
-
-
-void Vulkan::stagedUpload(	vk::Buffer buffer,
-							size_t off,
-							Utils::BufferView<const std::byte> data,
-							uint32_t queueIndex,
-							vk::PipelineStageFlags dstStages ) const
-{
-	m_impl->stagedUpload(buffer, off, data, queueIndex, dstStages);
 }
 
 }

@@ -17,26 +17,6 @@ constexpr T align(T ptr, Q alignment);
 
 
 
-template<typename T>
-constexpr const T& min(const T& a, const T& b);
-
-template<typename T>
-constexpr T min(std::initializer_list<T> ilist);
-
-template<typename T>
-constexpr const T& max(const T& a, const T& b);
-
-template<typename T>
-constexpr T max(std::initializer_list<T> ilist);
-
-template<typename T>
-constexpr const T& clamp(const T& val, const T& min, const T& max);
-
-template<typename T>
-constexpr bool isInRange(const T& val, const T& min, const T& max);
-
-
-
 template<typename Func, typename Tuple1, typename... Tuplen>
 constexpr auto elementwiseOperation(Func&& op, Tuple1&& first, Tuplen&&... rest);
 

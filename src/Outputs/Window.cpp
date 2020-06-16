@@ -6,7 +6,7 @@
 #include <Graphics/Vulkan.h>
 #include <Graphics/VulkanConversions.h>
 #include <Graphics/ColorTransfer.h>
-#include <Graphics/Uploader.h>
+#include <Graphics/StagedBuffer.h>
 #include <Utils/StaticId.h>
 #include <Utils/Functions.h>
 
@@ -15,6 +15,8 @@
 #include <limits>
 #include <set>
 #include <mutex>
+#include <cassert>
+#include <bitset>
 
 namespace Zuazo::Outputs {
 
@@ -36,6 +38,11 @@ struct Window::Impl {
 		WINDOW_DESCRIPTOR_COUNT
 	};
 
+	struct Vertex {
+		Math::Vec2f position;
+		Math::Vec2f texCoord;
+	};
+
 	static constexpr uint32_t VERTEX_BUFFER_BINDING = 0;
 	static constexpr uint32_t VERTEX_POSITION = 0;
 	static constexpr uint32_t VERTEX_TEXCOORD = 1;
@@ -47,12 +54,14 @@ struct Window::Impl {
 
 	static inline const size_t UNIFORM_BUFFER_SIZE = VIEWPORT_UNIFORM_OFFSET + VIEWPORT_UNIFORM_SIZE;
 
+
 	struct Open {
 		Graphics::GLFW::Window						window;
 		vk::UniqueSurfaceKHR						surface;
 		vk::UniqueCommandPool						commandPool;
 		vk::CommandBuffer							commandBuffer;
-		Graphics::Buffer							uniformBuffer;
+		Graphics::StagedBuffer						vertexBuffer;
+		Graphics::StagedBuffer						uniformBuffer;
 		vk::UniqueDescriptorPool					descriptorPool;
 		vk::DescriptorSet							descriptorSet;
 		vk::UniqueSemaphore 						imageAvailableSemaphore;
@@ -79,12 +88,14 @@ struct Window::Impl {
 				std::string_view name,
 				vk::Format format,
 				vk::ColorSpaceKHR colorSpace,
-				vk::Filter filter,
-				Graphics::ColorTransfer&& colorTransfer ) 
+				Graphics::ColorTransfer&& colorTransfer,
+				vk::Filter scalingFilter,
+				ScalingMode scalingMode ) 
 			: window(size, name)
 			, surface(window.getSurface(vulkan))
 			, commandPool(createCommandPool(vulkan))
 			, commandBuffer(createCommandBuffer(vulkan, *commandPool))
+			, vertexBuffer(createVertexBuffer(vulkan))
 			, uniformBuffer(createUniformBuffer(vulkan))
 			, descriptorPool(createDescriptorPool(vulkan))
 			, descriptorSet(createDescriptorSet(vulkan, *descriptorPool))
@@ -96,15 +107,15 @@ struct Window::Impl {
 			, format(format)
 			, colorSpace(colorSpace)
 			, colorTransfer(std::move(colorTransfer))
-			, filter(filter)
-			, geometry(vulkan, VERTEX_BUFFER_BINDING, Math::Vec2f(extent.width, extent.height))
+			, filter(scalingFilter)
+			, geometry(createGeometry(vertexBuffer.data(), scalingMode, Math::Vec2f(extent.width, extent.height)))
 
 			, swapchain(createSwapchain(vulkan, *surface, extent, format, colorSpace, {}))
 			, swapchainImageViews(createImageViews(vulkan, *swapchain, format))
 			, renderPass(createRenderPass(vulkan, format))
 			, framebuffers(createFramebuffers(vulkan, *renderPass, swapchainImageViews, extent))
 			, pipelineLayout(createPipelineLayout(vulkan, filter))
-			, pipeline(createPipeline(vulkan, geometry, *renderPass, pipelineLayout, extent))
+			, pipeline(createPipeline(vulkan, *renderPass, pipelineLayout, extent))
 
 		{
 			writeDescriptorSets(vulkan);
@@ -119,29 +130,29 @@ struct Window::Impl {
 			swapchainImageViews = createImageViews(vulkan, *swapchain, format);
 			renderPass = createRenderPass(vulkan, format);
 			framebuffers = createFramebuffers(vulkan, *renderPass, swapchainImageViews, extent);
-			pipeline = createPipeline(vulkan, geometry, *renderPass, pipelineLayout, extent);
+			pipeline = createPipeline(vulkan, *renderPass, pipelineLayout, extent);
 		}
 
 		void recreatePipelineLayout(const Graphics::Vulkan& vulkan) {
 			pipelineLayout = createPipelineLayout(vulkan, filter);
-			pipeline = createPipeline(vulkan, geometry, *renderPass, pipelineLayout, extent);
+			pipeline = createPipeline(vulkan, *renderPass, pipelineLayout, extent);
 		}
 
 		void updateViewportUniform(const Graphics::Vulkan& vulkan) {
-			vulkan.stagedUpload(
-				uniformBuffer.getBuffer(),
+			uniformBuffer.flushData(
+				vulkan,
 				VIEWPORT_UNIFORM_OFFSET,
-				{ reinterpret_cast<const std::byte*>(&geometry.getTargetSize()), VIEWPORT_UNIFORM_SIZE },
+				VIEWPORT_UNIFORM_SIZE,
 				vulkan.getGraphicsQueueIndex(),
 				vk::PipelineStageFlagBits::eVertexShader
 			);
 		}
 
 		void updateColorTransferUniform(const Graphics::Vulkan& vulkan) {
-			vulkan.stagedUpload(
-				uniformBuffer.getBuffer(),
+			uniformBuffer.flushData(
+				vulkan,
 				COLOR_TRANSFER_UNIFORM_OFFSET,
-				{ colorTransfer.data(), colorTransfer.size() },
+				COLOR_TRANSFER_UNIFORM_SIZE,
 				vulkan.getGraphicsQueueIndex(),
 				vk::PipelineStageFlagBits::eFragmentShader
 			);
@@ -197,89 +208,40 @@ struct Window::Impl {
 
 	Instance&									instance;
 	const Signal::Input<Video>&					videoIn;
+
+	ScalingMode									scalingMode;
+	ScalingFilter								scalingFilter;
+	
 	std::unique_ptr<Open>						opened;
 
 	Impl(	Instance& instance,
 			const Signal::Input<Video>& videoIn )
 		: instance(instance)
 		, videoIn(videoIn)
+		, scalingMode(ScalingMode::BOXED)
+		, scalingFilter(ScalingFilter::NEAREST)
 	{
 	}
 	~Impl() = default;
 
-	void open(	const Graphics::Vulkan& vulkan, 
-				const VideoMode& videoMode, 
+	void open(	const VideoMode& videoMode, 
 				std::string_view name ) 
 	{
-		//Check pixel aspect ratio support
-		if(videoMode.get<VideoMode::Parameters::pixelAspectRatio>() != AspectRatio(1, 1)) {
-			throw Exception("Only 1:1 PAR is supported");
-		}
+		const auto& vulkan = instance.getVulkan();
 
-		//Check color model support
-		if(videoMode.get<VideoMode::Parameters::colorModel>() != ColorModel::RGB) {
-			throw Exception("Unsupported color model");
-		}
-
-		//Check color subsampling support
-		if(videoMode.get<VideoMode::Parameters::colorSubsampling>() != ColorSubsampling::NONE) {
-			throw Exception("Color subsampling is not supported");
-		}
-
-		//Check color format support
-		auto formats = Graphics::Image::getPlaneDescriptors(
-			videoMode.get<VideoMode::Parameters::resolution>(),
-			videoMode.get<VideoMode::Parameters::colorSubsampling>(),
-			videoMode.get<VideoMode::Parameters::colorFormat>()
-		);
-
-		if(formats.size() != 1) {
-			throw Exception("Multi planar formats are not supported");
-		}
-
-		auto& f = formats[0];
-		std::tie(f.format, f.swizzle) = Graphics::optimizeFormat(std::make_tuple(f.format, f.swizzle));
-		if(formats[0].swizzle != vk::ComponentMapping()) {
-			throw Exception("Swizzled formats are not supported");
-		}
-
-		const auto& supportedFormats = vulkan.getFormatSupport().framebuffer; //TODO particularize for this window
-		if( !std::binary_search(supportedFormats.cbegin(),
-								supportedFormats.cend(),
-								f.format )) 
-		{
-			throw Exception("Unsupported format");
-		}
-
-		//Check color range support
-		if(videoMode.get<VideoMode::Parameters::colorRange>() != ColorRange::FULL) {
-			throw Exception("Only full range color is supported");
-		} 
-
-		const auto colorSpace = Graphics::toVulkan(
-			videoMode.get<VideoMode::Parameters::colorPrimaries>(), 
-			videoMode.get<VideoMode::Parameters::colorTransferFunction>()
-		);
-
-		//Create the color transfer characteristics
-		Graphics::ColorTransfer colorTransfer(
-			videoMode.get<VideoMode::Parameters::colorFormat>(),
-			videoMode.get<VideoMode::Parameters::colorRange>(),
-			videoMode.get<VideoMode::Parameters::colorTransferFunction>(),
-			videoMode.get<VideoMode::Parameters::colorModel>(),
-			videoMode.get<VideoMode::Parameters::colorPrimaries>()
-		);
-		colorTransfer.optimize(formats, supportedFormats);
+		auto [size, format, colorSpace, colorTransfer] = convertParameters(vulkan, videoMode);
+		const auto filter = Graphics::toVulkan(scalingFilter);
 
 		//Try to open it
 		opened = std::make_unique<Impl::Open>(
 			vulkan,
-			videoMode.get<VideoMode::Parameters::resolution>(),
+			size,
 			name,
-			f.format,
+			format,
 			colorSpace,
-			vk::Filter::eNearest,
-			std::move(colorTransfer)
+			std::move(colorTransfer),
+			filter,
+			scalingMode
 		);
 
 		//Set the callback
@@ -290,6 +252,101 @@ struct Window::Impl {
 		opened->waitCompletion(instance.getVulkan());
 		opened.reset();
 	}
+
+	void setVideoMode(const VideoMode& videoMode) {
+		if(opened) {
+			enum {
+				RECREATE_SWAPCHAIN,
+				UPDATE_COLOR_TRANSFER,
+
+				MODIFICATION_COUNT
+			};
+
+			const auto& vulkan = instance.getVulkan();
+
+			std::bitset<MODIFICATION_COUNT> modifications;
+
+
+			auto [size, format, colorSpace, colorTransfer] = convertParameters(vulkan, videoMode);
+
+			if(opened->window.getSize() != size) {
+				//Resizing is required. 
+				opened->window.setSize(size);
+
+				opened->extent = Graphics::toVulkan(opened->window.getResolution());
+				opened->geometry.setTargetSize(Math::Vec2f(opened->extent.width, opened->extent.height));
+
+				modifications.set(RECREATE_SWAPCHAIN);
+			}
+
+			if(opened->format != format) {
+				//Format has changed
+				opened->format = format;
+
+				modifications.set(RECREATE_SWAPCHAIN);
+			}
+
+			if(opened->colorSpace != colorSpace) {
+				//Color space has changed
+				opened->colorSpace = colorSpace;
+
+				modifications.set(RECREATE_SWAPCHAIN);
+			}
+
+			if(opened->colorTransfer != colorTransfer) {
+				//Color transfer characteristics have changed
+				opened->colorTransfer = std::move(colorTransfer);
+
+				modifications.set(UPDATE_COLOR_TRANSFER);
+			}
+
+			//Recreate stuff accordingly
+			if(modifications.any()) {
+				//Wait until rendering finishes
+				opened->waitCompletion(vulkan);
+
+				if(modifications.test(RECREATE_SWAPCHAIN)) opened->recreateSwapchain(vulkan);
+				if(modifications.test(UPDATE_COLOR_TRANSFER)) opened->updateColorTransferUniform(vulkan);
+			}
+		}
+	}
+	
+	void setScalingMode(ScalingMode mode) {
+		if(scalingMode != mode) {
+			scalingMode = mode;
+			
+			if(opened) {
+				const auto& vulkan = instance.getVulkan();
+
+				opened->waitCompletion(vulkan);
+				opened->geometry.setScalingMode(mode);
+			}
+		}
+	}
+
+	ScalingMode getScalingMode() const {
+		return scalingMode;
+	}
+
+
+	void setScalingFilter(ScalingFilter filter) {
+		if(scalingFilter != filter) {
+			scalingFilter = filter;
+			
+			if(opened) {
+				const auto& vulkan = instance.getVulkan();
+
+				opened->waitCompletion(vulkan);
+				opened->filter = Graphics::toVulkan(filter);
+				opened->recreatePipelineLayout(vulkan);
+			}
+		}
+	}
+	
+	ScalingFilter getScalingFilter() const {
+		return scalingFilter;
+	}
+
 
 	void update() {
 		assert(opened);
@@ -313,7 +370,16 @@ struct Window::Impl {
 			);
 
 			//Resize the geometry if needed
-			if(frame) opened->geometry.useFrame(*frame);
+			if(frame) {
+				opened->vertexBuffer.waitCompletion(vulkan);
+				if(opened->geometry.useFrame(*frame)){
+					opened->vertexBuffer.flushData(
+						vulkan, 
+						vulkan.getGraphicsQueueIndex(), 
+						vk::PipelineStageFlagBits::eVertexInput
+					);
+				}	
+			}
 
 			const auto& cmdBuffer = opened->commandBuffer;
 			const auto& frameBuffer = *(opened->framebuffers[index.value]);
@@ -343,15 +409,20 @@ struct Window::Impl {
 			if(frame) {
 				cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *(opened->pipeline), vulkan.getDispatcher());
 
-				opened->geometry.bind(cmdBuffer);
+				cmdBuffer.bindVertexBuffers(
+					VERTEX_BUFFER_BINDING,											//Binding
+					opened->vertexBuffer.getBuffer(),								//Vertex buffers
+					0UL,															//Offsets
+					vulkan.getDispatcher()											//Dispatcher
+				);
 
 				cmdBuffer.bindDescriptorSets(
-					vk::PipelineBindPoint::eGraphics,	//Pipeline bind point
-					opened->pipelineLayout,				//Pipeline layout
-					DESCRIPTOR_LAYOUT_WINDOW,			//First index
-					opened->descriptorSet,				//Descriptor sets
-					{},									//Dynamic offsets
-					vulkan.getDispatcher()
+					vk::PipelineBindPoint::eGraphics,								//Pipeline bind point
+					opened->pipelineLayout,											//Pipeline layout
+					DESCRIPTOR_LAYOUT_WINDOW,										//First index
+					opened->descriptorSet,											//Descriptor sets
+					{},																//Dynamic offsets
+					vulkan.getDispatcher()											//Dispatcher
 				);
 
 				frame->bind(cmdBuffer, opened->pipelineLayout, DESCRIPTOR_LAYOUT_FRAME, opened->filter);
@@ -390,6 +461,110 @@ struct Window::Impl {
 		}
 	}
 
+	VideoMode::Compatibilities getVideoModeCompatibility() const {
+		const VideoMode::Range<Resolution> resolutions {
+			Resolution(1, 1),
+			instance.getResolutionSupport().maxOutputResolution
+		};
+
+		const VideoMode::MustBe<AspectRatio> aspectRatios {
+			AspectRatio(1, 1)
+		};
+
+		const VideoMode::Any<Timing::Rate> frameRates {};
+
+		const VideoMode::MustBe<ColorModel> colorModels {
+			ColorModel::RGB
+		};
+
+		const VideoMode::MustBe<ColorSubsampling> colorSubsamplings {
+			ColorSubsampling::NONE
+		};
+
+		const VideoMode::MustBe<ColorRange> colorRanges {
+			ColorRange::FULL
+		};
+
+		//If it is not opened return a generic comatibility
+		//Otherwise query it
+		if(opened) {
+			VideoMode::Compatibilities result;
+
+			const auto& vulkan = instance.getVulkan();
+			const auto surfaceFormats = vulkan.getPhysicalDevice().getSurfaceFormatsKHR(*(opened->surface), vulkan.getDispatcher());
+
+			for(const auto& surfaceFormat : surfaceFormats) {
+				const auto [colorPrimary, colorTransferFunction] = Graphics::fromVulkan(surfaceFormat.colorSpace);
+				const auto [format, colorTransferFunction2] = Graphics::fromVulkan(surfaceFormat.format);
+
+				//Evaluate if it is a valid option
+				if(	(colorPrimary != ColorPrimaries::NONE) &&
+					(colorTransferFunction != ColorTransferFunction::NONE) &&
+					(format != ColorFormat::NONE) )
+				{
+					const VideoMode::MustBe<ColorPrimaries> colorPrimaries {
+						colorPrimary
+					};
+
+					const VideoMode::MustBe<ColorTransferFunction> colorTransferFunctions {
+						colorTransferFunction
+					};
+
+					const VideoMode::MustBe<ColorFormat> colorFormats {
+						format
+					};
+
+					result.emplace_back(
+						resolutions,
+						aspectRatios,
+						frameRates,
+						colorPrimaries,
+						colorModels,
+						colorTransferFunctions,
+						colorSubsamplings,
+						colorRanges,
+						colorFormats
+					);
+				}
+			}
+
+			return result;
+		} else {
+			//Return a configuration that is always supported, according to 
+			//https://vulkan.gpuinfo.org/listsurfaceformats.php
+
+			const VideoMode::MustBe<ColorPrimaries> colorPrimaries {
+				ColorPrimaries::BT709
+			};
+
+			const VideoMode::MustBe<ColorTransferFunction> colorTransferFunctions {
+				ColorTransferFunction::IEC61966_2_1
+			};
+
+			const VideoMode::MustBe<ColorFormat> colorFormats {
+				#ifdef __ANDROID__
+					ColorFormat::R8G8B8A8
+				#else
+					ColorFormat::B8G8R8A8
+				#endif
+			};
+
+			return { 
+				VideoMode::Compatibility(
+					resolutions,
+					aspectRatios,
+					frameRates,
+					colorPrimaries,
+					colorModels,
+					colorTransferFunctions,
+					colorSubsamplings,
+					colorRanges,
+					colorFormats
+				)
+			};
+		}
+	}
+
 private:
 	void resizeCallback(Resolution res) {
 		const auto& vulkan = instance.getVulkan();
@@ -401,6 +576,50 @@ private:
 		opened->updateViewportUniform(vulkan);
 		opened->recreateSwapchain(vulkan);
 	}
+
+	static std::tuple<Math::Vec2i, vk::Format, vk::ColorSpaceKHR, Graphics::ColorTransfer>
+	convertParameters(	const Graphics::Vulkan& vulkan,
+						const VideoMode& videoMode )
+	{
+		const auto size = static_cast<Math::Vec2i>(
+			videoMode.get<VideoMode::Parameters::resolution>()
+		);
+
+		//Obatin the pixel format
+		auto formats = Graphics::Frame::getPlaneDescriptors(
+			videoMode.get<VideoMode::Parameters::resolution>(),
+			videoMode.get<VideoMode::Parameters::colorSubsampling>(),
+			videoMode.get<VideoMode::Parameters::colorFormat>()
+		);
+		assert(formats.size() == 1);
+
+		auto& f = formats[0];
+		std::tie(f.format, f.swizzle) = Graphics::optimizeFormat(std::make_tuple(f.format, f.swizzle));
+		assert(formats[0].swizzle == vk::ComponentMapping());
+
+		//Obtain the color space
+		const auto colorSpace = Graphics::toVulkan(
+			videoMode.get<VideoMode::Parameters::colorPrimaries>(), 
+			videoMode.get<VideoMode::Parameters::colorTransferFunction>()
+		);
+
+		//Create the color transfer characteristics
+		Graphics::ColorTransfer colorTransfer(
+			videoMode.get<VideoMode::Parameters::colorFormat>(),
+			videoMode.get<VideoMode::Parameters::colorRange>(),
+			videoMode.get<VideoMode::Parameters::colorTransferFunction>(),
+			videoMode.get<VideoMode::Parameters::colorModel>(),
+			videoMode.get<VideoMode::Parameters::colorPrimaries>()
+		);
+
+		const auto& supportedFormats = vulkan.getFormatSupport().framebuffer;
+		colorTransfer.optimize(formats, supportedFormats);
+
+		return std::make_tuple(size, f.format, colorSpace, std::move(colorTransfer));
+	}
+
+
+
 
 	static vk::UniqueCommandPool createCommandPool(const Graphics::Vulkan& vulkan)
 	{
@@ -432,19 +651,20 @@ private:
 		return result;
 	}
 
-	static Graphics::Buffer createUniformBuffer(const Graphics::Vulkan& vulkan) {
-		constexpr vk::BufferUsageFlags usage =
-			vk::BufferUsageFlagBits::eUniformBuffer |
-			vk::BufferUsageFlagBits::eTransferDst;
 
-		constexpr vk::MemoryPropertyFlags memory =
-			vk::MemoryPropertyFlagBits::eDeviceLocal;
-
-		return Graphics::Buffer(
+	static Graphics::StagedBuffer createVertexBuffer(const Graphics::Vulkan& vulkan) {
+		return Graphics::StagedBuffer(
 			vulkan,
-			usage, 
-			memory, 
-			UNIFORM_BUFFER_SIZE
+			sizeof(Vertex) * Graphics::Frame::Geometry::VERTEX_COUNT,
+			vk::BufferUsageFlagBits::eVertexBuffer
+		);
+	}
+
+	static Graphics::StagedBuffer createUniformBuffer(const Graphics::Vulkan& vulkan) {
+		return Graphics::StagedBuffer(
+			vulkan,
+			UNIFORM_BUFFER_SIZE,
+			vk::BufferUsageFlagBits::eUniformBuffer
 		);
 	}
 
@@ -524,6 +744,15 @@ private:
 		return descriptorSet;
 	}
 
+	static Graphics::Frame::Geometry createGeometry(std::byte* data,
+													ScalingMode scalingMode,
+													Math::Vec2f size )
+	{
+		return Graphics::Frame::Geometry(
+			data, sizeof(Vertex), offsetof(Vertex, position), offsetof(Vertex, texCoord),
+			scalingMode, size
+		);
+	}
 
 
 	static vk::UniqueSwapchainKHR createSwapchain(	const Graphics::Vulkan& vulkan, 
@@ -713,7 +942,6 @@ private:
 	}
 
 	static vk::UniquePipeline createPipeline(	const Graphics::Vulkan& vulkan,
-												const Graphics::Frame::Geometry& geom,
 												vk::RenderPass renderPass,
 												vk::PipelineLayout layout,
 												vk::Extent2D extent )
@@ -749,12 +977,27 @@ private:
 				SHADER_ENTRY_POINT ),							//Shader entry point
 		};
 
-		const std::array vertexBindings = {
-			geom.getBindingDescription()
+		constexpr std::array vertexBindings = {
+			vk::VertexInputBindingDescription(
+				VERTEX_BUFFER_BINDING,
+				sizeof(Vertex),
+				vk::VertexInputRate::eVertex
+			)
 		};
 
-		const std::array vertexAttributes = {
-			geom.getAttributeDescriptions(VERTEX_POSITION, VERTEX_TEXCOORD)
+		constexpr std::array vertexAttributes = {
+			vk::VertexInputAttributeDescription(
+				VERTEX_POSITION,
+				VERTEX_BUFFER_BINDING,
+				vk::Format::eR32G32Sfloat,
+				offsetof(Vertex, position)
+			),
+			vk::VertexInputAttributeDescription(
+				VERTEX_TEXCOORD,
+				VERTEX_BUFFER_BINDING,
+				vk::Format::eR32G32Sfloat,
+				offsetof(Vertex, texCoord)
+			)
 		};
 
 		const vk::PipelineVertexInputStateCreateInfo vertexInput(
@@ -943,6 +1186,7 @@ Window::Window(Instance& instance, const std::string& name)
 	, m_impl(instance, findPad(std::get<0>(PADS)))
 {
 	setUpdateCallback(std::bind(&Impl::update, std::ref(*m_impl)));
+	VideoBase::setVideoModeCompatibility(m_impl->getVideoModeCompatibility());
 }
 
 Window::Window(Instance& instance, std::string&& name)
@@ -951,6 +1195,7 @@ Window::Window(Instance& instance, std::string&& name)
 	, m_impl(instance, findPad(std::get<0>(PADS)))
 {
 	setUpdateCallback(std::bind(&Impl::update, std::ref(*m_impl)));
+	VideoBase::setVideoModeCompatibility(m_impl->getVideoModeCompatibility());
 }
 
 Window::Window(Window&& other) = default;
@@ -965,27 +1210,58 @@ Window& Window::operator=(Window&& other) = default;
 
 void Window::open() {
 	const auto& videoMode = getVideoMode();
+	validate(videoMode);
 
-	m_impl->open(getInstance().getVulkan(), videoMode, getName());
+	m_impl->open(videoMode, getName());
 	ZuazoBase::enablePeriodicUpdate(Instance::OUTPUT_PRIORITY, 
 									Timing::getPeriod(videoMode.get<VideoMode::Parameters::frameRate>()) );
+
+	VideoBase::setVideoModeCompatibility(m_impl->getVideoModeCompatibility());
 	ZuazoBase::open();
 }
 
 void Window::close() {
 	ZuazoBase::disablePeriodicUpdate();
 	m_impl->close();
+
+	VideoBase::setVideoModeCompatibility(m_impl->getVideoModeCompatibility());
 	ZuazoBase::close();
 }
 
+void Window::setVideoMode(const VideoMode& videoMode) {
+	validate(videoMode);
+	m_impl->setVideoMode(videoMode);
 
-VideoMode::Compatibilities Window::getVideoModeCompatibility() const {
-	return VideoMode::Compatibilities(); //TODO
+	if(	Timing::getPeriod(getVideoMode().get<VideoMode::Parameters::frameRate>()) !=
+		Timing::getPeriod(videoMode.get<VideoMode::Parameters::frameRate>()) &&
+		ZuazoBase::isOpen() )
+	{
+		//Update the update rate rate
+		ZuazoBase::disablePeriodicUpdate();
+		ZuazoBase::enablePeriodicUpdate(Instance::OUTPUT_PRIORITY, 
+										Timing::getPeriod(videoMode.get<VideoMode::Parameters::frameRate>()) );
+	}
+
+	VideoBase::setVideoMode(videoMode);
 }
 
-void Window::setVideoMode(const VideoMode& videoMode) {
-	//TODO
-	ZUAZO_IGNORE_PARAM(videoMode);
+
+
+void Window::setScalingMode(ScalingMode mode) {	
+	m_impl->setScalingMode(mode);
+}
+
+ScalingMode Window::getScalingMode() const {
+	return m_impl->getScalingMode();
+}
+
+
+void Window::setScalingFilter(ScalingFilter filter) {
+	m_impl->setScalingFilter(filter);
+}
+
+ScalingFilter Window::getScalingFilter() const {
+	return m_impl->getScalingFilter();
 }
 
 }

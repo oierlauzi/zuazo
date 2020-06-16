@@ -53,13 +53,19 @@ public:
 
 	VideoBase&							operator=(const VideoBase& other);
 
-	virtual VideoMode::Compatibilities 	getVideoModeCompatibility() const = 0;
-
 	virtual void						setVideoMode(const VideoMode& videoMode) = 0;
 	const VideoMode&					getVideoMode() const;
 
+	const VideoMode::Compatibilities&	getVideoModeCompatibility() const;
+
+protected:
+	void								setVideoModeCompatibility(const VideoMode::Compatibilities& comp);
+	void								validate(const VideoMode& videoMode);
+
 private:
 	VideoMode							m_videoMode;
+
+	VideoMode::Compatibilities			m_compatibilities;
 
 };
 

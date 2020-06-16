@@ -61,8 +61,7 @@ private:
 		COUNT
 	};
 
-	//So that it does not change address when moved
-	using Callbacks = Utils::Pimpl<std::array<UpdateCallback, COUNT>>; 
+	using Callbacks = std::array<std::shared_ptr<UpdateCallback>, COUNT>; 
 
 	std::reference_wrapper<Instance>m_instance;
 

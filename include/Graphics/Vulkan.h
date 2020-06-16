@@ -4,6 +4,7 @@
 #include "../Verbosity.h"
 #include "../Utils/Pimpl.h"
 #include "../Utils/BufferView.h"
+#include "../Utils/Area.h"
 
 #include <vector>
 #include <array>
@@ -26,7 +27,7 @@ public:
 
 	struct AggregatedAllocation {
 		vk::UniqueDeviceMemory memory;
-		std::vector<std::pair<size_t, size_t>> offsets;
+		std::vector<Utils::Area> areas;
 	};
 
 	static constexpr uint64_t NO_TIMEOUT = std::numeric_limits<uint64_t>::max();
@@ -119,6 +120,11 @@ public:
 															size_t off = 0, 
 															size_t size = VK_WHOLE_SIZE) const;
 
+	void								updateDescriptorSets(	Utils::BufferView<const vk::WriteDescriptorSet> write,
+																Utils::BufferView<const vk::CopyDescriptorSet> copy ) const;
+	void								updateDescriptorSets(Utils::BufferView<const vk::WriteDescriptorSet> write) const;
+	void								updateDescriptorSets(Utils::BufferView<const vk::CopyDescriptorSet> copy) const;
+
 	void								waitIdle() const;
 	void								waitForFences(	Utils::BufferView<const vk::Fence> fences,
 														bool waitAll = false,
@@ -138,12 +144,6 @@ public:
 												vk::Semaphore waitSemaphore ) const;
 
 	void								presentAll() const;
-
-	void								stagedUpload(	vk::Buffer buffer,
-														size_t off,
-														Utils::BufferView<const std::byte> data,
-														uint32_t queueIndex,
-														vk::PipelineStageFlags dstStages ) const;
 
 private:
 	struct Impl;

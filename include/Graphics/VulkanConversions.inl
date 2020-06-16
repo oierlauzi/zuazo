@@ -666,4 +666,31 @@ constexpr vk::Format fromSrgb(vk::Format format) {
 }
 
 
+constexpr vk::Filter toVulkan(ScalingFilter filt) {
+	switch(filt){
+	case ScalingFilter::NEAREST: return vk::Filter::eNearest;
+	case ScalingFilter::LINEAR: return vk::Filter::eLinear;
+	default: return static_cast<vk::Filter>(-1);
+	}
+}
+
+constexpr ScalingFilter fromVulkan(vk::Filter filt) {
+	switch(filt){
+	case vk::Filter::eNearest: return ScalingFilter::NEAREST;
+	case vk::Filter::eLinear: return ScalingFilter::LINEAR;
+	default: return ScalingFilter::NONE;
+	}
+}
+
+
+template<typename T>
+constexpr vk::ArrayProxy<T> toVulkan(Utils::BufferView<T> bv) {
+	return vk::ArrayProxy<T>(bv.size(), bv.data());
+}
+
+template<typename T>
+constexpr Utils::BufferView<T> fromVulkan(vk::ArrayProxy<T> ap) {
+	return Utils::BufferView<T>(ap.data(), ap.size());
+}
+
 }

@@ -1,5 +1,6 @@
 #include <Video.h>
 
+#include <Exception.h>
 #include <Macros.h>
 
 namespace Zuazo {
@@ -34,9 +35,7 @@ VideoBase::~VideoBase() = default;
 
 VideoBase& VideoBase::operator=(const VideoBase& other) = default;
 
-VideoMode::Compatibilities VideoBase::getVideoModeCompatibility() const {
-	return VideoMode::Compatibilities();
-}
+
 
 void VideoBase::setVideoMode(const VideoMode& videoMode) {
 	m_videoMode = videoMode;
@@ -44,6 +43,23 @@ void VideoBase::setVideoMode(const VideoMode& videoMode) {
 
 const VideoMode& VideoBase::getVideoMode() const {
 	return m_videoMode;
+}
+
+
+const VideoMode::Compatibilities& VideoBase::getVideoModeCompatibility() const {
+	return m_compatibilities;
+}
+
+void VideoBase::setVideoModeCompatibility(const VideoMode::Compatibilities& comp) {
+	m_compatibilities = comp;
+}
+
+void VideoBase::validate(const VideoMode& videoMode) {
+	const auto& compatibility = getVideoModeCompatibility();
+	const auto val = VideoMode::validate(videoMode, compatibility);
+	if(!val.all()){
+		throw Exception("Unsupported video mode");
+	}
 }
 
 }

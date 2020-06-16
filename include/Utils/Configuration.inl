@@ -1,6 +1,7 @@
 #include "Configuration.h"
 
 #include "Functions.h"
+#include "../Math/Functions.h"
 
 #include <functional>
 #include <array>
@@ -48,6 +49,18 @@ constexpr int Configuration<Names, Types...>::operator>=(const Configuration& ot
 
 
 template<typename Names, typename... Types>  
+constexpr Configuration<Names, Types...>::operator bool() const {
+	return std::apply(
+		[] (const auto&... args) -> bool {
+			return (static_cast<bool>(args) && ...);
+		}, 
+		m_parameters
+	);
+}
+
+
+
+template<typename Names, typename... Types>  
 template <typename Configuration<Names, Types...>::Parameters param, typename T>
 constexpr void Configuration<Names, Types...>::set(T&& val) {
 	std::get<static_cast<size_t>(param)>(m_parameters) = std::forward<T>(val);
@@ -66,6 +79,7 @@ Configuration<Names, Types...>::asTuple() const {
 }
 
 
+
 template<typename Names, typename... Types>  
 template <typename T>
 constexpr bool Configuration<Names, Types...>::validate(const T&, Any<T>) {
@@ -75,7 +89,7 @@ constexpr bool Configuration<Names, Types...>::validate(const T&, Any<T>) {
 template<typename Names, typename... Types>  
 template <typename T>
 constexpr bool Configuration<Names, Types...>::validate(const T& value, const Range<T>& limit) {
-	return isInRange<T>(value, limit.min, limit.max);
+	return Math::isInRange(value, limit.min, limit.max);
 }
 
 template<typename Names, typename... Types>  
@@ -100,22 +114,50 @@ template<typename Names, typename... Types>
 template <typename T>
 constexpr bool Configuration<Names, Types...>::validate(const T& value, const Limit<T>& limit) {
 	return std::visit(
-		std::bind(validate, std::cref(value), std::placeholders::_1), 
+		[&] (const auto& x) -> auto{
+			return Configuration::validate(value, x);
+		},
 		limit
 	);
 }
 
 template<typename Names, typename... Types>  
-constexpr typename Configuration<Names, Types...>::template ResultArray<bool>
+constexpr typename Configuration<Names, Types...>::Validation
 Configuration<Names, Types...>::validate(	const Configuration& conf,
 											const Compatibility& comp)
 {
 	return std::apply(
 		[] (auto&&... x) -> auto {
-			return std::array{x...};
+			constexpr char FALSE = '0',  TRUE = '1';
+
+			const std::array str {(x ? TRUE : FALSE) ...};
+			return Validation(str.data(), str.size(), FALSE, TRUE);
 		},
-		elementwiseOperation(Configuration::validate, conf, comp)
+		elementwiseOperation(
+			[] (const auto& x, const auto& y) {
+				return Configuration::validate(x, y);
+			}, 
+			conf.m_parameters, comp
+		)
 	);
+}
+
+template<typename Names, typename... Types>  
+constexpr typename Configuration<Names, Types...>::Validation
+Configuration<Names, Types...>::validate(	const Configuration& conf,
+											const Compatibilities& comp)
+{
+	Validation best;
+
+	for(const auto& c : comp) {
+		//Validate this compatibility
+		const auto r = validate(conf, c); 
+
+		//Evaluate if it is better suited
+		if(r.count() > best.count()) best = r;
+	}
+
+	return best;
 }
 
 
@@ -177,14 +219,24 @@ template <typename T>
 constexpr typename Configuration<Names, Types...>::template Limit<T>
 Configuration<Names, Types...>::simplify(const Limit<T>& limit) 
 {
-	return std::visit(simplify, limit);
+	return std::visit(
+		[] (const auto& x) -> auto{
+			return Configuration::simplify(x);
+		},
+		limit
+	);
 }
 
 template<typename Names, typename... Types>  
 constexpr typename Configuration<Names, Types...>::Compatibility
-Configuration<Names, Types...>::simplify(const Compatibility& com) 
+Configuration<Names, Types...>::simplify(const Compatibility& comp) 
 {
-	return elementwiseOperation(Configuration::simplify, com);
+	return elementwiseOperation(
+		[] (const auto& x) -> auto {
+			return Configuration::simplify(x);
+		},		
+		comp
+	);
 }
 
 
@@ -428,8 +480,8 @@ constexpr typename Configuration<Names, Types...>::template Limit<T>
 Configuration<Names, Types...>::intersection(const Limit<T>& a, const Limit<T>& b) 
 {
 	return std::visit(
-		[] (const auto& la, const auto& lb) -> auto {
-			return intersection(la, lb);
+		[&] (const auto& x, const auto& y) -> auto{
+			return Configuration::intersection(x, y);
 		},
 		a, b
 	);
@@ -440,7 +492,12 @@ constexpr typename Configuration<Names, Types...>::Compatibility
 Configuration<Names, Types...>::intersection(	const Compatibility& a, 
 												const Compatibility& b )
 {
-	return elementwiseOperation(Configuration::intersection, a, b);
+	return elementwiseOperation(
+		[] (const auto& x, const auto& y) -> auto {
+			return Configuration::intersection(x, y);
+		},		
+		a, b
+	);
 }
 
 
@@ -479,7 +536,12 @@ constexpr T Configuration<Names, Types...>::lowest(None<T>) {
 template<typename Names, typename... Types>  
 template <typename T>
 constexpr T Configuration<Names, Types...>::lowest(const Limit<T>& limit) {
-	return std::visit(lowest, limit);
+	return std::visit(
+		[&] (const auto& x) -> auto{
+			return Configuration::lowest(x);
+		},
+		limit
+	);
 }
 
 template<typename Names, typename... Types>  
@@ -487,7 +549,12 @@ constexpr Configuration<Names, Types...>
 Configuration<Names, Types...>::lowest(const Compatibility& a) 
 {
 	return std::make_from_tuple<Configuration>(
-		elementwiseOperation(Configuration::lowest, a)
+		elementwiseOperation(
+			[] (const auto& x) -> auto {
+				return Configuration::lowest(x);
+			},		
+			a
+		)
 	);
 }
 
@@ -527,7 +594,12 @@ constexpr T Configuration<Names, Types...>::highest(None<T>) {
 template<typename Names, typename... Types>
 template <typename T>
 constexpr T Configuration<Names, Types...>::highest(const Limit<T>& limit) {
-	return std::visit(highest, limit);
+	return std::visit(
+		[&] (const auto& x) -> auto{
+			return Configuration::highest(x);
+		},
+		limit
+	);
 }
 
 template<typename Names, typename... Types>  
@@ -535,7 +607,12 @@ constexpr Configuration<Names, Types...>
 Configuration<Names, Types...>::highest(const Compatibility& a) 
 {
 	return std::make_from_tuple<Configuration>(
-		elementwiseOperation(Configuration::highest, a)
+		elementwiseOperation(
+			[] (const auto& x) -> auto {
+				return Configuration::highest(x);
+			},		
+			a
+		)
 	);
 }
 

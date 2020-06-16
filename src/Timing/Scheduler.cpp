@@ -53,7 +53,7 @@ void Scheduler::gotoTime(TimePoint tp) {
 
 		//Call all
 		for(const auto& c : m_calls){
-			const Callback& cbk = std::get<CallbackRef>(c);
+			const Callback& cbk = *(std::get<std::shared_ptr<Callback>>(c));
 			if(cbk) {
 				cbk();
 			}
@@ -85,23 +85,23 @@ Duration Scheduler::getTimeForNextEvent() const {
 	return result;
 }
 
-void Scheduler::addRegularCallback(const Callback& cbk, Priority prior) {
+void Scheduler::addRegularCallback(const std::shared_ptr<Callback>& cbk, Priority prior) {
 	m_regularCallbacks.emplace_back(cbk, prior);
 }
 
-void Scheduler::removeRegularCallback(const Callback& cbk) {
+void Scheduler::removeRegularCallback(const std::shared_ptr<Callback>& cbk) {
 	auto end = std::remove_if(
 		m_regularCallbacks.begin(), 
 		m_regularCallbacks.end(), 
 		[&] (const auto& e) -> bool {
-			return &std::get<CallbackRef>(e).get() == &cbk; //Compare callback's pointers
+			return std::get<std::shared_ptr<Callback>>(e) == cbk; //Compare callback's pointers
 		}
 	);
 	m_regularCallbacks.erase(end, m_regularCallbacks.end());
 }
 
 
-void Scheduler::addPeriodicCallback(const Callback& cbk, Priority prior, Duration period) {
+void Scheduler::addPeriodicCallback(const std::shared_ptr<Callback>& cbk, Priority prior, Duration period) {
 	auto ite = m_periodicCallbacks.find(period);
 
 	if(ite == m_periodicCallbacks.cend()){
@@ -114,7 +114,7 @@ void Scheduler::addPeriodicCallback(const Callback& cbk, Priority prior, Duratio
 	}
 }
 
-void Scheduler::removePeriodicCallback(const Callback& cbk) {
+void Scheduler::removePeriodicCallback(const std::shared_ptr<Callback>& cbk) {
 	auto ite = m_periodicCallbacks.begin();
 
 	while(ite != m_periodicCallbacks.end()) {
@@ -123,7 +123,7 @@ void Scheduler::removePeriodicCallback(const Callback& cbk) {
 			ite->second.begin(), 
 			ite->second.end(), 
 			[&] (const auto& e) -> bool {
-				return &std::get<CallbackRef>(e).get() == &cbk; //Compare callback's pointers
+				return std::get<std::shared_ptr<Callback>>(e) == cbk; //Compare callback's pointers
 			}
 		);
 		ite->second.erase(end, ite->second.end());

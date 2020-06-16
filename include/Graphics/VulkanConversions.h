@@ -11,6 +11,7 @@
 #include "../ColorTransferFunction.h"
 #include "../ColorModel.h"
 #include "../ColorPrimaries.h"
+#include "../ScalingFilter.h"
 #include "../Utils/BufferView.h"
 
 #include <tuple>
@@ -50,6 +51,15 @@ constexpr vk::ComponentMapping swizzle(std::string_view src, std::string_view ds
 
 constexpr vk::Format toSrgb(vk::Format format);
 constexpr vk::Format fromSrgb(vk::Format format);
+
+constexpr vk::Filter toVulkan(ScalingFilter filt);
+constexpr ScalingFilter fromVulkan(vk::Filter filt);
+
+template<typename T>
+constexpr vk::ArrayProxy<T> toVulkan(Utils::BufferView<T> bv);
+template<typename T>
+constexpr Utils::BufferView<T> fromVulkan(vk::ArrayProxy<T> ap);
+
 
 }
 

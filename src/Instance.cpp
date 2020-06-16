@@ -29,7 +29,7 @@ struct Instance::Impl {
 	FormatSupport				formatSupport;
 	ResolutionSupport			resolutionSupport;
 
-	ScheduledCallback			presentImages;
+	std::shared_ptr<ScheduledCallback> presentImages;
 
 	Impl(	ApplicationInfo&& appInfo,
 			const DeviceScoreFunc& deviceScoreFunc )
@@ -45,7 +45,7 @@ struct Instance::Impl {
 		, loop(scheduler, mutex)
 		, formatSupport(queryFormatSupport(vulkan))
 		, resolutionSupport(queryResolutionSupport(vulkan))
-		, presentImages(std::bind(&Graphics::Vulkan::presentAll, std::cref(vulkan)))
+		, presentImages(createPresentCallback(vulkan))
 	{
 		std::lock_guard<Impl> lock(*this);
 		addRegularCallback(presentImages, PRESENT_PRIORITY);
@@ -72,22 +72,22 @@ struct Instance::Impl {
 		return resolutionSupport;
 	}
 
-	void addRegularCallback(const ScheduledCallback& cbk, Priority prior) {
+	void addRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior) {
 		scheduler.addRegularCallback(cbk, prior);
 		loop.interrupt();
 	}
 
-	void removeRegularCallback(const ScheduledCallback& cbk) {
+	void removeRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk) {
 		scheduler.removeRegularCallback(cbk);
 		loop.interrupt();
 	}
 
-	void addPeriodicCallback(const ScheduledCallback& cbk, Priority prior, Timing::Duration period) {
+	void addPeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior, Timing::Duration period) {
 		scheduler.addPeriodicCallback(cbk, prior, period);
 		loop.interrupt();
 	}
 
-	void removePeriodicCallback(const ScheduledCallback& cbk) {
+	void removePeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk) {
 		scheduler.removePeriodicCallback(cbk);
 		loop.interrupt();
 	}
@@ -176,6 +176,10 @@ private:
 		};
 	}
 
+	static std::shared_ptr<ScheduledCallback> createPresentCallback(const Graphics::Vulkan& vulkan) {
+		return std::make_shared<ScheduledCallback>(std::bind(&Graphics::Vulkan::presentAll, std::cref(vulkan)));
+	}
+
 };
 
 
@@ -208,25 +212,25 @@ const Instance::ResolutionSupport& Instance::getResolutionSupport() const {
 	return m_impl->getResolutionSupport();
 }
 
-void Instance::addRegularCallback(	const ScheduledCallback& cbk, 
+void Instance::addRegularCallback(	const std::shared_ptr<ScheduledCallback>& cbk, 
 									Priority prior ) 
 {
 	m_impl->addRegularCallback(cbk, prior);
 }
 
-void Instance::removeRegularCallback(const ScheduledCallback& cbk) {
+void Instance::removeRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk) {
 	m_impl->removeRegularCallback(cbk);
 }
 
 
-void Instance::addPeriodicCallback(	const ScheduledCallback& cbk, 
+void Instance::addPeriodicCallback(	const std::shared_ptr<ScheduledCallback>& cbk, 
 									Priority prior, 
 									Timing::Duration period ) 
 {
 	m_impl->addPeriodicCallback(cbk, prior, period );
 }
 
-void Instance::removePeriodicCallback(const ScheduledCallback& cbk) {
+void Instance::removePeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk) {
 	m_impl->removePeriodicCallback(cbk);
 }
 
@@ -265,7 +269,7 @@ void Instance::defaultInstanceLogFunc(	const Instance& inst,
 {
 	std::ostream& output = std::cerr;
 
-	output << "[" << Utils::toString(severity) << "] ";
+	output << "[" << toString(severity) << "] ";
 	output << &inst << " (" << inst.getApplicationInfo().name << "): ";
 	output << msg;
 	output << std::endl;
@@ -278,7 +282,7 @@ void Instance::defaultElementLogFunc(	const ZuazoBase& base,
 	std::ostream& output = std::cerr;
 	Instance& inst = base.getInstance();
 
-	output << "[" << Utils::toString(severity) << "] ";
+	output << "[" << toString(severity) << "] ";
 	output << &inst << " (" << inst.getApplicationInfo().name << "): ";
 	output << "on " << &base << " (" << base.getName() << "): ";
 	output << msg;

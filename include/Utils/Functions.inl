@@ -26,56 +26,6 @@ constexpr T align(T ptr, Q alignment) {
 	}
 }
 
-
-
-
-template<typename T>
-constexpr const T& min(const T& a, const T& b) {
-	return std::min(a, b);
-}
-
-template<typename T>
-constexpr T min(std::initializer_list<T> ilist) {
-	assert(ilist.size() > 0);
-	auto result = *ilist.begin();
-
-	for(auto ite = ilist.begin() + 1; ite != ilist.end(); ++ite){
-		result = min(result, *ite);
-	}
-
-	return result;
-}
-
-template<typename T>
-constexpr const T& max(const T& a, const T& b) {
-	return std::max(a, b);
-}
-
-template<typename T>
-constexpr T max(std::initializer_list<T> ilist) {
-	assert(ilist.size() > 0);
-	auto result = *ilist.begin();
-
-	for(auto ite = ilist.begin() + 1; ite != ilist.end(); ++ite){
-		result = max(result, *ite);
-	}
-
-	return result;
-}
-
-
-template<typename T>
-constexpr const T& clamp(const T& val, const T& lo, const T& hi) {
-	return min(hi, max(lo, val));
-}
-
-template<typename T>
-constexpr bool isInRange(const T& val, const T& lo, const T& hi) {
-	return (lo <= val) && (val <= hi);
-}
-
-
-
 namespace details {
 
 template<typename Func, typename Tuples, size_t I>
@@ -91,7 +41,7 @@ constexpr auto elementwiseOperationImpl2(Func&& op, Tuples&& tuples, std::index_
 template<typename Func, typename Tuples, size_t... I>
 constexpr auto elementwiseOperationImpl1(Func&& op, Tuples&& tuples, std::index_sequence<I...>) {
 	return std::make_tuple(
-        elementWiseOperationImpl2( 
+        elementwiseOperationImpl2( 
             std::forward<Func>(op), 
             std::forward<Tuples>(tuples),
             std::index_sequence<I>()

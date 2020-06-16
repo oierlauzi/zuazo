@@ -2,7 +2,7 @@
 
 #include "Math/Vector.h"
 #include "Math/Rational.h"
-#include "Utils/Functions.h"
+#include "Math/Functions.h"
 
 #include <sys/types.h>
 #include <string>
@@ -47,11 +47,10 @@ std::string toString(Resolution res);
 
 }
 
-namespace Zuazo::Utils {
+namespace Zuazo::Math {
 
 constexpr Resolution min(Resolution a, Resolution b);
 constexpr Resolution max(Resolution a, Resolution b);
-constexpr Resolution clamp(Resolution val, Resolution lo, Resolution hi);
 
 }
 

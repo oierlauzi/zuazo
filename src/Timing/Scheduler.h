@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 #include <map>
+#include <memory>
 
 namespace Zuazo::Timing {
 
@@ -32,15 +33,14 @@ public:
 
 	Duration               	getTimeForNextEvent() const;
 
-	void					addRegularCallback(const Callback& cbk, Priority prior);
-	void					removeRegularCallback(const Callback& cbk);
+	void					addRegularCallback(const std::shared_ptr<Callback>& cbk, Priority prior);
+	void					removeRegularCallback(const std::shared_ptr<Callback>& cbk);
 
-	void					addPeriodicCallback(const Callback& cbk, Priority prior, Duration period);
-	void					removePeriodicCallback(const Callback& cbk);
+	void					addPeriodicCallback(const std::shared_ptr<Callback>& cbk, Priority prior, Duration period);
+	void					removePeriodicCallback(const std::shared_ptr<Callback>& cbk);
 
 private:
-	using CallbackRef = std::reference_wrapper<const Callback>;
-	using CallbackSet = std::vector<std::tuple<CallbackRef, Priority>>;
+	using CallbackSet = std::vector<std::tuple<std::shared_ptr<Callback>, Priority>>;
 	using PeriodMap = std::map<Duration, CallbackSet>;
 
 	TimePoint				m_epoch;

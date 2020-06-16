@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vulkan.h"
-#include "Image.h"
+#include "Frame.h"
 #include "../Utils/BufferView.h"
 #include "../Utils/Pimpl.h"
 #include "../Resolution.h"
@@ -35,12 +35,10 @@ public:
 	bool								operator==(const ColorTransfer& other) const;
 	bool								operator!=(const ColorTransfer& other) const;
 
-	void								optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
+	void								optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
 													Utils::BufferView<const vk::Format> supportedFormats );
 
 	const std::byte*					data() const;
-
-	Buffer								createBuffer(const Vulkan& vulkan) const;
 
 	static uint32_t 					getSamplerCount();
 	static uint32_t 					getSamplerBinding();

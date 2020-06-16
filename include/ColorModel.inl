@@ -5,7 +5,7 @@ namespace Zuazo {
 constexpr Math::Mat4x4f getConversionMatrix(ColorModel colorModel){
 	switch(colorModel){
 
-	//This matrices are defined in row major order and then transposed to bi in column major
+	//This matrices are defined in row major order and then transposed to be in column major
 	case ColorModel::RGB: 
 		return Math::Mat4x4f(1.0f); //Identity
 	case ColorModel::BT601: 

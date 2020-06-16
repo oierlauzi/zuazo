@@ -73,7 +73,7 @@ inline std::string toString(Resolution res) {
 
 
 
-namespace Zuazo::Utils {
+namespace Zuazo::Math {
     
 constexpr Resolution min(Resolution a, Resolution b) {
     return Resolution(
@@ -86,13 +86,6 @@ constexpr Resolution max(Resolution a, Resolution b) {
     return Resolution(
         max(a.x, b.x),
         max(a.y, b.y)
-    );
-}
-
-constexpr Resolution clamp(Resolution val, Resolution lo, Resolution hi) {
-    return Resolution(
-        clamp(val.x, lo.x, hi.x),
-        clamp(val.y, lo.y, hi.y)
     );
 }
 

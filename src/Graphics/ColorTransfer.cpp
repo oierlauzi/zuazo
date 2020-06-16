@@ -32,7 +32,7 @@ struct ColorTransfer::Impl {
 		return std::memcmp(data(), other.data(), size());
 	}
 
-	void optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
+	void optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
 					Utils::BufferView<const vk::Format> supportedFormats ) 
 	{
 		//For binary search:
@@ -77,32 +77,6 @@ struct ColorTransfer::Impl {
 
 	const std::byte* data() const {
 		return reinterpret_cast<const std::byte*>(&transferData);
-	}
-
-	Buffer createBuffer(const Vulkan& vulkan) const {
-		constexpr vk::BufferUsageFlags usageFlags =
-			vk::BufferUsageFlagBits::eUniformBuffer |
-			vk::BufferUsageFlagBits::eTransferDst;
-
-		constexpr vk::MemoryPropertyFlags memoryFlags =
-			vk::MemoryPropertyFlagBits::eDeviceLocal;
-
-		Buffer result(
-			vulkan,
-			usageFlags,
-			memoryFlags,
-			size()
-		);
-
-		vulkan.stagedUpload(
-			result.getBuffer(), 
-			0,
-			{ data(), size() },
-			vulkan.getGraphicsQueueIndex(),
-			vk::PipelineStageFlagBits::eAllCommands
-		);
-
-		return result;
 	}
 
 private:
@@ -188,7 +162,7 @@ bool ColorTransfer::operator!=(const ColorTransfer& other) const {
 
 
 
-void ColorTransfer::optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
+void ColorTransfer::optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
 								Utils::BufferView<const vk::Format> supportedFormats ) 
 {
 	m_impl->optimize(planes, supportedFormats);
@@ -197,11 +171,6 @@ void ColorTransfer::optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
 
 const std::byte* ColorTransfer::data() const {
 	return m_impl->data();
-}
-
-
-Buffer ColorTransfer::createBuffer(const Vulkan& vulkan) const {
-	return m_impl->createBuffer(vulkan);
 }
 
 

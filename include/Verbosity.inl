@@ -16,7 +16,7 @@ constexpr Verbosity operator& (Severity a, Verbosity b) {
 
 }
 
-namespace Zuazo::Utils {
+namespace Zuazo {
 	
 constexpr std::string_view toString(Severity verb) {
 	switch(verb) {
