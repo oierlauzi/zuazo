@@ -54,6 +54,12 @@ private:
 	std::map<Key, vk::CommandBuffer> 	m_uploadCommands;
 	mutable vk::Fence					m_waitFence;
 
+	vk::CommandBuffer					createCommandBuffer(const Vulkan& vulkan,
+															size_t offset,
+															size_t size,
+															uint32_t queue,
+															vk::PipelineStageFlags destination );
+
 	static Buffer						createDeviceBuffer(	const Vulkan& vulkan, 
 															size_t size,
 															vk::BufferUsageFlags usage );
@@ -63,14 +69,6 @@ private:
 															size_t size,
 															const Buffer& stagingBuffer );
 	static vk::UniqueCommandPool		createCommandPool(const Vulkan& vulkan);
-	static vk::CommandBuffer			createCommandBuffer(const Vulkan& vulkan,
-															size_t offset,
-															size_t size,
-															uint32_t queue,
-															vk::PipelineStageFlags destination,
-															vk::CommandPool cmdPool,
-															vk::Buffer deviceBuffer,
-															vk::Buffer stagingBuffer );
 
 };
 

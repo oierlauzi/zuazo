@@ -367,7 +367,7 @@ std::shared_ptr<Buffer> Frame::createColorTransferBuffer(	const Vulkan& vulkan,
 	std::memcpy(result->data(), colorTransfer.data(), colorTransfer.size());
 	result->flushData(vulkan, vulkan.getGraphicsQueueIndex(), vk::PipelineStageFlagBits::eAllGraphics);
 
-	return std::move(result); //Move it so that count does not increment when casting.
+	return result;
 }
 
 std::vector<Frame::PlaneDescriptor> Frame::getPlaneDescriptors(	Resolution resolution,
