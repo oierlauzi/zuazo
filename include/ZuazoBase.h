@@ -49,7 +49,7 @@ protected:
 	void							disableRegularUpdate() const;
 
 	void							enablePeriodicUpdate(	Instance::Priority prior, 
-															Timing::Duration period ) const;
+															Duration period ) const;
 	void							disablePeriodicUpdate() const;
 
 private:

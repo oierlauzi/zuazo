@@ -82,7 +82,7 @@ struct Instance::Impl {
 		loop.interrupt();
 	}
 
-	void addPeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior, Timing::Duration period) {
+	void addPeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior, Duration period) {
 		scheduler.addPeriodicCallback(cbk, prior, period);
 		loop.interrupt();
 	}
@@ -92,15 +92,15 @@ struct Instance::Impl {
 		loop.interrupt();
 	}
 
-	Timing::TimePoint getTime() const {
+	TimePoint getTime() const {
 		return scheduler.getTime();
 	}
 
-	Timing::TimePoint getEpoch() const {
+	TimePoint getEpoch() const {
 		return scheduler.getEpoch();
 	}
 
-	Timing::Duration getDeltaT() const {
+	Duration getDeltaT() const {
 		return scheduler.getDeltaT();
 	}
 
@@ -225,7 +225,7 @@ void Instance::removeRegularCallback(const std::shared_ptr<ScheduledCallback>& c
 
 void Instance::addPeriodicCallback(	const std::shared_ptr<ScheduledCallback>& cbk, 
 									Priority prior, 
-									Timing::Duration period ) 
+									Duration period ) 
 {
 	m_impl->addPeriodicCallback(cbk, prior, period );
 }
@@ -234,15 +234,15 @@ void Instance::removePeriodicCallback(const std::shared_ptr<ScheduledCallback>& 
 	m_impl->removePeriodicCallback(cbk);
 }
 
-Timing::TimePoint Instance::getTime() const {
+TimePoint Instance::getTime() const {
 	return m_impl->getTime();
 }
 
-Timing::TimePoint Instance::getEpoch() const {
+TimePoint Instance::getEpoch() const {
 	return m_impl->getEpoch();
 }
 
-Timing::Duration Instance::getDeltaT() const {
+Duration Instance::getDeltaT() const {
 	return m_impl->getDeltaT();
 }
 
@@ -318,16 +318,18 @@ uint32_t Instance::defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp
 	score += properties.limits.maxMemoryAllocationCount / SIMULTANEOUS_ALLOCATION_REDUCTION;
 
 	//Give the score based on the supported formats
-	for(size_t i = VK_FORMAT_BEGIN_RANGE; i < VK_FORMAT_END_RANGE; i++){
-		const auto format = static_cast<vk::Format>(i);
-		const auto formatProperties = device.getFormatProperties(format, disp);
+	for(const auto& range : Graphics::Vulkan::FORMAT_RANGES){
+		for(size_t i = range.first; i <= range.second; i++){
+			const auto format = static_cast<vk::Format>(i);
+			const auto formatProperties = device.getFormatProperties(format, disp);
 
-		if(Graphics::hasSamplerSupport(formatProperties)) {
-			score += SAMPLER_FORMAT_SCORE;
-		}
+			if(Graphics::hasSamplerSupport(formatProperties)) {
+				score += SAMPLER_FORMAT_SCORE;
+			}
 
-		if(Graphics::hasFramebufferSupport(formatProperties)) {
-			score += FRAMEBUFFER_FORMAT_SCORE;
+			if(Graphics::hasFramebufferSupport(formatProperties)) {
+				score += FRAMEBUFFER_FORMAT_SCORE;
+			}
 		}
 	}
 

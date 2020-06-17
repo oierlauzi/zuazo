@@ -10,8 +10,7 @@
 namespace Zuazo::Graphics {
 
 struct Frame::Impl {
-	static constexpr size_t DESCRIPTOR_COUNT = VK_FILTER_RANGE_SIZE;
-	using DescriptorSets = std::array<vk::DescriptorSet, DESCRIPTOR_COUNT>;
+	using DescriptorSets = std::array<vk::DescriptorSet, FILTER_COUNT>;
 
 	const Vulkan&						vulkan;
 
@@ -242,17 +241,17 @@ private:
 		const std::array poolSizes = {
 			vk::DescriptorPoolSize(
 				vk::DescriptorType::eCombinedImageSampler,			//Descriptor type
-				DESCRIPTOR_COUNT * ColorTransfer::getSamplerCount()	//Descriptor count
+				FILTER_COUNT * ColorTransfer::getSamplerCount()	//Descriptor count
 			),
 			vk::DescriptorPoolSize(
 				vk::DescriptorType::eUniformBuffer,					//Descriptor type
-				DESCRIPTOR_COUNT									//Descriptor count
+				FILTER_COUNT									//Descriptor count
 			)
 		};
 
 		const vk::DescriptorPoolCreateInfo createInfo(
 			{},														//Flags
-			DESCRIPTOR_COUNT,										//Descriptor set count
+			FILTER_COUNT,										//Descriptor set count
 			poolSizes.size(), poolSizes.data()						//Pool sizes
 		);
 
@@ -262,7 +261,7 @@ private:
 	static DescriptorSets allocateDescriptorSets(	const Vulkan& vulkan,
 													vk::DescriptorPool pool )
 	{
-		std::array<vk::DescriptorSetLayout, DESCRIPTOR_COUNT> layouts;
+		std::array<vk::DescriptorSetLayout, FILTER_COUNT> layouts;
 		for(size_t i = 0; i < layouts.size(); i++){
 			const auto filter = static_cast<vk::Filter>(i);
 			layouts[i] = getDescriptorSetLayout(vulkan, filter);
@@ -400,7 +399,7 @@ std::vector<Frame::PlaneDescriptor> Frame::getPlaneDescriptors(	Resolution resol
 
 vk::DescriptorSetLayout	Frame::getDescriptorSetLayout(	const Vulkan& vulkan,
 														vk::Filter filter) {
-	static const std::array<Utils::StaticId, VK_FILTER_RANGE_SIZE> ids;
+	static const std::array<Utils::StaticId, FILTER_COUNT> ids;
 	const size_t id = ids[static_cast<size_t>(filter)];
 
 	auto result = vulkan.createDescriptorSetLayout(id);

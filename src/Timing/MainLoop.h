@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Timing/Chrono.h>
+#include <Chrono.h>
 
 #include <thread>
 #include <mutex>

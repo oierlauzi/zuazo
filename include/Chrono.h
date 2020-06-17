@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../Math/Rational.h"
+#include "Math/Rational.h"
 
 #include <chrono>
 
-namespace Zuazo::Timing {
+namespace Zuazo {
 
 using Clock = std::chrono::steady_clock;
 
@@ -15,7 +15,7 @@ using Rate = Math::Rational<Duration::rep>;
 
 template<intmax_t rate_num, intmax_t rate_den = 1>
 using Frames = std::chrono::duration<	Duration::rep, 
-										std::ratio<rate_den, rate_num>>;
+										std::ratio<rate_den, rate_num>>; //Note that they are inverted
 
 constexpr Duration getPeriod(const Rate& rate);
 constexpr Rate getRate(const Duration& period);

@@ -5,7 +5,7 @@
 #include "Verbosity.h"
 #include "Video.h"
 #include "Graphics/Vulkan.h"
-#include "Timing/Chrono.h"
+#include "Chrono.h"
 #include "Utils/Pimpl.h"
 
 #include <functional>
@@ -77,12 +77,12 @@ public:
 	void						addRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior);
 	void						removeRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk);
 
-	void						addPeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior, Timing::Duration period);
+	void						addPeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior, Duration period);
 	void						removePeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk);
 
-	Timing::TimePoint			getTime() const;
-	Timing::TimePoint			getEpoch() const;
-	Timing::Duration			getDeltaT() const;
+	TimePoint					getTime() const;
+	TimePoint					getEpoch() const;
+	Duration					getDeltaT() const;
 
 	void						lock();
 	bool						try_lock();
@@ -101,7 +101,7 @@ public:
 
 	static constexpr VideoMode 	defaultVideoMode = VideoMode(	Resolution(1280, 720),
 																AspectRatio(1, 1),
-																Timing::Rate(30, 1),
+																Rate(30, 1),
 																ColorPrimaries::BT709,
 																ColorModel::RGB,
 																ColorTransferFunction::IEC61966_2_1,

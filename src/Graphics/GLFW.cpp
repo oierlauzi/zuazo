@@ -510,7 +510,7 @@ private:
 			return Monitor::Mode{
 				Monitor::ColorDepth(mod->redBits, mod->greenBits, mod->blueBits),
 				Math::Vec2i(mod->width, mod->height),
-				Timing::Rate(mod->refreshRate, 1)
+				Rate(mod->refreshRate, 1)
 			};
 		} else {
 			return {};
@@ -527,7 +527,7 @@ private:
 				modes.emplace_back(Monitor::Mode{
 					Monitor::ColorDepth(mod[i].redBits, mod[i].greenBits, mod[i].blueBits),
 					Math::Vec2i(mod[i].width, mod[i].height),
-					Timing::Rate(mod[i].refreshRate, 1)
+					Rate(mod[i].refreshRate, 1)
 				});
 			}
 

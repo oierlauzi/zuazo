@@ -113,7 +113,7 @@ inline void ZuazoBase::disableRegularUpdate() const {
 }
 
 inline void ZuazoBase::enablePeriodicUpdate(Instance::Priority prior, 
-											Timing::Duration period) const 
+											Duration period) const 
 {
 	visitCallbacks(
 		[=] (const std::shared_ptr<UpdateCallback>& cbk) {

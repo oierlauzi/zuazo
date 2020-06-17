@@ -32,6 +32,11 @@ public:
 
 	static constexpr uint64_t NO_TIMEOUT = std::numeric_limits<uint64_t>::max();
 
+	static constexpr std::array FORMAT_RANGES = {
+		std::pair{VK_FORMAT_R4G4_UNORM_PACK8, VK_FORMAT_ASTC_12x12_SRGB_BLOCK }, 			//Normal formats
+		std::pair{VK_FORMAT_G8B8G8R8_422_UNORM, VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM }	//YCbCr formats
+	};
+
 	Vulkan(	std::string_view appName, 
 			Version appVersion,
 			const DeviceScoreFunc& scoreFunc );

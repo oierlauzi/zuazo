@@ -1,4 +1,6 @@
-namespace Zuazo::Timing {
+#include "Chrono.h"
+
+namespace Zuazo {
 
 constexpr Duration getPeriod(const Rate& rate) {
 	constexpr auto fromSec = Rate(1L) / Rate(Duration::period());

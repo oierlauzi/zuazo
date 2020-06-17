@@ -8,7 +8,7 @@
 #include "ColorFormat.h"
 #include "Resolution.h"
 #include "Math/Rational.h"
-#include "Timing/Chrono.h"
+#include "Chrono.h"
 #include "Graphics/Frame.h"
 #include "Utils/Configuration.h"
 
@@ -36,7 +36,7 @@ using Video = std::shared_ptr<const Graphics::Frame>;
 using VideoMode = Utils::Configuration<	VideoModeParameters,
 										Resolution,
 										AspectRatio,
-										Timing::Rate,
+										Rate,
 										ColorPrimaries,
 										ColorModel,
 										ColorTransferFunction,

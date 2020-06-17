@@ -119,8 +119,7 @@ struct Window::Impl {
 
 		{
 			writeDescriptorSets(vulkan);
-			updateViewportUniform(vulkan);
-			updateColorTransferUniform(vulkan);
+			updateUniforms(vulkan);
 		}
 
 		~Open() = default;
@@ -158,6 +157,14 @@ struct Window::Impl {
 			);
 		}
 
+		void updateUniforms(const Graphics::Vulkan& vulkan) {
+			uniformBuffer.flushData(
+				vulkan,
+				vulkan.getGraphicsQueueIndex(),
+				vk::PipelineStageFlagBits::eFragmentShader
+			);
+		}
+
 		void waitCompletion(const Graphics::Vulkan& vulkan) {
 			vulkan.waitForFences(*renderFinishedFence);
 		}
@@ -179,7 +186,7 @@ struct Window::Impl {
 				)
 			};
 
-			const std::array writeDescriptorSets ={
+			const std::array writeDescriptorSets = {
 				vk::WriteDescriptorSet( //Viewport UBO
 					descriptorSet,											//Descriptor set
 					WINDOW_DESCRIPTOR_VIEWPORT,								//Binding
@@ -471,7 +478,7 @@ struct Window::Impl {
 			AspectRatio(1, 1)
 		};
 
-		const VideoMode::Any<Timing::Rate> frameRates {};
+		const VideoMode::Any<Rate> frameRates {};
 
 		const VideoMode::MustBe<ColorModel> colorModels {
 			ColorModel::RGB
@@ -572,7 +579,7 @@ private:
 
 		opened->waitCompletion(vulkan);
 		opened->extent = Graphics::toVulkan(res);
-		opened->geometry.setTargetSize(Math::Vec2f(res.x, res.y));
+		opened->geometry.setTargetSize(res);
 		opened->updateViewportUniform(vulkan);
 		opened->recreateSwapchain(vulkan);
 	}
@@ -918,7 +925,7 @@ private:
 	static vk::PipelineLayout createPipelineLayout(	const Graphics::Vulkan& vulkan, 
 													vk::Filter filter ) 
 	{
-		static std::array<Utils::StaticId, VK_FILTER_RANGE_SIZE> ids;
+		static std::array<Utils::StaticId, Graphics::Frame::FILTER_COUNT> ids;
 		const auto layoutId = ids[static_cast<size_t>(filter)];
 
 		auto result = vulkan.createPipelineLayout(layoutId);
@@ -1214,7 +1221,7 @@ void Window::open() {
 
 	m_impl->open(videoMode, getName());
 	ZuazoBase::enablePeriodicUpdate(Instance::OUTPUT_PRIORITY, 
-									Timing::getPeriod(videoMode.get<VideoMode::Parameters::frameRate>()) );
+									getPeriod(videoMode.get<VideoMode::Parameters::frameRate>()) );
 
 	VideoBase::setVideoModeCompatibility(m_impl->getVideoModeCompatibility());
 	ZuazoBase::open();
@@ -1232,14 +1239,14 @@ void Window::setVideoMode(const VideoMode& videoMode) {
 	validate(videoMode);
 	m_impl->setVideoMode(videoMode);
 
-	if(	Timing::getPeriod(getVideoMode().get<VideoMode::Parameters::frameRate>()) !=
-		Timing::getPeriod(videoMode.get<VideoMode::Parameters::frameRate>()) &&
+	if(	getPeriod(getVideoMode().get<VideoMode::Parameters::frameRate>()) !=
+		getPeriod(videoMode.get<VideoMode::Parameters::frameRate>()) &&
 		ZuazoBase::isOpen() )
 	{
 		//Update the update rate rate
 		ZuazoBase::disablePeriodicUpdate();
 		ZuazoBase::enablePeriodicUpdate(Instance::OUTPUT_PRIORITY, 
-										Timing::getPeriod(videoMode.get<VideoMode::Parameters::frameRate>()) );
+										getPeriod(videoMode.get<VideoMode::Parameters::frameRate>()) );
 	}
 
 	VideoBase::setVideoMode(videoMode);

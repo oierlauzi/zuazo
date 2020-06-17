@@ -819,11 +819,6 @@ private:
 	static FormatSupport getFormatSupport(	const vk::DispatchLoaderDynamic& disp, 
 											vk::PhysicalDevice physicalDevice )
 	{
-		constexpr std::array FORMAT_RANGES = {
-			std::pair{VK_FORMAT_BEGIN_RANGE, VK_FORMAT_END_RANGE }, //Normal formats
-			std::pair{VK_FORMAT_G8B8G8R8_422_UNORM, VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM } //YCbCr formats
-		};
-
 		FormatSupport result;
 
 		for(const auto& range : FORMAT_RANGES){

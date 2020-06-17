@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Vulkan.h"
+#include "../Chrono.h"
 #include "../Math/Vector.h"
 #include "../Resolution.h"
-#include "../Timing/Chrono.h"
 
 #include <atomic>
 #include <cstddef>
@@ -76,7 +76,7 @@ public:
 	struct Mode {
 		ColorDepth colorDepth;
 		Math::Vec2i size;
-		Timing::Rate frameRate;
+		Rate frameRate;
 	};
 
 	Monitor() = default;

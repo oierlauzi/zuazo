@@ -30,6 +30,8 @@ public:
 
 	using PixelData = std::vector<Utils::BufferView<std::byte>>;
 
+	static constexpr size_t FILTER_COUNT = VK_FILTER_LINEAR - VK_FILTER_NEAREST + 1;
+
 	Frame(	const Vulkan& vulkan,
 			Math::Vec2f size,
 			const std::shared_ptr<const Buffer>& colorTransfer,
