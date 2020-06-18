@@ -1,5 +1,7 @@
 #include "ScalingMode.h"
 
+#include "Math/Functions.h"
+
 namespace Zuazo {
 
 template<typename T>

@@ -521,8 +521,8 @@ void Frame::Geometry::updateBuffer() {
 	//Scale accordingly and clamp its value
 	auto recSize = scale(m_sourceSize, m_targetSize, m_scalingMode);
 	auto texSize = m_targetSize / recSize;
-	recSize = Math::clamp(recSize, Math::Vec2f(0.0f), m_targetSize);
-	texSize = Math::clamp(texSize, Math::Vec2f(0.0f), Math::Vec2f(1.0f));
+	recSize = Math::min(recSize, m_targetSize);
+	texSize = Math::min(texSize, Math::Vec2f(1.0f));
 
 	constexpr std::array vertexPositions {
 		Math::Vec2f(-1.0f, -1.0f),
