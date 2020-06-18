@@ -196,6 +196,36 @@ struct Window::Impl {
 		void waitCompletion(const Graphics::Vulkan& vulkan) {
 			vulkan.waitForFences(*renderFinishedFence);
 		}
+
+		uint32_t acquireImage(const Graphics::Vulkan& vulkan) {
+			vk::Result result;
+			uint32_t index;
+
+			//Try to acquire an image as many times as needed.
+			do {
+				result = vulkan.getDevice().acquireNextImageKHR(
+					*swapchain, 						
+					Graphics::Vulkan::NO_TIMEOUT,
+					*imageAvailableSemaphore,
+					nullptr,
+					&index,
+					vulkan.getDispatcher()
+				);
+
+				//Evaluate wether it was a success
+				switch(result) {
+				case vk::Result::eErrorOutOfDateKHR:
+				case vk::Result::eSuboptimalKHR:
+					recreateSwapchain(vulkan);
+					break;
+
+				default: 
+					break;
+				}
+			} while(result != vk::Result::eSuccess);
+
+			return index;
+		}
 	
 	private:
 		void writeDescriptorSets(const Graphics::Vulkan& vulkan) {
@@ -396,13 +426,7 @@ struct Window::Impl {
 			opened->waitCompletion(vulkan);
 
 			//Acquire an image from the swapchain
-			const auto index = vulkan.getDevice().acquireNextImageKHR(
-				*(opened->swapchain), 						
-				std::numeric_limits<uint64_t>::max(),
-				*(opened->imageAvailableSemaphore),
-				nullptr,
-				vulkan.getDispatcher()
-			);
+			const auto index = opened->acquireImage(vulkan);
 
 			//Resize the geometry if needed
 			if(frame) {
@@ -419,7 +443,7 @@ struct Window::Impl {
 			}
 
 			const auto& cmdBuffer = opened->commandBuffer;
-			const auto& frameBuffer = *(opened->framebuffers[index.value]);
+			const auto& frameBuffer = *(opened->framebuffers[index]);
 
 
 			//Begin writing to the command buffer. //TODO maybe reset pool?
@@ -494,7 +518,7 @@ struct Window::Impl {
 			vulkan.submit(vulkan.getGraphicsQueue(), subInfo, *(opened->renderFinishedFence));
 
 			//Present it
-			vulkan.present(*(opened->swapchain), index.value, renderFinishedSemaphores.front());
+			vulkan.present(*(opened->swapchain), index, renderFinishedSemaphores.front());
 		}
 	}
 

@@ -356,7 +356,7 @@ Math::Vec2f Frame::calculateSize(Resolution res, AspectRatio par) {
 }
 
 std::shared_ptr<Buffer> Frame::createColorTransferBuffer(	const Vulkan& vulkan,
-																const ColorTransfer& colorTransfer )
+															const ColorTransfer& colorTransfer )
 {
 	constexpr vk::BufferUsageFlags usage =
 		vk::BufferUsageFlagBits::eUniformBuffer;
