@@ -462,13 +462,13 @@ struct Vulkan::Impl {
 		device->waitIdle(dispatcher);
 	}
 
-	void waitForFences(	Utils::BufferView<const vk::Fence> fences,
+	bool waitForFences(	Utils::BufferView<const vk::Fence> fences,
 						bool waitAll,
 						uint64_t timeout ) const
 	{
 		using FenceArray = vk::ArrayProxy<const vk::Fence>;
 
-		device->waitForFences(
+		return vk::Result::eSuccess == device->waitForFences(
 			FenceArray(fences.size(), fences.data()),		//Fences
 			waitAll,										//Wait all
 			timeout,										//Timeout
@@ -1244,11 +1244,11 @@ void Vulkan::waitIdle() const {
 	m_impl->waitIdle();
 }
 
-void Vulkan::waitForFences(	Utils::BufferView<const vk::Fence> fences,
+bool Vulkan::waitForFences(	Utils::BufferView<const vk::Fence> fences,
 							bool waitAll,
 							uint64_t timeout ) const
 {
-	m_impl->waitForFences(fences, waitAll, timeout);
+	return m_impl->waitForFences(fences, waitAll, timeout);
 }
 
 void Vulkan::resetFences(Utils::BufferView<const vk::Fence> fences) const {

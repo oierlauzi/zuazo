@@ -18,6 +18,7 @@ StagedFrame::StagedFrame(	const Vulkan& vulkan,
 	, m_commandPool(cmdPool)
 	, m_commandBuffer(createCommandBuffer(getVulkan(), planes, **m_commandPool, getImages(), getPlaneAreas(), m_stagingBuffer))
 	, m_commandBufferSubmit(createSubmitInfo(*m_commandBuffer))
+	, m_uploadComplete(vulkan.createFence(false))
 {
 }
 
@@ -99,12 +100,12 @@ vk::UniqueCommandBuffer StagedFrame::createCommandBuffer(	const Vulkan& vulkan,
 	auto cmdBuffer = vulkan.allocateCommnadBuffer(allocInfo);
 
 	//Record the command buffer
-	const vk::CommandBufferBeginInfo cbBeginInfo(
+	const vk::CommandBufferBeginInfo beginInfo(
 		{},
 		nullptr
 	);
 
-	vulkan.begin(*cmdBuffer, cbBeginInfo);
+	vulkan.begin(*cmdBuffer, beginInfo);
 	{
 		const bool queueOwnershipTransfer = vulkan.getTransferQueueIndex() != vulkan.getGraphicsQueueIndex();
 		assert(images.size() == areas.size());
@@ -121,14 +122,18 @@ vk::UniqueCommandBuffer StagedFrame::createCommandBuffer(	const Vulkan& vulkan,
 			constexpr vk::AccessFlags srcAccess = {};
 			constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eTransferWrite;
 
-			const auto srcFamily = VK_QUEUE_FAMILY_IGNORED;
-			const auto dstFamily = queueOwnershipTransfer ? vulkan.getTransferQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
+			constexpr vk::ImageLayout srcLayout = vk::ImageLayout::eUndefined;
+			constexpr vk::ImageLayout dstLayout = vk::ImageLayout::eTransferDstOptimal;
+
+			//We don't mind about the previous contents, so skip the ownewship transfer
+			constexpr auto srcFamily = VK_QUEUE_FAMILY_IGNORED;
+			constexpr auto dstFamily = VK_QUEUE_FAMILY_IGNORED;
 
 			memoryBarriers[i] = vk::ImageMemoryBarrier(
 				srcAccess,								//Old access mask
 				dstAccess,								//New access mask
-				vk::ImageLayout::eUndefined,			//Old layout
-				vk::ImageLayout::eTransferDstOptimal,	//New layout
+				srcLayout,								//Old layout
+				dstLayout,								//New layout
 				srcFamily,								//Old queue family
 				dstFamily,								//New queue family
 				*(images[i]),							//Image
@@ -176,14 +181,17 @@ vk::UniqueCommandBuffer StagedFrame::createCommandBuffer(	const Vulkan& vulkan,
 			constexpr vk::AccessFlags srcAccess = vk::AccessFlagBits::eTransferWrite;
 			constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eShaderRead;
 
+			constexpr vk::ImageLayout srcLayout = vk::ImageLayout::eTransferDstOptimal;
+			constexpr vk::ImageLayout dstLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
 			const auto srcFamily = queueOwnershipTransfer ? vulkan.getTransferQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
 			const auto dstFamily = queueOwnershipTransfer ? vulkan.getGraphicsQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
 
 			memoryBarriers[i] = vk::ImageMemoryBarrier(
 				srcAccess,								//Old access mask
 				dstAccess,								//New access mask
-				vk::ImageLayout::eTransferDstOptimal,	//Old layout
-				vk::ImageLayout::eShaderReadOnlyOptimal,//New layout
+				srcLayout,								//Old layout
+				dstLayout,								//New layout
 				srcFamily,								//Old queue family
 				dstFamily,								//New queue family
 				*(images[i]),							//Image

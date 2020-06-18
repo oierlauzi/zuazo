@@ -138,29 +138,57 @@ struct Window::Impl {
 		}
 
 		void updateViewportUniform(const Graphics::Vulkan& vulkan) {
+			uniformBuffer.waitCompletion(vulkan);		
+			
+			auto& size = *(reinterpret_cast<Math::Vec2f*>(uniformBuffer.data() + VIEWPORT_UNIFORM_OFFSET));
+			size = geometry.getTargetSize();
+
 			uniformBuffer.flushData(
 				vulkan,
 				VIEWPORT_UNIFORM_OFFSET,
 				VIEWPORT_UNIFORM_SIZE,
 				vulkan.getGraphicsQueueIndex(),
+				vk::AccessFlagBits::eUniformRead,
 				vk::PipelineStageFlagBits::eVertexShader
 			);
 		}
 
 		void updateColorTransferUniform(const Graphics::Vulkan& vulkan) {
+			uniformBuffer.waitCompletion(vulkan);		
+			
+			std::memcpy(
+				uniformBuffer.data() + COLOR_TRANSFER_UNIFORM_OFFSET,
+				colorTransfer.data(),
+				COLOR_TRANSFER_UNIFORM_SIZE
+			);
+
 			uniformBuffer.flushData(
 				vulkan,
 				COLOR_TRANSFER_UNIFORM_OFFSET,
 				COLOR_TRANSFER_UNIFORM_SIZE,
 				vulkan.getGraphicsQueueIndex(),
+				vk::AccessFlagBits::eUniformRead,
 				vk::PipelineStageFlagBits::eFragmentShader
 			);
 		}
 
 		void updateUniforms(const Graphics::Vulkan& vulkan) {
+			uniformBuffer.waitCompletion(vulkan);		
+			
+			auto& size = *(reinterpret_cast<Math::Vec2f*>(uniformBuffer.data() + VIEWPORT_UNIFORM_OFFSET));
+			size = geometry.getTargetSize();
+
+			std::memcpy(
+				uniformBuffer.data() + COLOR_TRANSFER_UNIFORM_OFFSET,
+				colorTransfer.data(),
+				COLOR_TRANSFER_UNIFORM_SIZE
+			);
+
 			uniformBuffer.flushData(
 				vulkan,
 				vulkan.getGraphicsQueueIndex(),
+				vk::AccessFlagBits::eUniformRead,
+				vk::PipelineStageFlagBits::eVertexShader |
 				vk::PipelineStageFlagBits::eFragmentShader
 			);
 		}
@@ -380,9 +408,11 @@ struct Window::Impl {
 			if(frame) {
 				opened->vertexBuffer.waitCompletion(vulkan);
 				if(opened->geometry.useFrame(*frame)){
+					//Vertex buffer has changed, update it
 					opened->vertexBuffer.flushData(
 						vulkan, 
-						vulkan.getGraphicsQueueIndex(), 
+						vulkan.getGraphicsQueueIndex(),
+						vk::AccessFlagBits::eVertexAttributeRead,
 						vk::PipelineStageFlagBits::eVertexInput
 					);
 				}	
@@ -662,16 +692,16 @@ private:
 	static Graphics::StagedBuffer createVertexBuffer(const Graphics::Vulkan& vulkan) {
 		return Graphics::StagedBuffer(
 			vulkan,
-			sizeof(Vertex) * Graphics::Frame::Geometry::VERTEX_COUNT,
-			vk::BufferUsageFlagBits::eVertexBuffer
+			vk::BufferUsageFlagBits::eVertexBuffer,
+			sizeof(Vertex) * Graphics::Frame::Geometry::VERTEX_COUNT
 		);
 	}
 
 	static Graphics::StagedBuffer createUniformBuffer(const Graphics::Vulkan& vulkan) {
 		return Graphics::StagedBuffer(
 			vulkan,
-			UNIFORM_BUFFER_SIZE,
-			vk::BufferUsageFlagBits::eUniformBuffer
+			vk::BufferUsageFlagBits::eUniformBuffer,
+			UNIFORM_BUFFER_SIZE
 		);
 	}
 

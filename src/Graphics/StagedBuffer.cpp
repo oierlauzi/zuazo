@@ -3,13 +3,13 @@
 namespace Zuazo::Graphics {
 
 StagedBuffer::StagedBuffer(	const Vulkan& vulkan, 
-							size_t size, 
-							vk::BufferUsageFlags usage )
-	: Buffer(createDeviceBuffer(vulkan, size, usage))
+							vk::BufferUsageFlags usage,
+							size_t size )
+	: Buffer(createDeviceBuffer(vulkan, usage, size))
 	, m_stagingBuffer(createStagingBuffer(vulkan, size))
 	, m_data(mapStagingBuffer(vulkan, size, m_stagingBuffer))
 	, m_commandPool(createCommandPool(vulkan))
-	, m_uploadComplete(vulkan.createFence(true))
+	, m_uploadComplete(vulkan.createFence(false))
 	, m_waitFence(nullptr)
 {
 }
@@ -48,7 +48,8 @@ void StagedBuffer::flushData(	const Vulkan& vulkan,
 								size_t offset, 
 								size_t size, 					
 								uint32_t queue,
-								vk::PipelineStageFlags destination) 
+								vk::AccessFlags access,
+								vk::PipelineStageFlags stage) 
 {
 	assert(!m_waitFence);
 
@@ -65,7 +66,7 @@ void StagedBuffer::flushData(	const Vulkan& vulkan,
 	}
 
 	//Ensure that the adecuate command buffer exists
-	const auto key = Key(offset, size, queue, destination);
+	const auto key = Key(offset, size, queue, access, stage);
 	auto ite = m_uploadCommands.find(key);
 	if(ite == m_uploadCommands.end()) {
 		std::tie(ite, std::ignore) = m_uploadCommands.emplace(
@@ -73,7 +74,7 @@ void StagedBuffer::flushData(	const Vulkan& vulkan,
 			createCommandBuffer(
 				vulkan, 
 				offset, size, 
-				queue, destination
+				queue, access, stage
 			)
 		);
 	}
@@ -88,26 +89,33 @@ void StagedBuffer::flushData(	const Vulkan& vulkan,
 		1, &(ite->second),					//Command buffers
 		0, nullptr							//Signal semaphores
 	);
-	vulkan.getTransferQueue().submit(
+	vulkan.submit(
+		vulkan.getTransferQueue(),
 		subInfo,
-		m_waitFence,
-		vulkan.getDispatcher()
+		m_waitFence
 	);
 }
 
 void StagedBuffer::flushData(	const Vulkan& vulkan, 					
 								uint32_t queue,
-								vk::PipelineStageFlags destination )
+								vk::AccessFlags access,
+								vk::PipelineStageFlags stage )
 {
-	flushData(vulkan, 0, VK_WHOLE_SIZE, queue, destination);
+	flushData(vulkan, 0, VK_WHOLE_SIZE, queue, access, stage);
 }
 
-void StagedBuffer::waitCompletion(	const Vulkan& vulkan,
+bool StagedBuffer::waitCompletion(	const Vulkan& vulkan,
 									uint64_t timeo ) const 
 {
 	if(m_waitFence) {
-		vulkan.waitForFences(m_waitFence, true, timeo);
-		m_waitFence = nullptr;
+		if(vulkan.waitForFences(m_waitFence, true, timeo)) {
+			m_waitFence = nullptr;
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		return true;
 	}
 }
 
@@ -120,32 +128,34 @@ vk::CommandBuffer StagedBuffer::createCommandBuffer(const Vulkan& vulkan,
 													size_t offset,
 													size_t size,
 													uint32_t queue,
-													vk::PipelineStageFlags destination )
+													vk::AccessFlags access,
+													vk::PipelineStageFlags stage )
 {
-	const vk::CommandBufferAllocateInfo cbAllocInfo(
+	const vk::CommandBufferAllocateInfo allocInfo(
 		*m_commandPool,
 		vk::CommandBufferLevel::ePrimary,
 		1
 	);
 
-	auto cmdBuffer = vulkan.allocateCommnadBuffer(cbAllocInfo);
+	auto cmdBuffer = vulkan.allocateCommnadBuffer(allocInfo);
 
 	//Record the command buffer
-	const vk::CommandBufferBeginInfo cbBeginInfo(
+	const vk::CommandBufferBeginInfo beginInfo(
 		{},
 		nullptr
 	);
 
-	cmdBuffer->begin(cbBeginInfo, vulkan.getDispatcher()); 
+	cmdBuffer->begin(beginInfo, vulkan.getDispatcher()); 
 	{
-		const bool queueOwnershipTransfer = vulkan.getTransferQueueIndex() != queue;
-
 		{
-			//Insert a memory barrier to acquire buffer's ownership
-			const auto srcFamily = VK_QUEUE_FAMILY_IGNORED;
-			const auto dstFamily = queueOwnershipTransfer ? queue : VK_QUEUE_FAMILY_IGNORED;
+			//Insert a memory barrier
+			
 			constexpr vk::AccessFlags srcAccess = {};
 			constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eTransferWrite;
+
+			//We don't mind about the previous contents, so skip the ownewship transfer
+			constexpr auto srcFamily = VK_QUEUE_FAMILY_IGNORED;
+			constexpr auto dstFamily = VK_QUEUE_FAMILY_IGNORED;
 
 			const vk::BufferMemoryBarrier memoryBarrier(
 				srcAccess,						//Old access mask
@@ -156,15 +166,15 @@ vk::CommandBuffer StagedBuffer::createCommandBuffer(const Vulkan& vulkan,
 				offset, size					//Range
 			);
 
-			constexpr vk::PipelineStageFlags sourceStages = 
+			constexpr vk::PipelineStageFlags srcStages = 
 				vk::PipelineStageFlagBits::eTopOfPipe;
 
-			constexpr vk::PipelineStageFlags destinationStages = 
+			constexpr vk::PipelineStageFlags dstStages = 
 				vk::PipelineStageFlagBits::eTransfer;
 			
 			cmdBuffer->pipelineBarrier(
-				sourceStages,					//Generating stages
-				destinationStages,				//Consuming stages
+				srcStages,						//Generating stages
+				dstStages,						//Consuming stages
 				{},								//dependency flags
 				{},								//Memory barriers
 				memoryBarrier,					//Buffer memory barriers
@@ -183,10 +193,13 @@ vk::CommandBuffer StagedBuffer::createCommandBuffer(const Vulkan& vulkan,
 
 		//Insert a memory barrier, so that changes are visible
 		{
+			const bool queueOwnershipTransfer = vulkan.getTransferQueueIndex() != queue;
+
+			constexpr vk::AccessFlags srcAccess = vk::AccessFlagBits::eTransferWrite;
+			const vk::AccessFlags dstAccess = access;
+
 			const auto srcFamily = queueOwnershipTransfer ? vulkan.getTransferQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
 			const auto dstFamily = queueOwnershipTransfer ? queue : VK_QUEUE_FAMILY_IGNORED;
-			constexpr vk::AccessFlags srcAccess = vk::AccessFlagBits::eTransferWrite;
-			constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eVertexAttributeRead;
 
 			const vk::BufferMemoryBarrier memoryBarrier(
 				srcAccess,						//Old access mask
@@ -197,13 +210,15 @@ vk::CommandBuffer StagedBuffer::createCommandBuffer(const Vulkan& vulkan,
 				offset, size					//Range
 			);
 
-			constexpr vk::PipelineStageFlags sourceStages = 
+			constexpr vk::PipelineStageFlags srcStages = 
 				vk::PipelineStageFlagBits::eTransfer;
+
+			const vk::PipelineStageFlags dstStages = stage;
 			
 			cmdBuffer->pipelineBarrier(
-				sourceStages,					//Generating stages
-				destination,					//Consuming stages
-				{},								//dependency flags
+				srcStages,						//Generating stages
+				dstStages,						//Consuming stages
+				{},								//Dependency flags
 				{},								//Memory barriers
 				memoryBarrier,					//Buffer memory barriers
 				{},								//Image memory barriers
@@ -217,8 +232,8 @@ vk::CommandBuffer StagedBuffer::createCommandBuffer(const Vulkan& vulkan,
 }
 
 Buffer StagedBuffer::createDeviceBuffer(const Vulkan& vulkan, 
-										size_t size,
-										vk::BufferUsageFlags usage )
+										vk::BufferUsageFlags usage,
+										size_t size )
 {
 	const vk::BufferUsageFlags usageFlags =
 		vk::BufferUsageFlagBits::eTransferDst | usage;
@@ -260,10 +275,10 @@ Utils::BufferView<std::byte> StagedBuffer::mapStagingBuffer(const Vulkan& vulkan
 		stagingBuffer.getDeviceMemory(),
 		0, VK_WHOLE_SIZE
 	);
-	auto* data = vulkan.mapMemory(range);
+	auto* data = reinterpret_cast<std::byte*>(vulkan.mapMemory(range));
 
 	return Utils::BufferView<std::byte>( 
-		reinterpret_cast<std::byte*>(data), 
+		data, 
 		size 
 	);
 }

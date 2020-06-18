@@ -131,7 +131,7 @@ public:
 	void								updateDescriptorSets(Utils::BufferView<const vk::CopyDescriptorSet> copy) const;
 
 	void								waitIdle() const;
-	void								waitForFences(	Utils::BufferView<const vk::Fence> fences,
+	bool								waitForFences(	Utils::BufferView<const vk::Fence> fences,
 														bool waitAll = false,
 														uint64_t timeout = NO_TIMEOUT) const;
 	void								resetFences(Utils::BufferView<const vk::Fence> fences) const;

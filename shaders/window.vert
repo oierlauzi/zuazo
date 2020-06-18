@@ -10,6 +10,6 @@ layout(set = 0, binding = 0) uniform ViewPortBlock {
 
 
 void main() {
-    gl_Position = vec4(in_position / viewPortSize, 0.0, 1.0);
+    gl_Position = vec4(in_position / vec2(1280, 720), 0.0, 1.0);
 	ex_texCoord = in_texCoord;
 }

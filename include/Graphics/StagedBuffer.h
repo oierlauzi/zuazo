@@ -14,8 +14,8 @@ class StagedBuffer
 {
 public:
 	StagedBuffer(	const Vulkan& vulkan, 
-					size_t size,
-					vk::BufferUsageFlags usage );
+					vk::BufferUsageFlags usage,
+					size_t size );
 	StagedBuffer(const StagedBuffer& other) = delete;
 	StagedBuffer(StagedBuffer&& other);
 	virtual ~StagedBuffer();
@@ -33,17 +33,19 @@ public:
 													size_t offset, 
 													size_t size, 					
 													uint32_t queue,
-													vk::PipelineStageFlags destination );
+													vk::AccessFlags access,
+													vk::PipelineStageFlags stage );
 	void								flushData(	const Vulkan& vulkan, 					
 													uint32_t queue,
-													vk::PipelineStageFlags destination );
-	void								waitCompletion(	const Vulkan& vulkan, 
+													vk::AccessFlags access,
+													vk::PipelineStageFlags stage );
+	bool								waitCompletion(	const Vulkan& vulkan, 
 														uint64_t timeo = Vulkan::NO_TIMEOUT ) const;
 
 	Buffer								finish(const Vulkan& vulkan);
 	
 private:
-	using Key = std::tuple<size_t, size_t, uint32_t, vk::PipelineStageFlags>;
+	using Key = std::tuple<size_t, size_t, uint32_t, vk::AccessFlags, vk::PipelineStageFlags>;
 
 	Buffer								m_stagingBuffer;
 	Utils::BufferView<std::byte>		m_data;
@@ -58,11 +60,12 @@ private:
 															size_t offset,
 															size_t size,
 															uint32_t queue,
-															vk::PipelineStageFlags destination );
+															vk::AccessFlags access,
+															vk::PipelineStageFlags stage );
 
 	static Buffer						createDeviceBuffer(	const Vulkan& vulkan, 
-															size_t size,
-															vk::BufferUsageFlags usage );
+															vk::BufferUsageFlags usage,
+															size_t size );
 	static Buffer						createStagingBuffer(const Vulkan& vulkan, 
 															size_t size);
 	static Utils::BufferView<std::byte> mapStagingBuffer(	const Vulkan& vulkan, 

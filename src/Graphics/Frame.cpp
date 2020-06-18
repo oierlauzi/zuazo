@@ -361,11 +361,16 @@ std::shared_ptr<Buffer> Frame::createColorTransferBuffer(	const Vulkan& vulkan,
 	constexpr vk::BufferUsageFlags usage =
 		vk::BufferUsageFlagBits::eUniformBuffer;
 
-	auto result = std::make_unique<StagedBuffer>(vulkan, colorTransfer.size(), usage);
+	auto result = std::make_unique<StagedBuffer>(vulkan, usage, colorTransfer.size());
 
 	//Copy the data onto it
 	std::memcpy(result->data(), colorTransfer.data(), colorTransfer.size());
-	result->flushData(vulkan, vulkan.getGraphicsQueueIndex(), vk::PipelineStageFlagBits::eAllGraphics);
+	result->flushData(
+		vulkan, 
+		vulkan.getGraphicsQueueIndex(), 
+		vk::AccessFlagBits::eUniformRead,
+		vk::PipelineStageFlagBits::eAllGraphics
+	);
 
 	return result;
 }
