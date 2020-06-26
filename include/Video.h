@@ -18,32 +18,19 @@
 
 namespace Zuazo {
 
-enum class VideoModeParameters {
-	resolution,
-	pixelAspectRatio,
-	frameRate,
-	colorPrimaries,
-	colorModel,
-	colorTransferFunction,
-	colorSubsampling,
-	colorRange,
-	colorFormat
-};
-
-std::string_view toString(VideoModeParameters par);
-
 using Video = std::shared_ptr<const Graphics::Frame>;
-using VideoMode = Utils::Configuration<	VideoModeParameters,
-										Resolution,
-										AspectRatio,
-										Rate,
-										ColorPrimaries,
-										ColorModel,
-										ColorTransferFunction,
-										ColorSubsampling,
-										ColorRange,
-										ColorFormat	>;
 
+struct VideoMode : Graphics::Frame::Descriptor {
+	using Descriptor::Descriptor;
+
+	static inline const std::string FRAME_RATE = "frameRate";	static constexpr auto DEFAULT_FRAME_RATE = Rate(30, 1);
+
+	VideoMode(	Resolution res = DEFAULT_RESOLUTION,
+				Rate frameRate = DEFAULT_FRAME_RATE );
+
+	void					setFrameRate(Rate rate);
+	Rate					getFrameRate() const;
+};
 
 class VideoBase {
 public:
@@ -56,16 +43,16 @@ public:
 	virtual void						setVideoMode(const VideoMode& videoMode) = 0;
 	const VideoMode&					getVideoMode() const;
 
-	const VideoMode::Compatibilities&	getVideoModeCompatibility() const;
+	const std::vector<Utils::Compatibility>& getVideoModeCompatibility() const;
 
 protected:
-	void								setVideoModeCompatibility(const VideoMode::Compatibilities& comp);
+	void								setVideoModeCompatibility(const std::vector<Utils::Compatibility>& comp);
 	void								validate(const VideoMode& videoMode);
 
 private:
 	VideoMode							m_videoMode;
 
-	VideoMode::Compatibilities			m_compatibilities;
+	std::vector<Utils::Compatibility>	m_compatibilities;
 
 };
 

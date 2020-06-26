@@ -5,19 +5,16 @@
 
 namespace Zuazo::Graphics {
 
+/*
+ * Uploader
+ */
+
 Uploader::Uploader(	const Vulkan& vulkan, 
-					Resolution resolution,
-					AspectRatio par,
-					ColorSubsampling subsampling,
-					ColorFormat format,
-					ColorRange range,
-					ColorTransferFunction transferFunction,
-					ColorModel model,
-					ColorPrimaries primaries )
+					const Frame::Descriptor& conf )
 	: m_vulkan(vulkan)
-	, m_frameSize(Frame::calculateSize(resolution, par))
-	, m_colorTransfer(format, range, transferFunction, model, primaries)
-	, m_planeDescriptors(createPlaneDescriptors(vulkan, resolution, subsampling, format, m_colorTransfer))
+	, m_frameDescriptor(std::make_shared<Frame::Descriptor>(conf))
+	, m_colorTransfer(*m_frameDescriptor)
+	, m_planeDescriptors(createPlaneDescriptors(vulkan, conf.getResolution(), conf.getColorSubsampling(), conf.getColorFormat(), m_colorTransfer))
 	, m_commandPool(createCommandPool(m_vulkan))
 	, m_colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, m_colorTransfer))
 	, m_pool(std::bind(&Uploader::allocateFrame, this))
@@ -40,7 +37,7 @@ void Uploader::clear() {
 Utils::Pool<StagedFrame>::Ref Uploader::allocateFrame() const {
 	return std::make_shared<StagedFrame>(
 		m_vulkan,
-		m_frameSize,
+		m_frameDescriptor,
 		m_colorTransferBuffer,
 		m_planeDescriptors,
 		m_commandPool

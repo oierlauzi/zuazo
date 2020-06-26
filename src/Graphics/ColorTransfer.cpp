@@ -13,17 +13,13 @@ struct ColorTransfer::Impl {
 	ct_data transferData;
 
 	Impl() = default;
-	Impl(	ColorFormat format,
-			ColorRange range,
-			ColorTransferFunction transferFunc,
-			ColorModel model,
-			ColorPrimaries primaries )
+	Impl(const Frame::Descriptor& desc)
 		: transferData {
-			getConversionMatrix(primaries),
-			getConversionMatrix(model),
-			getTransferFunction(transferFunc),
-			getRange(range, model),
-			getPlaneFormat(format)
+			getConversionMatrix(desc.getColorPrimaries()),
+			getConversionMatrix(desc.getColorModel()),
+			getTransferFunction(desc.getColorTransferFunction()),
+			getRange(desc.getColorRange(), desc.getColorModel()),
+			getPlaneFormat(desc.getColorFormat())
 		}
 	{
 	}
@@ -135,12 +131,8 @@ private:
 
 ColorTransfer::ColorTransfer() = default;
 
-ColorTransfer::ColorTransfer(	ColorFormat format,
-								ColorRange range,
-								ColorTransferFunction transferFunc,
-								ColorModel model,
-								ColorPrimaries primaries )
-	: m_impl(format, range, transferFunc, model, primaries)
+ColorTransfer::ColorTransfer(const Frame::Descriptor& desc)
+	: m_impl(desc)
 {
 }
 

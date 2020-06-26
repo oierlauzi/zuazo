@@ -26,41 +26,6 @@ constexpr T align(T ptr, Q alignment) {
 	}
 }
 
-namespace details {
-
-template<typename Func, typename Tuples, size_t I>
-constexpr auto elementwiseOperationImpl2(Func&& op, Tuples&& tuples, std::index_sequence<I>) {
-    return std::apply(
-        [&] (auto&&... x) -> auto {
-            return op(std::get<I>(std::forward<decltype(x)>(x))...);
-        },
-       std::forward<Tuples>(tuples)
-    );
-}
-
-template<typename Func, typename Tuples, size_t... I>
-constexpr auto elementwiseOperationImpl1(Func&& op, Tuples&& tuples, std::index_sequence<I...>) {
-	return std::make_tuple(
-        elementwiseOperationImpl2( 
-            std::forward<Func>(op), 
-            std::forward<Tuples>(tuples),
-            std::index_sequence<I>()
-        )...
-    );
-}
-
-}
-
-template<typename Func, typename Tuple1, typename... Tuplen>
-constexpr auto elementwiseOperation(Func&& op, Tuple1&& first, Tuplen&&... rest) {
-	constexpr auto ARG_COUNT = std::tuple_size<typename std::remove_reference<Tuple1>::type>::value; //Also valid for pair and array
-	
-    return details::elementwiseOperationImpl1(
-		std::forward<Func>(op),
-		std::forward_as_tuple<Tuple1, Tuplen...>(first, rest...),
-        std::make_index_sequence<ARG_COUNT>()
-    );
-}
 
 }
 

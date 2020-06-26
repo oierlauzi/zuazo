@@ -7,14 +7,6 @@
 
 #include "../Utils/Pool.h"
 
-#include "../Resolution.h"
-#include "../ColorSubsampling.h"
-#include "../ColorFormat.h"
-#include "../ColorRange.h"
-#include "../ColorTransferFunction.h"
-#include "../ColorModel.h"
-#include "../ColorPrimaries.h"
-
 #include <memory>
 #include <utility>
 
@@ -23,14 +15,7 @@ namespace Zuazo::Graphics {
 class Uploader {
 public:
 	Uploader(	const Vulkan& vulkan, 
-				Resolution resolution,
-				AspectRatio par,
-				ColorSubsampling subsampling,
-				ColorFormat format,
-				ColorRange range,
-				ColorTransferFunction transferFunction,
-				ColorModel model,
-				ColorPrimaries primaries );
+				const Frame::Descriptor& conf );
 	Uploader(const Uploader& other) = delete;
 	Uploader(Uploader&& other) = default;
 	~Uploader() = default;
@@ -42,7 +27,7 @@ public:
 
 private:
 	const Vulkan&									m_vulkan;
-	Math::Vec2f										m_frameSize;
+	std::shared_ptr<Frame::Descriptor>				m_frameDescriptor;
 	ColorTransfer									m_colorTransfer;
 	std::vector<Frame::PlaneDescriptor>				m_planeDescriptors;
 

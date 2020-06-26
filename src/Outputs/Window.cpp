@@ -522,34 +522,54 @@ struct Window::Impl {
 		}
 	}
 
-	VideoMode::Compatibilities getVideoModeCompatibility() const {
-		const VideoMode::Range<Resolution> resolutions {
-			Resolution(1, 1),
-			instance.getResolutionSupport().maxOutputResolution
-		};
+	std::vector<Utils::Compatibility> getVideoModeCompatibility() const {
+		Utils::Compatibility baseCompatibility;
 
-		const VideoMode::MustBe<AspectRatio> aspectRatios {
-			AspectRatio(1, 1)
-		};
+		baseCompatibility.set(
+			VideoMode::RESOLUTION, 
+			Utils::Compatibility::Range<Resolution> {
+				Resolution(1, 1),
+				instance.getResolutionSupport().maxOutputResolution
+			}
+		);
 
-		const VideoMode::Any<Rate> frameRates {};
+		baseCompatibility.set(
+			VideoMode::PIXEL_ASPECT_RATIO, 
+			Utils::Compatibility::MustBe<AspectRatio> {
+				AspectRatio(1, 1)
+			}
+		);
 
-		const VideoMode::MustBe<ColorModel> colorModels {
-			ColorModel::RGB
-		};
+		baseCompatibility.set(
+			VideoMode::FRAME_RATE, 
+			Utils::Compatibility::Any<Rate>{}
+		);
 
-		const VideoMode::MustBe<ColorSubsampling> colorSubsamplings {
-			ColorSubsampling::NONE
-		};
+		baseCompatibility.set(
+			VideoMode::COLOR_MODEL, 
+			Utils::Compatibility::MustBe<ColorModel> {
+				ColorModel::RGB
+			}
+		);
 
-		const VideoMode::MustBe<ColorRange> colorRanges {
-			ColorRange::FULL
-		};
+		baseCompatibility.set(
+			VideoMode::COLOR_SUBSAMPLING, 
+			Utils::Compatibility::MustBe<ColorSubsampling> {
+				ColorSubsampling::NONE
+			}
+		);
+
+		baseCompatibility.set(
+			VideoMode::COLOR_RANGE, 
+			Utils::Compatibility::MustBe<ColorRange> {
+				ColorRange::FULL
+			}
+		);
 
 		//If it is not opened return a generic comatibility
 		//Otherwise query it
 		if(opened) {
-			VideoMode::Compatibilities result;
+			std::vector<Utils::Compatibility> result;
 
 			const auto& vulkan = instance.getVulkan();
 			const auto surfaceFormats = vulkan.getPhysicalDevice().getSurfaceFormatsKHR(*(opened->surface), vulkan.getDispatcher());
@@ -563,29 +583,31 @@ struct Window::Impl {
 					(colorTransferFunction != ColorTransferFunction::NONE) &&
 					(format != ColorFormat::NONE) )
 				{
-					const VideoMode::MustBe<ColorPrimaries> colorPrimaries {
-						colorPrimary
-					};
+					//Copy the base compatibility in order to modify it
+					Utils::Compatibility compatibility = baseCompatibility; 
 
-					const VideoMode::MustBe<ColorTransferFunction> colorTransferFunctions {
-						colorTransferFunction
-					};
-
-					const VideoMode::MustBe<ColorFormat> colorFormats {
-						format
-					};
-
-					result.emplace_back(
-						resolutions,
-						aspectRatios,
-						frameRates,
-						colorPrimaries,
-						colorModels,
-						colorTransferFunctions,
-						colorSubsamplings,
-						colorRanges,
-						colorFormats
+					compatibility.set(
+						VideoMode::COLOR_PRIMARIES, 
+						Utils::Compatibility::MustBe<ColorPrimaries> {
+							colorPrimary
+						}
 					);
+
+					compatibility.set(
+						VideoMode::COLOR_TRANSFER_FUNCTION, 
+						Utils::Compatibility::MustBe<ColorTransferFunction> {
+							colorTransferFunction
+						}
+					);
+
+					compatibility.set(
+						VideoMode::COLOR_FORMAT, 
+						Utils::Compatibility::MustBe<ColorFormat> {
+							format
+						}
+					);
+
+					result.emplace_back(std::move(compatibility));
 				}
 			}
 
@@ -593,36 +615,34 @@ struct Window::Impl {
 		} else {
 			//Return a configuration that is always supported, according to 
 			//https://vulkan.gpuinfo.org/listsurfaceformats.php
+			//In order to save space, it will be ammended to baseCompatibility
 
-			const VideoMode::MustBe<ColorPrimaries> colorPrimaries {
-				ColorPrimaries::BT709
-			};
+			baseCompatibility.set(
+				VideoMode::COLOR_PRIMARIES, 
+				Utils::Compatibility::MustBe<ColorPrimaries> {
+					ColorPrimaries::BT709
+				}
+			);
 
-			const VideoMode::MustBe<ColorTransferFunction> colorTransferFunctions {
-				ColorTransferFunction::IEC61966_2_1
-			};
+			baseCompatibility.set(
+				VideoMode::COLOR_TRANSFER_FUNCTION, 
+				Utils::Compatibility::MustBe<ColorTransferFunction> {
+					ColorTransferFunction::IEC61966_2_1
+				}
+			);
 
-			const VideoMode::MustBe<ColorFormat> colorFormats {
-				#ifdef __ANDROID__
-					ColorFormat::R8G8B8A8
-				#else
-					ColorFormat::B8G8R8A8
-				#endif
-			};
+			baseCompatibility.set(
+				VideoMode::COLOR_FORMAT, 
+				Utils::Compatibility::MustBe<ColorFormat> {
+					#ifdef __ANDROID__
+						ColorFormat::R8G8B8A8
+					#else
+						ColorFormat::B8G8R8A8
+					#endif
+				}
+			);
 
-			return { 
-				VideoMode::Compatibility(
-					resolutions,
-					aspectRatios,
-					frameRates,
-					colorPrimaries,
-					colorModels,
-					colorTransferFunctions,
-					colorSubsamplings,
-					colorRanges,
-					colorFormats
-				)
-			};
+			return { std::move(baseCompatibility) };
 		}
 	}
 
@@ -643,14 +663,14 @@ private:
 						const VideoMode& videoMode )
 	{
 		const auto size = static_cast<Math::Vec2i>(
-			videoMode.get<VideoMode::Parameters::resolution>()
+			videoMode.getResolution()
 		);
 
 		//Obatin the pixel format
 		auto formats = Graphics::Frame::getPlaneDescriptors(
-			videoMode.get<VideoMode::Parameters::resolution>(),
-			videoMode.get<VideoMode::Parameters::colorSubsampling>(),
-			videoMode.get<VideoMode::Parameters::colorFormat>()
+			videoMode.getResolution(),
+			videoMode.getColorSubsampling(),
+			videoMode.getColorFormat()
 		);
 		assert(formats.size() == 1);
 
@@ -660,18 +680,12 @@ private:
 
 		//Obtain the color space
 		const auto colorSpace = Graphics::toVulkan(
-			videoMode.get<VideoMode::Parameters::colorPrimaries>(), 
-			videoMode.get<VideoMode::Parameters::colorTransferFunction>()
+			videoMode.getColorPrimaries(), 
+			videoMode.getColorTransferFunction()
 		);
 
 		//Create the color transfer characteristics
-		Graphics::ColorTransfer colorTransfer(
-			videoMode.get<VideoMode::Parameters::colorFormat>(),
-			videoMode.get<VideoMode::Parameters::colorRange>(),
-			videoMode.get<VideoMode::Parameters::colorTransferFunction>(),
-			videoMode.get<VideoMode::Parameters::colorModel>(),
-			videoMode.get<VideoMode::Parameters::colorPrimaries>()
-		);
+		Graphics::ColorTransfer colorTransfer(static_cast<const Graphics::Frame::Descriptor&>(videoMode));
 
 		const auto& supportedFormats = vulkan.getFormatSupport().framebuffer;
 		colorTransfer.optimize(formats, supportedFormats);
@@ -1275,7 +1289,7 @@ void Window::open() {
 
 	m_impl->open(videoMode, getName());
 	ZuazoBase::enablePeriodicUpdate(Instance::OUTPUT_PRIORITY, 
-									getPeriod(videoMode.get<VideoMode::Parameters::frameRate>()) );
+									getPeriod(videoMode.getFrameRate()) );
 
 	VideoBase::setVideoModeCompatibility(m_impl->getVideoModeCompatibility());
 	ZuazoBase::open();
@@ -1293,14 +1307,14 @@ void Window::setVideoMode(const VideoMode& videoMode) {
 	validate(videoMode);
 	m_impl->setVideoMode(videoMode);
 
-	if(	getPeriod(getVideoMode().get<VideoMode::Parameters::frameRate>()) !=
-		getPeriod(videoMode.get<VideoMode::Parameters::frameRate>()) &&
+	if(	getPeriod(getVideoMode().getFrameRate()) !=
+		getPeriod(videoMode.getFrameRate()) &&
 		ZuazoBase::isOpen() )
 	{
 		//Update the update rate rate
 		ZuazoBase::disablePeriodicUpdate();
 		ZuazoBase::enablePeriodicUpdate(Instance::OUTPUT_PRIORITY, 
-										getPeriod(videoMode.get<VideoMode::Parameters::frameRate>()) );
+										getPeriod(videoMode.getFrameRate()) );
 	}
 
 	VideoBase::setVideoMode(videoMode);

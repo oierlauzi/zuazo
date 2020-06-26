@@ -14,14 +14,7 @@ public:
     TestSource(Zuazo::Instance& inst)
         : ZuazoBase(inst, "Test Source", PADS)
         , uplo( inst.getVulkan(),
-			    Zuazo::Resolution(1280, 720),
-			    Zuazo::AspectRatio(1, 1),
-			    Zuazo::ColorSubsampling::NONE,
-			    Zuazo::ColorFormat::R8G8B8A8,
-			    Zuazo::ColorRange::FULL,
-			    Zuazo::ColorTransferFunction::LINEAR,
-			    Zuazo::ColorModel::RGB,
-			    Zuazo::ColorPrimaries::BT709 )
+			    getVideoMode() )
         , j(0)
     {
         setUpdateCallback(std::bind(&TestSource::update, std::ref(*this)));
@@ -54,6 +47,14 @@ public:
     void close() final {}
 
     static inline const auto PADS = std::make_tuple(Zuazo::Signal::Output<Zuazo::Video>("videoOut0"));
+
+    static Zuazo::VideoMode getVideoMode() {
+        Zuazo::VideoMode vm;
+
+        //Default config is ok
+
+        return vm;
+    }
 
 };
 

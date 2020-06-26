@@ -5,21 +5,18 @@
 
 namespace Zuazo {
 
-std::string_view toString(VideoModeParameters par) {
-	switch(par){
+VideoMode::VideoMode(Resolution res, Rate frameRate) 
+	: Descriptor(res)
+{
+	setFrameRate(frameRate);
+}
 
-	ZUAZO_ENUM2STR_CASE( VideoModeParameters, resolution )
-	ZUAZO_ENUM2STR_CASE( VideoModeParameters, pixelAspectRatio )
-	ZUAZO_ENUM2STR_CASE( VideoModeParameters, frameRate )
-	ZUAZO_ENUM2STR_CASE( VideoModeParameters, colorPrimaries )
-	ZUAZO_ENUM2STR_CASE( VideoModeParameters, colorModel )
-	ZUAZO_ENUM2STR_CASE( VideoModeParameters, colorTransferFunction )
-	ZUAZO_ENUM2STR_CASE( VideoModeParameters, colorSubsampling )
-	ZUAZO_ENUM2STR_CASE( VideoModeParameters, colorRange )
-	ZUAZO_ENUM2STR_CASE( VideoModeParameters, colorFormat )
+void VideoMode::setFrameRate(Rate rate) {
+	return set(FRAME_RATE, rate);
+}
 
-	default: return "";
-	}
+Rate VideoMode::getFrameRate() const {
+	return get<Rate>(FRAME_RATE);
 }
 
 
@@ -46,18 +43,17 @@ const VideoMode& VideoBase::getVideoMode() const {
 }
 
 
-const VideoMode::Compatibilities& VideoBase::getVideoModeCompatibility() const {
+const std::vector<Utils::Compatibility>& VideoBase::getVideoModeCompatibility() const {
 	return m_compatibilities;
 }
 
-void VideoBase::setVideoModeCompatibility(const VideoMode::Compatibilities& comp) {
+void VideoBase::setVideoModeCompatibility(const std::vector<Utils::Compatibility>& comp) {
 	m_compatibilities = comp;
 }
 
-void VideoBase::validate(const VideoMode& videoMode) {
-	const auto& compatibility = getVideoModeCompatibility();
-	const auto val = VideoMode::validate(videoMode, compatibility);
-	if(!val.all()){
+void VideoBase::validate(const VideoMode& config) {
+	const auto validation = Utils::Compatibility::validate(m_compatibilities, config);
+	if(validation.missmatchCount) {
 		throw Exception("Unsupported video mode");
 	}
 }

@@ -20,11 +20,7 @@ namespace Zuazo::Graphics {
 class ColorTransfer {
 public:
 	ColorTransfer();
-	ColorTransfer(	ColorFormat format,
-					ColorRange range,
-					ColorTransferFunction transferFunc,
-					ColorModel model,
-					ColorPrimaries primaries );
+	ColorTransfer(const Frame::Descriptor& desc);
 	ColorTransfer(const ColorTransfer& other) = delete;
 	ColorTransfer(ColorTransfer&& other);
 	~ColorTransfer();

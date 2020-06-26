@@ -16,10 +16,6 @@ template<typename T, typename Q>
 constexpr T align(T ptr, Q alignment);
 
 
-
-template<typename Func, typename Tuple1, typename... Tuplen>
-constexpr auto elementwiseOperation(Func&& op, Tuple1&& first, Tuplen&&... rest);
-
 }
 
 namespace Zuazo {

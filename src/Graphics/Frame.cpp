@@ -14,6 +14,7 @@ struct Frame::Impl {
 
 	const Vulkan&						vulkan;
 
+	std::shared_ptr<const Descriptor> 	descriptor;
 	Math::Vec2f 						size;
 	std::shared_ptr<const Buffer> 		colorTransfer;
 
@@ -27,12 +28,13 @@ struct Frame::Impl {
 	mutable std::vector<vk::Fence> 		dependencies;
 
 	Impl(	const Vulkan& vulkan,
-			Math::Vec2f size,
+			const std::shared_ptr<const Descriptor> desc,
 			const std::shared_ptr<const Buffer>& colorTransfer,
 			Utils::BufferView<const PlaneDescriptor> planes,
 			vk::ImageUsageFlags usage )
 		: vulkan(vulkan)
-		, size(size)
+		, descriptor(desc)
+		, size(descriptor->calculateSize())
 		, colorTransfer(colorTransfer)
 		, images(createImages(vulkan, usage, planes))
 		, memory(allocateMemory(vulkan, images))
@@ -40,6 +42,10 @@ struct Frame::Impl {
 		, descriptorPool(createDescriptorPool(vulkan))
 		, descriptorSets(allocateDescriptorSets(vulkan, *descriptorPool))
 	{
+		assert(descriptor);
+		assert(colorTransfer);
+		assert(images.size());
+
 		writeDescriptorSets();
 	}
 
@@ -81,6 +87,10 @@ struct Frame::Impl {
 
 	const Vulkan& getVulkan() const { 
 		return vulkan;
+	}
+
+	const Descriptor& getDescriptor() const {
+		return *descriptor;
 	}
 
 	const Math::Vec2f& getSize() const {
@@ -286,11 +296,11 @@ private:
 
 
 Frame::Frame(	const Vulkan& vulkan,
-				Math::Vec2f size,
+				const std::shared_ptr<const Descriptor> desc,
 				const std::shared_ptr<const Buffer>& colorTransfer,
 				Utils::BufferView<const PlaneDescriptor> planes,
 				vk::ImageUsageFlags usage )
-	: m_impl(vulkan, size, colorTransfer, planes, usage)
+	: m_impl(vulkan, desc, colorTransfer, planes, usage)
 {
 }
 
@@ -325,6 +335,10 @@ const Vulkan& Frame::getVulkan() const {
 	return m_impl->getVulkan();
 }
 
+const Frame::Descriptor& Frame::getDescriptor() const {
+	return m_impl->getDescriptor();
+}
+
 const Math::Vec2f& Frame::getSize() const{
 	return m_impl->getSize();
 }
@@ -347,13 +361,6 @@ const vk::DeviceMemory& Frame::getMemory() const {
 }
 
 
-
-Math::Vec2f Frame::calculateSize(Resolution res, AspectRatio par) {
-	return Math::Vec2f(
-		static_cast<float>(par) * res.x,
-		static_cast<float>(res.y)
-	);
-}
 
 std::shared_ptr<Buffer> Frame::createColorTransferBuffer(	const Vulkan& vulkan,
 															const ColorTransfer& colorTransfer )
@@ -466,6 +473,98 @@ vk::DescriptorSetLayout	Frame::getDescriptorSetLayout(	const Vulkan& vulkan,
 	return result;
 }
 
+/*
+ * Frame::Descriptor
+ */
+Frame::Descriptor::Descriptor(Resolution res) {
+	constexpr size_t COUNT = 8;
+	reserve(COUNT);
+
+	setResolution(res);
+	setPixelAspectRatio(DEFAULT_PIXEL_ASPECT_RATIO);
+	setColorPrimaries(DEFAULT_COLOR_PRIMARIES);
+	setColorModel(DEFAULT_COLOR_MODEL);
+	setColorTransferFunction(DEFAULT_COLOR_TRANSFER_FUNCTION);
+	setColorSubsampling(DEFAULT_COLOR_SUBSAMPLING);
+	setColorRange(DEFAULT_COLOR_RANGE);
+	setColorFormat(DEFAULT_COLOR_FORMAT);
+
+	assert(size() == COUNT);
+}
+
+void Frame::Descriptor::setResolution(Resolution res) {
+	set(RESOLUTION, res);
+}
+
+Resolution Frame::Descriptor::getResolution() const {
+	return get<Resolution>(RESOLUTION);
+}
+
+void Frame::Descriptor::setPixelAspectRatio(AspectRatio ratio) {
+	set(PIXEL_ASPECT_RATIO, ratio);
+}
+
+AspectRatio Frame::Descriptor::getPixelAspectRatio() const {
+	return get<AspectRatio>(PIXEL_ASPECT_RATIO);
+}
+
+Math::Vec2f Frame::Descriptor::calculateSize() const {
+	const auto& res = getResolution();
+	const auto& par = getPixelAspectRatio();
+
+	return Math::Vec2f(
+		static_cast<float>(par * res.x),
+		static_cast<float>(res.y)
+	);
+}
+
+void Frame::Descriptor::setColorPrimaries(ColorPrimaries primaries) {
+	set(COLOR_PRIMARIES, primaries);
+}
+
+ColorPrimaries Frame::Descriptor::getColorPrimaries() const {
+	return get<ColorPrimaries>(COLOR_PRIMARIES);
+}
+
+void Frame::Descriptor::setColorModel(ColorModel model) {
+	set(COLOR_MODEL, model);
+}
+
+ColorModel Frame::Descriptor::getColorModel() const {
+	return get<ColorModel>(COLOR_MODEL);
+}
+
+void Frame::Descriptor::setColorTransferFunction(ColorTransferFunction xferFn) {
+	set(COLOR_TRANSFER_FUNCTION, xferFn);
+}
+
+ColorTransferFunction Frame::Descriptor::getColorTransferFunction() const {
+	return get<ColorTransferFunction>(COLOR_TRANSFER_FUNCTION);
+}
+
+void Frame::Descriptor::setColorSubsampling(ColorSubsampling subs) {
+	set(COLOR_SUBSAMPLING, subs);
+}
+
+ColorSubsampling Frame::Descriptor::getColorSubsampling() const {
+	return get<ColorSubsampling>(COLOR_SUBSAMPLING);
+}
+
+void Frame::Descriptor::setColorRange(ColorRange range) {
+	set(COLOR_RANGE, range);
+}
+
+ColorRange Frame::Descriptor::getColorRange() const {
+	return get<ColorRange>(COLOR_RANGE);
+}
+
+void Frame::Descriptor::setColorFormat(ColorFormat format) {
+	set(COLOR_FORMAT, format);
+}
+
+ColorFormat Frame::Descriptor::getColorFormat() const {
+	return get<ColorFormat>(COLOR_FORMAT);
+}
 
 /*
  * Frame::Geometry
