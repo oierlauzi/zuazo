@@ -6,8 +6,8 @@
 	#pragma once
 	#define ZUAZO_IF_CPP(x, y) x
 
-	#include <Math/Vector.h>
-	#include <Math/Matrix.h>
+	#include <zuazo/Math/Vector.h>
+	#include <zuazo/Math/Matrix.h>
 
 	#include <cstdint>
 

@@ -1,6 +1,6 @@
-#include <Graphics/GLFW.h>
+#include <zuazo/Graphics/GLFW.h>
 
-#include <Exception.h>
+#include <zuazo/Exception.h>
 
 #include <future>
 #include <thread>

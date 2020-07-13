@@ -1,6 +1,6 @@
-#include <Graphics/Buffer.h>
+#include <zuazo/Graphics/Buffer.h>
 
-#include <Exception.h>
+#include <zuazo/Exception.h>
 
 namespace Zuazo::Graphics {
 

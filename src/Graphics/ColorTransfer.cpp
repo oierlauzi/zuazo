@@ -1,5 +1,5 @@
-#include <Graphics/ColorTransfer.h>
-#include <Graphics/VulkanConversions.h>
+#include <zuazo/Graphics/ColorTransfer.h>
+#include <zuazo/Graphics/VulkanConversions.h>
 
 #include "color_transfer.h"
 

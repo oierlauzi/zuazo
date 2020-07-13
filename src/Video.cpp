@@ -1,32 +1,43 @@
-#include <Video.h>
+#include <zuazo/Video.h>
 
-#include <Exception.h>
-#include <Macros.h>
+#include <zuazo/Exception.h>
+#include <zuazo/Macros.h>
 
 namespace Zuazo {
 
-VideoMode::VideoMode(Resolution res, Rate frameRate) 
-	: Descriptor(res)
-{
-	setFrameRate(frameRate);
+VideoMode::VideoMode() {
+	setFrameRateLimits(makeLimit<Any<Rate>>());
 }
 
+
 void VideoMode::setFrameRate(Rate rate) {
-	return set(FRAME_RATE, rate);
+	setFrameRateLimits(makeLimit<MustBe<Rate>>(rate));
 }
 
 Rate VideoMode::getFrameRate() const {
-	return get<Rate>(FRAME_RATE);
+	return getValue<Rate>(FRAME_RATE).value();
+}
+
+void VideoMode::setFrameRateLimits(Limit<Rate> rate) {
+	set(FRAME_RATE, std::move(rate));
+}
+
+VideoMode::Limit<Rate> VideoMode::getFrameRateLimits() const {
+	return getLimit<Rate>(FRAME_RATE);
 }
 
 
 
-VideoBase::VideoBase(const VideoMode& videoMode)
-	: m_videoMode(videoMode)
+VideoBase::VideoBase() = default;
+
+VideoBase::VideoBase(VideoMode videoMode)
+	: m_videoMode(std::move(videoMode))
 {
 }
 
 VideoBase::VideoBase(const VideoBase& other) = default;
+
+VideoBase::VideoBase(VideoBase&& other) = default;
 
 VideoBase::~VideoBase() = default;
 
@@ -43,19 +54,22 @@ const VideoMode& VideoBase::getVideoMode() const {
 }
 
 
-const std::vector<Utils::Compatibility>& VideoBase::getVideoModeCompatibility() const {
+const std::vector<VideoMode>& VideoBase::getVideoModeCompatibility() const {
 	return m_compatibilities;
 }
 
-void VideoBase::setVideoModeCompatibility(const std::vector<Utils::Compatibility>& comp) {
-	m_compatibilities = comp;
+void VideoBase::setVideoModeCompatibility(std::vector<VideoMode> comp) {
+	m_compatibilities = std::move(comp);
 }
 
 void VideoBase::validate(const VideoMode& config) {
-	const auto validation = Utils::Compatibility::validate(m_compatibilities, config);
-	if(validation.missmatchCount) {
-		throw Exception("Unsupported video mode");
+	for(const auto& compatibility : m_compatibilities){
+		if(compatibility.intersection(config)){
+			return; //Found a compatible
+		}
 	}
+
+	throw Exception("Unsupported video mode");
 }
 
 }

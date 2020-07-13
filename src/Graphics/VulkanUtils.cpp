@@ -1,6 +1,6 @@
 #include "VulkanUtils.h"
 
-#include <Exception.h>
+#include <zuazo/Exception.h>
 
 namespace Zuazo::Graphics {
 

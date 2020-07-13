@@ -1,9 +1,9 @@
-#include <Graphics/Frame.h>
+#include <zuazo/Graphics/Frame.h>
 
-#include <Exception.h>
-#include <Utils/StaticId.h>
-#include <Graphics/ColorTransfer.h>
-#include <Graphics/StagedBuffer.h>
+#include <zuazo/Exception.h>
+#include <zuazo/Utils/StaticId.h>
+#include <zuazo/Graphics/ColorTransfer.h>
+#include <zuazo/Graphics/StagedBuffer.h>
 
 #include <vector>
 
@@ -34,7 +34,7 @@ struct Frame::Impl {
 			vk::ImageUsageFlags usage )
 		: vulkan(vulkan)
 		, descriptor(desc)
-		, size(descriptor->calculateSize())
+		, size(calcualteSize(*desc))
 		, colorTransfer(colorTransfer)
 		, images(createImages(vulkan, usage, planes))
 		, memory(allocateMemory(vulkan, images))
@@ -160,6 +160,12 @@ private:
 
 			vulkan.updateDescriptorSets(Utils::BufferView<const vk::WriteDescriptorSet>(writeDescriptorSets));
 		}
+	}
+
+	static Math::Vec2f calcualteSize(const Descriptor& desc) {
+		Resolution res = desc.getResolution();
+		AspectRatio par = desc.getPixelAspectRatio();
+		return Geometry::calculateSize(res, par);
 	}
 
 	static std::vector<vk::UniqueImage> createImages(	const Vulkan& vulkan,
@@ -382,10 +388,11 @@ std::shared_ptr<Buffer> Frame::createColorTransferBuffer(	const Vulkan& vulkan,
 	return result;
 }
 
-std::vector<Frame::PlaneDescriptor> Frame::getPlaneDescriptors(	Resolution resolution,
-																ColorSubsampling subsampling,
-																ColorFormat format )
-{
+std::vector<Frame::PlaneDescriptor> Frame::getPlaneDescriptors(const Descriptor& desc) {
+	const Resolution resolution = desc.getResolution();
+	const ColorSubsampling subsampling = desc.getColorSubsampling();
+	const ColorFormat format = desc.getColorFormat();
+
 	const auto planeCount = getPlaneCount(format);
 	std::vector<PlaneDescriptor> result;
 	result.reserve(planeCount);
@@ -476,94 +483,154 @@ vk::DescriptorSetLayout	Frame::getDescriptorSetLayout(	const Vulkan& vulkan,
 /*
  * Frame::Descriptor
  */
-Frame::Descriptor::Descriptor(Resolution res) {
-	constexpr size_t COUNT = 8;
-	reserve(COUNT);
-
-	setResolution(res);
-	setPixelAspectRatio(DEFAULT_PIXEL_ASPECT_RATIO);
-	setColorPrimaries(DEFAULT_COLOR_PRIMARIES);
-	setColorModel(DEFAULT_COLOR_MODEL);
-	setColorTransferFunction(DEFAULT_COLOR_TRANSFER_FUNCTION);
-	setColorSubsampling(DEFAULT_COLOR_SUBSAMPLING);
-	setColorRange(DEFAULT_COLOR_RANGE);
-	setColorFormat(DEFAULT_COLOR_FORMAT);
-
-	assert(size() == COUNT);
+Frame::Descriptor::Descriptor() 
+	: Configuration {
+		{ RESOLUTION, makeLimit<Any<Resolution>>() },
+		{ PIXEL_ASPECT_RATIO, makeLimit<Any<AspectRatio>>() },
+		{ COLOR_PRIMARIES, makeLimit<Any<ColorPrimaries>>() },
+		{ COLOR_MODEL, makeLimit<Any<ColorModel>>() },
+		{ COLOR_TRANSFER_FUNCTION, makeLimit<Any<ColorTransferFunction>>() },
+		{ COLOR_SUBSAMPLING, makeLimit<Any<ColorSubsampling>>() },
+		{ COLOR_RANGE, makeLimit<Any<ColorRange>>() },
+		{ COLOR_FORMAT, makeLimit<Any<ColorFormat>>() }
+	}
+{
 }
 
+
 void Frame::Descriptor::setResolution(Resolution res) {
-	set(RESOLUTION, res);
+	setResolutionLimits(makeLimit<MustBe<Resolution>>(res));
 }
 
 Resolution Frame::Descriptor::getResolution() const {
-	return get<Resolution>(RESOLUTION);
+	return getValue<Resolution>(RESOLUTION).value();
 }
 
-void Frame::Descriptor::setPixelAspectRatio(AspectRatio ratio) {
-	set(PIXEL_ASPECT_RATIO, ratio);
+void Frame::Descriptor::setResolutionLimits(Limit<Resolution> res) {
+	set(RESOLUTION, std::move(res));
+}
+
+Frame::Descriptor::Limit<Resolution> Frame::Descriptor::getResolutionLimits() const {
+	return getLimit<Resolution>(RESOLUTION);
+}
+
+
+void Frame::Descriptor::setPixelAspectRatio(AspectRatio par) {
+	setPixelAspectRatioLimits(makeLimit<MustBe<AspectRatio>>(par));
 }
 
 AspectRatio Frame::Descriptor::getPixelAspectRatio() const {
-	return get<AspectRatio>(PIXEL_ASPECT_RATIO);
+	return getValue<AspectRatio>(PIXEL_ASPECT_RATIO).value();
 }
 
-Math::Vec2f Frame::Descriptor::calculateSize() const {
-	const auto& res = getResolution();
-	const auto& par = getPixelAspectRatio();
-
-	return Math::Vec2f(
-		static_cast<float>(par * res.x),
-		static_cast<float>(res.y)
-	);
+void Frame::Descriptor::setPixelAspectRatioLimits(Limit<AspectRatio> par) {
+	set(PIXEL_ASPECT_RATIO, std::move(par));
 }
+
+Frame::Descriptor::Limit<AspectRatio> Frame::Descriptor::getPixelAspectRatioLimits() const {
+	return getLimit<AspectRatio>(PIXEL_ASPECT_RATIO);
+}
+
 
 void Frame::Descriptor::setColorPrimaries(ColorPrimaries primaries) {
-	set(COLOR_PRIMARIES, primaries);
+	setColorPrimariesLimits(makeLimit<MustBe<ColorPrimaries>>(primaries));
 }
 
 ColorPrimaries Frame::Descriptor::getColorPrimaries() const {
-	return get<ColorPrimaries>(COLOR_PRIMARIES);
+	return getValue<ColorPrimaries>(COLOR_PRIMARIES).value();
 }
 
+void Frame::Descriptor::setColorPrimariesLimits(Limit<ColorPrimaries> primaries) {
+	set(COLOR_PRIMARIES, std::move(primaries));
+}
+
+Frame::Descriptor::Limit<ColorPrimaries> Frame::Descriptor::getColorPrimariesLimits() const {
+	return getLimit<ColorPrimaries>(COLOR_PRIMARIES);
+}
+
+
 void Frame::Descriptor::setColorModel(ColorModel model) {
-	set(COLOR_MODEL, model);
+	setColorModelLimits(makeLimit<MustBe<ColorModel>>(model));
 }
 
 ColorModel Frame::Descriptor::getColorModel() const {
-	return get<ColorModel>(COLOR_MODEL);
+	return getValue<ColorModel>(COLOR_MODEL).value();
 }
 
-void Frame::Descriptor::setColorTransferFunction(ColorTransferFunction xferFn) {
-	set(COLOR_TRANSFER_FUNCTION, xferFn);
+void Frame::Descriptor::setColorModelLimits(Limit<ColorModel> model) {
+	set(COLOR_MODEL, std::move(model));
+}
+
+Frame::Descriptor::Limit<ColorModel> Frame::Descriptor::getColorModelLimits() const {
+	return getLimit<ColorModel>(COLOR_MODEL);
+}
+
+
+void Frame::Descriptor::setColorTransferFunction(ColorTransferFunction xferFunc) {
+	setColorTransferFunctionLimits(makeLimit<MustBe<ColorTransferFunction>>(xferFunc));
 }
 
 ColorTransferFunction Frame::Descriptor::getColorTransferFunction() const {
-	return get<ColorTransferFunction>(COLOR_TRANSFER_FUNCTION);
+	return getValue<ColorTransferFunction>(COLOR_TRANSFER_FUNCTION).value();
 }
 
+void Frame::Descriptor::setColorTransferFunctionLimits(Limit<ColorTransferFunction> xferFunc) {
+	set(COLOR_TRANSFER_FUNCTION, std::move(xferFunc));
+}
+
+Frame::Descriptor::Limit<ColorTransferFunction> Frame::Descriptor::getColorTransferFunctionLimits() const {
+	return getLimit<ColorTransferFunction>(COLOR_TRANSFER_FUNCTION);
+}
+
+
 void Frame::Descriptor::setColorSubsampling(ColorSubsampling subs) {
-	set(COLOR_SUBSAMPLING, subs);
+	setColorSubsamplingLimits(makeLimit<MustBe<ColorSubsampling>>(subs));
 }
 
 ColorSubsampling Frame::Descriptor::getColorSubsampling() const {
-	return get<ColorSubsampling>(COLOR_SUBSAMPLING);
+	return getValue<ColorSubsampling>(COLOR_SUBSAMPLING).value();
 }
 
+void Frame::Descriptor::setColorSubsamplingLimits(Limit<ColorSubsampling> subs) {
+	set(COLOR_SUBSAMPLING, std::move(subs));
+}
+
+Frame::Descriptor::Limit<ColorSubsampling> Frame::Descriptor::getColorSubsamplingLimits() const {
+	return getLimit<ColorSubsampling>(COLOR_SUBSAMPLING);
+}
+
+
 void Frame::Descriptor::setColorRange(ColorRange range) {
-	set(COLOR_RANGE, range);
+	setColorRangeLimits(makeLimit<MustBe<ColorRange>>(range));
 }
 
 ColorRange Frame::Descriptor::getColorRange() const {
-	return get<ColorRange>(COLOR_RANGE);
+	return getValue<ColorRange>(COLOR_RANGE).value();
 }
 
+void Frame::Descriptor::setColorRangeLimits(Limit<ColorRange> range) {
+	set(COLOR_RANGE, std::move(range));
+}
+
+Frame::Descriptor::Limit<ColorRange> Frame::Descriptor::getColorRangeLimits() const {
+	return getLimit<ColorRange>(COLOR_RANGE);
+}
+
+
 void Frame::Descriptor::setColorFormat(ColorFormat format) {
-	set(COLOR_FORMAT, format);
+	setColorFormatLimits(makeLimit<MustBe<ColorFormat>>(format));
 }
 
 ColorFormat Frame::Descriptor::getColorFormat() const {
-	return get<ColorFormat>(COLOR_FORMAT);
+	return getValue<ColorFormat>(COLOR_FORMAT).value();
+}
+
+void Frame::Descriptor::setColorFormatLimits(Limit<ColorFormat> format) {
+	set(COLOR_FORMAT, std::move(format));
+}
+
+Frame::Descriptor::Limit<ColorFormat> Frame::Descriptor::getColorFormatLimits() const {
+	return getLimit<ColorFormat>(COLOR_FORMAT);
 }
 
 /*
@@ -614,6 +681,13 @@ bool Frame::Geometry::useFrame(const Frame& frame) {
 	} else {
 		return false;
 	}
+}
+
+Math::Vec2f Frame::Geometry::calculateSize(Resolution res, AspectRatio par) {
+	return Math::Vec2f(
+		static_cast<float>(par * res.x),
+		static_cast<float>(res.y)
+	);
 }
 
 void Frame::Geometry::updateBuffer() { 

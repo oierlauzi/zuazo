@@ -1,13 +1,13 @@
-#include <Instance.h>
+#include <zuazo/Instance.h>
 
 #include "Graphics/VulkanUtils.h"
 #include "Timing/MainLoop.h"
 #include "Timing/Scheduler.h"
 
-#include <Zuazo.h>
-#include <ZuazoBase.h>
-#include <Graphics/VulkanConversions.h>
-#include <Graphics/GLFW.h>
+#include <zuazo/Zuazo.h>
+#include <zuazo/ZuazoBase.h>
+#include <zuazo/Graphics/VulkanConversions.h>
+#include <zuazo/Graphics/GLFW.h>
 
 #include <mutex>
 #include <iostream>

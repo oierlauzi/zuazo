@@ -1,7 +1,7 @@
-#include <Graphics/Uploader.h>
+#include <zuazo/Graphics/Uploader.h>
 
-#include <Graphics/VulkanConversions.h>
-#include <Exception.h>
+#include <zuazo/Graphics/VulkanConversions.h>
+#include <zuazo/Exception.h>
 
 namespace Zuazo::Graphics {
 
@@ -14,7 +14,7 @@ Uploader::Uploader(	const Vulkan& vulkan,
 	: m_vulkan(vulkan)
 	, m_frameDescriptor(std::make_shared<Frame::Descriptor>(conf))
 	, m_colorTransfer(*m_frameDescriptor)
-	, m_planeDescriptors(createPlaneDescriptors(vulkan, conf.getResolution(), conf.getColorSubsampling(), conf.getColorFormat(), m_colorTransfer))
+	, m_planeDescriptors(createPlaneDescriptors(vulkan, conf, m_colorTransfer))
 	, m_commandPool(createCommandPool(m_vulkan))
 	, m_colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, m_colorTransfer))
 	, m_pool(std::bind(&Uploader::allocateFrame, this))
@@ -45,12 +45,10 @@ Utils::Pool<StagedFrame>::Ref Uploader::allocateFrame() const {
 }
 
 std::vector<Frame::PlaneDescriptor> Uploader::createPlaneDescriptors(	const Vulkan& vulkan, 
-																		Resolution resolution,
-																		ColorSubsampling subsampling,
-																		ColorFormat format, 
+																		const Frame::Descriptor& desc, 
 																		ColorTransfer& colorTransfer)
 {
-	std::vector<Frame::PlaneDescriptor> result = Frame::getPlaneDescriptors(resolution, subsampling, format);
+	std::vector<Frame::PlaneDescriptor> result = Frame::getPlaneDescriptors(desc);
 
 	//Try to optimize it
 	const auto& supportedFormats = vulkan.getFormatSupport().sampler;

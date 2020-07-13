@@ -1,4 +1,4 @@
-#include <Zuazo.h>
+#include <zuazo/Zuazo.h>
 
 namespace Zuazo {
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Graphics/Vulkan.h>
+#include <zuazo/Graphics/Vulkan.h>
 
 #include <vector>
 #include <array>

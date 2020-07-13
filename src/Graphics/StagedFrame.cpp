@@ -1,4 +1,4 @@
-#include <Graphics/StagedFrame.h>
+#include <zuazo/Graphics/StagedFrame.h>
 
 namespace Zuazo::Graphics {
 

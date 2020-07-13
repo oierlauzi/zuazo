@@ -20,14 +20,6 @@ file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp ${PROJECT_SOURCE_DIR}/
 file(GLOB_RECURSE INLINE_SOURCES ${PROJECT_SOURCE_DIR}/include/*.inl)
 file(GLOB_RECURSE HEADERS ${PROJECT_SOURCE_DIR}/include/*.h)
 
-#Generate a include file for all the headers
-foreach(header ${HEADERS})
-	file(RELATIVE_PATH header ${PROJECT_SOURCE_DIR}/include ${header})
-	set(HEADER_LIST "${HEADER_LIST}#include \"${header}\"\n") #Append a include to the include list
-endforeach()
-set(INCLUDES_HEADER "${CMAKE_CURRENT_BINARY_DIR}/include/Includes.h")
-configure_file(${PROJECT_SOURCE_DIR}/include/Includes.h.in ${INCLUDES_HEADER} @ONLY)
-
 # Create shared library
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 set_target_properties(
@@ -39,6 +31,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include/
 target_include_directories(${PROJECT_NAME} PRIVATE ${SHADER_INCLUDE_DIR}/)
 
 # Install library's binary files and headers
-install(TARGETS ${PROJECT_NAME} DESTINATION lib/)
-install(FILES ${INCLUDES_HEADER} DESTINATION include/${PROJECT_NAME})
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include/${PROJECT_NAME} FILES_MATCHING REGEX "^.*\\.(h|inl)$")
+install(TARGETS ${PROJECT_NAME} 
+		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

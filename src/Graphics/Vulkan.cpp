@@ -1,13 +1,13 @@
-#include <Graphics/Vulkan.h>
+#include <zuazo/Graphics/Vulkan.h>
 
 #include "VulkanUtils.h"
 
-#include <Graphics/GLFW.h>
-#include <Graphics/VulkanConversions.h>
-#include <Utils/Functions.h>
-#include <Zuazo.h>
-#include <Exception.h>
-#include <Macros.h>
+#include <zuazo/Graphics/GLFW.h>
+#include <zuazo/Graphics/VulkanConversions.h>
+#include <zuazo/Utils/Functions.h>
+#include <zuazo/Zuazo.h>
+#include <zuazo/Exception.h>
+#include <zuazo/Macros.h>
 
 #include <cstring>
 #include <cstdint>
