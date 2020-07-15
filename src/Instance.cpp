@@ -7,7 +7,6 @@
 #include <zuazo/Zuazo.h>
 #include <zuazo/ZuazoBase.h>
 #include <zuazo/Graphics/VulkanConversions.h>
-#include <zuazo/Graphics/GLFW.h>
 
 #include <mutex>
 #include <iostream>
@@ -18,8 +17,7 @@ namespace Zuazo {
 
 struct Instance::Impl {
 	ApplicationInfo				applicationInfo;
-	
-	Graphics::GLFW				glfw;
+
 	Graphics::Vulkan			vulkan;
 
 	std::mutex					mutex;
@@ -34,7 +32,6 @@ struct Instance::Impl {
 	Impl(	ApplicationInfo&& appInfo,
 			const DeviceScoreFunc& deviceScoreFunc )
 		: applicationInfo(std::move(appInfo))
-		, glfw()
 		, vulkan(
 			applicationInfo.name.c_str(), 
 			Graphics::toVulkan(applicationInfo.version), 
@@ -106,25 +103,15 @@ struct Instance::Impl {
 
 
 	void lock() {
-		glfw.disableCallbacks();
 		mutex.lock();
 	}
 
 	bool try_lock() {
-		glfw.disableCallbacks();
-		const bool success = mutex.try_lock();
-
-		//Undo all changes
-		if(!success) {
-			glfw.enableCallbacks();
-		}
-
-		return success;
+		return mutex.try_lock();
 	}
 
 	void unlock() {
 		mutex.unlock();
-		glfw.enableCallbacks();
 	}
 
 

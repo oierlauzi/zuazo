@@ -53,6 +53,8 @@ Configuration::operator[](const std::string& option) const {
 }
 
 inline Configuration::operator bool() const {
+	if(size() == 0) return false; //Return false if it is empty
+
 	return std::all_of(
 		cbegin(), cend(),
 		[] (const value_type& pair) -> bool {
@@ -116,14 +118,15 @@ Configuration::get(const std::string& option) const {
 }
 
 template<typename T>
-inline Configuration::template Limit<T>
+inline Configuration::template LimitPtr<T>
 Configuration::getLimit(const std::string& option) const {
-	return std::dynamic_pointer_cast<typename Limit<T>::element_type>(get(option));
+	static_assert(std::is_base_of<LimitBase, T>::value, "T must inherit from LimitBase");
+	return std::dynamic_pointer_cast<typename LimitPtr<T>::element_type>(get(option));
 }
 
 template<typename T>
 inline std::optional<T> Configuration::getValue(const std::string& option) const {
-	const auto limit = getLimit<T>(option);
+	const auto limit = getLimit<TypedLimitBase<T>>(option);
 	return static_cast<bool>(limit) ? std::make_optional<T>(limit->lowest()) : std::optional<T>(); //If the returned limit is valid, return its lowest value
 }
 
@@ -175,8 +178,35 @@ inline Configuration Configuration::intersection(const Configuration& other) con
 	return result;
 }
 
+template<typename Ite>			
+inline std::pair<Configuration, Ite> 
+Configuration::intersection(Ite begin, Ite end) const {
+	auto result = std::make_pair(Configuration(), end);
+	size_t bestCnt = std::numeric_limits<size_t>::max();
+	auto ite = begin;
+
+	while(ite != end && bestCnt > 0) {
+		const Configuration intersec = intersection(*ite);
+		const size_t cnt = std::count_if(
+			intersec.cbegin(), intersec.cend(), 
+			[] (const value_type& x) -> bool {
+				return !static_cast<bool>(x.second);
+			}
+		);
+
+		if(cnt < bestCnt) {
+			result = std::make_pair(intersec, ite);
+			bestCnt = cnt;
+		}
+
+		++ite;
+	}
+
+	return result;
+}
+
 template<typename T, typename... Args>
-inline Configuration::template Pointer<T> 
+inline Configuration::template LimitPtr<T> 
 Configuration::makeLimit(Args&&... args) {
 	static_assert(std::is_base_of<LimitBase, T>::value, "T must inherit from LimitBase");
 	return makeShared<T>(std::forward<Args>(args)...);

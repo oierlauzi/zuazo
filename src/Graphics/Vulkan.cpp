@@ -2,7 +2,6 @@
 
 #include "VulkanUtils.h"
 
-#include <zuazo/Graphics/GLFW.h>
 #include <zuazo/Graphics/VulkanConversions.h>
 #include <zuazo/Utils/Functions.h>
 #include <zuazo/Zuazo.h>
@@ -20,10 +19,6 @@
 
 #if (ZUAZO_IS_DEBUG == true)
 	#define ZUAZO_ENABLE_VALIDATION_LAYERS
-#endif
-
-#if 0
-	#define ZUAZO_DISABLE_PRESENTATION_SUPPORT
 #endif
 
 namespace Zuazo::Graphics {
@@ -71,6 +66,15 @@ struct Vulkan::Impl {
 	mutable std::vector<vk::SwapchainKHR>			presentSwapchains;
 	mutable std::vector<uint32_t>					presentIndices;
 	mutable std::vector<vk::Semaphore>				presentSemaphores;
+
+	/*
+	 * Static members
+	 */
+
+	static std::vector<vk::ExtensionProperties> 	requiredInstanceExtensions;
+	static std::vector<vk::ExtensionProperties> 	requiredDeviceExtensions;
+
+	static std::vector<PresentationSupportCallback>	presentationSupportCallbacks;
 
 	/*
 	 * Methods
@@ -553,6 +557,19 @@ struct Vulkan::Impl {
 		}
 	}
 
+	static void registerRequiredInstanceExtensions(Utils::BufferView<const vk::ExtensionProperties> ext) {
+		requiredInstanceExtensions.insert(requiredInstanceExtensions.cend(), ext.cbegin(), ext.cend());
+	}
+
+	static void registerRequiredDeviceExtensions(Utils::BufferView<const vk::ExtensionProperties> ext) {
+		requiredDeviceExtensions.insert(requiredDeviceExtensions.cend(), ext.cbegin(), ext.cend());
+	}
+
+	static void registerPresentationSupportCallback(PresentationSupportCallback cbk) {
+		presentationSupportCallbacks.emplace_back(std::move(cbk));
+	}
+
+
 
 private:
 	/*
@@ -696,13 +713,9 @@ private:
 				continue;
 			}
 
-			#ifndef ZUAZO_DISABLE_PRESENTATION_SUPPORT
-				//Window support is required
-				const size_t nQueueFamilies = availableQueueFamilies.size();
-				if(GLFW::getPresentationQueueFamilies(instance, device, nQueueFamilies).size() == 0){
-					continue;
-				}
-			#endif
+			if(getPresentationQueueFamilies(instance, device, availableQueueFamilies.size()).size() == 0){
+				continue;
+			}
 
 			//Evaluate if the device is the best
 			//If the score is 0 device is considered not suitable
@@ -733,19 +746,16 @@ private:
 		queues[COMPUTE_QUEUE] = getQueueFamilyIndex(queueFamilies, vk::QueueFlagBits::eCompute);
 		queues[TRANSFER_QUEUE] = getQueueFamilyIndex(queueFamilies, vk::QueueFlagBits::eTransfer);
 
+		//Find a queue family compatible with presentation
+		const auto presentFamilies = getPresentationQueueFamilies(inst, dev, queueFamilies.size());
+		assert(presentFamilies.size()); //It should have been checked before
 
-		#ifndef ZUAZO_DISABLE_PRESENTATION_SUPPORT
-			//Add a queue family compatible with presentation
-			const auto presentFamilies = GLFW::getPresentationQueueFamilies(inst, dev, queueFamilies.size());
-			assert(presentFamilies.size()); //It should have been checked before
-
-			//Try to assign the graphics queue
-			if(std::find(presentFamilies.cbegin(), presentFamilies.cend(), queues[GRAPHICS_QUEUE]) != presentFamilies.cend()){
-				queues[PRESENTATION_QUEUE] = queues[GRAPHICS_QUEUE];
-			} else {
-				queues[PRESENTATION_QUEUE] = presentFamilies[0];
-			}
-		#endif
+		//Try to assign the graphics queue
+		if(std::find(presentFamilies.cbegin(), presentFamilies.cend(), queues[GRAPHICS_QUEUE]) != presentFamilies.cend()){
+			queues[PRESENTATION_QUEUE] = queues[GRAPHICS_QUEUE];
+		} else {
+			queues[PRESENTATION_QUEUE] = presentFamilies[0];
+		}
 
 		return queues;
 	}
@@ -853,8 +863,8 @@ private:
 		return validationLayers;
 	}
 
-	static std::vector<vk::ExtensionProperties> getRequiredInstanceExtensions() {
-		std::vector<vk::ExtensionProperties> extensions;
+	static const std::vector<vk::ExtensionProperties>& getRequiredInstanceExtensions() {
+		/*std::vector<vk::ExtensionProperties> extensions;
 
 		#ifndef ZUAZO_DISABLE_PRESENTATION_SUPPORT
 			//Add window swap-chain extensions
@@ -866,17 +876,12 @@ private:
 			);
 		#endif
 
-		#ifdef ZUAZO_ENABLE_VALIDATION_LAYERS
-			//Add debug utils extension requirement
-			extensions.emplace_back();
-			std::strncpy(extensions.back().extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE);
-		#endif
-
-		return extensions;
+		return extensions;*/
+		return requiredInstanceExtensions;
 	}
 
-	static std::vector<vk::ExtensionProperties> getRequiredDeviceExtensions() {
-		std::vector<vk::ExtensionProperties> extensions;
+	static const std::vector<vk::ExtensionProperties>& getRequiredDeviceExtensions() {
+		/*std::vector<vk::ExtensionProperties> extensions;
 
 		#ifndef ZUAZO_DISABLE_PRESENTATION_SUPPORT
 			//Require swapchain extension
@@ -885,7 +890,8 @@ private:
 			extensions.emplace_back(swapchainExtension);
 		#endif
 
-		return extensions;
+		return extensions;*/
+		return requiredDeviceExtensions;
 	}
 
 	static std::vector<vk::QueueFamilyProperties> getRequiredQueueFamilies() {
@@ -894,6 +900,28 @@ private:
 			VkQueueFamilyProperties{ VK_QUEUE_COMPUTE_BIT,	1,	0,	{} },
 			VkQueueFamilyProperties{ VK_QUEUE_TRANSFER_BIT,	1,	0,	{} }
 		};
+	}
+
+	static std::vector<uint32_t> getPresentationQueueFamilies(vk::Instance instance, vk::PhysicalDevice device, uint32_t count) {
+		std::vector<uint32_t> result;
+
+		for(uint32_t i = 0; i < count; i++) {
+			//All of the callbacks must return true
+			//Note that if there are no callbacks this function will return true
+			const bool support = std::all_of(
+				presentationSupportCallbacks.cbegin(), presentationSupportCallbacks.cend(),
+				[instance, device, i] (const PresentationSupportCallback& cbk) -> bool {
+					return cbk(instance, device, i);
+				}
+			);
+
+			//This queue family can be used for presenting
+			if(support) {
+				result.emplace_back(i);
+			}
+		}
+
+		return result;
 	}
 
 	/*
@@ -957,7 +985,16 @@ private:
 
 };
 
+std::vector<vk::ExtensionProperties> Vulkan::Impl::requiredInstanceExtensions {
+	#ifdef ZUAZO_ENABLE_VALIDATION_LAYERS
+		//Add debug utils extension requirement
+		vk::ExtensionProperties(std::array<char, VK_MAX_EXTENSION_NAME_SIZE>{VK_EXT_DEBUG_UTILS_EXTENSION_NAME})
+	#endif
+};
 
+std::vector<vk::ExtensionProperties> Vulkan::Impl::requiredDeviceExtensions;
+
+std::vector<Vulkan::PresentationSupportCallback> Vulkan::Impl::presentationSupportCallbacks;
 
 /*
  * Interface implementation
@@ -1286,6 +1323,20 @@ void Vulkan::present(	vk::SwapchainKHR swapchain,
 
 void Vulkan::presentAll() const {
 	m_impl->presentAll();
+}
+
+
+
+void Vulkan::registerRequiredInstanceExtensions(Utils::BufferView<const vk::ExtensionProperties> ext) {
+	Impl::registerRequiredInstanceExtensions(ext);
+}
+
+void Vulkan::registerRequiredDeviceExtensions(Utils::BufferView<const vk::ExtensionProperties> ext) {
+	Impl::registerRequiredDeviceExtensions(ext);
+}
+
+void Vulkan::registerPresentationSupportCallback(PresentationSupportCallback cbk) {
+	Impl::registerPresentationSupportCallback(std::move(cbk));
 }
 
 }

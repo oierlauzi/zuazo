@@ -99,43 +99,43 @@ struct Frame::Descriptor : Utils::Configuration {
 
 	void 									setResolution(Resolution res);
 	Resolution 								getResolution() const;
-	void 									setResolutionLimits(Limit<Resolution> res);
-	Limit<Resolution>						getResolutionLimits() const;
+	void 									setResolutionLimit(TypedLimitPtr<Resolution> res);
+	TypedLimitPtr<Resolution>				getResolutionLimit() const;
 
 	void									setPixelAspectRatio(AspectRatio ratio);
 	AspectRatio 							getPixelAspectRatio() const;
-	void									setPixelAspectRatioLimits(Limit<AspectRatio> ratio);
-	Limit<AspectRatio>				 		getPixelAspectRatioLimits() const;
+	void									setPixelAspectRatioLimit(TypedLimitPtr<AspectRatio> ratio);
+	TypedLimitPtr<AspectRatio>				getPixelAspectRatioLimit() const;
 
 	void									setColorPrimaries(ColorPrimaries primaries);
 	ColorPrimaries							getColorPrimaries() const;
-	void									setColorPrimariesLimits(Limit<ColorPrimaries> primaries);
-	Limit<ColorPrimaries>					getColorPrimariesLimits() const;
+	void									setColorPrimariesLimit(TypedLimitPtr<ColorPrimaries> primaries);
+	TypedLimitPtr<ColorPrimaries>			getColorPrimariesLimit() const;
 
 	void									setColorModel(ColorModel model);
 	ColorModel 								getColorModel() const;
-	void									setColorModelLimits(Limit<ColorModel> model);
-	Limit<ColorModel>						getColorModelLimits() const;
+	void									setColorModelLimit(TypedLimitPtr<ColorModel> model);
+	TypedLimitPtr<ColorModel>				getColorModelLimit() const;
 
 	void									setColorTransferFunction(ColorTransferFunction xferFn);
 	ColorTransferFunction 					getColorTransferFunction() const;
-	void									setColorTransferFunctionLimits(Limit<ColorTransferFunction> xferFn);
-	Limit<ColorTransferFunction>			getColorTransferFunctionLimits() const;
+	void									setColorTransferFunctionLimit(TypedLimitPtr<ColorTransferFunction> xferFn);
+	TypedLimitPtr<ColorTransferFunction>	getColorTransferFunctionLimit() const;
 
 	void									setColorSubsampling(ColorSubsampling subs);
 	ColorSubsampling 						getColorSubsampling() const;
-	void									setColorSubsamplingLimits(Limit<ColorSubsampling> subs);
-	Limit<ColorSubsampling>					getColorSubsamplingLimits() const;
+	void									setColorSubsamplingLimit(TypedLimitPtr<ColorSubsampling> subs);
+	TypedLimitPtr<ColorSubsampling>			getColorSubsamplingLimit() const;
 
 	void									setColorRange(ColorRange range);
 	ColorRange 								getColorRange() const;
-	void									setColorRangeLimits(Limit<ColorRange> range);
-	Limit<ColorRange>						getColorRangeLimits() const;
+	void									setColorRangeLimit(TypedLimitPtr<ColorRange> range);
+	TypedLimitPtr<ColorRange>				getColorRangeLimit() const;
 
 	void									setColorFormat(ColorFormat format);
 	ColorFormat 							getColorFormat() const;
-	void									setColorFormatLimits(Limit<ColorFormat> format);
-	Limit<ColorFormat>						getColorFormatLimits() const;
+	void									setColorFormatLimit(TypedLimitPtr<ColorFormat> format);
+	TypedLimitPtr<ColorFormat>				getColorFormatLimit() const;
 
 };
 

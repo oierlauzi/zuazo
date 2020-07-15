@@ -14,16 +14,16 @@ namespace Zuazo {
 using Video = std::shared_ptr<const Graphics::Frame>;
 
 struct VideoMode : public Graphics::Frame::Descriptor {
-	static inline const std::string FRAME_RATE = "frameRate";	static constexpr auto DEFAULT_FRAME_RATE = Rate(30, 1);
-
+	static inline const std::string FRAME_RATE = "frameRate";
+	
 	using Graphics::Frame::Descriptor::Descriptor;
 	using Graphics::Frame::Descriptor::operator=;
 	VideoMode();
 	
 	void 									setFrameRate(Rate res);
 	Rate 									getFrameRate() const;
-	void 									setFrameRateLimits(Limit<Rate> res);
-	Limit<Rate>								getFrameRateLimits() const;
+	void 									setFrameRateLimits(TypedLimitPtr<Rate> res);
+	TypedLimitPtr<Rate>						getFrameRateLimits() const;
 };
 
 class VideoBase {
@@ -43,7 +43,7 @@ public:
 
 protected:
 	void								setVideoModeCompatibility(std::vector<VideoMode> comp);
-	void								validate(const VideoMode& videoMode);
+	VideoMode							validate(const VideoMode& videoMode);
 
 private:
 	VideoMode							m_videoMode;

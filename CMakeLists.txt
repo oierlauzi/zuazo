@@ -20,11 +20,11 @@ file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp ${PROJECT_SOURCE_DIR}/
 file(GLOB_RECURSE INLINE_SOURCES ${PROJECT_SOURCE_DIR}/include/*.inl)
 file(GLOB_RECURSE HEADERS ${PROJECT_SOURCE_DIR}/include/*.h)
 
-# Create shared library
+# Create the shared library
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 set_target_properties(
 	${PROJECT_NAME} PROPERTIES 
-		SOVERSION ${PROJECT_VERSION}	
+		SOVERSION ${PROJECT_VERSION}
 )
 add_dependencies(${PROJECT_NAME} shaders)
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include/)

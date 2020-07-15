@@ -9,6 +9,7 @@
 #include <vector>
 #include <array>
 #include <utility>
+#include <functional>
 
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #define VULKAN_HPP_DEFAULT_DISPATCHER void()
@@ -19,6 +20,7 @@ namespace Zuazo::Graphics {
 class Vulkan {
 public:
 	using DeviceScoreFunc = std::function<uint32_t(const vk::DispatchLoaderDynamic&, vk::PhysicalDevice)>;
+	using PresentationSupportCallback = std::function<bool(vk::Instance, vk::PhysicalDevice, uint32_t)>;
 
 	struct FormatSupport {
 		std::vector<vk::Format>	sampler;
@@ -149,6 +151,10 @@ public:
 												vk::Semaphore waitSemaphore ) const;
 
 	void								presentAll() const;
+
+	static void							registerRequiredInstanceExtensions(Utils::BufferView<const vk::ExtensionProperties> ext);
+	static void							registerRequiredDeviceExtensions(Utils::BufferView<const vk::ExtensionProperties> ext);
+	static void							registerPresentationSupportCallback(PresentationSupportCallback cbk);
 
 private:
 	struct Impl;

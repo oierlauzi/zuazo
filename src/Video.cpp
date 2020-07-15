@@ -18,12 +18,12 @@ Rate VideoMode::getFrameRate() const {
 	return getValue<Rate>(FRAME_RATE).value();
 }
 
-void VideoMode::setFrameRateLimits(Limit<Rate> rate) {
+void VideoMode::setFrameRateLimits(TypedLimitPtr<Rate> rate) {
 	set(FRAME_RATE, std::move(rate));
 }
 
-VideoMode::Limit<Rate> VideoMode::getFrameRateLimits() const {
-	return getLimit<Rate>(FRAME_RATE);
+VideoMode::TypedLimitPtr<Rate> VideoMode::getFrameRateLimits() const {
+	return getLimit<TypedLimitBase<Rate>>(FRAME_RATE);
 }
 
 
@@ -62,14 +62,15 @@ void VideoBase::setVideoModeCompatibility(std::vector<VideoMode> comp) {
 	m_compatibilities = std::move(comp);
 }
 
-void VideoBase::validate(const VideoMode& config) {
-	for(const auto& compatibility : m_compatibilities){
-		if(compatibility.intersection(config)){
-			return; //Found a compatible
-		}
-	}
+VideoMode VideoBase::validate(const VideoMode& config) {
+	VideoMode result;
+	std::tie(result, std::ignore) = config.intersection(m_compatibilities.cbegin(), m_compatibilities.cend());
 
-	throw Exception("Unsupported video mode");
+	if(!result) {
+		throw Exception("Unsupported video mode");
+	}
+	
+	return result;
 }
 
 }

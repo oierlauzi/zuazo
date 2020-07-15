@@ -30,9 +30,11 @@ public:
 	class Any;
 
 	template <typename T>
-	using Pointer = std::shared_ptr<const T>;
+	using LimitPtr = std::shared_ptr<const T>;
+	template <typename T>
+	using TypedLimitPtr = LimitPtr<TypedLimitBase<T>>;
 
-	using Data = std::unordered_map<std::string, Pointer<LimitBase>>;
+	using Data = std::unordered_map<std::string, LimitPtr<LimitBase>>;
 	using iterator = Data::iterator;
 	using const_iterator = Data::const_iterator;
 	using reference = Data::reference;
@@ -40,9 +42,6 @@ public:
 	using key_type = Data::key_type;
 	using mapped_type = Data::mapped_type;
 	using value_type = Data::value_type;
-
-	template <typename T>
-	using Limit = Pointer<TypedLimitBase<T>>;
 
 	static inline const mapped_type NONE = mapped_type();
 
@@ -79,15 +78,17 @@ public:
 	const mapped_type& 				get(const std::string& option) const;
 
 	template<typename T>			
-	Limit<T>						getLimit(const std::string& option) const;
+	LimitPtr<T>						getLimit(const std::string& option) const;
 	template<typename T>			
 	std::optional<T>				getValue(const std::string& option) const;
 
 
 	Configuration					intersection(const Configuration& other) const;
+	template<typename Ite>			
+	std::pair<Configuration, Ite>	intersection(Ite begin, Ite end) const;
 
 	template<typename T, typename... Args>
-	static Pointer<T>				makeLimit(Args&&... args);
+	static LimitPtr<T>				makeLimit(Args&&... args);
 
 
 private:
