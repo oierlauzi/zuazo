@@ -15,11 +15,11 @@ struct ColorTransfer::Impl {
 	Impl() = default;
 	Impl(const Frame::Descriptor& desc)
 		: transferData {
-			getConversionMatrix(desc.getColorPrimaries()),
-			getConversionMatrix(desc.getColorModel()),
-			getTransferFunction(desc.getColorTransferFunction()),
-			getRange(desc.getColorRange(), desc.getColorModel()),
-			getPlaneFormat(desc.getColorFormat())
+			getConversionMatrix(desc.colorPrimaries),
+			getConversionMatrix(desc.colorModel),
+			getTransferFunction(desc.colorTransferFunction),
+			getRange(desc.colorRange, desc.colorModel),
+			getPlaneFormat(desc.colorFormat)
 		}
 	{
 	}

@@ -7,7 +7,6 @@
 #include "../Utils/BufferView.h"
 #include "../Utils/Pimpl.h"
 #include "../Math/Vector.h"
-#include "../Utils/Configuration.h"
 #include "../Resolution.h"
 #include "../ColorSubsampling.h"
 #include "../ColorFormat.h"
@@ -83,60 +82,15 @@ private:
 };
 
 
-struct Frame::Descriptor : Utils::Configuration {
-	static inline const std::string RESOLUTION = "resolution";
-	static inline const std::string PIXEL_ASPECT_RATIO = "pixelAspectRatio";
-	static inline const std::string COLOR_PRIMARIES = "colorPrimaries";
-	static inline const std::string COLOR_MODEL = "colorModel";
-	static inline const std::string COLOR_TRANSFER_FUNCTION = "colorTransferFunction";
-	static inline const std::string COLOR_SUBSAMPLING = "colorSubsampling";
-	static inline const std::string COLOR_RANGE = "colorRange";
-	static inline const std::string COLOR_FORMAT = "colorFormat";
-
-	using Utils::Configuration::Configuration;
-	using Utils::Configuration::operator=;
-	Descriptor();
-
-	void 									setResolution(Resolution res);
-	Resolution 								getResolution() const;
-	void 									setResolutionLimit(TypedLimitPtr<Resolution> res);
-	TypedLimitPtr<Resolution>				getResolutionLimit() const;
-
-	void									setPixelAspectRatio(AspectRatio ratio);
-	AspectRatio 							getPixelAspectRatio() const;
-	void									setPixelAspectRatioLimit(TypedLimitPtr<AspectRatio> ratio);
-	TypedLimitPtr<AspectRatio>				getPixelAspectRatioLimit() const;
-
-	void									setColorPrimaries(ColorPrimaries primaries);
-	ColorPrimaries							getColorPrimaries() const;
-	void									setColorPrimariesLimit(TypedLimitPtr<ColorPrimaries> primaries);
-	TypedLimitPtr<ColorPrimaries>			getColorPrimariesLimit() const;
-
-	void									setColorModel(ColorModel model);
-	ColorModel 								getColorModel() const;
-	void									setColorModelLimit(TypedLimitPtr<ColorModel> model);
-	TypedLimitPtr<ColorModel>				getColorModelLimit() const;
-
-	void									setColorTransferFunction(ColorTransferFunction xferFn);
-	ColorTransferFunction 					getColorTransferFunction() const;
-	void									setColorTransferFunctionLimit(TypedLimitPtr<ColorTransferFunction> xferFn);
-	TypedLimitPtr<ColorTransferFunction>	getColorTransferFunctionLimit() const;
-
-	void									setColorSubsampling(ColorSubsampling subs);
-	ColorSubsampling 						getColorSubsampling() const;
-	void									setColorSubsamplingLimit(TypedLimitPtr<ColorSubsampling> subs);
-	TypedLimitPtr<ColorSubsampling>			getColorSubsamplingLimit() const;
-
-	void									setColorRange(ColorRange range);
-	ColorRange 								getColorRange() const;
-	void									setColorRangeLimit(TypedLimitPtr<ColorRange> range);
-	TypedLimitPtr<ColorRange>				getColorRangeLimit() const;
-
-	void									setColorFormat(ColorFormat format);
-	ColorFormat 							getColorFormat() const;
-	void									setColorFormatLimit(TypedLimitPtr<ColorFormat> format);
-	TypedLimitPtr<ColorFormat>				getColorFormatLimit() const;
-
+struct Frame::Descriptor {
+	Resolution								resolution;
+	AspectRatio								pixelAspectRatio;
+	ColorPrimaries							colorPrimaries;
+	ColorModel								colorModel;
+	ColorTransferFunction					colorTransferFunction;
+	ColorSubsampling						colorSubsampling;
+	ColorRange								colorRange;
+	ColorFormat								colorFormat;
 };
 
 

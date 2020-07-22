@@ -69,11 +69,8 @@ inline std::ostream& operator<<(std::ostream& os, Resolution res) {
     return os << res.width << 'x' << res.height;
 }
 
-}
 
-
-
-namespace Zuazo::Math {
+namespace Math {
     
 constexpr Resolution min(Resolution a, Resolution b) {
     return Resolution(
@@ -87,6 +84,21 @@ constexpr Resolution max(Resolution a, Resolution b) {
         max(a.x, b.x),
         max(a.y, b.y)
     );
+}
+
+}
+
+namespace Utils {
+
+constexpr Resolution lowest(const Any<Resolution>&) {
+	return Resolution(0, 0);
+}
+
+constexpr Resolution highest(const Any<Resolution>&) {
+	constexpr auto MAX_SIZE = highest(Any<uint32_t>());
+	return Resolution(MAX_SIZE, MAX_SIZE);
+}
+
 }
 
 }

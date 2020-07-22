@@ -285,6 +285,16 @@ constexpr size_t getPlaneCount(ColorFormat format);
 constexpr std::string_view toString(ColorFormat format);
 std::ostream& operator<<(std::ostream& os, ColorFormat format);
 
+namespace Utils {
+
+template<typename T>
+class Any;
+
+constexpr ColorFormat lowest(const Any<ColorFormat>& any);
+constexpr ColorFormat highest(const Any<ColorFormat>& any);
+
+}
+
 }
 
 #include "ColorFormat.inl"

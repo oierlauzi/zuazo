@@ -21,4 +21,16 @@ inline std::ostream& operator<<(std::ostream& os, ColorRange colorRange) {
 }
 
 
+namespace Utils {
+
+constexpr ColorRange lowest(const Any<ColorRange>&) {
+	return ColorRange::NONE + static_cast<ColorRange>(1);
+}
+
+constexpr ColorRange highest(const Any<ColorRange>&) {
+	return ColorRange::COUNT - static_cast<ColorRange>(1);
+}
+
+}
+
 }

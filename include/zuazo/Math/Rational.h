@@ -240,7 +240,19 @@ constexpr Rational<den_t, num_t> inv(const Rational<num_t, den_t>& r);
 namespace Zuazo {
 
 template<typename num_t, typename den_t>
-std::ostream& operator<<(std::ostream& os, Math::Rational<num_t, den_t>& rat);
+std::ostream& operator<<(std::ostream& os, const Math::Rational<num_t, den_t>& rat);
+
+namespace Utils {
+
+template<typename T>
+class Any;
+
+template<typename num_t, typename den_t>
+constexpr Math::Rational<num_t, den_t> lowest(const Any<Math::Rational<num_t, den_t>>& any);
+template<typename num_t, typename den_t>
+constexpr Math::Rational<num_t, den_t> highest(const Any<Math::Rational<num_t, den_t>>& any);
+
+}
 
 }
 

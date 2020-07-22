@@ -31,6 +31,16 @@ ZUAZO_ENUM_COMP_OPERATORS(ColorRange)
 constexpr std::string_view toString(ColorRange colorRange);
 std::ostream& operator<<(std::ostream& os, ColorRange colorRange);
 
+namespace Utils {
+
+template<typename T>
+class Any;
+
+constexpr ColorRange lowest(const Any<ColorRange>& any);
+constexpr ColorRange highest(const Any<ColorRange>& any);
+
+}
+
 }
 
 #include "ColorRange.inl"

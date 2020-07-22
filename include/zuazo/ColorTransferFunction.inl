@@ -17,4 +17,16 @@ inline std::ostream& operator<<(std::ostream& os, ColorTransferFunction colorTra
 }
 
 
+namespace Utils {
+
+constexpr ColorTransferFunction lowest(const Any<ColorTransferFunction>&) {
+	return ColorTransferFunction::NONE + static_cast<ColorTransferFunction>(1);
+}
+
+constexpr ColorTransferFunction highest(const Any<ColorTransferFunction>&) {
+	return ColorTransferFunction::COUNT - static_cast<ColorTransferFunction>(1);
+}
+
+}
+
 }

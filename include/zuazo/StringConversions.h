@@ -8,7 +8,6 @@
 #include <typeindex>
 #include <utility>
 #include <tuple>
-#include <vector>
 
 namespace Zuazo {
 
@@ -41,10 +40,6 @@ std::ostream& operator<<(std::ostream& os, const std::pair<T1, T2>& pair);
 //Tuple
 template <typename... Types>
 std::ostream& operator<<(std::ostream& os, const std::tuple<Types...>& tuple);
-
-//Vector
-template <typename T>
-std::ostream& operator<<(std::ostream& os, const std::vector<T>& vector);
 
 //Helper functions
 template<typename T>

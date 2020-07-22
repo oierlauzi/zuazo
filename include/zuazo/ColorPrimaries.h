@@ -34,6 +34,16 @@ constexpr Math::Mat4x4f getConversionMatrix(ColorPrimaries colorPrim);
 constexpr std::string_view toString(ColorPrimaries colorPrim);
 std::ostream& operator<<(std::ostream& os, ColorPrimaries colorPrim);
 
+namespace Utils {
+
+template<typename T>
+class Any;
+
+constexpr ColorPrimaries lowest(const Any<ColorPrimaries>& any);
+constexpr ColorPrimaries highest(const Any<ColorPrimaries>& any);
+
+}
+
 }
 
 #include "ColorPrimaries.inl"

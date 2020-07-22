@@ -53,4 +53,16 @@ inline std::ostream& operator<<(std::ostream& os, ColorModel model) {
 }
 
 
+namespace Utils {
+
+constexpr ColorModel lowest(const Any<ColorModel>&) {
+	return ColorModel::NONE + static_cast<ColorModel>(1);
+}
+
+constexpr ColorModel highest(const Any<ColorModel>&) {
+	return ColorModel::COUNT - static_cast<ColorModel>(1);
+}
+
+}
+
 }

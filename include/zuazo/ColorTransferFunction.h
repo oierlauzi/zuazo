@@ -27,6 +27,16 @@ ZUAZO_ENUM_COMP_OPERATORS(ColorTransferFunction)
 constexpr std::string_view toString(ColorTransferFunction colorTransferFunc);
 std::ostream& operator<<(std::ostream& os, ColorTransferFunction colorTransferFunc);
 
+namespace Utils {
+
+template<typename T>
+class Any;
+
+constexpr ColorTransferFunction lowest(const Any<ColorTransferFunction>& any);
+constexpr ColorTransferFunction highest(const Any<ColorTransferFunction>& any);
+
+}
+
 }
 
 #include "ColorTransferFunction.inl"

@@ -45,12 +45,22 @@ struct Resolution{
 
 std::ostream& operator<<(std::ostream& os, Resolution res);
 
-}
-
-namespace Zuazo::Math {
+namespace Math {
 
 constexpr Resolution min(Resolution a, Resolution b);
 constexpr Resolution max(Resolution a, Resolution b);
+
+}
+
+namespace Utils {
+
+template<typename T>
+class Any;
+
+constexpr Resolution lowest(const Any<Resolution>& any);
+constexpr Resolution highest(const Any<Resolution>& any);
+
+}
 
 }
 

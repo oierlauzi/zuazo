@@ -58,4 +58,16 @@ inline std::ostream& operator<<(std::ostream& os, ColorPrimaries colorPrim) {
 }
 
 
+namespace Utils {
+
+constexpr ColorPrimaries lowest(const Any<ColorPrimaries>&) {
+	return ColorPrimaries::NONE + static_cast<ColorPrimaries>(1);
+}
+
+constexpr ColorPrimaries highest(const Any<ColorPrimaries>&) {
+	return ColorPrimaries::COUNT - static_cast<ColorPrimaries>(1);
+}
+
+}
+
 }

@@ -29,7 +29,7 @@ public:
 		std::string		name = "Zuazo Application";
 		Version			version = Version(0, 1, 0);
 		Verbosity		verbosity = ZUAZO_IS_DEBUG ? Verbosity::LEQ_INFO : Verbosity::SILENT;
-		VideoMode		defaultVideoMode = VideoMode();
+		VideoMode		defaultVideoMode = VideoMode::ANY;
 		InstanceLogFunc	instanceLogFunc = defaultInstanceLogFunc;
 		ElementLogFunc	elementLogFunc = defaultElementLogFunc;
 	};
@@ -59,7 +59,7 @@ public:
 		INPUT_PRIORITY = HIGHEST_PRIORITY / 2,
 	};
 
-	Instance(	ApplicationInfo&& applicationInfo, 
+	Instance(	ApplicationInfo applicationInfo, 
 				const DeviceScoreFunc& deviceScoreFunc = defaultDeviceScoreFunc);
 	Instance(const Instance& other) = delete;
 	Instance(Instance&& other);

@@ -45,4 +45,17 @@ inline std::ostream& operator<<(std::ostream& os, ScalingMode scalingMode) {
 	return os << toString(scalingMode);
 }
 
+
+namespace Utils {
+
+constexpr ScalingMode lowest(const Any<ScalingMode>&) {
+	return ScalingMode::NONE + static_cast<ScalingMode>(1);
+}
+
+constexpr ScalingMode highest(const Any<ScalingMode>&) {
+	return ScalingMode::COUNT - static_cast<ScalingMode>(1);
+}
+
+}
+
 }

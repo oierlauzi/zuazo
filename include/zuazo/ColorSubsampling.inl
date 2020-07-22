@@ -43,4 +43,16 @@ inline std::ostream& operator<<(std::ostream& os, ColorSubsampling colorSubsampl
 }
 
 
+namespace Utils {
+
+constexpr ColorSubsampling lowest(const Any<ColorSubsampling>&) {
+	return ColorSubsampling::NONE + static_cast<ColorSubsampling>(1);
+}
+
+constexpr ColorSubsampling highest(const Any<ColorSubsampling>&) {
+	return ColorSubsampling::COUNT - static_cast<ColorSubsampling>(1);
+}
+
+}
+
 }

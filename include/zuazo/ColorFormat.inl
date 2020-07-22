@@ -225,4 +225,16 @@ inline std::ostream& operator<<(std::ostream& os, ColorFormat format) {
 	return os << toString(format);
 }
 
+namespace Utils {
+
+constexpr ColorFormat lowest(const Any<ColorFormat>&) {
+	return ColorFormat::NONE + static_cast<ColorFormat>(1);
+}
+
+constexpr ColorFormat highest(const Any<ColorFormat>&) {
+	return ColorFormat::COUNT - static_cast<ColorFormat>(1);
+}
+
+}
+
 }

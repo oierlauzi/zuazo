@@ -163,8 +163,8 @@ private:
 	}
 
 	static Math::Vec2f calcualteSize(const Descriptor& desc) {
-		Resolution res = desc.getResolution();
-		AspectRatio par = desc.getPixelAspectRatio();
+		Resolution res = desc.resolution;
+		AspectRatio par = desc.pixelAspectRatio;
 		return Geometry::calculateSize(res, par);
 	}
 
@@ -257,17 +257,17 @@ private:
 		const std::array poolSizes = {
 			vk::DescriptorPoolSize(
 				vk::DescriptorType::eCombinedImageSampler,			//Descriptor type
-				FILTER_COUNT * ColorTransfer::getSamplerCount()	//Descriptor count
+				FILTER_COUNT * ColorTransfer::getSamplerCount()		//Descriptor count
 			),
 			vk::DescriptorPoolSize(
 				vk::DescriptorType::eUniformBuffer,					//Descriptor type
-				FILTER_COUNT									//Descriptor count
+				FILTER_COUNT										//Descriptor count
 			)
 		};
 
 		const vk::DescriptorPoolCreateInfo createInfo(
 			{},														//Flags
-			FILTER_COUNT,										//Descriptor set count
+			FILTER_COUNT,											//Descriptor set count
 			poolSizes.size(), poolSizes.data()						//Pool sizes
 		);
 
@@ -389,9 +389,9 @@ std::shared_ptr<Buffer> Frame::createColorTransferBuffer(	const Vulkan& vulkan,
 }
 
 std::vector<Frame::PlaneDescriptor> Frame::getPlaneDescriptors(const Descriptor& desc) {
-	const Resolution resolution = desc.getResolution();
-	const ColorSubsampling subsampling = desc.getColorSubsampling();
-	const ColorFormat format = desc.getColorFormat();
+	const Resolution resolution = desc.resolution;
+	const ColorSubsampling subsampling = desc.colorSubsampling;
+	const ColorFormat format = desc.colorFormat;
 
 	const auto planeCount = getPlaneCount(format);
 	std::vector<PlaneDescriptor> result;
@@ -478,159 +478,6 @@ vk::DescriptorSetLayout	Frame::getDescriptorSetLayout(	const Vulkan& vulkan,
 	}
 
 	return result;
-}
-
-/*
- * Frame::Descriptor
- */
-Frame::Descriptor::Descriptor() 
-	: Configuration {
-		{ RESOLUTION, makeLimit<Any<Resolution>>() },
-		{ PIXEL_ASPECT_RATIO, makeLimit<Any<AspectRatio>>() },
-		{ COLOR_PRIMARIES, makeLimit<Any<ColorPrimaries>>() },
-		{ COLOR_MODEL, makeLimit<Any<ColorModel>>() },
-		{ COLOR_TRANSFER_FUNCTION, makeLimit<Any<ColorTransferFunction>>() },
-		{ COLOR_SUBSAMPLING, makeLimit<Any<ColorSubsampling>>() },
-		{ COLOR_RANGE, makeLimit<Any<ColorRange>>() },
-		{ COLOR_FORMAT, makeLimit<Any<ColorFormat>>() }
-	}
-{
-}
-
-
-void Frame::Descriptor::setResolution(Resolution res) {
-	setResolutionLimit(makeLimit<MustBe<Resolution>>(res));
-}
-
-Resolution Frame::Descriptor::getResolution() const {
-	return getValue<Resolution>(RESOLUTION).value();
-}
-
-void Frame::Descriptor::setResolutionLimit(TypedLimitPtr<Resolution> res) {
-	set(RESOLUTION, std::move(res));
-}
-
-Frame::Descriptor::TypedLimitPtr<Resolution> Frame::Descriptor::getResolutionLimit() const {
-	return getLimit<TypedLimitBase<Resolution>>(RESOLUTION);
-}
-
-
-void Frame::Descriptor::setPixelAspectRatio(AspectRatio par) {
-	setPixelAspectRatioLimit(makeLimit<MustBe<AspectRatio>>(par));
-}
-
-AspectRatio Frame::Descriptor::getPixelAspectRatio() const {
-	return getValue<AspectRatio>(PIXEL_ASPECT_RATIO).value();
-}
-
-void Frame::Descriptor::setPixelAspectRatioLimit(TypedLimitPtr<AspectRatio> par) {
-	set(PIXEL_ASPECT_RATIO, std::move(par));
-}
-
-Frame::Descriptor::TypedLimitPtr<AspectRatio> Frame::Descriptor::getPixelAspectRatioLimit() const {
-	return getLimit<TypedLimitBase<AspectRatio>>(PIXEL_ASPECT_RATIO);
-}
-
-
-void Frame::Descriptor::setColorPrimaries(ColorPrimaries primaries) {
-	setColorPrimariesLimit(makeLimit<MustBe<ColorPrimaries>>(primaries));
-}
-
-ColorPrimaries Frame::Descriptor::getColorPrimaries() const {
-	return getValue<ColorPrimaries>(COLOR_PRIMARIES).value();
-}
-
-void Frame::Descriptor::setColorPrimariesLimit(TypedLimitPtr<ColorPrimaries> primaries) {
-	set(COLOR_PRIMARIES, std::move(primaries));
-}
-
-Frame::Descriptor::TypedLimitPtr<ColorPrimaries> Frame::Descriptor::getColorPrimariesLimit() const {
-	return getLimit<TypedLimitBase<ColorPrimaries>>(COLOR_PRIMARIES);
-}
-
-
-void Frame::Descriptor::setColorModel(ColorModel model) {
-	setColorModelLimit(makeLimit<MustBe<ColorModel>>(model));
-}
-
-ColorModel Frame::Descriptor::getColorModel() const {
-	return getValue<ColorModel>(COLOR_MODEL).value();
-}
-
-void Frame::Descriptor::setColorModelLimit(TypedLimitPtr<ColorModel> model) {
-	set(COLOR_MODEL, std::move(model));
-}
-
-Frame::Descriptor::TypedLimitPtr<ColorModel> Frame::Descriptor::getColorModelLimit() const {
-	return getLimit<TypedLimitBase<ColorModel>>(COLOR_MODEL);
-}
-
-
-void Frame::Descriptor::setColorTransferFunction(ColorTransferFunction xferFunc) {
-	setColorTransferFunctionLimit(makeLimit<MustBe<ColorTransferFunction>>(xferFunc));
-}
-
-ColorTransferFunction Frame::Descriptor::getColorTransferFunction() const {
-	return getValue<ColorTransferFunction>(COLOR_TRANSFER_FUNCTION).value();
-}
-
-void Frame::Descriptor::setColorTransferFunctionLimit(TypedLimitPtr<ColorTransferFunction> xferFunc) {
-	set(COLOR_TRANSFER_FUNCTION, std::move(xferFunc));
-}
-
-Frame::Descriptor::TypedLimitPtr<ColorTransferFunction> Frame::Descriptor::getColorTransferFunctionLimit() const {
-	return getLimit<TypedLimitBase<ColorTransferFunction>>(COLOR_TRANSFER_FUNCTION);
-}
-
-
-void Frame::Descriptor::setColorSubsampling(ColorSubsampling subs) {
-	setColorSubsamplingLimit(makeLimit<MustBe<ColorSubsampling>>(subs));
-}
-
-ColorSubsampling Frame::Descriptor::getColorSubsampling() const {
-	return getValue<ColorSubsampling>(COLOR_SUBSAMPLING).value();
-}
-
-void Frame::Descriptor::setColorSubsamplingLimit(TypedLimitPtr<ColorSubsampling> subs) {
-	set(COLOR_SUBSAMPLING, std::move(subs));
-}
-
-Frame::Descriptor::TypedLimitPtr<ColorSubsampling> Frame::Descriptor::getColorSubsamplingLimit() const {
-	return getLimit<TypedLimitBase<ColorSubsampling>>(COLOR_SUBSAMPLING);
-}
-
-
-void Frame::Descriptor::setColorRange(ColorRange range) {
-	setColorRangeLimit(makeLimit<MustBe<ColorRange>>(range));
-}
-
-ColorRange Frame::Descriptor::getColorRange() const {
-	return getValue<ColorRange>(COLOR_RANGE).value();
-}
-
-void Frame::Descriptor::setColorRangeLimit(TypedLimitPtr<ColorRange> range) {
-	set(COLOR_RANGE, std::move(range));
-}
-
-Frame::Descriptor::TypedLimitPtr<ColorRange> Frame::Descriptor::getColorRangeLimit() const {
-	return getLimit<TypedLimitBase<ColorRange>>(COLOR_RANGE);
-}
-
-
-void Frame::Descriptor::setColorFormat(ColorFormat format) {
-	setColorFormatLimit(makeLimit<MustBe<ColorFormat>>(format));
-}
-
-ColorFormat Frame::Descriptor::getColorFormat() const {
-	return getValue<ColorFormat>(COLOR_FORMAT).value();
-}
-
-void Frame::Descriptor::setColorFormatLimit(TypedLimitPtr<ColorFormat> format) {
-	set(COLOR_FORMAT, std::move(format));
-}
-
-Frame::Descriptor::TypedLimitPtr<ColorFormat> Frame::Descriptor::getColorFormatLimit() const {
-	return getLimit<TypedLimitBase<ColorFormat>>(COLOR_FORMAT);
 }
 
 /*

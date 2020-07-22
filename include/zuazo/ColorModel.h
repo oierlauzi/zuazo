@@ -33,6 +33,15 @@ constexpr Math::Mat4x4f getConversionMatrix(ColorModel colorModel);
 constexpr std::string_view toString(ColorModel colorModel);
 std::ostream& operator<<(std::ostream& os, ColorModel model);
 
+namespace Utils {
+
+template<typename T>
+class Any;
+
+constexpr ColorModel lowest(const Any<ColorModel>& any);
+constexpr ColorModel highest(const Any<ColorModel>& any);
+
+}
 
 }
 

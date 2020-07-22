@@ -832,9 +832,7 @@ private:
 		FormatSupport result;
 
 		for(const auto& range : FORMAT_RANGES){
-			for(size_t i = range.first; i <= range.second; i++){
-				const auto format = static_cast<vk::Format>(i);
-
+			for(auto format = range.getMin(); format <= range.getMax(); reinterpret_cast<int&>(format)++){
 				const auto properties = physicalDevice.getFormatProperties(format, disp);
 
 				if(hasSamplerSupport(properties)){
@@ -864,33 +862,10 @@ private:
 	}
 
 	static const std::vector<vk::ExtensionProperties>& getRequiredInstanceExtensions() {
-		/*std::vector<vk::ExtensionProperties> extensions;
-
-		#ifndef ZUAZO_DISABLE_PRESENTATION_SUPPORT
-			//Add window swap-chain extensions
-			const auto windowExtensions = GLFW::getRequiredVulkanExtensions();
-			std::copy(
-				windowExtensions.cbegin(),
-				windowExtensions.cend(),
-				std::back_insert_iterator(extensions)
-			);
-		#endif
-
-		return extensions;*/
 		return requiredInstanceExtensions;
 	}
 
 	static const std::vector<vk::ExtensionProperties>& getRequiredDeviceExtensions() {
-		/*std::vector<vk::ExtensionProperties> extensions;
-
-		#ifndef ZUAZO_DISABLE_PRESENTATION_SUPPORT
-			//Require swapchain extension
-			VkExtensionProperties swapchainExtension = {};
-			std::strncpy(swapchainExtension.extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE);
-			extensions.emplace_back(swapchainExtension);
-		#endif
-
-		return extensions;*/
 		return requiredDeviceExtensions;
 	}
 

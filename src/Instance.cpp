@@ -29,7 +29,7 @@ struct Instance::Impl {
 
 	std::shared_ptr<ScheduledCallback> presentImages;
 
-	Impl(	ApplicationInfo&& appInfo,
+	Impl(	ApplicationInfo appInfo,
 			const DeviceScoreFunc& deviceScoreFunc )
 		: applicationInfo(std::move(appInfo))
 		, vulkan(
@@ -170,7 +170,7 @@ private:
 };
 
 
-Instance::Instance(	ApplicationInfo&& applicationInfo,
+Instance::Instance(	ApplicationInfo applicationInfo,
 					const DeviceScoreFunc& deviceScoreFunc )
 	: m_impl(std::move(applicationInfo), deviceScoreFunc)
 {
@@ -306,7 +306,7 @@ uint32_t Instance::defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp
 
 	//Give the score based on the supported formats
 	for(const auto& range : Graphics::Vulkan::FORMAT_RANGES){
-		for(size_t i = range.first; i <= range.second; i++){
+		for(auto i = range.getMin(); i <= range.getMax(); reinterpret_cast<int&>(i)++){
 			const auto format = static_cast<vk::Format>(i);
 			const auto formatProperties = device.getFormatProperties(format, disp);
 

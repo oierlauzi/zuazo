@@ -34,6 +34,15 @@ constexpr Resolution getSubsampledResolution(ColorSubsampling subs, Resolution r
 constexpr std::string_view toString(ColorSubsampling colorSubsampling);
 std::ostream& operator<<(std::ostream& os, ColorSubsampling colorSubsampling);
 
+namespace Utils {
+
+template<typename T>
+class Any;
+
+constexpr ColorSubsampling lowest(const Any<ColorSubsampling>& any);
+constexpr ColorSubsampling highest(const Any<ColorSubsampling>& any);
+
+}
 
 }
 

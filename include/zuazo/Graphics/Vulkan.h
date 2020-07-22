@@ -4,6 +4,7 @@
 #include "../Verbosity.h"
 #include "../Utils/Pimpl.h"
 #include "../Utils/BufferView.h"
+#include "../Utils/Limit.h"
 #include "../Utils/Area.h"
 
 #include <vector>
@@ -35,8 +36,12 @@ public:
 	static constexpr uint64_t NO_TIMEOUT = std::numeric_limits<uint64_t>::max();
 
 	static constexpr std::array FORMAT_RANGES = {
-		std::pair{VK_FORMAT_R4G4_UNORM_PACK8, VK_FORMAT_ASTC_12x12_SRGB_BLOCK }, 			//Normal formats
-		std::pair{VK_FORMAT_G8B8G8R8_422_UNORM, VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM }	//YCbCr formats
+		Utils::Range{ vk::Format::eR4G4UnormPack8, vk::Format::eAstc12x12SrgbBlock  }, 			//Normal formats
+		Utils::Range{ vk::Format::eG8B8G8R8422Unorm, vk::Format::eG16B16R163Plane444Unorm }		//YCbCr formats
+	};
+
+	static constexpr std::array FILTER_RANGES = {
+		Utils::Range{ vk::Filter::eNearest, vk::Filter::eLinear }
 	};
 
 	Vulkan(	std::string_view appName, 

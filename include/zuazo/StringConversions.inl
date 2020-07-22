@@ -99,12 +99,6 @@ inline std::ostream& operator<<(std::ostream& os, const std::tuple<Types...>& tu
 	return os;
 }
 
-template <typename T>
-inline std::ostream& operator<<(std::ostream& os, const std::vector<T>& vector) {
-	return toOstream(os, vector.cbegin(), vector.cend());
-}
-
-
 
 template<typename T>
 inline std::ostream& enquote(std::ostream& os, T&& x) {
