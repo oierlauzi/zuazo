@@ -7,6 +7,8 @@
 
 namespace Zuazo::Utils {
 
+inline const Exception NO_VALUE_EXCEPTION("No value");
+
 /*
  * Any
  */
@@ -251,10 +253,46 @@ constexpr int None<T>::operator>=(const None&) const {
  * Functions
  */
 
+template <typename T>
+constexpr bool hasValue(const Any<T>&) {
+	return true;
+}
+
+template <typename T>
+constexpr bool hasValue(const Range<T>& range) {
+	return range.getMin() <= range.getMax();
+}
+
+template <typename T>
+constexpr bool hasValue(const Discrete<T>& discrete) {
+	return discrete.size() > 0;
+}
+
+template <typename T>
+constexpr bool hasValue(const MustBe<T>&) {
+	return true;
+}
+
+template <typename T>
+constexpr bool hasValue(const None<T>&) {
+	return false;
+}
+
+template <typename T>
+constexpr bool hasValue(const Limit<T>& limit) {
+	return std::visit(
+        [] (const auto& l) -> bool {
+            return hasValue(l);
+        },
+        limit
+    );
+}
+
+
 
 template <typename T>
 constexpr T lowest(const Any<T>&) {
-	static_assert("lowest function must be spetialized for each type");
+	static_assert("lowest function must be overloaded for each type");
 }
 
 constexpr uint8_t lowest(const Any<uint8_t>&) {
@@ -299,13 +337,15 @@ constexpr double lowest(const Any<double>&) {
 
 template <typename T>
 constexpr T lowest(const Range<T>& range) {
-	return range.getMin();
+	if(hasValue(range)) return range.getMin();
+	throw NO_VALUE_EXCEPTION;
 }
 
 template <typename T>
 constexpr T lowest(const Discrete<T>& discrete) {
     assert(std::is_sorted(discrete.cbegin(), discrete.cend()));
-    return discrete.front();
+	if(hasValue(discrete)) return discrete.front();
+	throw NO_VALUE_EXCEPTION;
 }
 
 template <typename T>
@@ -315,7 +355,7 @@ constexpr T lowest(const MustBe<T>& mustBe) {
 
 template <typename T>
 constexpr T lowest(const None<T>&) {
-	throw Exception("No value");
+	throw NO_VALUE_EXCEPTION;
 }
 
 template <typename T>
@@ -331,7 +371,7 @@ constexpr T lowest(const Limit<T>& limit) {
 
 template <typename T>
 constexpr T highest(const Any<T>&) {
-    static_assert("highest function must be spetialized for each type");
+    static_assert("highest function must be overloaded for each type");
 }
 
 constexpr uint8_t highest(const Any<uint8_t>&) {
@@ -377,13 +417,15 @@ constexpr double highest(const Any<double>&) {
 
 template <typename T>
 constexpr T highest(const Range<T>& range) {
-    return range.getMax();
+	if(hasValue(range)) return range.getMax();
+	throw NO_VALUE_EXCEPTION;
 }
 
 template <typename T>
 constexpr T highest(const Discrete<T>& discrete) {
     assert(std::is_sorted(discrete.cbegin(), discrete.cend()));
-    return discrete.back();
+	if(hasValue(discrete)) return discrete.back();
+	throw NO_VALUE_EXCEPTION;
 }
 
 template <typename T>
@@ -393,7 +435,7 @@ constexpr T highest(const MustBe<T>& mustBe) {
 
 template <typename T>
 constexpr T highest(const None<T>&) {
-    throw Exception("No value");
+	throw NO_VALUE_EXCEPTION;
 }
 
 template <typename T>
@@ -513,7 +555,7 @@ constexpr Limit<T> simplify(const None<T>&) {
 template <typename T>
 constexpr Limit<T> simplify(const Limit<T>& limit) {
     return std::visit(
-        [] (const auto& l) {
+        [] (const auto& l) -> Limit<T> {
             return simplify(l);
         },
         limit
@@ -738,7 +780,7 @@ inline std::ostream& operator<<(std::ostream& os, const Utils::Limit<T>& limit) 
 		[&os] (const auto& l) -> std::ostream& {
 			return os << std::forward_as_tuple(
 				std::make_pair("type", decltype(l)::LIMIT_TYPE),
-				std::make_pair("value", std::cref(l))
+				std::make_pair("data", std::cref(l))
 			);
 		},
 		limit

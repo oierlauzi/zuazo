@@ -68,23 +68,11 @@ int VideoMode::operator>=(const VideoMode& other) const {
 	return m_data >= other.m_data;
 }
 
-VideoMode::operator Graphics::Frame::Descriptor() const {
-	return Graphics::Frame::Descriptor {
-		getResolutionValue(),
-		getPixelAspectRatioValue(),
-		getColorPrimariesValue(),
-		getColorModelValue(),
-		getColorTransferFunctionValue(),
-		getColorSubsamplingValue(),
-		getColorRangeValue(),
-		getColorFormatValue()
-	};
-}
 
 VideoMode::operator bool() const {
 	return std::apply(
 		[] (const auto&... x) -> bool {
-			return ((x.index() != Utils::LIMIT_TYPE_NONE_INDEX) && ...);
+			return (Utils::hasValue(x) && ...);
 		},
 		m_data
 	);
@@ -219,6 +207,19 @@ VideoMode VideoMode::intersect(const VideoMode& other) const {
 		Utils::intersection(getColorRange(), other.getColorRange()),
 		Utils::intersection(getColorFormat(), other.getColorFormat())
 	);
+}
+
+Graphics::Frame::Descriptor VideoMode::getFrameDescriptor() const {
+	return Graphics::Frame::Descriptor {
+		getResolutionValue(),
+		getPixelAspectRatioValue(),
+		getColorPrimariesValue(),
+		getColorModelValue(),
+		getColorTransferFunctionValue(),
+		getColorSubsamplingValue(),
+		getColorRangeValue(),
+		getColorFormatValue()
+	};
 }
 
 /*

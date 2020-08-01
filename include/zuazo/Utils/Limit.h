@@ -137,14 +137,19 @@ using Limit = std::variant< None<T>,
 							Range<T>,
 							Any<T> >;
 
-enum LimitIndices {
-	LIMIT_TYPE_NONE_INDEX,
-	LIMIT_TYPE_MUSTBE_INDEX,
-	LIMIT_TYPE_DISCRETE_INDEX,
-	LIMIT_TYPE_RANGE_INDEX,
-	LIMIT_TYPE_ANY_INDEX
-};
 
+template <typename T>
+constexpr bool hasValue(const Any<T>& any);
+template <typename T>
+constexpr bool hasValue(const Range<T>& range);
+template <typename T>
+constexpr bool hasValue(const Discrete<T>& discrete);
+template <typename T>
+constexpr bool hasValue(const MustBe<T>& mustBe);
+template <typename T>
+constexpr bool hasValue(const None<T>& none);
+template <typename T>
+constexpr bool hasValue(const Limit<T>& limit);
 
 template <typename T>
 constexpr T lowest(const Any<T>& any);

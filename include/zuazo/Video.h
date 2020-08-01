@@ -38,7 +38,6 @@ public:
 	int 										operator>(const VideoMode& other) const;
 	int 										operator>=(const VideoMode& other) const;
 
-	operator Graphics::Frame::Descriptor() const;
 	operator bool() const;
 
 	void 										setFrameRate(Utils::Limit<Rate> frameRate);
@@ -78,6 +77,8 @@ public:
 	ColorFormat									getColorFormatValue() const;
 
 	VideoMode									intersect(const VideoMode& other) const;
+
+	Graphics::Frame::Descriptor					getFrameDescriptor() const;
 
 	static const VideoMode 						ANY;
 
