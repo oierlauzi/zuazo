@@ -6,50 +6,45 @@
 
 namespace Zuazo::Signal {
 
-class Layout;
-
 class PadBase {
 	friend Layout;
 public:
-	PadBase() = default;
-	template<typename Str>
-	PadBase(Str&& name);
+	PadBase(std::string name);
 	PadBase(const PadBase& other) = default; 
 	PadBase(PadBase&& other) = default;
 	virtual ~PadBase() = default;
 
-	PadBase&					operator=(const PadBase& other) = default;
-	PadBase&					operator=(PadBase&& other) = default;
+	PadBase&						operator=(const PadBase& other) = default;
+	PadBase&						operator=(PadBase&& other) = default;
+	
+	bool							operator==(const PadBase& other) const;
+	bool							operator!=(const PadBase& other) const;
+	bool							operator<(const PadBase& other) const;
+	bool							operator<=(const PadBase& other) const;
+	bool							operator>(const PadBase& other) const;
+	bool							operator>=(const PadBase& other) const;
 
-	template<typename Str>
-	void                		setName(Str&& name);
-	const std::string&			getName() const;
+	void                			setName(std::string name);
+	const std::string&				getName() const;
 
 private:
-	std::string					m_name;
+	std::string						m_name;
 	
 };
 
 template<>
-class Layout::PadProxy<PadBase> {
-public:
-	PadProxy(PadBase& pad);
-	PadProxy(const PadProxy& other) = delete;
-	~PadProxy() = default;
-
-	PadProxy& operator=(const PadProxy& other) = delete;
-
-	const std::string&			getName() const;
-
-protected:
-	template <typename T>
-	T&							get();
-
-	template <typename T>
-	const T&					get() const;
-
-private:
-	PadBase&					m_pad;
+struct Layout::PadProxy<PadBase>
+	: private PadBase
+{
+	friend Layout;
+	
+	using PadBase::operator==;
+	using PadBase::operator!=;
+	using PadBase::operator<;
+	using PadBase::operator<=;
+	using PadBase::operator>;
+	using PadBase::operator>=;
+	using PadBase::getName;
 };
 
 }

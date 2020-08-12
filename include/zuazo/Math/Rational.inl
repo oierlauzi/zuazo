@@ -1,5 +1,7 @@
 #include "Rational.h"
 
+#include "Functions.h"
+
 namespace Zuazo::Math {
 
 /*
@@ -19,7 +21,7 @@ constexpr Rational<num_t, den_t>::Rational(Num num, Den den)
 	, m_den(den)
 {
 	//Take out the common factor
-	Integer gcd = std::gcd(m_num, m_den);
+	Integer gcd = Math::gcd(m_num, m_den);
 	if(gcd > 1){
 		m_num /= gcd;
 		m_den /= gcd;
@@ -126,6 +128,49 @@ constexpr bool Rational<num_t, den_t>::isInteger() const{
 	return m_den == 1;
 }
 
+
+template<typename num_t, typename den_t>
+constexpr Rational<num_t, den_t> Rational<num_t, den_t>::abs()const {
+	return Rational<num_t, den_t>(Math::abs(m_num), m_den);
+}
+
+template<typename num_t, typename den_t>
+constexpr Rational<num_t, den_t> Rational<num_t, den_t>::inv()const {
+	return Rational<num_t, den_t>(m_den, m_num);
+}
+
+
+template<typename num_t, typename den_t>
+constexpr Rational<num_t, den_t> Rational<num_t, den_t>::floor()const {
+	return *this < 0 ? -trunc(-(*this) + Rational(m_den - 1, m_den)) : trunc(*this);
+}
+
+template<typename num_t, typename den_t>
+constexpr Rational<num_t, den_t> Rational<num_t, den_t>::trunc()const {
+	return Rational<num_t, den_t>(
+		static_cast<Num>(m_num / m_den),
+		Den(1)
+	);
+}
+
+template<typename num_t, typename den_t>
+constexpr Rational<num_t, den_t> Rational<num_t, den_t>::ceil()const {
+	return *this < 0 ? -trunc(-(*this)) : trunc(*this + Rational(m_den - 1, m_den));
+}
+
+template<typename num_t, typename den_t>
+constexpr Rational<num_t, den_t> Rational<num_t, den_t>::round() const {
+	return (*this + Rational(1, 2)).floor();
+}
+
+template<typename num_t, typename den_t>
+constexpr Rational<num_t, den_t> Rational<num_t, den_t>::frac() const{
+	return Rational<num_t, den_t>(
+		Math::mod(m_num, m_den),
+		m_den
+	);
+}
+
 /*
  * Casting operators
  */
@@ -136,12 +181,12 @@ constexpr Rational<num_t, den_t>::operator bool() const{
 }
 
 template<typename num_t, typename den_t>
-constexpr Rational<num_t, den_t>::operator Num() const{
-	Num result(0);
+constexpr Rational<num_t, den_t>::operator Integer() const{
+	Integer result(0);
 
 	if(m_den)           result = m_num / m_den;
-	else if(m_num > 0)  result = std::numeric_limits<Num>::max();
-	else if(m_num < 0)  result = std::numeric_limits<Num>::min();
+	else if(m_num > 0)  result = std::numeric_limits<Integer>::max();
+	else if(m_num < 0)  result = std::numeric_limits<Integer>::min();
 	//else              result = 0;
 
 	return result;
@@ -185,12 +230,18 @@ constexpr Rational<num_t, den_t>& Rational<num_t, den_t>::operator/=(const Ratio
 	return (*this);
 }
 
+template<typename num_t, typename den_t>
+constexpr Rational<num_t, den_t>& Rational<num_t, den_t>::operator%=(const Rational& right){
+	(*this) = (*this) % right;
+	return (*this);
+}
+
 
 template<typename num_t, typename den_t>
 template<typename num_t2, typename den_t2>
-constexpr typename Rational<num_t, den_t>::template CommonType<num_t2, den_t2> 
+constexpr typename Rational<num_t, den_t>::template CommonType<Rational<num_t2, den_t2>>
 Rational<num_t, den_t>::operator+(const Rational<num_t2, den_t2>& right) const {
-	return CommonType<num_t2, den_t2> (
+	return CommonType<Rational<num_t2, den_t2>> (
 		m_num * right.m_den + right.m_num * m_den,
 		m_den * right.m_den
 	);
@@ -198,9 +249,9 @@ Rational<num_t, den_t>::operator+(const Rational<num_t2, den_t2>& right) const {
 
 template<typename num_t, typename den_t>
 template<typename num_t2, typename den_t2>
-constexpr typename Rational<num_t, den_t>::template CommonType<num_t2, den_t2> 
+constexpr typename Rational<num_t, den_t>::template CommonType<Rational<num_t2, den_t2>> 
 Rational<num_t, den_t>::operator-(const Rational<num_t2, den_t2>& right) const {
-	return CommonType<num_t2, den_t2>(
+	return CommonType<Rational<num_t2, den_t2>>(
 		m_num * right.m_den - right.m_num * m_den,
 		m_den * right.m_den
 	);
@@ -208,9 +259,9 @@ Rational<num_t, den_t>::operator-(const Rational<num_t2, den_t2>& right) const {
 
 template<typename num_t, typename den_t>
 template<typename num_t2, typename den_t2>
-constexpr typename Rational<num_t, den_t>::template CommonType<num_t2, den_t2> 
+constexpr typename Rational<num_t, den_t>::template CommonType<Rational<num_t2, den_t2>> 
 Rational<num_t, den_t>::operator*(const Rational<num_t2, den_t2>& right) const {
-	return CommonType<num_t2, den_t2>(
+	return CommonType<Rational<num_t2, den_t2>>(
 		m_num * right.m_num,
 		m_den * right.m_den
 	);
@@ -218,14 +269,23 @@ Rational<num_t, den_t>::operator*(const Rational<num_t2, den_t2>& right) const {
 
 template<typename num_t, typename den_t>
 template<typename num_t2, typename den_t2>
-constexpr typename Rational<num_t, den_t>::template CommonType<num_t2, den_t2> 
+constexpr typename Rational<num_t, den_t>::template CommonType<Rational<num_t2, den_t2>> 
 Rational<num_t, den_t>::operator/(const Rational<num_t2, den_t2>& right) const {
-	return CommonType<num_t2, den_t2>(
+	return CommonType<Rational<num_t2, den_t2>>(
 		m_num * right.m_den,
 		right.m_num * m_den
 	);
 }
 
+template<typename num_t, typename den_t>
+template<typename num_t2, typename den_t2>
+constexpr typename Rational<num_t, den_t>::template CommonType<Rational<num_t2, den_t2>> 
+Rational<num_t, den_t>::operator%(const Rational<num_t2, den_t2>& right) const {
+	return CommonType<Rational<num_t2, den_t2>>(
+		(m_num * right.m_den) % (right.m_num * m_den),
+		right.m_den * m_den
+	);
+}
 
 /*
  * Comparison operators
@@ -270,13 +330,61 @@ constexpr int Rational<num_t, den_t>::operator>=(const Rational<num_t2, den_t2>&
 
 
 template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> mod(const Rational<num_t, den_t>& num, const Rational<num_t, den_t>& den) {
+	return num % den;
+}
+
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> abs(const Rational<num_t, den_t>& r){
+	return r.abs();
+}
+
+
+template<typename num_t, typename den_t>
 constexpr Rational<den_t, num_t> inv(const Rational<num_t, den_t>& r){
+	return r.inv();
+}
+
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> floor(const Rational<num_t, den_t>& x) {
+	return x.floor();
+}
+
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> trunc(const Rational<num_t, den_t>& x) {
+	return x.trunc();
+}
+
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> ceil(const Rational<num_t, den_t>&x) {
+	return x.ceil();
+}
+
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> round(const Rational<num_t, den_t>& x) {
+	return x.round();
+}
+
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> frac(const Rational<num_t, den_t>& x) {
+	return x.frac();
+}
+
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> gcd(const Rational<den_t, num_t>& a, const Rational<den_t, num_t>& b) {
 	return Rational<den_t, num_t>(
-		r.getDenominator(),
-		r.getNumerator()
+		Math::gcd(a.getNumerator(), b.getNumerator()),
+		Math::lcm(a.getDenominator(), b.getDenominator())
 	);
 }
 
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> lcm(const Rational<den_t, num_t>& a, const Rational<den_t, num_t>& b) {
+	return Rational<den_t, num_t>(
+		Math::lcm(a.getNumerator(), b.getNumerator()),
+		Math::gcd(a.getDenominator(), b.getDenominator())
+	);
+}
 
 }
 
@@ -294,12 +402,12 @@ namespace Utils {
 
 template<typename num_t, typename den_t>
 constexpr Math::Rational<num_t, den_t> lowest(const Any<Math::Rational<num_t, den_t>>&) {
-	return Math::Rational(-1, 0);
+	return Math::Rational<num_t, den_t>(-1, 0);
 }
 
 template<typename num_t, typename den_t>
 constexpr Math::Rational<num_t, den_t> highest(const Any<Math::Rational<num_t, den_t>>&) {
-	return Math::Rational(1, 0);
+	return Math::Rational<num_t, den_t>(1, 0);
 }
 
 }

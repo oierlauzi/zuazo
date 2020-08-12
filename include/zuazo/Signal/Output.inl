@@ -1,16 +1,36 @@
 #include "Output.h"
 
+#include <algorithm>
+
 namespace Zuazo::Signal {
 
 /*
- * Output
+ * Output<T>
  */
 
 template <typename T>
-template <typename Str>
-inline Output<T>::Output(Str&& name)
-	: PadBase(std::forward<Str>(name))
+inline Output<T>::Output(std::string name, PullCallback pullCbk)
+	: PadBase(std::move(name))
+	, m_pullCallback(std::move(pullCbk))
 {
+}
+
+template <typename T>
+inline typename Output<T>::Consumers Output<T>::getConsumers() const {
+	const auto& observers = getObservers();
+
+	Consumers result;
+	result.reserve(observers.size());
+
+	std::transform(
+		observers.cbegin(), observers.cend(),
+		std::back_inserter(result),
+		[] (Utils::Observer* obs) -> Input<T>& {
+			return static_cast<Input<T>&>(*obs);
+		}
+	);
+
+	return result;
 }
 
 template <typename T>
@@ -19,48 +39,47 @@ inline void Output<T>::reset() {
 }
 
 template <typename T>
-template<typename Q>
-void Output<T>::push(Q&& element) {
-	m_lastElement = std::forward<Q>(element);
+void Output<T>::push(T element) {
+	m_lastElement = std::move(element);
 }
 
 template <typename T>
-inline const T& Output<T>::get() const {
+inline const T& Output<T>::pull() const {
+	if(m_pullCallback) m_pullCallback();
 	return m_lastElement;
 }
+
+template <typename T>
+inline void Output<T>::setPullCallback(PullCallback cbk) {
+	m_pullCallback = std::move(cbk);
+}
+
+template <typename T>
+inline const typename Output<T>::PullCallback& Output<T>::getPullCallback() const {
+	return m_pullCallback;
+}
+
 
 /*
  * Layout::PadProxy<Output<T>>
  */
 
 template <typename T>
-inline Layout::PadProxy<Output<T>>::PadProxy(Output<T>& pad)
-	: PadProxy<PadBase>(pad)
-{
-}
+inline Layout::PadProxy<Output<T>>::Consumers Layout::PadProxy<Output<T>>::getConsumers() const {
+	Consumers result;
 
-/*
- * getInput(s) methods
- */
+	const auto consumers = Output<T>::getConsumers();
+	result.reserve(consumers.size());
 
-template <typename T>
-inline std::vector<Layout::PadProxy<Output<T>>> getOutputs(Layout& layout) {
-	return layout.getPads<Output<T>>();
-}
+	std::transform(
+		consumers.cbegin(), consumers.cend(),
+		std::back_inserter(result),
+		[] (Input<T>& input) -> Layout::PadProxy<Input<T>>& {
+			return static_cast<Layout::PadProxy<Input<T>>&>(input);
+		}
+	);
 
-template <typename T>
-inline std::vector<const Layout::PadProxy<Output<T>>> getOutputs(const Layout& layout){
-	return layout.getPads<Output<T>>();
-}
-
-template <typename T>
-inline Layout::PadProxy<Output<T>> getOutput(Layout& layout, std::string_view str) {
-	return layout.getPad<Output<T>>(str);
-}
-
-template <typename T>
-inline const Layout::PadProxy<Output<T>> getOutput(const Layout& layout, std::string_view str) {
-	return layout.getPad<Output<T>>(str);
+	return result;
 }
 
 }

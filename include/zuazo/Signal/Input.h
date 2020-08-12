@@ -1,11 +1,12 @@
 #pragma once
 
-#include "Layout.h"
 #include "PadBase.h"
 #include "Output.h"
+#include "../Utils/ObserverPattern.h"
 
 #include <vector>
 #include <string_view>
+#include <optional>
 
 namespace Zuazo::Signal {
 
@@ -17,23 +18,27 @@ enum class NoSignalAction {
 	HOLD_LAST
 };
 
+class NoSignal {};
+constexpr NoSignal noSignal;
+
 template <typename T>
-class Input : public PadBase {
-	friend Output<T>;
+class Input 
+	: public PadBase
+	, private Utils::Observer
+{
 public:
-	Input() = default;
-	template<typename Str>
-	Input(Str&& name);
+	using Source = Output<T>; friend Source;
+
+	Input(std::string name);
 	Input(const Input& other) = default;
 	Input(Input&& other) = default;
 	virtual ~Input() = default;
 
-	Input&						operator=(const Input& other);
-	Input&						operator=(Input&& other);
+	Input&						operator=(const Input& other) = default;
+	Input&						operator=(Input&& other) = default;
 
-
-	void						setSource(const Output<T>* src);
-	const Output<T>*			getSource() const;
+	void						setSource(Source* src);
+	Source*						getSource() const;
 
 	void						setNoSignalAction(NoSignalAction nsa);
 	NoSignalAction				getNoSignalAction() const;
@@ -45,46 +50,38 @@ public:
 	static const T				NO_SIGNAL;
 
 private:
-	const Output<T>*			m_source = nullptr;
-
 	mutable T					m_lastElement;
-	NoSignalAction				m_onNoSignal = NoSignalAction::RETURN_EMPTY;
+	NoSignalAction				m_onNoSignal;
+
 
 	const T&					get() const;
 	bool						needsToHold(const T& element) const;
 };
 
-template <typename T>
-class Layout::PadProxy<Input<T>> : public Layout::PadProxy<PadBase> {
-public:
-	PadProxy(Input<T>& pad);
-	PadProxy(const PadProxy& other) = delete;
-	~PadProxy() = default;
+template<typename T>
+struct Layout::PadProxy<Input<T>>
+	: private Input<T>
+{
+	friend Layout;
 
-	PadProxy& 					operator=(const PadProxy& other) = delete;
+	using Source = PadProxy<Input<T>>; friend Source;
 
-	void						setSource(const PadProxy<Output<T>>* src);
-	PadProxy<Output<T>>* 		getSource() const;
+	using Input<T>::operator==;
+	using Input<T>::operator!=;
+	using Input<T>::operator<;
+	using Input<T>::operator<=;
+	using Input<T>::operator>;
+	using Input<T>::operator>=;
+	using Input<T>::getName;
+	using Input<T>::setNoSignalAction;
+	using Input<T>::getNoSignalAction;
 
-	void 						operator<<(const PadProxy<Output<T>>& src);
-	void 						operator<<(NoSignal);
-
-	void						setNoSignalAction(NoSignalAction hold);
-	NoSignalAction				getNoSignalAction() const;
-
+	void						setSource(Source* src);
+	Source*						getSource() const;
+	
+	void						operator<<(NoSignal);
+	void						operator<<(PadProxy<Input<T>>& src);
 };
-
-template <typename T>
-std::vector<Layout::PadProxy<Input<T>>> getInputs(Layout& layout);
-
-template <typename T>
-std::vector<const Layout::PadProxy<Input<T>>> getInputs(const Layout& layout);
-
-template <typename T>
-Layout::PadProxy<Input<T>> getInput(Layout& layout, std::string_view str);
-
-template <typename T>
-const Layout::PadProxy<Input<T>> getInput(const Layout& layout, std::string_view str);
 
 }
 

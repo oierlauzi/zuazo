@@ -22,6 +22,15 @@ constexpr Rate getRate(const Duration& period);
 
 TimePoint now();
 
+namespace Utils {
+
+template<typename T>
+class Any;
+
+constexpr Duration lowest(const Any<Duration>& any);
+constexpr Duration highest(const Any<Duration>& any);
+
+}
 }
 
 #include "Chrono.inl"

@@ -3,28 +3,28 @@
 namespace Zuazo::Signal {
 
 /*
- * Input
+ * Input<T>
  */
 
 template <typename T>
 inline const T Input<T>::NO_SIGNAL = T();
 
 template <typename T>
-template <typename Str>
-inline Input<T>::Input(Str&& name) 
-	: PadBase(std::forward<Str>(name))
+inline Input<T>::Input(std::string name) 
+	: PadBase(std::move(name))
+	, m_onNoSignal(NoSignalAction::RETURN_EMPTY)
 {
 }
 
 
 template <typename T>
-inline void Input<T>::setSource(const Output<T>* src){
-	m_source = src;
+inline void Input<T>::setSource(Source* src){
+	setSubject(static_casrsrc);
 }
 
 template <typename T>
-inline const Output<T>* Input<T>::getSource() const{
-	return m_source;
+inline typename Input<T>::Source* Input<T>::getSource() const{
+	return static_cast<Output<T>*>(getSubject());
 }
 
 
@@ -68,7 +68,8 @@ inline bool Input<T>::hasChanged() const {
 
 template <typename T>
 inline const T& Input<T>::get() const{
-	return m_source ? m_source->get() : NO_SIGNAL;
+	const auto* source = getSource();
+	return source ? source->get() : NO_SIGNAL;
 }
 
 template <typename T>
@@ -82,28 +83,13 @@ inline bool Input<T>::needsToHold(const T& element) const {
  */
 
 template <typename T>
-inline Layout::PadProxy<Input<T>>::PadProxy(Input<T>& pad)
-	: PadProxy<PadBase>(pad)
-{
+inline void Layout::PadProxy<Input<T>>::setSource(Source* src) {
+	Input<T>::setSource(src);
 }
 
 template <typename T>
-inline void Layout::PadProxy<Input<T>>::setSource(const Layout::PadProxy<Output<T>>* src) {
-	if(src) {
-		get<Input<T>>().setSource(&(src->template get<Output<T>>()));
-	} else {
-		get<Input<T>>().setSource(nullptr);
-	}
-}
-
-template <typename T>
-inline Layout::PadProxy<Output<T>>* Layout::PadProxy<Input<T>>::getSource() const {
-	return get<Input<T>>().getSource();
-}
-
-template <typename T>
-inline void Layout::PadProxy<Input<T>>::operator<<(const Layout::PadProxy<Output<T>>& src) {
-	setSource(&src);
+inline typename Layout::PadProxy<Input<T>>::Source* Layout::PadProxy<Input<T>>::getSource() const {
+	return static_cast<Source*>(Input<T>::getSource());
 }
 
 template <typename T>
@@ -111,39 +97,9 @@ inline void Layout::PadProxy<Input<T>>::operator<<(NoSignal) {
 	setSource(nullptr);
 }
 
-
 template <typename T>
-inline void Layout::PadProxy<Input<T>>::setNoSignalAction(NoSignalAction nsa) {
-	return get<Input<T>>().setNoSignalAction(nsa);
-}
-
-template <typename T>
-inline NoSignalAction Layout::PadProxy<Input<T>>::getNoSignalAction() const {
-	return get<Input<T>>().getNoSignalAction();
-}
-
-/*
- * getInput(s) methods
- */
-
-template <typename T>
-inline std::vector<Layout::PadProxy<Input<T>>> getInputs(Layout& layout) {
-	return layout.getPads<Input<T>>();
-}
-
-template <typename T>
-inline std::vector<const Layout::PadProxy<Input<T>>> getInputs(const Layout& layout){
-	return layout.getPads<Input<T>>();
-}
-
-template <typename T>
-inline Layout::PadProxy<Input<T>> getInput(Layout& layout, std::string_view str) {
-	return layout.getPad<Input<T>>(str);
-}
-
-template <typename T>
-inline const Layout::PadProxy<Input<T>> getInput(const Layout& layout, std::string_view str) {
-	return layout.getPad<Input<T>>(str);
+inline void Layout::PadProxy<Input<T>>::operator<<(PadProxy<Input<T>>& src) {
+	setSource(&src);
 }
 
 }

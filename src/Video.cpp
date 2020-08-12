@@ -209,6 +209,50 @@ VideoMode VideoMode::intersect(const VideoMode& other) const {
 	);
 }
 
+
+VideoMode VideoMode::lowest() const {
+	return VideoMode(
+		Utils::MustBe(Utils::lowest(getFrameRate())),
+		Utils::MustBe(Utils::lowest(getResolution())),
+		Utils::MustBe(Utils::lowest(getPixelAspectRatio())),
+		Utils::MustBe(Utils::lowest(getColorPrimaries())),
+		Utils::MustBe(Utils::lowest(getColorModel())),
+		Utils::MustBe(Utils::lowest(getColorTransferFunction())),
+		Utils::MustBe(Utils::lowest(getColorSubsampling())),
+		Utils::MustBe(Utils::lowest(getColorRange())),
+		Utils::MustBe(Utils::lowest(getColorFormat()))
+	);
+}
+
+VideoMode VideoMode::highest() const {
+	return VideoMode(
+		Utils::MustBe(Utils::highest(getFrameRate())),
+		Utils::MustBe(Utils::highest(getResolution())),
+		Utils::MustBe(Utils::highest(getPixelAspectRatio())),
+		Utils::MustBe(Utils::highest(getColorPrimaries())),
+		Utils::MustBe(Utils::highest(getColorModel())),
+		Utils::MustBe(Utils::highest(getColorTransferFunction())),
+		Utils::MustBe(Utils::highest(getColorSubsampling())),
+		Utils::MustBe(Utils::highest(getColorRange())),
+		Utils::MustBe(Utils::highest(getColorFormat()))
+	);
+}
+
+VideoMode VideoMode::values() const {
+	return VideoMode(
+		Utils::MustBe(Utils::value(getFrameRate())),
+		Utils::MustBe(Utils::value(getResolution())),
+		Utils::MustBe(Utils::value(getPixelAspectRatio())),
+		Utils::MustBe(Utils::value(getColorPrimaries())),
+		Utils::MustBe(Utils::value(getColorModel())),
+		Utils::MustBe(Utils::value(getColorTransferFunction())),
+		Utils::MustBe(Utils::value(getColorSubsampling())),
+		Utils::MustBe(Utils::value(getColorRange())),
+		Utils::MustBe(Utils::value(getColorFormat()))
+	);
+}
+
+
 Graphics::Frame::Descriptor VideoMode::getFrameDescriptor() const {
 	return Graphics::Frame::Descriptor {
 		getResolutionValue(),
@@ -293,8 +337,10 @@ void VideoBase::updateVideoMode() {
 	VideoMode vm = selectVideoMode();
 
 	if(vm != m_videoMode) {
-		std::swap(vm, m_videoMode);
+		//Videomode has changed
+		m_videoMode = vm;
 
+		//Call the callbacks
 		for(const auto& cbk : m_videoModeCallbacks) {
 			if(cbk) cbk(m_videoMode);
 		}
@@ -304,7 +350,7 @@ void VideoBase::updateVideoMode() {
 VideoMode VideoBase::selectVideoMode() const {
 	for(const auto& compatibility : m_videoModeCompatibility) {
 		const auto interscetion = compatibility.intersect(m_videoModeLimits);
-		if(interscetion) return interscetion;
+		if(interscetion) return interscetion.values();
 	}
 
 	throw Exception("Unsupported video mode");

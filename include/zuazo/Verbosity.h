@@ -32,10 +32,11 @@ enum class Verbosity {
 	ALL			= LEQ_VERBOSE
 };
 
+ZUAZO_ENUM_COMP_OPERATORS(Verbosity)
+ZUAZO_ENUM_COMP_OPERATORS2(Verbosity, Severity)
+ZUAZO_ENUM_COMP_OPERATORS2(Severity, Verbosity)
 ZUAZO_ENUM_BIT_OPERATORS(Verbosity)
-
-constexpr Verbosity operator& (Verbosity a, Severity b);
-constexpr Verbosity operator& (Severity a, Verbosity b);
+ZUAZO_ENUM_BIT_OPERATORS2(Verbosity, Severity)
 
 }
 

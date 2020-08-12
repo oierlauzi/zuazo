@@ -16,4 +16,16 @@ inline TimePoint now() {
 	return std::chrono::time_point_cast<Duration>(Clock::now());
 }
 
+namespace Utils {
+
+constexpr Duration lowest(const Any<Duration>&) {
+	return Duration::min();
+}
+
+constexpr Duration highest(const Any<Duration>&) {
+	return Duration::max();
+}
+
+}
+
 }

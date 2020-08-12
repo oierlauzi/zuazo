@@ -59,9 +59,9 @@ public:
 	 */
 	using Real = double;
 
-	template<typename num_t2, typename den_t2>
-	using CommonType = Rational<typename std::common_type<Num, num_t2>::type,
-								typename std::common_type<Den, den_t2>::type>;
+	template<typename Rational2>
+	using CommonType = Rational<typename std::common_type<Num, typename Rational2::Num>::type,
+								typename std::common_type<Den, typename Rational2::Den>::type >;
 
 	//////////////////////////////////////////////
 	//				CONSTRUCTORS				//
@@ -183,12 +183,68 @@ public:
 	 */
 	constexpr bool isInteger() const;
 
+
+	/**
+	 * \brief
+	 * Returns the absolute (unsigned) value
+	 */
+	constexpr Rational abs() const;
+
+	/**
+	 * \brief
+	 * Returns the inverse value (Numerator <-> Denominator)
+	 */
+	constexpr Rational inv() const;
+
+	/**
+	 * \brief
+	 * Returns the closest integer value not greater than itself
+	 * 
+	 * \see
+	 * https://en.cppreference.com/w/cpp/numeric/math/floor 
+	 */
+	constexpr Rational floor() const;
+
+	/**
+	 * \brief
+	 * Removes the fractional part so that the result is the closest
+	 * integer towards zero
+	 * 
+	 * \see
+	 * https://en.cppreference.com/w/cpp/numeric/math/trunc 
+	 */
+	constexpr Rational trunc() const;
+
+	/**
+	 * \brief
+	 * Returns the closest integer value not less than itself
+	 * 
+	 * \see
+	 * https://en.cppreference.com/w/cpp/numeric/math/ceil 
+	 */
+	constexpr Rational ceil() const;
+
+	/**
+	 * \brief
+	 * Returns the closest integer value
+	 * 
+	 * \see
+	 * https://en.cppreference.com/w/cpp/numeric/math/round
+	 */
+	constexpr Rational round() const;
+
+	/**
+	 * \brief
+	 * Returns the fractional part
+	 */
+	constexpr Rational frac() const;
+
 	//////////////////////////////////////////////
 	//				CAST OPERATORS				//
 	//////////////////////////////////////////////
 
 	constexpr operator bool() const;
-	explicit constexpr operator Num() const;
+	explicit constexpr operator Integer() const;
 	explicit constexpr operator Real() const;
 
 	//////////////////////////////////////////////
@@ -200,15 +256,18 @@ public:
 	constexpr Rational& operator-=(const Rational& right);
 	constexpr Rational& operator*=(const Rational& right);
 	constexpr Rational& operator/=(const Rational& right);
+	constexpr Rational& operator%=(const Rational& right);
 
 	template<typename num_t2, typename den_t2>
-	constexpr CommonType<num_t2, den_t2> operator+(const Rational<num_t2, den_t2>& right) const;
+	constexpr CommonType<Rational<num_t2, den_t2>> operator+(const Rational<num_t2, den_t2>& right) const;
 	template<typename num_t2, typename den_t2>
-	constexpr CommonType<num_t2, den_t2> operator-(const Rational<num_t2, den_t2>& right) const;
+	constexpr CommonType<Rational<num_t2, den_t2>> operator-(const Rational<num_t2, den_t2>& right) const;
 	template<typename num_t2, typename den_t2>
-	constexpr CommonType<num_t2, den_t2> operator*(const Rational<num_t2, den_t2>& right) const;
+	constexpr CommonType<Rational<num_t2, den_t2>> operator*(const Rational<num_t2, den_t2>& right) const;
 	template<typename num_t2, typename den_t2>
-	constexpr CommonType<num_t2, den_t2> operator/(const Rational<num_t2, den_t2>& right) const;
+	constexpr CommonType<Rational<num_t2, den_t2>> operator/(const Rational<num_t2, den_t2>& right) const;
+	template<typename num_t2, typename den_t2>
+	constexpr CommonType<Rational<num_t2, den_t2>> operator%(const Rational<num_t2, den_t2>& right) const;
 
 	//////////////////////////////////////////////
 	//				COMPARE OPERATORS			//
@@ -233,7 +292,34 @@ private:
 };
 
 template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> mod(const Rational<num_t, den_t>& num, const Rational<num_t, den_t>& den);
+
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> abs(const Rational<num_t, den_t>& r);
+
+template<typename num_t, typename den_t>
 constexpr Rational<den_t, num_t> inv(const Rational<num_t, den_t>& r);
+
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> floor(const Rational<num_t, den_t>& x);
+
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> trunc(const Rational<num_t, den_t>& x);
+
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> ceil(const Rational<num_t, den_t>&x);
+
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> round(const Rational<num_t, den_t>& x);
+
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> frac(const Rational<num_t, den_t>& x);
+
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> gcd(const Rational<den_t, num_t>& a, const Rational<den_t, num_t>& b);
+
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> lcm(const Rational<den_t, num_t>& a, const Rational<den_t, num_t>& b);
 
 }
 

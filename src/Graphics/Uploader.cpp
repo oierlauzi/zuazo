@@ -17,8 +17,17 @@ Uploader::Uploader(	const Vulkan& vulkan,
 	, m_planeDescriptors(createPlaneDescriptors(vulkan, conf, m_colorTransfer))
 	, m_commandPool(createCommandPool(m_vulkan))
 	, m_colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, m_colorTransfer))
-	, m_pool(std::bind(&Uploader::allocateFrame, this))
+	, m_pool(Allocator(*this))
 {
+}
+
+
+void Uploader::setMaxSpares(size_t max) {
+	m_pool.setMaxSpares(max);
+}
+
+size_t Uploader::getMaxSpares() const {
+	return m_pool.getMaxSpares();
 }
 
 
@@ -29,19 +38,7 @@ std::shared_ptr<StagedFrame> Uploader::acquireFrame() const {
 }
 
 void Uploader::clear() {
-	m_pool.clearUnused();
-}
-
-
-
-Utils::Pool<StagedFrame>::Ref Uploader::allocateFrame() const {
-	return std::make_shared<StagedFrame>(
-		m_vulkan,
-		m_frameDescriptor,
-		m_colorTransferBuffer,
-		m_planeDescriptors,
-		m_commandPool
-	);
+	m_pool.clear();
 }
 
 std::vector<Frame::PlaneDescriptor> Uploader::createPlaneDescriptors(	const Vulkan& vulkan, 
@@ -67,6 +64,21 @@ std::shared_ptr<vk::UniqueCommandPool> Uploader::createCommandPool(const Vulkan&
 	);
 
 	return std::make_shared<vk::UniqueCommandPool>(vulkan.createCommandPool(createInfo));
+}
+
+Uploader::Allocator::Allocator(const Uploader& uploader)
+	: m_uploader(uploader)
+{
+}
+
+StagedFrame* Uploader::Allocator::operator()() const {
+	return new StagedFrame(
+		m_uploader.get().m_vulkan,
+		m_uploader.get().m_frameDescriptor,
+		m_uploader.get().m_colorTransferBuffer,
+		m_uploader.get().m_planeDescriptors,
+		m_uploader.get().m_commandPool
+	);
 }
 
 }

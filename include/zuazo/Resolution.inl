@@ -1,51 +1,112 @@
 #include "Resolution.h"
 
-#include <tuple>
+#include "Math/Functions.h"
+
+#include <limits>
 
 namespace Zuazo {
 
 constexpr Resolution::Resolution() :
-    width(0),
-    height(0)
+	x(0),
+	y(0)
 {
 }
 
 constexpr Resolution::Resolution(uint32_t width, uint32_t height) :
-    width(width),
-    height(height)
+	x(width),
+	y(height)
 {
 }
 
 template<typename T>
 constexpr Resolution::Resolution(const Math::Vec2<T>& res) :
-    width(static_cast<uint32_t>(res.x)),
-    height(static_cast<uint32_t>(res.y))
+	x(static_cast<uint32_t>(res.x)),
+	y(static_cast<uint32_t>(res.y))
 {
 }
 
-constexpr bool Resolution::operator==(const Resolution& other) const {
-    return std::tie(x, y) == std::tie(other.x, other.y);
+
+
+template<typename T>
+constexpr Resolution& Resolution::operator=(const Math::Vec2<T>& res) {
+	return *this = Resolution(res);
 }
 
-constexpr bool Resolution::operator!=(const Resolution& other) const {
-    return std::tie(x, y) != std::tie(other.x, other.y);
+
+
+constexpr Resolution Resolution::operator==(const Resolution& other) const {
+	return Resolution(x == other.x, y == other.y);
 }
 
-constexpr bool Resolution::operator<(const Resolution& other) const {
-    return std::tie(x, y) < std::tie(other.x, other.y);
+constexpr Resolution Resolution::operator!=(const Resolution& other) const {
+	return Resolution(x != other.x, y != other.y);
 }
 
-constexpr bool Resolution::operator<=(const Resolution& other) const {
-    return std::tie(x, y) <= std::tie(other.x, other.y);
+constexpr Resolution Resolution::operator<(const Resolution& other) const {
+	return Resolution(x < other.x, y < other.y);
 }
 
-constexpr bool Resolution::operator>(const Resolution& other) const {
-    return std::tie(x, y) > std::tie(other.x, other.y);
+constexpr Resolution Resolution::operator<=(const Resolution& other) const {
+	return Resolution(x <= other.x, y <= other.y);
 }
 
-constexpr bool Resolution::operator>=(const Resolution& other) const {
-    return std::tie(x, y) >= std::tie(other.x, other.y);
+constexpr Resolution Resolution::operator>(const Resolution& other) const {
+	return Resolution(x > other.x, y > other.y);
 }
+
+constexpr Resolution Resolution::operator>=(const Resolution& other) const {
+	return Resolution(x >= other.x, y >= other.y);
+}
+
+
+
+constexpr Resolution Resolution::operator+(const Resolution& other) const {
+	return Resolution(x + other.x, y + other.y);
+}
+
+constexpr Resolution Resolution::operator-(const Resolution& other) const {
+	return Resolution(x - other.x, y - other.y);
+}
+
+constexpr Resolution Resolution::operator*(const Resolution& other) const {
+	return Resolution(x * other.x, y * other.y);
+}
+
+constexpr Resolution Resolution::operator/(const Resolution& other) const {
+	return Resolution(x / other.x, y / other.y);
+}
+
+constexpr Resolution Resolution::operator%(const Resolution& other) const {
+	return Resolution(x % other.x, y % other.y);
+}
+
+
+
+constexpr Resolution& Resolution::operator+=(const Resolution& other) {
+	x += other.x; y += other.y;
+	return *this;
+}
+
+constexpr Resolution& Resolution::operator-=(const Resolution& other) {
+	x -= other.x; y -= other.y;
+	return *this;
+}
+
+constexpr Resolution& Resolution::operator*=(const Resolution& other) {
+	x *= other.x; y *= other.y;
+	return *this;
+}
+
+constexpr Resolution& Resolution::operator/=(const Resolution& other) {
+	x /= other.x; y /= other.y;
+	return *this;
+}
+
+constexpr Resolution& Resolution::operator%=(const Resolution& other) {
+	x %= other.x; y %= other.y;
+	return *this;
+}
+
 
 template<typename T>
 constexpr Resolution::operator Math::Vec2<T>() const {
@@ -71,18 +132,36 @@ inline std::ostream& operator<<(std::ostream& os, Resolution res) {
 
 
 namespace Math {
-    
-constexpr Resolution min(Resolution a, Resolution b) {
+
+constexpr Resolution min(const Resolution& a, const Resolution& b) {
     return Resolution(
-        min(a.x, b.x),
-        min(a.y, b.y)
+        Math::min(a.x, b.x),
+        Math::min(a.y, b.y)
     );
 }
 
-constexpr Resolution max(Resolution a, Resolution b) {
+constexpr Resolution max(const Resolution& a, const Resolution& b) {
     return Resolution(
-        max(a.x, b.x),
-        max(a.y, b.y)
+        Math::max(a.x, b.x),
+        Math::max(a.y, b.y)
+    );
+}
+
+constexpr Resolution mod(const Resolution& num, const Resolution& den) {
+	return num % den;
+}
+
+constexpr Resolution gcd(const Resolution& a, const Resolution& b) {
+	return Resolution(
+        Math::gcd(a.x, b.x),
+        Math::gcd(a.y, b.y)
+    );
+}
+
+constexpr Resolution lcm(const Resolution& a, const Resolution& b) {
+	return Resolution(
+        Math::lcm(a.x, b.x),
+        Math::lcm(a.y, b.y)
     );
 }
 
@@ -95,7 +174,7 @@ constexpr Resolution lowest(const Any<Resolution>&) {
 }
 
 constexpr Resolution highest(const Any<Resolution>&) {
-	constexpr auto MAX_SIZE = highest(Any<uint32_t>());
+	constexpr auto MAX_SIZE = std::numeric_limits<uint32_t>::max();
 	return Resolution(MAX_SIZE, MAX_SIZE);
 }
 

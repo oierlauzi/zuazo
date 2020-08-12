@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Layout.h"
 #include "PadBase.h"
+#include "../Utils/ObserverPattern.h"
 
-#include <string_view>
+#include <functional>
+#include <vector>
 
 namespace Zuazo::Signal {
 
@@ -11,12 +12,16 @@ template <typename T>
 class Input;
 
 template <typename T>
-class Output : public PadBase {
-	friend Input<T>;
+class Output 
+	: public PadBase
+	, private Utils::Subject
+{
 public:
-	Output() = default;
-	template<typename Str>
-	Output(Str&& name);
+	using Consumer = Input<T>; friend Consumer;
+	using Consumers = std::vector<std::reference_wrapper<Consumer>>;
+	using PullCallback = std::function<void()>;
+
+	Output(std::string name, PullCallback pullCbk = {});
 	Output(const Output& other) = default;
 	Output(Output&& other) = default;
 	virtual ~Output() = default;
@@ -24,40 +29,40 @@ public:
 	Output&						operator=(const Output& other) = default;
 	Output&						operator=(Output&& other) = default;
 
+	Consumers					getConsumers() const;
+
 	void						reset();
-	template<typename Q>
-	void						push(Q&& element);
+	void						push(T element);
+	const T&					pull() const;
+
+	void						setPullCallback(PullCallback cbk);
+	const PullCallback&			getPullCallback() const;
 
 private:
 	T							m_lastElement;
-
-	virtual const T&			get() const;
-};
-
-template <typename T>
-class Layout::PadProxy<Output<T>> : public Layout::PadProxy<PadBase> {
-	friend Layout::PadProxy<Input<T>>;
-public:
-	PadProxy(Output<T>& pad);
-	PadProxy(const PadProxy& other) = delete;
-	~PadProxy() = default;
-
-	PadProxy& 					operator=(const PadProxy& other) = delete;
+	PullCallback				m_pullCallback;
 
 };
 
+template<typename T>
+struct Layout::PadProxy<Output<T>>
+	: private Output<T>
+{
+	friend Layout;
 
-template <typename T>
-std::vector<Layout::PadProxy<Output<T>>> getOutputs(Layout& layout);
+	using Consumer = PadProxy<Input<T>>; friend Consumer;
+	using Consumers = std::vector<std::reference_wrapper<Consumer>>;
 
-template <typename T>
-std::vector<const Layout::PadProxy<Output<T>>> getOutputs(const Layout& layout);
+	using Output<T>::operator==;
+	using Output<T>::operator!=;
+	using Output<T>::operator<;
+	using Output<T>::operator<=;
+	using Output<T>::operator>;
+	using Output<T>::operator>=;
+	using Output<T>::getName;
 
-template <typename T>
-Layout::PadProxy<Output<T>> getOutput(Layout& layout, std::string_view str);
-
-template <typename T>
-const Layout::PadProxy<Output<T>> getOutput(const Layout& layout, std::string_view str);
+	Consumers					getConsumers() const;
+};
 
 }
 

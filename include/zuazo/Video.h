@@ -1,7 +1,16 @@
 #pragma once
 
-#include "Math/Rational.h"
+//Ensure they are included first of all in order to make use of
+//the overloaded functions in templates defined in Utils/Limit.h
 #include "Chrono.h"
+#include "Resolution.h"
+#include "ColorSubsampling.h"
+#include "ColorFormat.h"
+#include "ColorRange.h"
+#include "ColorTransferFunction.h"
+#include "ColorModel.h"
+#include "ColorPrimaries.h"
+
 #include "Graphics/Frame.h"
 #include "Utils/Limit.h"
 
@@ -78,6 +87,10 @@ public:
 
 	VideoMode									intersect(const VideoMode& other) const;
 
+	VideoMode									lowest() const;
+	VideoMode									highest() const;
+	VideoMode									values() const;
+
 	Graphics::Frame::Descriptor					getFrameDescriptor() const;
 
 	static const VideoMode 						ANY;
@@ -105,7 +118,7 @@ private:
 		m_colorFormat
 	};
 
-	Data 								m_data;
+	Data 										m_data;
 
 };
 
@@ -119,23 +132,23 @@ public:
 	VideoBase(VideoBase&& other);
 	virtual ~VideoBase();
 
-	VideoBase&							operator=(const VideoBase& other);
-	VideoBase&							operator=(VideoBase&& other);
+	VideoBase&									operator=(const VideoBase& other);
+	VideoBase&									operator=(VideoBase&& other);
 
 
-	void								setVideoModeCallback(VideoModeCallback cbk);
-	const VideoModeCallback&			getVideoModeCallback() const;
+	void										setVideoModeCallback(VideoModeCallback cbk);
+	const VideoModeCallback&					getVideoModeCallback() const;
 
-	void								setVideoModeLimits(VideoMode videoMode);
-	const VideoMode&					getVideoModeLimits() const;
-	const std::vector<VideoMode>& 		getVideoModeCompatibility() const;
-	const VideoMode&					getVideoMode() const;
+	void										setVideoModeLimits(VideoMode videoMode);
+	const VideoMode&							getVideoModeLimits() const;
+	const std::vector<VideoMode>& 				getVideoModeCompatibility() const;
+	const VideoMode&							getVideoMode() const;
 
 protected:
-	void								setInternalVideoModeCallback(VideoModeCallback cbk);
-	const VideoModeCallback&			getInternalVideoModeCallback() const;
+	void										setInternalVideoModeCallback(VideoModeCallback cbk);
+	const VideoModeCallback&					getInternalVideoModeCallback() const;
 
-	void								setVideoModeCompatibility(std::vector<VideoMode> comp);
+	void										setVideoModeCompatibility(std::vector<VideoMode> comp);
 
 private:
 	enum VideoModeCallbacks {
@@ -144,14 +157,14 @@ private:
 		VMCBK_COUNT
 	};
 
-	std::array<VideoModeCallback, VMCBK_COUNT> m_videoModeCallbacks;
+	std::array<VideoModeCallback, VMCBK_COUNT>	m_videoModeCallbacks;
 	
-	VideoMode							m_videoModeLimits;
-	std::vector<VideoMode>				m_videoModeCompatibility;
-	VideoMode							m_videoMode;
+	VideoMode									m_videoModeLimits;
+	std::vector<VideoMode>						m_videoModeCompatibility;
+	VideoMode									m_videoMode;
 
-	void								updateVideoMode();
-	VideoMode							selectVideoMode() const;
+	void										updateVideoMode();
+	VideoMode									selectVideoMode() const;
 
 };
 

@@ -50,6 +50,42 @@ constexpr Math::Vec<T, dim> clamp(const Math::Vec<T, dim>& val, const Math::Vec<
 template<typename T, int dim, typename Q>
 constexpr Math::Vec<T, dim> lerp(const Math::Vec<T, dim>& a, const Math::Vec<T, dim>& b, const Q& r);
 
+template<typename T, int dim, typename Q = double>
+constexpr Math::Vec<Q, dim> ilerp(const Math::Vec<T, dim>& val, const Math::Vec<T, dim>& a, const Math::Vec<T, dim>& b);
+
+template<typename T, int dim, typename Q = double>
+constexpr Math::Vec<T, dim> map(const Math::Vec<T, dim>& val, const Math::Vec<T, dim>& lo1, const Math::Vec<T, dim>& hi1, const Math::Vec<T, dim>& lo2, const Math::Vec<T, dim>& hi2);
+
+template<typename T, int dim>
+constexpr Math::Vec<T, dim> mod(const Math::Vec<T, dim>& num, const Math::Vec<T, dim>& den);
+
+template<typename T, int dim>
+constexpr Math::Vec<T, dim> abs(const Math::Vec<T, dim>& r);
+
+template<typename T, int dim>
+constexpr Math::Vec<T, dim> inv(const Math::Vec<T, dim>& r);
+
+template<typename T, int dim>
+constexpr Math::Vec<T, dim> floor(const Math::Vec<T, dim>& x);
+
+template<typename T, int dim>
+constexpr Math::Vec<T, dim> trunc(const Math::Vec<T, dim>& x);
+
+template<typename T, int dim>
+constexpr Math::Vec<T, dim> ceil(const Math::Vec<T, dim>&x);
+
+template<typename T, int dim>
+constexpr Math::Vec<T, dim> round(const Math::Vec<T, dim>& x);
+
+template<typename T, int dim>
+constexpr Math::Vec<T, dim> frac(const Math::Vec<T, dim>& x);
+
+template<typename T, int dim>
+constexpr Math::Vec<T, dim> gcd(const Math::Vec<T, dim>& a, const Math::Vec<T, dim>& b);
+
+template<typename T, int dim>
+constexpr Math::Vec<T, dim> lcm(const Math::Vec<T, dim>& a, const Math::Vec<T, dim>& b);
+
 }
 
 namespace Zuazo {

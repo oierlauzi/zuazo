@@ -14,20 +14,14 @@ namespace Zuazo::Signal {
  * Layout
  */
 
-template<typename Str, typename Pads>
-inline Layout::Layout(Str&& name, Pads&& pads)
-	: m_name(std::forward<Str>(name))
+inline Layout::Layout(std::string name, std::initializer_list<PadRef> pads)
+	: m_name(std::move(name))
+	, m_pads(std::move(pads))
 {
-	const auto addPadFunc = [=] (auto&&... x) {
-		(this->addPad(std::forward<decltype(x)>(x)), ...);
-	};
-
-	std::apply(addPadFunc, std::forward<Pads>(pads));
 }
 
-template<typename Str>
-inline void Layout::setName(Str&& name) {
-	m_name = std::forward<Str>(name);
+inline void Layout::setName(std::string name) {
+	m_name = std::move(name);
 }
 
 inline const std::string& Layout::getName() const{
@@ -37,61 +31,86 @@ inline const std::string& Layout::getName() const{
 
 
 template<typename T>
-inline std::vector<Layout::PadProxy<T>> Layout::getPads() {
-	const auto vec = findPads<T>();
-	return std::vector<PadProxy<T>>(vec.cbegin(), vec.cend());
+inline std::vector<std::reference_wrapper<Layout::PadProxy<T>>> Layout::getPads() {
+	const auto pads = findPads<T>();
+	std::vector<std::reference_wrapper<PadProxy<T>>> result;
+	result.reserve(pads.size());
+
+	std::transform(
+		pads.cbegin(), pads.cend(),
+		std::back_inserter(result),
+		[] (T& pad) -> PadProxy<T>& {
+			return makeProxy(pad);
+		}
+	);
+	
+	return result;
 }
 
 template<typename T>
-inline std::vector<const Layout::PadProxy<T>>	Layout::getPads() const {
-	const auto vec = findPads<T>();
-	return std::vector<const PadProxy<T>>(vec.cbegin(), vec.cend());
+inline std::vector<std::reference_wrapper<const Layout::PadProxy<T>>> Layout::getPads() const {
+	const auto pads = findPads<T>();
+	std::vector<std::reference_wrapper<PadProxy<T>>> result;
+	result.reserve(pads.size());
+
+	std::transform(
+		pads.cbegin(), pads.cend(),
+		std::back_inserter(result),
+		[] (const T& pad) -> const PadProxy<T>& {
+			return makeProxy(pad);
+		}
+	);
+	
+	return result;
 }
 
 template<typename T>
-inline Layout::PadProxy<T> Layout::getPad(std::string_view str) {
-	return findPad<T>(str);
+inline Layout::PadProxy<T>& Layout::getPad(std::string_view name) {
+	return makeProxy(findPad<T>(name));
 }
 
 template<typename T>
-inline Layout::PadProxy<T> Layout::getPad(const T& pad) {
-	return findPad(pad);
+inline Layout::PadProxy<T>& Layout::getPad(const T& pad) {
+	return makeProxy(findPad(pad));
 }
 
 template<typename T>
-inline const Layout::PadProxy<T> Layout::getPad(std::string_view str) const {
-	return findPad<T>(str);
+inline const Layout::PadProxy<T>& Layout::getPad(std::string_view name) const {
+	return makeProxy(findPad<T>(name));
 }
 
 template<typename T>
-inline const Layout::PadProxy<T> Layout::getPad(const T& pad) const {
-	return findPad(pad);
+inline const Layout::PadProxy<T>& Layout::getPad(const T& pad) const {
+	return makeProxy(findPad(pad));
 }
 
 
 
-template <typename Pad>
-inline void Layout::addPad(Pad&& pad){
-	using ResultPad = typename std::remove_cv<typename std::remove_reference<Pad>::type>::type;
-	m_pads.push_back(std::make_unique<ResultPad>(std::forward<Pad>(pad))); 
+inline void Layout::registerPad(PadRef pad) {
+	m_pads.push_back(pad);
 }
 
-inline void Layout::removePad(PadBase& pad){
-	const auto cond = [&] (const std::unique_ptr<PadBase>& ptr) -> bool {
-		return ptr.get() == &pad;
-	};
-
-	//Remove it from my array
-	auto ite = std::remove_if(m_pads.begin(), m_pads.end(), cond);
-	m_pads.erase(ite, m_pads.cend());
+inline void Layout::registerPads(std::initializer_list<PadRef> pads) {
+	m_pads.insert(m_pads.cend(), pads);
 }
+
+inline void Layout::removePad(PadRef pad) {
+	const auto ite = std::find_if(
+		m_pads.cbegin(), m_pads.cend(),
+		[pad] (PadRef p) -> bool {
+			return &(p.get()) == &(pad.get()); //Compare pointers
+		}
+	);
+	m_pads.erase(ite);
+}
+
 
 
 template <typename T>
 inline T& Layout::findPad(std::string_view str) const {
 	static_assert(std::is_base_of<PadBase, T>::value, "T must inherit from PadBase");
 	for(const auto& pad : m_pads) {
-		if(pad->getName() == str){
+		if(pad.get().getName() == str){
 			auto* p = dynamic_cast<T*>(pad.get());
 			if(p) return *p;
 		}
@@ -116,6 +135,17 @@ inline std::vector<std::reference_wrapper<T>> Layout::findPads() const {
 	}
 
 	return result;
+}
+
+
+template<typename T>
+inline Layout::PadProxy<T>& Layout::makeProxy(T& pad) {
+	return static_cast<PadProxy<T>&>(pad);
+}
+
+template<typename T>
+inline const Layout::PadProxy<T>& Layout::makeProxy(const T& pad) {
+	return static_cast<const PadProxy<T>&>(pad);
 }
 
 }

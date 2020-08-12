@@ -13,8 +13,9 @@ constexpr void ignore(const T&...);
 template<typename T>
 constexpr T bit(T pos);
 
-template<typename T, typename Q>
-constexpr T align(T ptr, Q alignment);
+template<typename T>
+T* align(T* ptr, size_t alignment);
+constexpr uintptr_t align(uintptr_t ptr, size_t alignment);
 
 
 template<typename T, typename... Args>

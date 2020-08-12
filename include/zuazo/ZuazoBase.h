@@ -73,7 +73,7 @@ private:
 
 #define ZUAZO_BASE_LOG(base, severity, message)														\
 	if(	(base).getInstance().getApplicationInfo().elementLogFunc && 								\
-		((severity) & (base).getInstance().getApplicationInfo().verbosity) != Verbosity::SILENT ) 	\
+		(((base).getInstance().getApplicationInfo().verbosity) & (severity)) != Verbosity::SILENT ) \
 	{																								\
 		(base).getInstance().getApplicationInfo().elementLogFunc(base, severity, message);			\
 	}

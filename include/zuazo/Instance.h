@@ -108,7 +108,7 @@ private:
 
 #define ZUAZO_LOG(instance, severity, message)												\
 	if(	(instance).getApplicationInfo().instanceLogFunc && 									\
-		((severity) & (instance).getApplicationInfo().verbosity) != Verbosity::SILENT ) 	\
+		(((instance).getApplicationInfo().verbosity) & (severity)) != Verbosity::SILENT ) 	\
 	{																						\
 		(instance).getApplicationInfo().instanceLogFunc(instance, severity, message);		\
 	}

@@ -2,7 +2,6 @@
 
 #include "Math/Vector.h"
 #include "Math/Rational.h"
-#include "Math/Functions.h"
 
 #include <sys/types.h>
 #include <string>
@@ -27,14 +26,29 @@ struct Resolution{
     constexpr Resolution(const Resolution& other) = default;
     ~Resolution() = default;
 
+    template<typename T>
+    constexpr Resolution& operator=(const Math::Vec2<T>& res);
     constexpr Resolution& operator=(const Resolution& other) = default;
 
-    constexpr bool operator==(const Resolution& other) const;
-    constexpr bool operator!=(const Resolution& other) const;
-    constexpr bool operator<(const Resolution& other) const;
-    constexpr bool operator<=(const Resolution& other) const;
-    constexpr bool operator>(const Resolution& other) const;
-    constexpr bool operator>=(const Resolution& other) const;
+    constexpr Resolution operator==(const Resolution& other) const;
+    constexpr Resolution operator!=(const Resolution& other) const;
+    constexpr Resolution operator<(const Resolution& other) const;
+    constexpr Resolution operator<=(const Resolution& other) const;
+    constexpr Resolution operator>(const Resolution& other) const;
+    constexpr Resolution operator>=(const Resolution& other) const;
+
+    constexpr Resolution operator+(const Resolution& other) const;
+    constexpr Resolution operator-(const Resolution& other) const;
+    constexpr Resolution operator*(const Resolution& other) const;
+    constexpr Resolution operator/(const Resolution& other) const;
+    constexpr Resolution operator%(const Resolution& other) const;
+
+    constexpr Resolution& operator+=(const Resolution& other);
+    constexpr Resolution& operator-=(const Resolution& other);
+    constexpr Resolution& operator*=(const Resolution& other);
+    constexpr Resolution& operator/=(const Resolution& other);
+    constexpr Resolution& operator%=(const Resolution& other);
+
 
     template<typename T>
     constexpr operator Math::Vec2<T>() const;
@@ -47,8 +61,11 @@ std::ostream& operator<<(std::ostream& os, Resolution res);
 
 namespace Math {
 
-constexpr Resolution min(Resolution a, Resolution b);
-constexpr Resolution max(Resolution a, Resolution b);
+constexpr Resolution min(const Resolution& a, const Resolution& b);
+constexpr Resolution max(const Resolution& a, const Resolution& b);
+constexpr Resolution mod(const Resolution& num, const Resolution& den);
+constexpr Resolution gcd(const Resolution& a, const Resolution& b);
+constexpr Resolution lcm(const Resolution& a, const Resolution& b);
 
 }
 
