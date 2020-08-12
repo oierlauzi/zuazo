@@ -14,7 +14,7 @@ class PadBase;
 class Layout {
 public:
 	template<typename T>
-	struct PadProxy;
+	class PadProxy;
 
 	using PadRef = std::reference_wrapper<PadBase>;
 	
@@ -43,8 +43,15 @@ public:
 	template<typename T>
 	const PadProxy<T>&										getPad(const T& pad) const;
 
+	template<typename T>
+	static PadProxy<T>&										makeProxy(T& pad);
+	template<typename T>
+	static const PadProxy<T>&								makeProxy(const T& pad);
+
 protected:
 	void													registerPad(PadRef pad);
+	template<typename T>
+	void													registerPad(PadProxy<T>& pad);
 	void													registerPads(std::initializer_list<PadRef> pads);
 	void													removePad(PadRef pad);
 
@@ -58,11 +65,6 @@ private:
 	T&														findPad(const T& pad) const;
 	template<typename T>
 	std::vector<std::reference_wrapper<T>>					findPads() const;
-
-	template<typename T>
-	static PadProxy<T>&										makeProxy(T& pad);
-	template<typename T>
-	static const PadProxy<T>&								makeProxy(const T& pad);
 	
 };
 

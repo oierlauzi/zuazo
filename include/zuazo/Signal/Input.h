@@ -37,6 +37,9 @@ public:
 	Input&						operator=(const Input& other) = default;
 	Input&						operator=(Input&& other) = default;
 
+	void						operator<<(NoSignal);
+	void						operator<<(Source& src);
+
 	void						setSource(Source* src);
 	Source*						getSource() const;
 
@@ -59,12 +62,19 @@ private:
 };
 
 template<typename T>
-struct Layout::PadProxy<Input<T>>
-	: private Input<T>
+class Layout::PadProxy<Input<T>>
+	: Input<T>
 {
+public:
 	friend Layout;
 
-	using Source = PadProxy<Input<T>>; friend Source;
+	using Source = PadProxy<Output<T>>; friend Source;
+
+	PadProxy() = delete;
+	PadProxy(const PadProxy& other) = delete;
+	~PadProxy() = default;
+
+	PadProxy& 					operator=(const PadProxy& other) = delete;
 
 	using Input<T>::operator==;
 	using Input<T>::operator!=;
@@ -72,6 +82,7 @@ struct Layout::PadProxy<Input<T>>
 	using Input<T>::operator<=;
 	using Input<T>::operator>;
 	using Input<T>::operator>=;
+	using Input<T>::operator<<;
 	using Input<T>::getName;
 	using Input<T>::setNoSignalAction;
 	using Input<T>::getNoSignalAction;
@@ -79,8 +90,7 @@ struct Layout::PadProxy<Input<T>>
 	void						setSource(Source* src);
 	Source*						getSource() const;
 	
-	void						operator<<(NoSignal);
-	void						operator<<(PadProxy<Input<T>>& src);
+	void						operator<<(Source& src);
 };
 
 }

@@ -86,8 +86,25 @@ inline const Layout::PadProxy<T>& Layout::getPad(const T& pad) const {
 
 
 
+template<typename T>
+inline Layout::PadProxy<T>& Layout::makeProxy(T& pad) {
+	return static_cast<PadProxy<T>&>(pad);
+}
+
+template<typename T>
+inline const Layout::PadProxy<T>& Layout::makeProxy(const T& pad) {
+	return static_cast<const PadProxy<T>&>(pad);
+}
+
+
+
 inline void Layout::registerPad(PadRef pad) {
 	m_pads.push_back(pad);
+}
+
+template<typename T>
+inline void Layout::registerPad(PadProxy<T>& pad) {
+	registerPad(static_cast<T&>(pad));
 }
 
 inline void Layout::registerPads(std::initializer_list<PadRef> pads) {
@@ -135,17 +152,6 @@ inline std::vector<std::reference_wrapper<T>> Layout::findPads() const {
 	}
 
 	return result;
-}
-
-
-template<typename T>
-inline Layout::PadProxy<T>& Layout::makeProxy(T& pad) {
-	return static_cast<PadProxy<T>&>(pad);
-}
-
-template<typename T>
-inline const Layout::PadProxy<T>& Layout::makeProxy(const T& pad) {
-	return static_cast<const PadProxy<T>&>(pad);
 }
 
 }

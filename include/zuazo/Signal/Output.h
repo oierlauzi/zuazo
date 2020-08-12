@@ -45,13 +45,20 @@ private:
 };
 
 template<typename T>
-struct Layout::PadProxy<Output<T>>
-	: private Output<T>
+class Layout::PadProxy<Output<T>>
+	: Output<T>
 {
+public:
 	friend Layout;
 
 	using Consumer = PadProxy<Input<T>>; friend Consumer;
 	using Consumers = std::vector<std::reference_wrapper<Consumer>>;
+
+	PadProxy() = delete;
+	PadProxy(const PadProxy& other) = delete;
+	~PadProxy() = default;
+
+	PadProxy& 					operator=(const PadProxy& other) = delete;
 
 	using Output<T>::operator==;
 	using Output<T>::operator!=;

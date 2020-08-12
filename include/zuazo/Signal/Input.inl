@@ -16,6 +16,15 @@ inline Input<T>::Input(std::string name)
 {
 }
 
+template <typename T>
+inline void Input<T>::operator<<(NoSignal) {
+	setSource(nullptr);
+}
+
+template <typename T>
+inline void Input<T>::operator<<(Source& src) {
+	setSource(&src);
+}
 
 template <typename T>
 inline void Input<T>::setSource(Source* src){
@@ -93,12 +102,7 @@ inline typename Layout::PadProxy<Input<T>>::Source* Layout::PadProxy<Input<T>>::
 }
 
 template <typename T>
-inline void Layout::PadProxy<Input<T>>::operator<<(NoSignal) {
-	setSource(nullptr);
-}
-
-template <typename T>
-inline void Layout::PadProxy<Input<T>>::operator<<(PadProxy<Input<T>>& src) {
+inline void Layout::PadProxy<Input<T>>::operator<<(Source& src) {
 	setSource(&src);
 }
 

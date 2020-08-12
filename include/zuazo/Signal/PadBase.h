@@ -33,11 +33,18 @@ private:
 };
 
 template<>
-struct Layout::PadProxy<PadBase>
-	: private PadBase
+class Layout::PadProxy<PadBase>
+	: PadBase
 {
+public:
 	friend Layout;
 	
+	PadProxy() = delete;
+	PadProxy(const PadProxy& other) = delete;
+	~PadProxy() = default;
+
+	PadProxy& 						operator=(const PadProxy& other) = delete;
+
 	using PadBase::operator==;
 	using PadBase::operator!=;
 	using PadBase::operator<;
