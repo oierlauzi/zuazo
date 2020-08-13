@@ -4,13 +4,13 @@ namespace Zuazo::Utils {
 
 template <typename T, size_t Capacity>
 inline size_t LockFreeQueue<T, Capacity>::size() const {
-	//Capacity is added to avoid negative values on unsigned integers
-	return (capacity() + m_write.load() - m_read.load()) % capacity();
+	//size() is added to avoid negative values on unsigned integers
+	return (m_queue.size() + m_write.load() - m_read.load()) % m_queue.size();
 }
 
 template <typename T, size_t Capacity>
 constexpr size_t LockFreeQueue<T, Capacity>::capacity() {
-	return Capacity;
+	return Capacity - 1; // -1 as m_read == m_write means it is empty
 }
 
 template <typename T, size_t Capacity>
@@ -64,7 +64,7 @@ inline void LockFreeQueue<T, Capacity>::pop() {
 
 template <typename T, size_t Capacity>
 constexpr size_t LockFreeQueue<T, Capacity>::nextIndex(size_t i) const {
-	return (i + 1) % capacity();
+	return (i + 1) % m_queue.size();
 }
 
 
