@@ -56,7 +56,6 @@ public:
 
 	PadProxy() = delete;
 	PadProxy(const PadProxy& other) = delete;
-	~PadProxy() = default;
 
 	PadProxy& 					operator=(const PadProxy& other) = delete;
 
@@ -69,6 +68,10 @@ public:
 	using Output<T>::getName;
 
 	Consumers					getConsumers() const;
+
+private:
+	~PadProxy() = default;
+	
 };
 
 }

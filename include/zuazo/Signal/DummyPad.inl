@@ -1,13 +1,13 @@
 #include "DummyPad.h"
 
-#include <functional>
-
 namespace Zuazo::Signal {
 
 template<typename T>
 DummyPad<T>::DummyPad(std::string name)
-	: m_io(std::move(name))
+	: Layout(name)
+	, m_io(std::move(name))
 {
+	Layout::registerPads( {m_io->input, m_io->output} );
 }
 
 template<typename T>

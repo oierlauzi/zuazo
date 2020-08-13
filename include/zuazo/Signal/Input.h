@@ -72,7 +72,6 @@ public:
 
 	PadProxy() = delete;
 	PadProxy(const PadProxy& other) = delete;
-	~PadProxy() = default;
 
 	PadProxy& 					operator=(const PadProxy& other) = delete;
 
@@ -91,6 +90,10 @@ public:
 	Source*						getSource() const;
 	
 	void						operator<<(Source& src);
+
+private:
+	~PadProxy() = default;
+
 };
 
 }

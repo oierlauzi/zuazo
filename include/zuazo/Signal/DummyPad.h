@@ -5,23 +5,28 @@
 #include "Output.h"
 #include "../Utils/Pimpl.h"
 
+#include <deque>
+
 namespace Zuazo::Signal {
 
 template <typename T>
-class DummyPad {
+class DummyPad 
+	: public Layout
+{
 public:
 	DummyPad(std::string name);
-	DummyPad(const DummyPad&& other) = delete;
+	DummyPad(const DummyPad& other) = delete;
 	DummyPad(DummyPad&& other) = default;
 	~DummyPad() = default;
 
-	DummyPad&							operator=(const DummyPad&& other) = delete;
-	DummyPad&							operator=(DummyPad&& other) = default;
+	DummyPad&						operator=(const DummyPad& other) = delete;
+	DummyPad&						operator=(DummyPad&& other) = default;
 
-	Layout::PadProxy<Input<T>>&			getInput();
-	const Layout::PadProxy<Input<T>>&	getInput() const;
-	Layout::PadProxy<Output<T>>&		getOutput();
-	const Layout::PadProxy<Output<T>>&	getOutput() const;
+	PadProxy<Input<T>>&				getInput();
+	const PadProxy<Input<T>>&		getInput() const;
+	PadProxy<Output<T>>&			getOutput();
+	const PadProxy<Output<T>>&		getOutput() const;
+
 private:
 	struct IO {
 		IO(std::string name);
@@ -32,8 +37,9 @@ private:
 		Output<T> output;
 	};
 
-	//Dynamically allocated so that the address remains invariant
-	Utils::Pimpl<IO>		m_io; 
+	//Dynamically allocated so that its address remains invariant
+	Utils::Pimpl<IO>				m_io; 
+
 };
 
 	

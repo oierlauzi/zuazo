@@ -7,7 +7,6 @@
 namespace Zuazo::Signal {
 
 class PadBase {
-	friend Layout;
 public:
 	PadBase(std::string name);
 	PadBase(const PadBase& other) = default; 
@@ -41,7 +40,6 @@ public:
 	
 	PadProxy() = delete;
 	PadProxy(const PadProxy& other) = delete;
-	~PadProxy() = default;
 
 	PadProxy& 						operator=(const PadProxy& other) = delete;
 
@@ -52,6 +50,10 @@ public:
 	using PadBase::operator>;
 	using PadBase::operator>=;
 	using PadBase::getName;
+
+private:
+	~PadProxy() = default;
+	
 };
 
 }
