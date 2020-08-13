@@ -21,28 +21,25 @@ public:
 	Delay&								operator=(const Delay& other) = delete;
 	Delay&								operator=(Delay&& other) = default;
 
-	Layout::PadProxy<Input<T>>&			getInput();
-	const Layout::PadProxy<Input<T>>&	getInput() const;
-	Layout::PadProxy<Output<T>>&		getOutput();
-	const Layout::PadProxy<Output<T>>&	getOutput() const;
+	PadProxy<Input<T>>&					getInput();
+	const PadProxy<Input<T>>&			getInput() const;
+	PadProxy<Output<T>>&				getOutput();
+	const PadProxy<Output<T>>&			getOutput() const;
 
 	void								setDelay(Duration delay);
 	Duration							getDelay() const;
 
 	void								update(TimePoint now);
 
-
+private:
 	struct IO {
 		Input<T> input = Input<T>("in");
 		Output<T> output = Output<T>("out");
 	};
 
-	static inline const IO				PADS;
-
-private:
 	struct Packet {
-		TimePoint						time;
-		T								data;
+		TimePoint time;
+		T data;
 	};
 
 	//Dynamically allocated so that its address remains invariant
@@ -55,4 +52,4 @@ private:
 	
 }
 
-#include "DummyPad.inl"
+#include "Delay.inl"

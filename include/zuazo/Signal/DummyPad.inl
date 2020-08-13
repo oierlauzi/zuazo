@@ -3,7 +3,7 @@
 namespace Zuazo::Signal {
 
 template<typename T>
-DummyPad<T>::DummyPad(std::string name)
+inline DummyPad<T>::DummyPad(std::string name)
 	: Layout(name)
 	, m_io(std::move(name))
 {
@@ -11,34 +11,36 @@ DummyPad<T>::DummyPad(std::string name)
 }
 
 template<typename T>
-Layout::PadProxy<Input<T>>& DummyPad<T>::getInput() {
+inline Layout::PadProxy<Input<T>>& DummyPad<T>::getInput() {
 	return Layout::makeProxy(m_io->input);
 }
 
 template<typename T>
-const Layout::PadProxy<Input<T>>& DummyPad<T>::getInput() const {
+inline const Layout::PadProxy<Input<T>>& DummyPad<T>::getInput() const {
 	return Layout::makeProxy(m_io->input);
 }
 
 template<typename T>
-Layout::PadProxy<Output<T>>& DummyPad<T>::getOutput() {
+inline Layout::PadProxy<Output<T>>& DummyPad<T>::getOutput() {
 	return Layout::makeProxy(m_io->output);
 }
 
 template<typename T>
-const Layout::PadProxy<Output<T>>& DummyPad<T>::getOutput() const {
+inline const Layout::PadProxy<Output<T>>& DummyPad<T>::getOutput() const {
 	return Layout::makeProxy(m_io->output);
 }
 
 template<typename T>
-DummyPad<T>::IO::IO(std::string name)
+inline typename Output<T>::PullCallback DummyPad<T>::makePullCbk(Output<T>& output, const Input<T>& input) {
+	return [&output, &input] () -> void {
+		output.push(input.pull());
+	};
+}
+
+template<typename T>
+inline DummyPad<T>::IO::IO(std::string name)
 	: input(name)
-	, output(
-		std::move(name), 
-		[&input, &output] () {
-			output.push(input.pull());
-		}
-	)
+	, output(std::move(name), makePullCbk(output, input))
 {
 }
 

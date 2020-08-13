@@ -38,7 +38,9 @@ private:
 	};
 
 	//Dynamically allocated so that its address remains invariant
-	Utils::Pimpl<IO>				m_io; 
+	Utils::Pimpl<IO>				m_io;
+
+	static typename Output<T>::PullCallback	makePullCbk(Output<T>& output, const Input<T>& input);
 
 };
 
