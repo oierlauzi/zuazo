@@ -5,8 +5,8 @@
 namespace Zuazo::Utils {
 
 struct StaticId {
-	size_t get() const;
-	operator size_t() const;
+	uintptr_t get() const;
+	operator uintptr_t() const;
 };
 
 }
