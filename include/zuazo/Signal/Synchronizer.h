@@ -6,7 +6,7 @@
 #include "../Utils/Pimpl.h"
 #include "../Utils/LockFreeQueue.h"
 
-#include <deque>
+#include <atomic>
 
 namespace Zuazo::Signal {
 
@@ -34,8 +34,8 @@ public:
 
 private:
 	Utils::LockFreeQueue<T>			m_queue;
+	std::atomic<size_t>				m_dropped;
 	size_t							m_maxDropped;
-	size_t							m_dropped;
 
 };
 

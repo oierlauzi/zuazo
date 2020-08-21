@@ -15,10 +15,10 @@ class BinomialLayout
 	: public Layout
 {
 public:
-	BinomialLayout(	std::string name, 
-					std::string inputName = makeInputName<T>(), 
-					std::string outputName = makeOutputName<T>(),
-					PullCallback pullCbk = {} );
+	explicit BinomialLayout(std::string name, 
+							std::string inputName = makeInputName<T>(), 
+							std::string outputName = makeOutputName<T>(),
+							PullCallback pullCbk = {} );
 	BinomialLayout(const BinomialLayout& other) = delete;
 	BinomialLayout(BinomialLayout&& other) = default;
 	~BinomialLayout() = default;

@@ -22,7 +22,7 @@ public:
 	using Consumer = Input<T>; friend Consumer;
 	using Consumers = std::vector<std::reference_wrapper<Consumer>>;
 
-	Output(std::string name, PullCallback pullCbk = {});
+	explicit Output(std::string name, PullCallback pullCbk = {});
 	Output(const Output& other) = default;
 	Output(Output&& other) = default;
 	virtual ~Output() = default;

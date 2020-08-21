@@ -10,7 +10,7 @@ namespace Zuazo::Signal {
 template <typename T>
 class DummyPad {
 public:
-	DummyPad(std::string name);
+	explicit DummyPad(std::string name);
 	DummyPad(const DummyPad& other) = delete;
 	DummyPad(DummyPad&& other) = default;
 	~DummyPad() = default;

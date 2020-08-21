@@ -8,8 +8,8 @@ template<typename T>
 inline Synchronizer<T>::Synchronizer(std::string name, size_t maxDelay, size_t maxDropped)
 	: BinomialLayout(std::move(name))
 	, m_queue(maxDelay)
-	, m_maxDropped(maxDropped)
 	, m_dropped(0)
+	, m_maxDropped(maxDropped)
 {
 }
 
@@ -50,12 +50,12 @@ template<typename T>
 inline void Synchronizer<T>::updateOutput() {
 	if(m_queue.size() > 0) {
 		//There is at least one element
-		m_dropped = 0;
+		m_dropped.load(0);
 		getOutputPad().push(std::move(m_queue.front()));
 		m_queue.pop();
 	} else {
 		//Could not retrieve an element
-		if(++m_dropped > getMaxDropped()) {
+		if(m_dropped.fetch_add(1) >= getMaxDropped()) {
 			getOutputPad().reset();
 		}
 	}

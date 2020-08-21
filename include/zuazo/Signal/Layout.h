@@ -18,7 +18,7 @@ public:
 
 	using PadRef = std::reference_wrapper<PadBase>;
 	
-	Layout(std::string name, std::initializer_list<PadRef> pads = {});
+	explicit Layout(std::string name, std::initializer_list<PadRef> pads = {});
 	Layout(const Layout& other) = default;
 	Layout(Layout&& other) = default;
 	virtual ~Layout() = default;

@@ -15,7 +15,7 @@ class FailOver
 	: public Layout
 {
 public:
-	FailOver(std::string name);
+	explicit FailOver(std::string name);
 	FailOver(const FailOver& other) = delete;
 	FailOver(FailOver&& other) = default;
 	~FailOver() = default;

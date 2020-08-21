@@ -8,7 +8,7 @@ namespace Zuazo::Signal {
 
 class PadBase {
 public:
-	PadBase(std::string name);
+	explicit PadBase(std::string name);
 	PadBase(const PadBase& other) = default; 
 	PadBase(PadBase&& other) = default;
 	virtual ~PadBase() = default;

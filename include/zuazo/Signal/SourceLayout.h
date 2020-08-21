@@ -15,9 +15,9 @@ class SourceLayout
 	: public Layout
 {
 public:
-	SourceLayout(	std::string name, 
-					std::string outputName = makeOutputName<T>(),
-					PullCallback pullCbk = {} );
+	explicit SourceLayout(	std::string name, 
+							std::string outputName = makeOutputName<T>(),
+							PullCallback pullCbk = {} );
 	SourceLayout(const SourceLayout& other) = delete;
 	SourceLayout(SourceLayout&& other) = default;
 	~SourceLayout() = default;

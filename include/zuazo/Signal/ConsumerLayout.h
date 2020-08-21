@@ -15,8 +15,8 @@ class ConsumerLayout
 	: public Layout
 {
 public:
-	ConsumerLayout(	std::string name, 
-					std::string inputName = makeInputName<T>() );
+	explicit ConsumerLayout(std::string name, 
+							std::string inputName = makeInputName<T>() );
 	ConsumerLayout(const ConsumerLayout& other) = delete;
 	ConsumerLayout(ConsumerLayout&& other) = default;
 	~ConsumerLayout() = default;
