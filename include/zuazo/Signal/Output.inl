@@ -9,6 +9,9 @@ namespace Zuazo::Signal {
  */
 
 template <typename T>
+inline const T Output<T>::NO_SIGNAL = T();
+
+template <typename T>
 inline Output<T>::Output(std::string name, PullCallback pullCbk)
 	: PadBase(std::move(name))
 	, m_pullCallback(std::move(pullCbk))

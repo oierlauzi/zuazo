@@ -9,6 +9,8 @@ inline FailOver<T>::FailOver(std::string name)
 	Layout::registerPads( {m_io->input, m_io->backup, m_io->output} );
 }
 
+
+
 template<typename T>
 inline Layout::PadProxy<Input<T>>& FailOver<T>::getInput() {
 	return Layout::makeProxy(m_io->input);
@@ -39,8 +41,10 @@ inline const Layout::PadProxy<Output<T>>& FailOver<T>::getOutput() const {
 	return Layout::makeProxy(m_io->output);
 }
 
+
+
 template<typename T>
-inline typename Output<T>::PullCallback FailOver<T>::makePullCbk(Output<T>& output, const Input<T>& input, const Input<T>& backup) {
+inline PullCallback FailOver<T>::makePullCbk(Output<T>& output, const Input<T>& input, const Input<T>& backup) {
 	return [&output, &input, &backup] () -> void {
 		//Retrieve an element from the primary input
 		const auto& x = input.pull();

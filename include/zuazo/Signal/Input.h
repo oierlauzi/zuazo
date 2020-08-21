@@ -50,8 +50,6 @@ public:
 	const T&					pull() const;
 	bool						hasChanged() const;
 
-	static const T				NO_SIGNAL;
-
 private:
 	mutable T					m_lastElement;
 	NoSignalAction				m_onNoSignal;

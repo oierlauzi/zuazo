@@ -7,9 +7,6 @@ namespace Zuazo::Signal {
  */
 
 template <typename T>
-inline const T Input<T>::NO_SIGNAL = T();
-
-template <typename T>
 inline Input<T>::Input(std::string name) 
 	: PadBase(std::move(name))
 	, m_onNoSignal(NoSignalAction::RETURN_EMPTY)
@@ -78,13 +75,13 @@ inline bool Input<T>::hasChanged() const {
 template <typename T>
 inline const T& Input<T>::get() const{
 	const auto* source = getSource();
-	return source ? source->get() : NO_SIGNAL;
+	return source ? source->get() : Output<T>::NO_SIGNAL;
 }
 
 template <typename T>
 inline bool Input<T>::needsToHold(const T& element) const {
 	//Last element will only be held if the option is set and an empty signal arrives
-	return (m_onNoSignal == NoSignalAction::HOLD_LAST) && (element == NO_SIGNAL);
+	return (m_onNoSignal == NoSignalAction::HOLD_LAST) && (element == Output<T>::NO_SIGNAL);
 }
 
 /*

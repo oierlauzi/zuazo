@@ -3,7 +3,10 @@
 #include "Layout.h"
 #include "Input.h"
 #include "Output.h"
+#include "NamingConventions.h"
 #include "../Utils/Pimpl.h"
+
+#include <string_view>
 
 namespace Zuazo::Signal {
 
@@ -13,8 +16,8 @@ class FailOver
 {
 public:
 	FailOver(std::string name);
-	FailOver(const DummyPad& other) = delete;
-	FailOver(DummyPad&& other) = default;
+	FailOver(const FailOver& other) = delete;
+	FailOver(FailOver&& other) = default;
 	~FailOver() = default;
 
 	FailOver&								operator=(const FailOver& other) = delete;
@@ -27,17 +30,19 @@ public:
 	PadProxy<Output<T>>&					getOutput();
 	const PadProxy<Output<T>>&				getOutput() const;
 
+	static constexpr std::string_view		BACKUP_INPUT_NAME = "backup";
+
 private:
 	struct IO {
-		Input<T> input = Input<T>("in");
-		Input<T> backup = Input<T>("backup");
-		Output<T> output = Output<T>("out", makePullCbk(output, input, backup));
+		Input<T> input = Input<T>(makeInputName<T>());
+		Input<T> backup = Input<T>(BACKUP_INPUT_NAME);
+		Output<T> output = Output<T>(makeOutputName<T>(), makePullCbk(output, input, backup));
 	};
 
 	//Dynamically allocated so that its address remains invariant
 	Utils::Pimpl<IO>						m_io;
 
-	static typename Output<T>::PullCallback	makePullCbk(Output<T>& output, const Input<T>& input, const Input<T>& backup);
+	static PullCallback						makePullCbk(Output<T>& output, const Input<T>& input, const Input<T>& backup);
 
 };
 	

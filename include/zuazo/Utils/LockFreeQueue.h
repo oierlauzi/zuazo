@@ -1,12 +1,12 @@
 #pragma once
 
 #include <cstddef>
-#include <array>
+#include <vector>
 #include <atomic>
 
 namespace Zuazo::Utils {
 
-template <typename T, size_t Capacity>
+template <typename T>
 class LockFreeQueue {
 public:
 	using value_type = T;
@@ -15,7 +15,7 @@ public:
 	using pointer = value_type*;
 	using const_pointer = const value_type*;
 
-	LockFreeQueue() = default;
+	LockFreeQueue(size_t capacity);
 	LockFreeQueue(const LockFreeQueue& other) = default;
 	LockFreeQueue(LockFreeQueue&& other) = default;
 	~LockFreeQueue() = default;
@@ -23,8 +23,10 @@ public:
 	LockFreeQueue&			operator=(const LockFreeQueue& other) = default;
 	LockFreeQueue&			operator=(LockFreeQueue&& other) = default;
 
+	size_t					capacity() const;
 	size_t					size() const;
-	static constexpr size_t	capacity();
+	bool					empty() const;
+	bool					full() const;
 
 	const_reference			front() const;
 	reference				front();
@@ -36,11 +38,11 @@ public:
 
 
 private:
-	std::array<T, Capacity>	m_queue;
+	std::vector<T>			m_queue;
 	std::atomic<size_t>		m_read;
 	std::atomic<size_t>		m_write;
 
-	constexpr size_t 		nextIndex(size_t i) const;
+	size_t 					nextIndex(size_t i) const;
 };
 
 }

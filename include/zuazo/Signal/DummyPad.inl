@@ -4,10 +4,8 @@ namespace Zuazo::Signal {
 
 template<typename T>
 inline DummyPad<T>::DummyPad(std::string name)
-	: Layout(name)
-	, m_io(std::move(name))
+	: m_io(std::move(name))
 {
-	Layout::registerPads( {m_io->input, m_io->output} );
 }
 
 template<typename T>
@@ -31,7 +29,7 @@ inline const Layout::PadProxy<Output<T>>& DummyPad<T>::getOutput() const {
 }
 
 template<typename T>
-inline typename Output<T>::PullCallback DummyPad<T>::makePullCbk(Output<T>& output, const Input<T>& input) {
+inline PullCallback DummyPad<T>::makePullCbk(Output<T>& output, const Input<T>& input) {
 	return [&output, &input] () -> void {
 		output.push(input.pull());
 	};

@@ -14,6 +14,8 @@
 #include "Graphics/Frame.h"
 #include "Utils/Limit.h"
 
+#include "Signal/NamingConventions.h"
+
 #include <memory>
 #include <tuple>
 #include <vector>
@@ -167,6 +169,16 @@ private:
 	VideoMode									selectVideoMode() const;
 
 };
+
+namespace Signal {
+
+template<>
+constexpr std::string_view makeInputName<Video>() { return "videoIn"; }
+
+template<>
+constexpr std::string_view makeOutputName<Video>() { return "videoOut"; }
+
+}
 
 }
 

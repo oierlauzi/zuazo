@@ -11,6 +11,8 @@ namespace Zuazo::Signal {
 template <typename T>
 class Input;
 
+using PullCallback = std::function<void()>;
+
 template <typename T>
 class Output 
 	: public PadBase
@@ -19,7 +21,6 @@ class Output
 public:
 	using Consumer = Input<T>; friend Consumer;
 	using Consumers = std::vector<std::reference_wrapper<Consumer>>;
-	using PullCallback = std::function<void()>;
 
 	Output(std::string name, PullCallback pullCbk = {});
 	Output(const Output& other) = default;
@@ -37,6 +38,8 @@ public:
 
 	void						setPullCallback(PullCallback cbk);
 	const PullCallback&			getPullCallback() const;
+
+	static const T				NO_SIGNAL;
 
 private:
 	T							m_lastElement;
