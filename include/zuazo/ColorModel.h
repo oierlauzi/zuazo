@@ -28,6 +28,7 @@ enum class ColorModel {
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorModel)
 ZUAZO_ENUM_COMP_OPERATORS(ColorModel)
 
+constexpr bool isYCbCr(ColorModel colorModel);
 constexpr Math::Mat4x4f getConversionMatrix(ColorModel colorModel);
 
 constexpr std::string_view toString(ColorModel colorModel);

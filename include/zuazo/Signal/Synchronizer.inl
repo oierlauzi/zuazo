@@ -8,8 +8,8 @@ template<typename T>
 inline Synchronizer<T>::Synchronizer(std::string name, size_t maxDelay, size_t maxDropped)
 	: BinomialLayout(std::move(name))
 	, m_queue(maxDelay)
-	, m_dropped(0)
 	, m_maxDropped(maxDropped)
+	, m_dropped(0)
 {
 }
 

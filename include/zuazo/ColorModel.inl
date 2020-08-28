@@ -2,6 +2,17 @@
 
 namespace Zuazo {
 
+constexpr bool isYCbCr(ColorModel colorModel) {
+	switch(colorModel){
+	case ColorModel::BT601:
+	case ColorModel::BT709: 
+	case ColorModel::BT2020:
+		return true;
+	default: 
+		return false;
+	}
+}
+
 constexpr Math::Mat4x4f getConversionMatrix(ColorModel colorModel){
 	switch(colorModel){
 

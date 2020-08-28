@@ -12,38 +12,45 @@ class ZuazoBase
 	: public Signal::Layout
 {
 public:
+	using OpenCallback = std::function<void(ZuazoBase&)>;
+	using CloseCallback = std::function<void(ZuazoBase&)>;
 	using UpdateCallback = std::function<void()>;
 
-	template<typename Str, typename Pads>
-	ZuazoBase(Instance& instance, Str&& name, Pads&& pads);
+	ZuazoBase(	Instance& instance, 
+				std::string name,
+				OpenCallback openCbk = {},
+				CloseCallback closeCbk = {},
+				UpdateCallback updateCbk = {},
+				std::initializer_list<PadRef> pads = {} );
 	ZuazoBase(const ZuazoBase& other) = delete;
 	ZuazoBase(ZuazoBase&& other) = default;
-	virtual ~ZuazoBase();
+	virtual ~ZuazoBase() = default;
 
 	ZuazoBase& 						operator=(const ZuazoBase& other) = delete;
 	ZuazoBase& 						operator=(ZuazoBase&& other) = default;
 
-	virtual void 					open() = 0;
-	virtual void 					close() = 0;
+	void 							open();
+	void 							close();
 	bool 							isOpen() const;
 
 	Instance&						getInstance() const;
 
-	template <typename Cbk>
-	void							setPreUpdateCallback(Cbk&& cbk);
+	void							setPreUpdateCallback(UpdateCallback cbk);
 	const UpdateCallback&			setPreUpdateCallback() const;
 
-	template <typename Cbk>
-	void							setPostUpdateCallback(Cbk&& cbk);
+	void							setPostUpdateCallback(UpdateCallback cbk);
 	const UpdateCallback&			setPostUpdateCallback() const;
 
 protected:
-	template <typename Cbk>
-	void							setUpdateCallback(Cbk&& cbk);
+	void							setUpdateCallback(UpdateCallback cbk);
 	const UpdateCallback&			setUpdateCallback() const;
 
-	template<typename Func>
-	void							visitCallbacks(const Func& func) const;
+	void							setOpenCallback(OpenCallback cbk);
+	const OpenCallback&				setOpenCallback() const;
+
+	void							setCloseCallback(CloseCallback cbk);
+	const CloseCallback&			setCloseCallback() const;
+
 	void        					update() const;
 	void							enableRegularUpdate(Instance::Priority prior) const;
 	void							disableRegularUpdate() const;
@@ -61,13 +68,15 @@ private:
 		COUNT
 	};
 
-	using Callbacks = std::array<std::shared_ptr<UpdateCallback>, COUNT>; 
+	using UpdateCallbacks = std::array<std::shared_ptr<UpdateCallback>, COUNT>;
 
 	std::reference_wrapper<Instance>m_instance;
 
 	bool    						m_isOpen;
 
-	Callbacks						m_callbacks;
+	OpenCallback					m_openCallback;
+	CloseCallback					m_closeCallback;
+	UpdateCallbacks					m_updateCallbacks;
 	
 };
 
@@ -79,5 +88,3 @@ private:
 	}
 
 }
-
-#include "ZuazoBase.inl"

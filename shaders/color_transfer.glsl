@@ -23,29 +23,21 @@ vec4 ct_sample(in int planeFormat, in sampler2D images[ct_SAMPLER_COUNT], in vec
 	return result;
 }
 
-vec4 ct_contract(in int range, in vec4 color){
-	vec4 result;
+vec4 ct_make_cbcr_negative(in int isYCbCr, in vec4 color){
+	vec4 result = color;
 
-	const float MIN_Y = 16.0f / 255.0f;
-	const float MAX_Y = 235.0f / 255.0f;
-	const float MIN_C = 16.0f / 255.0f;
-	const float MAX_C = 240.0f / 255.0f;
+	if(isYCbCr == ct_YCBCR_TRUE) {
+		color.rb -= vec2(0.5f); //Values between -0.5 and 0.5
+	}
 
-	switch(range){
-	case ct_COLOR_RANGE_FULL_YCBCR:
-		result.ga = color.ga;
-		result.rb = color.rb + vec2(0.5f);
-		break;
-	case ct_COLOR_RANGE_ITU_NARROW_RGB:
-		result = color * (MAX_Y - MIN_Y) + vec4(MIN_Y);
-		break;
-	case ct_COLOR_RANGE_ITU_NARROW_YCBCR:
-		result.ga = color.ga * (MAX_Y - MIN_Y) + vec2(MIN_Y);
-		result.rb = (color.rb + vec2(0.5f)) * (MAX_C - MIN_C) + vec2(MIN_C);
-		break;
-	default: //ct_COLOR_RANGE_FULL_RGB
-		result = color;
-		break;
+	return result;
+}
+
+vec4 ct_make_cbcr_positive(in int isYCbCr, in vec4 color){
+	vec4 result = color;
+
+	if(isYCbCr == ct_YCBCR_TRUE) {
+		color.rb += vec2(0.5f); //Values between -0.5 and 0.5
 	}
 
 	return result;
@@ -60,18 +52,38 @@ vec4 ct_expand(in int range, in vec4 color){
 	const float MAX_C = 240.0f / 255.0f;
 
 	switch(range){
-	case ct_COLOR_RANGE_FULL_YCBCR:
-		result.ga = color.ga;
-		result.rb = color.rb - vec2(0.5f);
-		break;
 	case ct_COLOR_RANGE_ITU_NARROW_RGB:
 		result = (color - vec4(MIN_Y)) / (MAX_Y - MIN_Y);
 		break;
 	case ct_COLOR_RANGE_ITU_NARROW_YCBCR:
 		result.ga = (color.ga - vec2(MIN_Y)) / (MAX_Y - MIN_Y);
-		result.rb = (color.rb - vec2(MIN_C)) / (MAX_C - MIN_C) - vec2(0.5f);
+		result.rb = (color.rb - vec2(MIN_C)) / (MAX_C - MIN_C);
 		break;
-	default: //ct_COLOR_RANGE_FULL_RGB
+	default: //ct_COLOR_RANGE_FULL
+		result = color;
+		break;
+	}
+
+	return result;
+}
+
+vec4 ct_contract(in int range, in vec4 color){
+	vec4 result;
+
+	const float MIN_Y = 16.0f / 255.0f;
+	const float MAX_Y = 235.0f / 255.0f;
+	const float MIN_C = 16.0f / 255.0f;
+	const float MAX_C = 240.0f / 255.0f;
+
+	switch(range){
+	case ct_COLOR_RANGE_ITU_NARROW_RGB:
+		result = color * (MAX_Y - MIN_Y) + vec4(MIN_Y);
+		break;
+	case ct_COLOR_RANGE_ITU_NARROW_YCBCR:
+		result.ga = color.ga * (MAX_Y - MIN_Y) + vec2(MIN_Y);
+		result.rb = color.rb * (MAX_C - MIN_C) + vec2(MIN_C);
+		break;
+	default: //ct_COLOR_RANGE_FULL
 		result = color;
 		break;
 	}
@@ -135,6 +147,7 @@ vec4 ct_readColor(in ct_data inputProp, in ct_data outputProp, in vec4 color){
 	vec4 result = color;
 
 	result = ct_expand(inputProp.colorRange, result); //Normalize the values into [0.0, 1.0]
+	result = ct_make_cbcr_negative(inputProp.isYCbCr, result);
 	result = inverse(inputProp.colorModel) * result; //Convert it into RGB color model
 	result = ct_linearize(inputProp.colorTransferFunction, result); //Undo all gamma-like compressions
 	result = outputProp.colorPrimaries * inverse(inputProp.colorPrimaries) * result; //Convert the destination's color primaries
@@ -147,6 +160,7 @@ vec4 ct_writeColor(in ct_data outputProp, in vec4 color){
 
 	result = ct_unlinearize(outputProp.colorTransferFunction, result); //Apply a gamma-like compression
 	result = outputProp.colorModel * result; //Convert it into the destination color model
+	result = ct_make_cbcr_positive(outputProp.isYCbCr, result);
 	result = ct_contract(outputProp.colorRange, result); //Convert it into the corresponding range
 
 	return result;

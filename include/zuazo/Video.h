@@ -10,6 +10,8 @@
 #include "ColorTransferFunction.h"
 #include "ColorModel.h"
 #include "ColorPrimaries.h"
+#include "ScalingMode.h"
+#include "ScalingFilter.h"
 
 #include "Graphics/Frame.h"
 #include "Utils/Limit.h"
@@ -126,7 +128,7 @@ private:
 
 class VideoBase {
 public:
-	using VideoModeCallback = std::function<void(const VideoMode&)>;
+	using VideoModeCallback = std::function<void(VideoBase&, const VideoMode&)>;
 
 	VideoBase();
 	VideoBase(VideoMode videoMode, VideoModeCallback cbk = {});
@@ -167,6 +169,42 @@ private:
 
 	void										updateVideoMode();
 	VideoMode									selectVideoMode() const;
+
+};
+
+class VideoScalerBase {
+public:
+	using ScalingModeCallback = std::function<void(VideoScalerBase&, ScalingMode)>;
+	using ScalingFilterCallback = std::function<void(VideoScalerBase&, ScalingFilter)>;
+
+	VideoScalerBase(	ScalingModeCallback modeCbk = {}, 
+						ScalingFilterCallback filterCbk = {} );
+	VideoScalerBase(const VideoScalerBase& other) = default;
+	VideoScalerBase(VideoScalerBase&& other) = default;
+	virtual ~VideoScalerBase() = default;
+
+	VideoScalerBase& 							operator=(const VideoScalerBase& other) = default;
+	VideoScalerBase& 							operator=(VideoScalerBase&& other) = default;
+
+	void 										setScalingMode(ScalingMode mode);
+	ScalingMode 								getScalingMode() const;
+
+	void 										setScalingFilter(ScalingFilter filter);
+	ScalingFilter 								getScalingFilter() const;
+
+protected:
+	void										setScalingModeCallback(ScalingModeCallback cbk);
+	const ScalingModeCallback&					getScalingModeCallback() const;
+
+	void										setScalingFilterCallback(ScalingFilterCallback cbk);
+	const ScalingFilterCallback&				getScalingFilterCallback() const;
+
+private:
+	ScalingMode									m_scalingMode;
+	ScalingFilter								m_scalingFilter;
+
+	ScalingModeCallback							m_scalingModeCallback;
+	ScalingFilterCallback						m_scalingFilterCallback;
 
 };
 

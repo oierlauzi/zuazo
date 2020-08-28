@@ -16,6 +16,8 @@
 namespace Zuazo {
 
 struct Instance::Impl {
+	Instance&					instance;
+
 	ApplicationInfo				applicationInfo;
 
 	Graphics::Vulkan			vulkan;
@@ -29,12 +31,16 @@ struct Instance::Impl {
 
 	std::shared_ptr<ScheduledCallback> presentImages;
 
-	Impl(	ApplicationInfo appInfo,
+	Impl(	Instance& instance,
+			ApplicationInfo appInfo,
 			const DeviceScoreFunc& deviceScoreFunc )
-		: applicationInfo(std::move(appInfo))
+		: instance(instance)
+		, applicationInfo(std::move(appInfo))
 		, vulkan(
 			applicationInfo.name.c_str(), 
 			Graphics::toVulkan(applicationInfo.version), 
+			applicationInfo.verbosity,
+			std::bind(&Impl::vulkanLogCallback, std::ref(*this), std::placeholders::_1, std::placeholders::_2),
 			deviceScoreFunc
 		)
 		, mutex()
@@ -46,6 +52,8 @@ struct Instance::Impl {
 	{
 		std::lock_guard<Impl> lock(*this);
 		addRegularCallback(presentImages, PRESENT_PRIORITY);
+
+		ZUAZO_LOG(instance, Severity::INFO, generateInitMessage());
 	}
 
 	~Impl() {
@@ -145,6 +153,12 @@ struct Instance::Impl {
 	}
 
 private:
+	void vulkanLogCallback(Severity severity, std::string msg) {
+		if(applicationInfo.instanceLogFunc) {
+			applicationInfo.instanceLogFunc(instance, severity, msg);
+		}
+	}
+
 	static FormatSupport queryFormatSupport(const Graphics::Vulkan& vulkan) {
 		const auto& supported = vulkan.getFormatSupport();
 
@@ -172,16 +186,11 @@ private:
 
 Instance::Instance(	ApplicationInfo applicationInfo,
 					const DeviceScoreFunc& deviceScoreFunc )
-	: m_impl(std::move(applicationInfo), deviceScoreFunc)
+	: m_impl({}, *this, std::move(applicationInfo), deviceScoreFunc)
 {
-	ZUAZO_LOG(*this, Severity::INFO, m_impl->generateInitMessage());
 }
 
-Instance::Instance(Instance&& other) = default;
-
 Instance::~Instance() = default; 
-
-Instance& Instance::operator=(Instance&& other) = default;
 
 const Instance::ApplicationInfo& Instance::getApplicationInfo() const {
 	return m_impl->getApplicationInfo();

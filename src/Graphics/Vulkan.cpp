@@ -17,10 +17,6 @@
 #include <unordered_map>
 #include <optional>
 
-#if (ZUAZO_IS_DEBUG == true)
-	#define ZUAZO_ENABLE_VALIDATION_LAYERS
-#endif
-
 namespace Zuazo::Graphics {
 
 struct Vulkan::Impl {
@@ -39,6 +35,7 @@ struct Vulkan::Impl {
 	vk::DynamicLoader								loader;
 	vk::DispatchLoaderDynamic						dispatcher;
 	vk::UniqueInstance								instance;
+	LogCallback 									logCallback;
 	vk::UniqueDebugUtilsMessengerEXT				messenger;
 	vk::PhysicalDevice								physicalDevice;
 	std::array<uint32_t, QUEUE_NUM>					queueIndices;
@@ -81,11 +78,14 @@ struct Vulkan::Impl {
 	 */
 	Impl(	std::string_view appName, 
 			Version appVersion,
+			Verbosity verbosity,
+			LogCallback logCallback,
 			const DeviceScoreFunc& scoreFunc )
 		: loader()
 		, dispatcher(createDispatcher(loader))
 		, instance(createInstance(dispatcher, appName.data(), toVulkan(appVersion)))
-		, messenger(createMessenger(dispatcher, *instance))
+		, logCallback(std::move(logCallback))
+		, messenger(createMessenger(dispatcher, *instance, verbosity, this))
 		, physicalDevice(getBestPhysicalDevice(dispatcher, *instance, scoreFunc))
 		, queueIndices(getQueueIndices(dispatcher, *instance, physicalDevice))
 		, device(createDevice(dispatcher, physicalDevice, queueIndices))
@@ -514,6 +514,62 @@ struct Vulkan::Impl {
 		cmd.end(dispatcher);
 	}
 
+	void beginRenderPass(	vk::CommandBuffer cmd, 
+							const vk::RenderPassBeginInfo& beginInfo, 
+							vk::SubpassContents contents ) const
+	{
+		cmd.beginRenderPass(beginInfo, contents, dispatcher);
+	}
+
+	void endRenderPass(vk::CommandBuffer cmd) const {
+		cmd.endRenderPass(dispatcher);
+	}
+
+	void bindPipeline(	vk::CommandBuffer cmd, 
+						vk::PipelineBindPoint bindPoint, 
+						vk::Pipeline pipeline ) const
+	{
+		cmd.bindPipeline(bindPoint, pipeline, dispatcher);
+	}
+
+	void bindVertexBuffers(	vk::CommandBuffer cmd, 
+							uint32_t firstBinding, 
+							Utils::BufferView<const vk::Buffer> buffers, 
+							Utils::BufferView<const vk::DeviceSize> offsets ) const
+	{
+		cmd.bindVertexBuffers(
+			firstBinding, 
+			toVulkan(buffers), 
+			toVulkan(offsets), 
+			dispatcher
+		);
+	}
+
+	void bindDescriptorSets(vk::CommandBuffer cmd, 
+							vk::PipelineBindPoint pipelineBindPoint, 
+							vk::PipelineLayout layout, 
+							uint32_t firstSet, 
+							Utils::BufferView<const vk::DescriptorSet> descriptorSets, 
+							Utils::BufferView<const uint32_t> dynamicOffsets) const
+	{
+		cmd.bindDescriptorSets(
+			pipelineBindPoint, 
+			layout, firstSet, 
+			toVulkan(descriptorSets), 
+			toVulkan(dynamicOffsets), 
+			dispatcher
+		);
+	}
+
+	void draw(	vk::CommandBuffer cmd, 
+				uint32_t vertexCount, 
+				uint32_t instanceCount, 
+				uint32_t firstVertex, 
+				uint32_t firstInstance ) const
+	{
+		cmd.draw(vertexCount, instanceCount, firstVertex, firstInstance, dispatcher);
+	}
+
 
 
 	void present(	vk::SwapchainKHR swapchain,
@@ -654,30 +710,26 @@ private:
 	}
 
 	static vk::UniqueDebugUtilsMessengerEXT	createMessenger(const vk::DispatchLoaderDynamic& disp, 
-															vk::Instance instance )
+															vk::Instance instance,
+															Verbosity verbosity,
+															Impl* usrPtr )
 	{
-		#ifdef ZUAZO_ENABLE_VALIDATION_LAYERS
-			constexpr auto msgSeverity =
-				vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
-				vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
+		const vk::DebugUtilsMessageSeverityFlagsEXT msgSeverity = toVulkan(verbosity);
 
-			constexpr auto msgTypes = 	
-				vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-				vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
-				vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
+		constexpr vk::DebugUtilsMessageTypeFlagsEXT msgTypes = 	
+			vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+			vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
+			vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
 
-			const vk::DebugUtilsMessengerCreateInfoEXT createInfo(
-				{},										//Flags
-				msgSeverity,							//Message severity flags
-				msgTypes,								//Message type flags
-				validationLayerCallback,				//Callback ptr
-				nullptr									//User ptr
-			);
+		const vk::DebugUtilsMessengerCreateInfoEXT createInfo(
+			{},										//Flags
+			msgSeverity,							//Message severity flags
+			msgTypes,								//Message type flags
+			validationLayerCallback,				//Callback ptr
+			usrPtr									//User ptr
+		);
 
-			return instance.createDebugUtilsMessengerEXTUnique(createInfo, nullptr, disp);
-		#else
-			return {};
-		#endif
+		return instance.createDebugUtilsMessengerEXTUnique(createInfo, nullptr, disp);
 	}
 
 	static vk::PhysicalDevice getBestPhysicalDevice(const vk::DispatchLoaderDynamic& disp, 
@@ -851,7 +903,7 @@ private:
 	static std::vector<vk::LayerProperties> getRequiredLayers() {
 		std::vector<vk::LayerProperties> validationLayers;
 
-		#ifdef ZUAZO_ENABLE_VALIDATION_LAYERS
+		#ifndef ZUAZO_DISABLE_VALIDATION_LAYERS
 			//Add debug utils extension requirement
 			//Khronos validation layer
 			validationLayers.emplace_back();
@@ -913,47 +965,48 @@ private:
 		* https://github.com/KhronosGroup/Vulkan-Hpp/blob/master/samples/CreateDebugUtilsMessenger/CreateDebugUtilsMessenger.cpp
 		*/
 
-		std::ostringstream message;
+		Impl* impl = static_cast<Impl*>(userData);
+		assert(impl);
 
-		message 
-			<< vk::to_string(static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>(severity)) 
-			<< ": " << vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(type)) << ":\n";
-		message << vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(type)) << ":\n";
-		message << "\t" << "messageIDName   = <" << data->pMessageIdName << ">\n";
-		message << "\t" << "messageIdNumber = " << data->messageIdNumber << "\n";
-		message << "\t" << "message         = <" << data->pMessage << ">\n";
+		if(impl->logCallback) {
+			std::ostringstream message;
 
-		if (0 < data->queueLabelCount) {
-			message << "\t" << "Queue Labels:\n";
-			for (uint8_t i = 0; i < data->queueLabelCount; i++) {
-				message << "\t\t" << "lableName = <" << data->pQueueLabels[i].pLabelName << ">\n";
-			}
-		}
+			message << vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(type)) << ":\n";
+			message << "\t" << "messageIDName   = <" << data->pMessageIdName << ">\n";
+			message << "\t" << "messageIdNumber = " << data->messageIdNumber << "\n";
+			message << "\t" << "message         = <" << data->pMessage << ">\n";
 
-		if (0 < data->cmdBufLabelCount) {
-			message << "\t" << "CommandBuffer Labels:\n";
-			for (uint8_t i = 0; i < data->cmdBufLabelCount; i++) {
-				message << "\t\t" << "labelName = <" << data->pCmdBufLabels[i].pLabelName << ">\n";
-			}
-		}
-
-		if (0 < data->objectCount) {
-			message << "\t" << "Objects:\n";
-			for (uint8_t i = 0; i < data->objectCount; i++) {
-				message << "\t\t" << "Object " << i << "\n";
-				message 
-					<< "\t\t\t" << "objectType   = " 
-					<< vk::to_string(static_cast<vk::ObjectType>(data->pObjects[i].objectType)) << "\n";
-				message << "\t\t\t" << "objectHandle = " << data->pObjects[i].objectHandle << "\n";
-				if (data->pObjects[i].pObjectName) {
-					message << "\t\t\t" << "objectName   = <" << data->pObjects[i].pObjectName << ">\n";
+			if(data->queueLabelCount > 0) {
+				message << "\t" << "Queue Labels:\n";
+				for (uint32_t i = 0; i < data->queueLabelCount; i++) {
+					message << "\t\t" << "lableName = <" << data->pQueueLabels[i].pLabelName << ">\n";
 				}
 			}
+
+			if(data->cmdBufLabelCount > 0) {
+				message << "\t" << "CommandBuffer Labels:\n";
+				for (uint32_t i = 0; i < data->cmdBufLabelCount; i++) {
+					message << "\t\t" << "labelName = <" << data->pCmdBufLabels[i].pLabelName << ">\n";
+				}
+			}
+
+			if(data->objectCount > 0) {
+				message << "\t" << "Objects:\n";
+				for (uint32_t i = 0; i < data->objectCount; i++) {
+					message << "\t\t" << "Object " << i << "\n";
+					message 
+						<< "\t\t\t" << "objectType   = " 
+						<< vk::to_string(static_cast<vk::ObjectType>(data->pObjects[i].objectType)) << "\n";
+					message << "\t\t\t" << "objectHandle = " << data->pObjects[i].objectHandle << "\n";
+					if (data->pObjects[i].pObjectName) {
+						message << "\t\t\t" << "objectName   = <" << data->pObjects[i].pObjectName << ">\n";
+					}
+				}
+			}
+
+			//Invoke the callback
+			impl->logCallback(fromVulkan(static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>(severity)), message.str());
 		}
-
-		std::cerr << message.str() << std::endl;
-
-		ZUAZO_IGNORE_PARAM(userData);
 
 		return VK_FALSE;
 	}
@@ -961,7 +1014,7 @@ private:
 };
 
 std::vector<vk::ExtensionProperties> Vulkan::Impl::requiredInstanceExtensions {
-	#ifdef ZUAZO_ENABLE_VALIDATION_LAYERS
+	#ifndef ZUAZO_DISABLE_VALIDATION_LAYERS
 		//Add debug utils extension requirement
 		vk::ExtensionProperties(std::array<char, VK_MAX_EXTENSION_NAME_SIZE>{VK_EXT_DEBUG_UTILS_EXTENSION_NAME})
 	#endif
@@ -977,8 +1030,10 @@ std::vector<Vulkan::PresentationSupportCallback> Vulkan::Impl::presentationSuppo
 
 Vulkan::Vulkan(	std::string_view appName, 
 				Version appVersion,
+				Verbosity verbosity,
+				LogCallback logCallback,
 				const DeviceScoreFunc& scoreFunc )
-	: m_impl(appName, appVersion, scoreFunc)
+	: m_impl({}, appName, appVersion, verbosity, std::move(logCallback), scoreFunc)
 {
 }
 
@@ -1285,6 +1340,51 @@ void Vulkan::begin(	vk::CommandBuffer cmd,
 
 void Vulkan::end(vk::CommandBuffer cmd) const {
 	m_impl->end(cmd);
+}
+
+void Vulkan::beginRenderPass(vk::CommandBuffer cmd, 
+							const vk::RenderPassBeginInfo& beginInfo, 
+							vk::SubpassContents contents ) const
+{
+	m_impl->beginRenderPass(cmd, beginInfo, contents);
+}
+
+void Vulkan::endRenderPass(vk::CommandBuffer cmd) const {
+	m_impl->endRenderPass(cmd);
+}
+
+void Vulkan::bindPipeline(	vk::CommandBuffer cmd, 
+							vk::PipelineBindPoint bindPoint, 
+							vk::Pipeline pipeline ) const
+{
+	m_impl->bindPipeline(cmd, bindPoint, pipeline);
+}
+
+void Vulkan::bindVertexBuffers(	vk::CommandBuffer cmd, 
+								uint32_t firstBinding, 
+								Utils::BufferView<const vk::Buffer> buffers, 
+								Utils::BufferView<const vk::DeviceSize> offsets ) const
+{
+	m_impl->bindVertexBuffers(cmd, firstBinding, buffers, offsets);
+}
+
+void Vulkan::bindDescriptorSets(vk::CommandBuffer cmd, 
+								vk::PipelineBindPoint pipelineBindPoint, 
+								vk::PipelineLayout layout, 
+								uint32_t firstSet, 
+								Utils::BufferView<const vk::DescriptorSet> descriptorSets, 
+								Utils::BufferView<const uint32_t> dynamicOffsets) const
+{
+	m_impl->bindDescriptorSets(cmd, pipelineBindPoint, layout, firstSet, descriptorSets, dynamicOffsets);
+}
+
+void Vulkan::draw(	vk::CommandBuffer cmd, 
+					uint32_t vertexCount, 
+					uint32_t instanceCount, 
+					uint32_t firstVertex, 
+					uint32_t firstInstance ) const
+{
+	m_impl->draw(cmd, vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
 

@@ -28,7 +28,7 @@ public:
 	struct ApplicationInfo {
 		std::string		name = "Zuazo Application";
 		Version			version = Version(0, 1, 0);
-		Verbosity		verbosity = ZUAZO_IS_DEBUG ? Verbosity::LEQ_INFO : Verbosity::SILENT;
+		Verbosity		verbosity = ZUAZO_IS_DEBUG ? Verbosity::GEQ_INFO : Verbosity::SILENT;
 		VideoMode		defaultVideoMode = VideoMode::ANY;
 		InstanceLogFunc	instanceLogFunc = defaultInstanceLogFunc;
 		ElementLogFunc	elementLogFunc = defaultElementLogFunc;
@@ -62,11 +62,11 @@ public:
 	Instance(	ApplicationInfo applicationInfo, 
 				const DeviceScoreFunc& deviceScoreFunc = defaultDeviceScoreFunc);
 	Instance(const Instance& other) = delete;
-	Instance(Instance&& other);
+	Instance(Instance&& other) = delete;
 	~Instance();
 
 	Instance& operator=(const Instance& other) = delete;
-	Instance& operator=(Instance&& other);
+	Instance& operator=(Instance&& other) = delete;
 
 	const ApplicationInfo&		getApplicationInfo() const;
 	const Graphics::Vulkan&		getVulkan() const;

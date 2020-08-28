@@ -17,8 +17,9 @@ struct ColorTransfer::Impl {
 		: transferData {
 			getConversionMatrix(desc.colorPrimaries),
 			getConversionMatrix(desc.colorModel),
+			isYCbCr(desc.colorModel) ? ct_YCBCR_TRUE : ct_YCBCR_FALSE,
 			getTransferFunction(desc.colorTransferFunction),
-			getRange(desc.colorRange, desc.colorModel),
+			getRange(desc.colorRange),
 			getPlaneFormat(desc.colorFormat)
 		}
 	{
@@ -35,7 +36,8 @@ struct ColorTransfer::Impl {
 		assert(std::is_sorted(supportedFormats.cbegin(), supportedFormats.cend()));
 
 		if(	transferData.colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_1 && 
-			transferData.colorRange == ct_COLOR_RANGE_FULL_RGB )
+			transferData.colorRange == ct_COLOR_RANGE_FULL &&
+			transferData.isYCbCr == ct_YCBCR_FALSE )
 		{
 			//For being able to use Vulkan's built in sRGB formats, all planes need to support it
 			transferData.colorTransferFunction = ct_COLOR_TRANSFER_FUNCTION_LINEAR; //Suppose it is supported
@@ -86,28 +88,13 @@ private:
 		return -1;
 	}
 
-	static int32_t getRange(ColorRange range, ColorModel model) {
-		switch(model){
-		case ColorModel::RGB:
-			switch(range){
-			case ColorRange::FULL: return ct_COLOR_RANGE_FULL_RGB;
-			case ColorRange::ITU_NARROW: return ct_COLOR_RANGE_ITU_NARROW_RGB;
-			default: break;
-			}
-			break;
-		case ColorModel::BT601:
-		case ColorModel::BT709:
-		case ColorModel::BT2020:
-			switch(range){
-			case ColorRange::FULL: return ct_COLOR_RANGE_FULL_YCBCR;
-			case ColorRange::ITU_NARROW: return ct_COLOR_RANGE_ITU_NARROW_YCBCR;
-			default: break;
-			}
-			break;
-		default: break;
+	static int32_t getRange(ColorRange range) {
+		switch(range){
+		case ColorRange::FULL: return ct_COLOR_RANGE_FULL;
+		case ColorRange::ITU_NARROW_RGB: return ct_COLOR_RANGE_ITU_NARROW_RGB;
+		case ColorRange::ITU_NARROW_YCBCR: return ct_COLOR_RANGE_ITU_NARROW_YCBCR;
+		default: return -1;;
 		}
-
-		return -1;
 	}
 
 	static int32_t getPlaneFormat(ColorFormat format) {
@@ -129,10 +116,13 @@ private:
  * ColorTransfer
  */
 
-ColorTransfer::ColorTransfer() = default;
+ColorTransfer::ColorTransfer()
+	: m_impl({})
+{
+}
 
 ColorTransfer::ColorTransfer(const Frame::Descriptor& desc)
-	: m_impl(desc)
+	: m_impl({}, desc)
 {
 }
 

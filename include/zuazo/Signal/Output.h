@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PadBase.h"
+#include "NamingConventions.h"
 #include "../Utils/ObserverPattern.h"
 
 #include <functional>
@@ -22,7 +23,7 @@ public:
 	using Consumer = Input<T>; friend Consumer;
 	using Consumers = std::vector<std::reference_wrapper<Consumer>>;
 
-	explicit Output(std::string name, PullCallback pullCbk = {});
+	explicit Output(std::string name = makeOutputName<T>(), PullCallback pullCbk = {});
 	Output(const Output& other) = default;
 	Output(Output&& other) = default;
 	virtual ~Output() = default;

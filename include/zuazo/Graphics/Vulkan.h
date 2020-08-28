@@ -20,6 +20,7 @@ namespace Zuazo::Graphics {
 
 class Vulkan {
 public:
+	using LogCallback = std::function<void(Severity, std::string)>;
 	using DeviceScoreFunc = std::function<uint32_t(const vk::DispatchLoaderDynamic&, vk::PhysicalDevice)>;
 	using PresentationSupportCallback = std::function<bool(vk::Instance, vk::PhysicalDevice, uint32_t)>;
 
@@ -46,6 +47,8 @@ public:
 
 	Vulkan(	std::string_view appName, 
 			Version appVersion,
+			Verbosity verbosity,
+			LogCallback logCallback,
 			const DeviceScoreFunc& scoreFunc );
 	Vulkan(const Vulkan& other) = delete;
 	Vulkan(Vulkan&& other);
@@ -147,9 +150,32 @@ public:
 												Utils::BufferView<const vk::SubmitInfo> subInfo,
 												vk::Fence fence ) const;
 
+
 	void								begin(	vk::CommandBuffer cmd,
 												const vk::CommandBufferBeginInfo& beginInfo ) const;
 	void								end(vk::CommandBuffer cmd) const;
+	void								beginRenderPass(vk::CommandBuffer cmd, 
+														const vk::RenderPassBeginInfo& beginInfo, 
+														vk::SubpassContents contents ) const;
+	void								endRenderPass(vk::CommandBuffer cmd) const;
+	void								bindPipeline(	vk::CommandBuffer cmd, 
+														vk::PipelineBindPoint bindPoint, 
+														vk::Pipeline pipeline ) const;
+	void								bindVertexBuffers(	vk::CommandBuffer cmd, 
+															uint32_t firstBinding, 
+															Utils::BufferView<const vk::Buffer> buffers, 
+															Utils::BufferView<const vk::DeviceSize> offsets ) const;
+	void								bindDescriptorSets(	vk::CommandBuffer cmd, 
+															vk::PipelineBindPoint pipelineBindPoint, 
+															vk::PipelineLayout layout, 
+															uint32_t firstSet, 
+															Utils::BufferView<const vk::DescriptorSet> descriptorSets, 
+															Utils::BufferView<const uint32_t> dynamicOffsets) const;
+	void								draw(	vk::CommandBuffer cmd, 
+												uint32_t vertexCount, 
+												uint32_t instanceCount, 
+												uint32_t firstVertex, 
+												uint32_t firstInstance ) const;
 
 	void								present(vk::SwapchainKHR swapchain,
 												uint32_t imageIndex,

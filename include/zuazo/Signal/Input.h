@@ -2,6 +2,7 @@
 
 #include "PadBase.h"
 #include "Output.h"
+#include "NamingConventions.h"
 #include "../Utils/ObserverPattern.h"
 
 #include <vector>
@@ -29,7 +30,7 @@ class Input
 public:
 	using Source = Output<T>; friend Source;
 
-	explicit Input(std::string name);
+	explicit Input(std::string name = makeInputName<T>());
 	Input(const Input& other) = default;
 	Input(Input&& other) = default;
 	virtual ~Input() = default;

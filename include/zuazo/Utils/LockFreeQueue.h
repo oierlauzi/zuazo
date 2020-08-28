@@ -38,11 +38,14 @@ public:
 
 
 private:
+	using Index = 
+
 	std::vector<T>			m_queue;
 	std::atomic<size_t>		m_read;
 	std::atomic<size_t>		m_write;
 
 	size_t 					nextIndex(size_t i) const;
+	size_t					advance(std::atomic<size_t>& index) const;
 };
 
 }

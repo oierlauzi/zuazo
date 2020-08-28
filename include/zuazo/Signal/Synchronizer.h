@@ -3,7 +3,6 @@
 #include "BinomialLayout.h"
 #include "Input.h"
 #include "Output.h"
-#include "../Utils/Pimpl.h"
 #include "../Utils/LockFreeQueue.h"
 
 #include <atomic>
@@ -34,8 +33,8 @@ public:
 
 private:
 	Utils::LockFreeQueue<T>			m_queue;
-	std::atomic<size_t>				m_dropped;
 	size_t							m_maxDropped;
+	std::atomic<size_t>				m_dropped;
 
 };
 

@@ -24,7 +24,10 @@ constexpr size_t MAX_PLANE_COUNT = 4;
 constexpr uint32_t toVulkan(Version version);
 
 constexpr vk::DebugUtilsMessageSeverityFlagsEXT toVulkan(Verbosity ver);
-constexpr Verbosity fromVulkan(vk::DebugUtilsMessageSeverityFlagsEXT sev);
+constexpr Verbosity fromVulkan(vk::DebugUtilsMessageSeverityFlagsEXT ver);
+
+constexpr vk::DebugUtilsMessageSeverityFlagBitsEXT toVulkan(Severity sev);
+constexpr Severity fromVulkan(vk::DebugUtilsMessageSeverityFlagBitsEXT sev);
 
 constexpr vk::Extent2D toVulkan(Resolution res);
 constexpr Resolution fromVulkan(vk::Extent2D res);

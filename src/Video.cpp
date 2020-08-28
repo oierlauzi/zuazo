@@ -342,7 +342,7 @@ void VideoBase::updateVideoMode() {
 
 		//Call the callbacks
 		for(const auto& cbk : m_videoModeCallbacks) {
-			if(cbk) cbk(m_videoMode);
+			if(cbk) cbk(*this, m_videoMode);
 		}
 	}
 }
@@ -355,5 +355,63 @@ VideoMode VideoBase::selectVideoMode() const {
 
 	throw Exception("Unsupported video mode");
 }
+
+
+
+/*
+ * VideoScalerBase
+ */
+
+VideoScalerBase::VideoScalerBase(	ScalingModeCallback modeCbk, 
+									ScalingFilterCallback filterCbk )
+	: m_scalingMode(ScalingMode::STRETCH)
+	, m_scalingFilter(ScalingFilter::NEAREST)
+	, m_scalingModeCallback(std::move(modeCbk))
+	, m_scalingFilterCallback(std::move(filterCbk))
+{
+}
+
+
+void VideoScalerBase::setScalingMode(ScalingMode mode) {
+	if(m_scalingMode != mode) {
+		m_scalingMode = mode;
+		if(m_scalingModeCallback) m_scalingModeCallback(*this, m_scalingMode);
+	}
+}
+
+ScalingMode VideoScalerBase::getScalingMode() const {
+	return m_scalingMode;
+}
+
+
+void VideoScalerBase::setScalingFilter(ScalingFilter filter) {
+	if(m_scalingFilter != filter) {
+		m_scalingFilter = filter;
+		if(m_scalingFilterCallback) m_scalingFilterCallback(*this, m_scalingFilter);
+	}
+}
+
+ScalingFilter VideoScalerBase::getScalingFilter() const {
+	return m_scalingFilter;
+}
+
+
+void VideoScalerBase::setScalingModeCallback(ScalingModeCallback cbk) {
+	m_scalingModeCallback = std::move(cbk);
+}
+
+const VideoScalerBase::ScalingModeCallback& VideoScalerBase::getScalingModeCallback() const {
+	return m_scalingModeCallback;
+}
+
+
+void VideoScalerBase::setScalingFilterCallback(ScalingFilterCallback cbk) {
+	m_scalingFilterCallback = std::move(cbk);
+}
+
+const VideoScalerBase::ScalingFilterCallback& VideoScalerBase::getScalingFilterCallback() const {
+	return m_scalingFilterCallback;
+}
+
 
 }

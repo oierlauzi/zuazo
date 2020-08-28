@@ -26,15 +26,24 @@ class ColorTransfer;
 
 class Frame {
 public:
-	struct Descriptor;
-
-	class Geometry;
+	struct Descriptor {
+		Resolution								resolution;
+		AspectRatio								pixelAspectRatio;
+		ColorPrimaries							colorPrimaries;
+		ColorModel								colorModel;
+		ColorTransferFunction					colorTransferFunction;
+		ColorSubsampling						colorSubsampling;
+		ColorRange								colorRange;
+		ColorFormat								colorFormat;
+	};
 
 	struct PlaneDescriptor {
-		vk::Extent2D extent;
-		vk::Format format;
-		vk::ComponentMapping swizzle;
+		vk::Extent2D 							extent;
+		vk::Format 								format;
+		vk::ComponentMapping 					swizzle;
 	};
+
+	class Geometry;
 
 	using PixelData = std::vector<Utils::BufferView<std::byte>>;
 
@@ -79,18 +88,6 @@ private:
 	struct Impl;
 	Utils::Pimpl<Impl>						m_impl;
 
-};
-
-
-struct Frame::Descriptor {
-	Resolution								resolution;
-	AspectRatio								pixelAspectRatio;
-	ColorPrimaries							colorPrimaries;
-	ColorModel								colorModel;
-	ColorTransferFunction					colorTransferFunction;
-	ColorSubsampling						colorSubsampling;
-	ColorRange								colorRange;
-	ColorFormat								colorFormat;
 };
 
 

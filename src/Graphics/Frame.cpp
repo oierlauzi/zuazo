@@ -306,7 +306,7 @@ Frame::Frame(	const Vulkan& vulkan,
 				const std::shared_ptr<const Buffer>& colorTransfer,
 				Utils::BufferView<const PlaneDescriptor> planes,
 				vk::ImageUsageFlags usage )
-	: m_impl(vulkan, desc, colorTransfer, planes, usage)
+	: m_impl({}, vulkan, desc, colorTransfer, planes, usage)
 {
 }
 

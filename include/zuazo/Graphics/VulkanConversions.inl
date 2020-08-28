@@ -16,28 +16,56 @@ constexpr uint32_t toVulkan(Version version){
 	);
 }
 
+
 constexpr vk::DebugUtilsMessageSeverityFlagsEXT toVulkan(Verbosity ver) {
 	vk::DebugUtilsMessageSeverityFlagsEXT result = {};
 
-	if((ver & Verbosity::ERROR) != Verbosity::SILENT) 	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
-	if((ver & Verbosity::WARNING) != Verbosity::SILENT)	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
-	if((ver & Verbosity::INFO) != Verbosity::SILENT) 	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
 	if((ver & Verbosity::VERBOSE) != Verbosity::SILENT)	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose;
+	if((ver & Verbosity::INFO) != Verbosity::SILENT) 	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
+	if((ver & Verbosity::WARNING) != Verbosity::SILENT)	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
+	if((ver & Verbosity::ERROR) != Verbosity::SILENT) 	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
 
 	return result;
 }
 
-constexpr Verbosity fromVulkan(vk::DebugUtilsMessageSeverityFlagsEXT sev) {
+constexpr Verbosity fromVulkan(vk::DebugUtilsMessageSeverityFlagsEXT ver) {
 	constexpr auto silent = vk::DebugUtilsMessageSeverityFlagsEXT();
 	Verbosity result = Verbosity::SILENT;
 
-	if((sev & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError) != silent)		result |= Verbosity::ERROR;
-	if((sev & vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning) != silent)	result |= Verbosity::WARNING;
-	if((sev & vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo) != silent)		result |= Verbosity::INFO;
-	if((sev & vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose) != silent)	result |= Verbosity::VERBOSE;
+	if((ver & vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose) != silent)	result |= Verbosity::VERBOSE;
+	if((ver & vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo) != silent)		result |= Verbosity::INFO;
+	if((ver & vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning) != silent)	result |= Verbosity::WARNING;
+	if((ver & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError) != silent)		result |= Verbosity::ERROR;
+	
+	
 
 	return result;
 }	
+
+
+constexpr vk::DebugUtilsMessageSeverityFlagBitsEXT toVulkan(Severity sev) {
+	constexpr auto FAILURE = static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>(0);
+
+	switch(sev) {
+	case Severity::VERBOSE:	return vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose;
+	case Severity::INFO:	return vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
+	case Severity::WARNING:	return vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
+	case Severity::ERROR:	return vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
+	default: return FAILURE;
+	}
+}
+
+constexpr Severity fromVulkan(vk::DebugUtilsMessageSeverityFlagBitsEXT sev) {
+	constexpr auto FAILURE = static_cast<Severity>(0);
+
+	switch(sev) {
+	case vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose:	return Severity::VERBOSE;
+	case vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo:		return Severity::INFO;
+	case vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning:	return Severity::WARNING;
+	case vk::DebugUtilsMessageSeverityFlagBitsEXT::eError:		return Severity::ERROR;
+	default: return FAILURE;
+	}
+}
 
 
 constexpr vk::Extent2D toVulkan(Resolution res){
