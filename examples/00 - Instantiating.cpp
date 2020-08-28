@@ -2,7 +2,7 @@
  * This example shows how instantiate (or initialize) the library
  * 
  * How to compile:
- * c++ 00\ -\ Instantiating.cpp -std=c++17 -lzuazo -ldl -lpthread
+ * c++ 00\ -\ Instantiating.cpp -std=c++17 -Wall -Wextra -lzuazo -ldl -lpthread
  */
 
 #include <zuazo/Instance.h>

@@ -111,6 +111,6 @@
 
 #define ZUAZO_ENUM2STR_CASE(ns, e) case ns::e: return ZUAZO_TO_STRING(e);
 
-#define ZUAZO_DEFAULT_ASSIGMENT_OPERATORS(T)	\
-	T& operator=(const T& other) = default; 	\
+#define ZUAZO_DEFAULT_ASSIGMENT_OPERATORS(T)																																		\
+	T& operator=(const T& other) = default; 																																		\
 	T& operator=(T&& other) = default;

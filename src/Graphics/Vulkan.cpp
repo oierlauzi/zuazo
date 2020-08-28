@@ -664,7 +664,7 @@ private:
 			std::string missingNames;
 
 			for(const auto& m : requiredLayers){
-				missingNames += m.layerName;
+				missingNames += m.layerName.data();
 				missingNames += "\n";
 			}
 
@@ -684,7 +684,7 @@ private:
 			std::string missingNames;
 
 			for(const auto& m : requiredExtensions){
-				missingNames += m.extensionName;
+				missingNames += m.extensionName.data();
 				missingNames += "\n";
 			}
 

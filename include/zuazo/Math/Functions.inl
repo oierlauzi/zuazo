@@ -137,7 +137,7 @@ constexpr T gcd(const T& a, const T& b) {
 
 	T x = Math::abs(a), y = Math::abs(b);
 	T r = {}; //Reminder
-	while(static_cast<bool>(r = mod(x, y))) {
+	while(static_cast<bool>((r = Math::mod(x, y)))) {
 		x = y;
 		y = r;
 	}

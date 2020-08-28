@@ -155,7 +155,11 @@ struct Instance::Impl {
 private:
 	void vulkanLogCallback(Severity severity, std::string msg) {
 		if(applicationInfo.instanceLogFunc) {
-			applicationInfo.instanceLogFunc(instance, severity, msg);
+			applicationInfo.instanceLogFunc(
+				instance, 
+				severity, 
+				"Vulkan:\n" + msg
+			);
 		}
 	}
 
