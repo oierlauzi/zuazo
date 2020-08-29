@@ -15,7 +15,7 @@ int main() {
 	Zuazo::Instance::ApplicationInfo appInfo {
 		"Example 00",								//Application's name
 		Zuazo::Version(0, 1, 0),					//Application's version
-		Zuazo::Verbosity::GEQ_INFO,					//Verbosity 
+		Zuazo::Verbosity::GEQ_WARNING,				//Verbosity 
 		Zuazo::VideoMode::ANY,						//Default video-mode
 		Zuazo::Instance::defaultInstanceLogFunc,	//Instance log callback
 		Zuazo::Instance::defaultElementLogFunc		//Element log callback
@@ -28,14 +28,14 @@ int main() {
 	ZUAZO_IGNORE_PARAM(defaultInitAppInfo); //This line is here only to avoid warnings
 
 	/*
-	 * Finaly instantiate the library. Move the appinfo in order to
-	 * save memory allocations.
+	 * Finaly instantiate the library. 
+	 * Tip: Move the appinfo in order to save memory allocations.
 	 */
 	Zuazo::Instance instance(std::move(appInfo));
 
 	/*
-	 * For now on you're free to use Zuazo objects and functions
-	 * the instance will be destroyed at the end of the scope.
+	 * For now on you're free to use Zuazo objects and functions.
+	 * The instance will be destroyed at the end of the scope.
 	 */
 
 	getchar();

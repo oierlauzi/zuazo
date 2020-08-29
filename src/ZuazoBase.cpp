@@ -17,24 +17,30 @@ ZuazoBase::ZuazoBase(	Instance& instance,
 						std::make_shared<UpdateCallback>(std::move(updateCbk)),
 						std::make_shared<UpdateCallback>()}
 {
+	ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Constructed");
 }
 
+ZuazoBase::~ZuazoBase() {
+	ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Destroyed");
+}
 
 void ZuazoBase::open() {
 	if(m_isOpen == false) {
-		m_isOpen = true;
 		if(m_openCallback) m_openCallback(*this);
+		m_isOpen = true;
+		ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Opened");
 	} else {
-		ZUAZO_BASE_LOG(*this, Severity::WARNING, "Opening an already opened element");
+		ZUAZO_BASE_LOG(*this, Severity::ERROR, "Opening an already opened element");
 	}
 }
 
 void ZuazoBase::close() {
 	if(m_isOpen == true) {
-		m_isOpen = false;
 		if(m_closeCallback) m_closeCallback(*this);
+		m_isOpen = false;
+		ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Closed");
 	} else {
-		ZUAZO_BASE_LOG(*this, Severity::WARNING, "Closing an already closed element");
+		ZUAZO_BASE_LOG(*this, Severity::ERROR, "Closing an already closed element");
 	}
 }
 

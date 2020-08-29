@@ -59,6 +59,7 @@ struct Instance::Impl {
 	~Impl() {
 		std::lock_guard<Impl> lock(*this);
 		removeRegularCallback(presentImages);
+		ZUAZO_LOG(instance, Severity::INFO, "Terminated");
 	}
 
 	const Instance::ApplicationInfo& getApplicationInfo() const {
@@ -80,21 +81,29 @@ struct Instance::Impl {
 	void addRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior) {
 		scheduler.addRegularCallback(cbk, prior);
 		loop.interrupt();
+
+		ZUAZO_LOG(instance, Severity::VERBOSE, generateAddRegularEventMessage(cbk, prior));
 	}
 
 	void removeRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk) {
 		scheduler.removeRegularCallback(cbk);
 		loop.interrupt();
+
+		ZUAZO_LOG(instance, Severity::VERBOSE, generateRemoveRegularEventMessage(cbk));
 	}
 
 	void addPeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior, Duration period) {
 		scheduler.addPeriodicCallback(cbk, prior, period);
 		loop.interrupt();
+
+		ZUAZO_LOG(instance, Severity::VERBOSE, generateAddPeriodicEventMessage(cbk, prior, period));
 	}
 
 	void removePeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk) {
 		scheduler.removePeriodicCallback(cbk);
 		loop.interrupt();
+
+		ZUAZO_LOG(instance, Severity::VERBOSE, generateRemovePeriodicEventMessage(cbk));
 	}
 
 	TimePoint getTime() const {
@@ -123,7 +132,7 @@ struct Instance::Impl {
 	}
 
 
-
+private:
 	std::string	generateInitMessage() const {
 		std::ostringstream message;
 
@@ -152,7 +161,41 @@ struct Instance::Impl {
 		return message.str();
 	}
 
-private:
+	std::string generateAddRegularEventMessage(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior) const {
+		std::ostringstream message;
+
+		message << "Regular event added: " << cbk << " ";
+		message << "(Priority: " << prior << ")";
+
+		return message.str();
+	}
+	
+	std::string generateRemoveRegularEventMessage(const std::shared_ptr<ScheduledCallback>& cbk) const {
+		std::ostringstream message;
+
+		message << "Regular event removed: " << cbk << " ";
+
+		return message.str();
+	}
+
+	std::string generateAddPeriodicEventMessage(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior, Duration period) const {
+		std::ostringstream message;
+
+		message << "Periodic event added: " << cbk << " ";
+		message << "(Priority: " << prior << ", ";
+		message << "Rate: " << getRate(period) << " Hz)";
+
+		return message.str();
+	}
+
+	std::string generateRemovePeriodicEventMessage(const std::shared_ptr<ScheduledCallback>& cbk) const {
+		std::ostringstream message;
+
+		message << "Periodic event removed: " << cbk << " ";
+
+		return message.str();
+	}
+
 	void vulkanLogCallback(Severity severity, std::string msg) {
 		if(applicationInfo.instanceLogFunc) {
 			applicationInfo.instanceLogFunc(

@@ -11,7 +11,6 @@
 #include <cstring>
 #include <cstdint>
 #include <cassert>
-#include <iostream>
 #include <sstream>
 #include <set>
 #include <unordered_map>
@@ -714,22 +713,30 @@ private:
 															Verbosity verbosity,
 															Impl* usrPtr )
 	{
-		const vk::DebugUtilsMessageSeverityFlagsEXT msgSeverity = toVulkan(verbosity);
+		#ifndef ZUAZO_DISABLE_VALIDATION_LAYERS
+			const vk::DebugUtilsMessageSeverityFlagsEXT msgSeverity = toVulkan(verbosity);
 
-		constexpr vk::DebugUtilsMessageTypeFlagsEXT msgTypes = 	
-			vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-			vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
-			vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
+			constexpr vk::DebugUtilsMessageTypeFlagsEXT msgTypes = 	
+				vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+				vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
+				vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
 
-		const vk::DebugUtilsMessengerCreateInfoEXT createInfo(
-			{},										//Flags
-			msgSeverity,							//Message severity flags
-			msgTypes,								//Message type flags
-			validationLayerCallback,				//Callback ptr
-			usrPtr									//User ptr
-		);
+			const vk::DebugUtilsMessengerCreateInfoEXT createInfo(
+				{},										//Flags
+				msgSeverity,							//Message severity flags
+				msgTypes,								//Message type flags
+				validationLayerCallback,				//Callback ptr
+				usrPtr									//User ptr
+			);
 
-		return instance.createDebugUtilsMessengerEXTUnique(createInfo, nullptr, disp);
+			return instance.createDebugUtilsMessengerEXTUnique(createInfo, nullptr, disp);
+		#else
+			ZUAZO_IGNORE_PARAM(disp);
+			ZUAZO_IGNORE_PARAM(instance);
+			ZUAZO_IGNORE_PARAM(verbosity);
+			ZUAZO_IGNORE_PARAM(usrPtr);
+			return {};
+		#endif
 	}
 
 	static vk::PhysicalDevice getBestPhysicalDevice(const vk::DispatchLoaderDynamic& disp, 
@@ -819,9 +826,9 @@ private:
 		//Get the validation layers and extensions.
 		//They should be available, as we have checked for them when
 		//choosing the physical device
-		const auto layers = getRequiredLayers();
+		const auto& layers = getRequiredLayers();
 		const auto layerNames = getNames(layers);
-		const auto extensions = getRequiredDeviceExtensions();
+		const auto& extensions = getRequiredDeviceExtensions();
 		const auto extensionNames = getNames(extensions);
 
 		//Fill the queue create infos
@@ -971,7 +978,7 @@ private:
 		if(impl->logCallback) {
 			std::ostringstream message;
 
-			message << vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(type)) << ":\n";
+			message << vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagBitsEXT>(type)) << ":\n";
 			message << "\t" << "messageIDName   = <" << data->pMessageIdName << ">\n";
 			message << "\t" << "messageIdNumber = " << data->messageIdNumber << "\n";
 			message << "\t" << "message         = <" << data->pMessage << ">\n";
@@ -1013,10 +1020,11 @@ private:
 
 };
 
+
 std::vector<vk::ExtensionProperties> Vulkan::Impl::requiredInstanceExtensions {
 	#ifndef ZUAZO_DISABLE_VALIDATION_LAYERS
 		//Add debug utils extension requirement
-		vk::ExtensionProperties(std::array<char, VK_MAX_EXTENSION_NAME_SIZE>{VK_EXT_DEBUG_UTILS_EXTENSION_NAME})
+		vk::ExtensionProperties(std::array<char, VK_MAX_EXTENSION_NAME_SIZE>{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}),
 	#endif
 };
 

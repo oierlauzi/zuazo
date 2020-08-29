@@ -24,7 +24,7 @@ public:
 				std::initializer_list<PadRef> pads = {} );
 	ZuazoBase(const ZuazoBase& other) = delete;
 	ZuazoBase(ZuazoBase&& other) = default;
-	virtual ~ZuazoBase() = default;
+	virtual ~ZuazoBase();
 
 	ZuazoBase& 						operator=(const ZuazoBase& other) = delete;
 	ZuazoBase& 						operator=(ZuazoBase&& other) = default;
