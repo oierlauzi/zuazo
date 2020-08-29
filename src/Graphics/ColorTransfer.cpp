@@ -1,7 +1,7 @@
 #include <zuazo/Graphics/ColorTransfer.h>
 #include <zuazo/Graphics/VulkanConversions.h>
 
-#include "color_transfer.h"
+#include <zuazo/shaders/color_transfer.h>
 
 namespace Zuazo::Graphics {
 

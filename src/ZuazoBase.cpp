@@ -82,6 +82,24 @@ const ZuazoBase::UpdateCallback& ZuazoBase::setPostUpdateCallback() const {
 
 
 
+void ZuazoBase::setOpenCallback(OpenCallback cbk) {
+	m_openCallback = std::move(cbk);
+}
+
+const ZuazoBase::OpenCallback& ZuazoBase::setOpenCallback() const {
+	return m_openCallback;
+}
+
+void ZuazoBase::setCloseCallback(CloseCallback cbk) {
+	m_closeCallback = std::move(cbk);
+}
+
+const ZuazoBase::CloseCallback& ZuazoBase::setCloseCallback() const {
+	return m_closeCallback;
+}
+
+
+
 void ZuazoBase::update() const {
 	for(const auto& cbk : m_updateCallbacks) {
 		(*cbk)();

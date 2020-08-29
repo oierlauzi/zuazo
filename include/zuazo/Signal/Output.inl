@@ -58,7 +58,7 @@ inline void Output<T>::setPullCallback(PullCallback cbk) {
 }
 
 template <typename T>
-inline const typename Output<T>::PullCallback& Output<T>::getPullCallback() const {
+inline const PullCallback& Output<T>::getPullCallback() const {
 	return m_pullCallback;
 }
 
@@ -68,7 +68,7 @@ inline const typename Output<T>::PullCallback& Output<T>::getPullCallback() cons
  */
 
 template <typename T>
-inline Layout::PadProxy<Output<T>>::Consumers Layout::PadProxy<Output<T>>::getConsumers() const {
+inline typename Layout::PadProxy<Output<T>>::Consumers Layout::PadProxy<Output<T>>::getConsumers() const {
 	Consumers result;
 
 	const auto consumers = Output<T>::getConsumers();

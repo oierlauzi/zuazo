@@ -1,4 +1,4 @@
-#include "../src/Graphics/color_transfer.h"
+#include "color_transfer.h"
 
 vec4 ct_sample(in int planeFormat, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords){
 	vec4 result;

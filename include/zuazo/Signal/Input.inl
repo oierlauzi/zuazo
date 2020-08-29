@@ -25,7 +25,7 @@ inline void Input<T>::operator<<(Source& src) {
 
 template <typename T>
 inline void Input<T>::setSource(Source* src){
-	setSubject(static_casrsrc);
+	setSubject(static_cast<Zuazo::Utils::Subject*>(src));
 }
 
 template <typename T>
@@ -75,7 +75,7 @@ inline bool Input<T>::hasChanged() const {
 template <typename T>
 inline const T& Input<T>::get() const{
 	const auto* source = getSource();
-	return source ? source->get() : Output<T>::NO_SIGNAL;
+	return source ? source->pull() : Output<T>::NO_SIGNAL;
 }
 
 template <typename T>
