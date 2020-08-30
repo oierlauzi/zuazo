@@ -216,11 +216,11 @@ private:
 	}
 
 	static ResolutionSupport queryResolutionSupport(const Graphics::Vulkan& vulkan) {
-		const auto prop = vulkan.getPhysicalDevice().getProperties(vulkan.getDispatcher());
+		const auto& limits = vulkan.getPhysicalDeviceProperties().limits;
 
 		return ResolutionSupport {
-			Resolution(prop.limits.maxImageDimension2D, prop.limits.maxImageDimension2D),
-			Resolution(prop.limits.maxFramebufferWidth, prop.limits.maxFramebufferHeight)
+			Resolution(limits.maxImageDimension2D, limits.maxImageDimension2D),
+			Resolution(limits.maxFramebufferWidth, limits.maxFramebufferHeight)
 		};
 	}
 

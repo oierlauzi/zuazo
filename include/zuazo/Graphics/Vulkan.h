@@ -61,6 +61,7 @@ public:
 	const vk::DispatchLoaderDynamic&	getDispatcher() const;
 	vk::Instance						getInstance() const;
 	vk::PhysicalDevice					getPhysicalDevice() const;
+	const vk::PhysicalDeviceProperties&	getPhysicalDeviceProperties() const;
 	vk::Device							getDevice() const;
 	uint32_t							getGraphicsQueueIndex() const;
 	vk::Queue							getGraphicsQueue() const;

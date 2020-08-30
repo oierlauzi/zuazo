@@ -37,6 +37,7 @@ struct Vulkan::Impl {
 	LogCallback 									logCallback;
 	vk::UniqueDebugUtilsMessengerEXT				messenger;
 	vk::PhysicalDevice								physicalDevice;
+	vk::PhysicalDeviceProperties					physicalDeviceProperties;
 	std::array<uint32_t, QUEUE_NUM>					queueIndices;
 	vk::UniqueDevice								device;
 	std::array<vk::Queue, QUEUE_NUM>				queues;
@@ -86,6 +87,7 @@ struct Vulkan::Impl {
 		, logCallback(std::move(logCallback))
 		, messenger(createMessenger(dispatcher, *instance, verbosity, this))
 		, physicalDevice(getBestPhysicalDevice(dispatcher, *instance, scoreFunc))
+		, physicalDeviceProperties(getPhysicalDeviceProperties(dispatcher, physicalDevice))
 		, queueIndices(getQueueIndices(dispatcher, *instance, physicalDevice))
 		, device(createDevice(dispatcher, physicalDevice, queueIndices))
 		, queues(getQueues(dispatcher, *device, queueIndices))
@@ -109,6 +111,10 @@ struct Vulkan::Impl {
 
 	vk::PhysicalDevice getPhysicalDevice() const{
 		return physicalDevice;
+	}
+
+	const vk::PhysicalDeviceProperties&	getPhysicalDeviceProperties() const {
+		return physicalDeviceProperties;
 	}
 
 	vk::Device getDevice() const{
@@ -158,7 +164,6 @@ struct Vulkan::Impl {
 	vk::FormatProperties getFormatFeatures(vk::Format format) const {
 		return physicalDevice.getFormatProperties(format, dispatcher);
 	}
-
 
 
 	vk::UniqueSwapchainKHR createSwapchain(const vk::SwapchainCreateInfoKHR& createInfo) const{
@@ -792,6 +797,12 @@ private:
 		return best.first.value();
 	}
 
+	static vk::PhysicalDeviceProperties getPhysicalDeviceProperties(const vk::DispatchLoaderDynamic& disp, 
+																	vk::PhysicalDevice dev)
+	{
+		return dev.getProperties(disp);
+	}
+
 	static std::array<uint32_t, QUEUE_NUM> getQueueIndices(	const vk::DispatchLoaderDynamic& disp, 
 															vk::Instance inst, 
 															vk::PhysicalDevice dev )
@@ -1067,6 +1078,10 @@ vk::Instance Vulkan::getInstance() const{
 
 vk::PhysicalDevice Vulkan::getPhysicalDevice() const{
 	return m_impl->getPhysicalDevice();
+}
+
+const vk::PhysicalDeviceProperties&	Vulkan::getPhysicalDeviceProperties() const { 
+	return m_impl->getPhysicalDeviceProperties();
 }
 
 vk::Device Vulkan::getDevice() const{
