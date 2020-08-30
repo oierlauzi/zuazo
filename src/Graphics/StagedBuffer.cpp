@@ -53,27 +53,29 @@ void StagedBuffer::flushData(	const Vulkan& vulkan,
 {
 	assert(!m_waitFence);
 
+	//Size must be a multiple of nonCoherentAtomSize or reach the end of the buffer
+	const auto nonCoherentAtomSize = vulkan.getPhysicalDeviceProperties().limits.nonCoherentAtomSize;
+	const auto flushSize = (size == VK_WHOLE_SIZE) ? VK_WHOLE_SIZE : Utils::align(size, nonCoherentAtomSize);
+
 	//Flush the memory
 	const vk::MappedMemoryRange range(
 		m_stagingBuffer.getDeviceMemory(),
-		offset, size
+		offset, flushSize
 	);
 	vulkan.flushMappedMemory(range);
 
 	//vkCopyBuffer does not support VK_WHOLE_SIZE, so use the real value
-	if(size == VK_WHOLE_SIZE) {
-		size = m_data.size();
-	}
+	const auto copySize = (size == VK_WHOLE_SIZE) ? m_data.size() : size;
 
 	//Ensure that the adecuate command buffer exists
-	const auto key = Key(offset, size, queue, access, stage);
+	const auto key = Key(offset, copySize, queue, access, stage);
 	auto ite = m_uploadCommands.find(key);
 	if(ite == m_uploadCommands.end()) {
 		std::tie(ite, std::ignore) = m_uploadCommands.emplace(
 			key,
 			createCommandBuffer(
 				vulkan, 
-				offset, size, 
+				offset, copySize, 
 				queue, access, stage
 			)
 		);
