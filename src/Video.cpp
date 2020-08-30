@@ -348,12 +348,17 @@ void VideoBase::updateVideoMode() {
 }
 
 VideoMode VideoBase::selectVideoMode() const {
-	for(const auto& compatibility : m_videoModeCompatibility) {
-		const auto interscetion = compatibility.intersect(m_videoModeLimits);
-		if(interscetion) return interscetion.values();
-	}
+	if(m_videoModeCompatibility.size() > 0) {
+		for(const auto& compatibility : m_videoModeCompatibility) {
+			const auto interscetion = compatibility.intersect(m_videoModeLimits);
+			if(interscetion) return interscetion.values();
+		}
 
-	throw Exception("Unsupported video mode");
+		throw Exception("Unsupported video mode");
+	} else {
+		//If there is no compatibility list, fail silently.
+		return VideoMode();
+	}
 }
 
 
