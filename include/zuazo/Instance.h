@@ -53,10 +53,13 @@ public:
 	enum {
 		LOWEST_PRIORITY = std::numeric_limits<Priority>::min(),
 		HIGHEST_PRIORITY = std::numeric_limits<Priority>::max(),
+
 		OUTPUT_PRIORITY = LOWEST_PRIORITY / 2,
-		PRESENT_PRIORITY = OUTPUT_PRIORITY - 64,
 		PROCESSOR_PRIORITY = 0,
 		INPUT_PRIORITY = HIGHEST_PRIORITY / 2,
+
+		PRESENT_PRIORITY = OUTPUT_PRIORITY - 64,
+		EVENT_QUERY_PRIORITY = INPUT_PRIORITY + 64,
 	};
 
 	Instance(	ApplicationInfo applicationInfo, 
