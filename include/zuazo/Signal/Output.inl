@@ -85,4 +85,18 @@ inline typename Layout::PadProxy<Output<T>>::Consumers Layout::PadProxy<Output<T
 	return result;
 }
 
+/*
+ * Get input
+ */
+
+template<typename T>
+inline Layout::PadProxy<Output<T>>& getOutput(Layout& layout, std::string_view name) {
+	return layout.getPad<Output<T>>(name);
+}
+
+template<typename T>
+inline const Layout::PadProxy<Output<T>>& getOutput(const Layout& layout, std::string_view name) {
+	return layout.getPad<Output<T>>(name);
+}
+
 }

@@ -128,7 +128,7 @@ inline T& Layout::findPad(std::string_view str) const {
 	static_assert(std::is_base_of<PadBase, T>::value, "T must inherit from PadBase");
 	for(const auto& pad : m_pads) {
 		if(pad.get().getName() == str){
-			auto* p = dynamic_cast<T*>(pad.get());
+			auto* p = dynamic_cast<T*>(&(pad.get()));
 			if(p) return *p;
 		}
 	}

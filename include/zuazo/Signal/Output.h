@@ -78,6 +78,12 @@ private:
 	
 };
 
+template<typename T>
+Layout::PadProxy<Output<T>>& getOutput(Layout& layout, std::string_view name = makeOutputName<T>());
+
+template<typename T>
+const Layout::PadProxy<Output<T>>& getOutput(const Layout& layout, std::string_view name = makeOutputName<T>());
+
 }
 
 #include "Output.inl"

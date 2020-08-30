@@ -50,13 +50,14 @@ public:
 	void						reset();
 	const T&					pull() const;
 	bool						hasChanged() const;
+	const T&					getLastElement() const;
 
 private:
 	mutable T					m_lastElement;
 	NoSignalAction				m_onNoSignal;
 
 
-	const T&					get() const;
+	const T&					pullFromSource() const;
 	bool						needsToHold(const T& element) const;
 };
 
@@ -94,6 +95,12 @@ private:
 	~PadProxy() = default;
 
 };
+
+template<typename T>
+Layout::PadProxy<Input<T>>& getInput(Layout& layout, std::string_view name = makeInputName<T>());
+
+template<typename T>
+const Layout::PadProxy<Input<T>>& getInput(const Layout& layout, std::string_view name = makeInputName<T>());
 
 }
 

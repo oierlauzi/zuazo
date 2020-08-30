@@ -52,7 +52,7 @@ inline void Input<T>::reset() {
 
 template <typename T>
 inline const T& Input<T>::pull() const {
-	const auto& newElement = get();
+	const auto& newElement = pullFromSource();
 
 	if(!needsToHold(newElement)){
 		m_lastElement = newElement;
@@ -63,7 +63,7 @@ inline const T& Input<T>::pull() const {
 
 template <typename T>
 inline bool Input<T>::hasChanged() const {
-	const auto& newElement = get();
+	const auto& newElement = pullFromSource();
 
 	if(needsToHold(newElement)){
 		return false; //If last element is held, it has not change
@@ -73,7 +73,13 @@ inline bool Input<T>::hasChanged() const {
 }
 
 template <typename T>
-inline const T& Input<T>::get() const{
+inline const T& Input<T>::getLastElement() const {
+	return m_lastElement;
+}
+
+
+template <typename T>
+inline const T& Input<T>::pullFromSource() const{
 	const auto* source = getSource();
 	return source ? source->pull() : Output<T>::NO_SIGNAL;
 }
@@ -101,6 +107,20 @@ inline typename Layout::PadProxy<Input<T>>::Source* Layout::PadProxy<Input<T>>::
 template <typename T>
 inline void Layout::PadProxy<Input<T>>::operator<<(Source& src) {
 	setSource(&src);
+}
+
+/*
+ * Get input
+ */
+
+template<typename T>
+inline Layout::PadProxy<Input<T>>& getInput(Layout& layout, std::string_view name) {
+	return layout.getPad<Input<T>>(name);
+}
+
+template<typename T>
+inline const Layout::PadProxy<Input<T>>& getInput(const Layout& layout, std::string_view name) {
+	return layout.getPad<Input<T>>(name);
 }
 
 }
