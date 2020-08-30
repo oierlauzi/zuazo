@@ -26,7 +26,7 @@ struct ColorTransfer::Impl {
 	}
 
 	bool equals(const Impl& other) const {
-		return std::memcmp(data(), other.data(), size());
+		return std::memcmp(data(), other.data(), size()) == 0;
 	}
 
 	void optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
