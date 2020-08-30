@@ -21,6 +21,10 @@ ZuazoBase::ZuazoBase(	Instance& instance,
 }
 
 ZuazoBase::~ZuazoBase() {
+	//Just in case upper class has not desuscribed from updates
+	disableRegularUpdate();
+	disablePeriodicUpdate();
+	
 	ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Destroyed");
 }
 
