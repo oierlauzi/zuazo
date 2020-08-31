@@ -16,8 +16,8 @@ class BinomialLayout
 {
 public:
 	explicit BinomialLayout(std::string name, 
-							std::string inputName = makeInputName<T>(), 
-							std::string outputName = makeOutputName<T>(),
+							std::string inputName = std::string(makeInputName<T>()), 
+							std::string outputName = std::string(makeOutputName<T>()),
 							PullCallback pullCbk = {} );
 	BinomialLayout(const BinomialLayout& other) = delete;
 	BinomialLayout(BinomialLayout&& other) = default;

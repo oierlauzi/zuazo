@@ -5,7 +5,7 @@ namespace Zuazo::Signal {
 template<typename T>
 inline SourceLayout<T>::SourceLayout(std::string name, std::string outputName, PullCallback pullCbk)
 	: Layout(std::move(name))
-	, m_io(, std::move(outputName), std::move(pullCbk))
+	, m_io({}, std::move(outputName), std::move(pullCbk))
 {
 	Layout::registerPad(m_io->output);
 }

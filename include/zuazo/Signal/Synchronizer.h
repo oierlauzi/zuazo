@@ -11,7 +11,7 @@ namespace Zuazo::Signal {
 
 template <typename T>
 class Synchronizer 
-	: public BinomialLayout
+	: public BinomialLayout<T>
 {
 public:
 	explicit Synchronizer(std::string name, size_t maxDelay = 3, size_t maxDropped = 1);

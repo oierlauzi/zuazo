@@ -4,7 +4,7 @@ namespace Zuazo::Signal {
 
 template<typename T>
 inline Delay<T>::Delay(std::string name, Duration delay)
-	: BinomialLayout(std::move(name))
+	: BinomialLayout<T>(std::move(name))
 	, m_delay(delay)
 {
 }
@@ -29,14 +29,18 @@ inline void Delay<T>::update(TimePoint now) {
 	m_delayLine.push_back(
 		Packet{
 			now, 
-			getInputPad().pull()
+			BinomialLayout<T>::getInputPad().pull()
 		}
 	);
 
 	//Push all elements older than delay into the output. Only the last one will be preserved
-	while(m_delayLine.front().time + m_delay >= now) {
-		getOutputPad().push(m_delayLine.front().data);
-		m_delayLine.pop_front();
+	while(m_delayLine.size() > 0) {
+		if(m_delayLine.front().time + m_delay <= now) {
+			BinomialLayout<T>::getOutputPad().push(m_delayLine.front().data);
+			m_delayLine.pop_front();
+		} else {
+			break;
+		}
 	}
 }
 

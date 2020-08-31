@@ -5,7 +5,7 @@ namespace Zuazo::Signal {
 template<typename T>
 inline BinomialLayout<T>::BinomialLayout(std::string name, std::string inputName, std::string outputName, PullCallback pullCbk)
 	: Layout(std::move(name))
-	, m_io(std::move(inputName), std::move(outputName), std::move(pullCbk))
+	, m_io({}, std::move(inputName), std::move(outputName), std::move(pullCbk))
 {
 	Layout::registerPads( { m_io->input, m_io->output } );
 }

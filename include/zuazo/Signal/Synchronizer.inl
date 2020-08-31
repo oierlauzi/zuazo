@@ -6,7 +6,7 @@ namespace Zuazo::Signal {
 
 template<typename T>
 inline Synchronizer<T>::Synchronizer(std::string name, size_t maxDelay, size_t maxDropped)
-	: BinomialLayout(std::move(name))
+	: BinomialLayout<T>(std::move(name))
 	, m_queue(maxDelay)
 	, m_maxDropped(maxDropped)
 	, m_dropped(0)

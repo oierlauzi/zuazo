@@ -30,7 +30,7 @@ class Input
 public:
 	using Source = Output<T>; friend Source;
 
-	explicit Input(std::string name = makeInputName<T>());
+	explicit Input(std::string name = std::string(makeInputName<T>()));
 	Input(const Input& other) = default;
 	Input(Input&& other) = default;
 	virtual ~Input() = default;

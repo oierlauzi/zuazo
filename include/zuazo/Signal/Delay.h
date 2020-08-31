@@ -11,7 +11,7 @@ namespace Zuazo::Signal {
 
 template <typename T>
 class Delay 
-	: public BinomialLayout
+	: public BinomialLayout<T>
 {
 public:
 	Delay(std::string name, Duration delay);

@@ -5,7 +5,7 @@ namespace Zuazo::Signal {
 template<typename T>
 inline ConsumerLayout<T>::ConsumerLayout(std::string name, std::string inputName)
 	: Layout(std::move(name))
-	, m_io(std::move(inputName))
+	, m_io({}, std::move(inputName))
 {
 	Layout::registerPad(m_io->input);
 }
