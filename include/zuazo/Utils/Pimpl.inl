@@ -1,5 +1,7 @@
 #include "Pimpl.h"
 
+#include <cassert>
+
 namespace Zuazo::Utils {
 
 template<typename T, typename Alloc>

@@ -15,6 +15,7 @@ enum class ColorSubsampling {
 	NONE = 0,					///<Not supported
 
 	RB_444,						///<No subsampling
+	RB_440,						///<1 G (or Y) sample per 4 R (or Cr) and B (or Cb) samples on even lines. No R and B samples on odd lines.
 	RB_422,						///<1 G (or Y) sample per 2 R (or Cr) and B (or Cb) samples on even and odd lines.
 	RB_420,						///<1 G (or Y) sample per 2 R (or Cr) and B (or Cb) samples on even lines. No R and B samples on odd lines.
 	RB_411,						///<1 G (or Y) sample per 4 R (or Cr) and B (or Cb) samples on even and odd lines.

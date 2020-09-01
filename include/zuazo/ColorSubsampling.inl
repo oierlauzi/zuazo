@@ -7,6 +7,8 @@ constexpr Resolution getSubsampledResolution(ColorSubsampling subs, Resolution r
 
 	case ColorSubsampling::RB_444: 
 		return res;
+	case ColorSubsampling::RB_440:
+		return Resolution(res.width, res.height / 2);
 	case ColorSubsampling::RB_422: 
 		return Resolution(res.width / 2, res.height);
 	case ColorSubsampling::RB_420:
@@ -28,6 +30,7 @@ constexpr std::string_view toString(ColorSubsampling colorSubsampling){
 	switch(colorSubsampling){
 
 	case ColorSubsampling::RB_444: return "4:4:4";
+	case ColorSubsampling::RB_440: return "4:4:0";
 	case ColorSubsampling::RB_422: return "4:2:2";
 	case ColorSubsampling::RB_420: return "4:2:0";
 	case ColorSubsampling::RB_411: return "4:1:1";
