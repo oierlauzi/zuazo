@@ -22,15 +22,6 @@ Uploader::Uploader(	const Vulkan& vulkan,
 }
 
 
-void Uploader::setMaxSpares(size_t max) {
-	m_pool.setMaxSpares(max);
-}
-
-size_t Uploader::getMaxSpares() const {
-	return m_pool.getMaxSpares();
-}
-
-
 std::shared_ptr<StagedFrame> Uploader::acquireFrame() const {
 	auto frame = m_pool.acquire();
 	frame->waitDependecies();
@@ -63,7 +54,7 @@ std::shared_ptr<vk::UniqueCommandPool> Uploader::createCommandPool(const Vulkan&
 		vulkan.getTransferQueueIndex()						//Queue index
 	);
 
-	return std::make_shared<vk::UniqueCommandPool>(vulkan.createCommandPool(createInfo));
+	return Utils::makeShared<vk::UniqueCommandPool>(vulkan.createCommandPool(createInfo));
 }
 
 Uploader::Allocator::Allocator(const Uploader& uploader)
@@ -71,8 +62,8 @@ Uploader::Allocator::Allocator(const Uploader& uploader)
 {
 }
 
-StagedFrame* Uploader::Allocator::operator()() const {
-	return new StagedFrame(
+std::shared_ptr<StagedFrame> Uploader::Allocator::operator()() const {
+	return Utils::makeShared<StagedFrame>(
 		m_uploader.get().m_vulkan,
 		m_uploader.get().m_frameDescriptor,
 		m_uploader.get().m_colorTransferBuffer,

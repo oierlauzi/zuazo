@@ -22,9 +22,6 @@ public:
 
 	Uploader& 										operator=(const Uploader& other) = delete;
 
-		void										setMaxSpares(size_t max);
-	size_t											getMaxSpares() const;
-
 	std::shared_ptr<StagedFrame>					acquireFrame() const;
 	void											clear();
 
@@ -37,7 +34,7 @@ private:
 
 		Allocator& 										operator=(const Allocator& other) = default;
 
-		StagedFrame*									operator()() const;
+		std::shared_ptr<StagedFrame>					operator()() const;
 
 	private:
 		std::reference_wrapper<const Uploader>			m_uploader;
