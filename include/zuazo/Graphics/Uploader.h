@@ -24,6 +24,7 @@ public:
 
 	std::shared_ptr<StagedFrame>					acquireFrame() const;
 	void											clear();
+	void											shrink(size_t maxSpares = 0);
 
 private:
 	class Allocator {

@@ -32,6 +32,11 @@ void Uploader::clear() {
 	m_pool.clear();
 }
 
+void Uploader::shrink(size_t maxSpares) {
+	m_pool.shrink(maxSpares);
+}
+
+
 std::vector<Frame::PlaneDescriptor> Uploader::createPlaneDescriptors(	const Vulkan& vulkan, 
 																		const Frame::Descriptor& desc, 
 																		ColorTransfer& colorTransfer)

@@ -28,6 +28,7 @@ public:
 
 	std::shared_ptr<T>			acquire();
 	void						clear();
+	void						shrink(size_t maxSpares = 0);
 
 private:
 	using Spares = std::vector<std::shared_ptr<T>>;
