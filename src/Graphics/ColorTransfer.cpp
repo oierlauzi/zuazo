@@ -15,8 +15,8 @@ struct ColorTransfer::Impl {
 	Impl() = default;
 	Impl(const Frame::Descriptor& desc)
 		: transferData {
-			getConversionMatrix(desc.colorPrimaries),
-			getConversionMatrix(desc.colorModel),
+			getRGB2XYZConversionMatrix(desc.colorPrimaries),
+			getRGB2YCbCrConversionMatrix(desc.colorModel),
 			isYCbCr(desc.colorModel) ? ct_YCBCR_TRUE : ct_YCBCR_FALSE,
 			getTransferFunction(desc.colorTransferFunction),
 			getRange(desc.colorRange),
@@ -80,8 +80,17 @@ struct ColorTransfer::Impl {
 private:
 	static int32_t getTransferFunction(ColorTransferFunction transferFunction) {
 		switch(transferFunction){
-		case ColorTransferFunction::LINEAR: return ct_COLOR_TRANSFER_FUNCTION_LINEAR;
-		case ColorTransferFunction::IEC61966_2_1: return ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_1;
+		case ColorTransferFunction::LINEAR: 		return ct_COLOR_TRANSFER_FUNCTION_LINEAR;
+		case ColorTransferFunction::BT601:			return ct_COLOR_TRANSFER_FUNCTION_BT601;
+		case ColorTransferFunction::BT709:			return ct_COLOR_TRANSFER_FUNCTION_BT709;
+		case ColorTransferFunction::BT2020_10:		return ct_COLOR_TRANSFER_FUNCTION_BT2020_10;
+		case ColorTransferFunction::BT2020_12:		return ct_COLOR_TRANSFER_FUNCTION_BT2020_12;
+		case ColorTransferFunction::GAMMA22:		return ct_COLOR_TRANSFER_FUNCTION_GAMMA22;
+		case ColorTransferFunction::GAMMA26:		return ct_COLOR_TRANSFER_FUNCTION_GAMMA26;
+		case ColorTransferFunction::GAMMA28:		return ct_COLOR_TRANSFER_FUNCTION_GAMMA28;
+		case ColorTransferFunction::IEC61966_2_1:	return ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_1;
+		case ColorTransferFunction::SMPTE2084:		return ct_COLOR_TRANSFER_FUNCTION_SMPTE2084;
+		case ColorTransferFunction::ARIB_STD_B67:	return ct_COLOR_TRANSFER_FUNCTION_ARIB_STD_B67;
 		default: break;
 		}
 

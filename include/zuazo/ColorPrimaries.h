@@ -16,8 +16,11 @@ namespace Zuazo {
 enum class ColorPrimaries {
 	NONE = 0,					///<Not supported
 
+	BT601_625,					///<Used in PAL and SECAM \see https://www.itu.int/rec/R-REC-BT.601/en
+	BT601_525,					///<Used in NTSC \see https://www.itu.int/rec/R-REC-BT.601/en
 	BT709,						///<Used in HDTV and sRGB color space\see https://www.itu.int/rec/R-REC-BT.709/en
 	BT2020,						///<Used in UHDTV \see https://www.itu.int/rec/R-REC-BT.2020/en
+	SMPTE431,					///<Used in DCI-P3 color space
 	SMPTE432,					///<Used in Display P3 color space
 	ADOBE_RGB,					///<Used in Adobe RGB color space
 
@@ -29,7 +32,14 @@ enum class ColorPrimaries {
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorPrimaries)
 ZUAZO_ENUM_COMP_OPERATORS(ColorPrimaries)	
 
-constexpr Math::Mat4x4f getConversionMatrix(ColorPrimaries colorPrim);
+template<typename T>
+constexpr Math::Mat4x4<T> constructRGB2XYZConversionMatrix(	const T white_x,const T white_y,
+															const T red_x,	const T red_y,
+															const T green_x,const T green_y,
+															const T blue_x, const T blue_y,
+															const T white_luminance = T(1) );
+
+constexpr Math::Mat4x4f getRGB2XYZConversionMatrix(ColorPrimaries colorPrim);
 
 constexpr std::string_view toString(ColorPrimaries colorPrim);
 std::ostream& operator<<(std::ostream& os, ColorPrimaries colorPrim);

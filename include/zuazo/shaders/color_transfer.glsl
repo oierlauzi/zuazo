@@ -91,30 +91,238 @@ vec4 ct_contract(in int range, in vec4 color){
 	return result;
 }
 
-float ct_unlinearize_IEC61966_2_1(in float value){
-	if(value < 0.0031308f){
-		return 12.92f * value;
+/*
+ * OETF: Opto-electrical transfer function (unlinearize)
+ * EOTF: Electro-optical transfer function (linearize)
+ * Linear value is usualy expressed as L in equations, whilst
+ * the non-linear one as E or V
+ */
+
+//Note: gain is expresed OETF-wise
+float ct_EOTF_linear(in float gain, in float value){
+	return value / gain;
+}
+
+float ct_OETF_linear(in float gain, in float value){
+	return value * gain;
+}
+
+
+//Note: gain is expresed OETF-wise
+float ct_EOTF_gamma(in float gain, in float gamma, in float value){
+	return pow(ct_EOTF_linear(gain, value), gamma);
+}
+
+float ct_OETF_gamma(in float gain, in float gamma, in float value){
+	return ct_OETF_linear(gain, pow(value, 1.0f/gamma));
+}
+
+
+//Note: gain is expresed OETF-wise
+float ct_EOTF_log(in float gain, in float b, in float value){
+	return exp(ct_EOTF_linear(gain, value)) + b;
+}
+
+float ct_OETF_log(in float gain, in float b, in float value){
+	return ct_OETF_linear(gain, log(value - b));
+}
+
+
+//Note: gain is expresed OETF-wise
+float ct_EOTF_PQ(in float c1, in float c2, in float m1, in float m2, in float value){
+	const float c3 = c1 + c2 - 1;
+
+	const float value2 = pow(value, 1.0f/m2);
+	const float num = max(value2 - c1, 0.0f);
+	const float den = c2 - c3*value2;
+	return pow(num/den, 1.0f/m1);
+}
+
+float ct_OETF_PQ(in float c1, in float c2, in float m1, in float m2, in float value){
+	//Equations from:
+	//https://en.wikipedia.org/wiki/High-dynamic-range_video
+
+	const float c3 = c1 + c2 - 1;
+
+	const float value2 = pow(value, m1);
+	const float num = c1 	+ c2*value2;
+	const float den = 1.0f 	+ c3*value2;
+	return pow(num/den, m2);
+}
+
+
+//Note: gains are expresed OETF-wise
+float ct_EOTF_hybrid_linear_gamma(in float thresh, in float gain1, in float gain2, in float gamma, in float value) {
+	//Equations from:
+	//https://en.wikipedia.org/wiki/Rec._2020
+
+	if(value < ct_OETF_linear(gain1, thresh)){
+		return ct_EOTF_linear(gain1, value);
 	} else {
-		return 1.055f * pow(value, 5.0f / 12.0f) - 0.055f;
+		const float offset = ct_OETF_linear(gain1, thresh) - ct_OETF_gamma(gain2, gamma, thresh); //Usualy (1 - gain2)
+		return ct_EOTF_gamma(gain2, gamma, value - offset);
 	}
 }
 
-float ct_linearize_IEC61966_2_1(in float value){
-	if(value < 0.04045f){
-		return value / 12.92f;
+float ct_OETF_hybrid_linear_gamma(in float thresh, in float gain1, in float gain2, in float gamma, in float value){
+	if(value < thresh){
+		return ct_OETF_linear(gain1, value);
 	} else {
-		return pow((value + 0.055f) / 1.055f, 12.0f / 5.0f);
+		const float offset = ct_OETF_linear(gain1, thresh) - ct_OETF_gamma(gain2, gamma, thresh); //Usualy (1 - gain2)
+		return ct_OETF_gamma(gain2, gamma, value) + offset;
 	}
 }
 
-vec4 ct_unlinearize(in int encoding, in vec4 color){
+
+//Note: gains are expresed OETF-wise
+float ct_EOTF_hybrid_log_gamma(in float thresh, in float gain1, in float gamma, in float gain2, in float b, in float value) {
+	if(value < ct_OETF_gamma(gain1, gamma, value)){
+		return ct_EOTF_gamma(gain1, gamma, value);
+	} else {
+		const float offset = ct_OETF_gamma(gain1, gamma, thresh) - ct_OETF_log(gain2, b, thresh);
+		return ct_EOTF_log(gain2, b, value - offset);
+	}
+}
+
+float ct_OETF_hybrid_log_gamma(in float thresh, in float gain1, in float gamma, in float gain2, in float b, in float value){
+	//Equations from:
+	//https://en.wikipedia.org/wiki/Hybrid_Log-Gamma
+
+	if(value < thresh){
+		return ct_OETF_gamma(gain1, gamma, value);
+	} else {
+		const float offset = ct_OETF_gamma(gain1, gamma, thresh) - ct_OETF_log(gain2, b, thresh);
+		return ct_OETF_log(gain2, b, value) + offset;
+	}
+}
+
+
+float ct_EOTF_bt601_709_2020(in float value){
+	return ct_EOTF_hybrid_linear_gamma(0.018f, 4.5f, 1.099f, 1.0f/0.45f, value);
+}
+
+float ct_OETF_bt601_709_2020(in float value){
+	return ct_OETF_hybrid_linear_gamma(0.018f, 4.5f, 1.099f, 1.0f/0.45f, value);
+}
+
+
+float ct_EOTF_bt2020_12(in float value){
+	return ct_EOTF_hybrid_linear_gamma(0.0181f, 4.5f, 1.0993f, 1.0f/0.45f, value);
+}
+
+float ct_OETF_bt2020_12(in float value){
+	return ct_OETF_hybrid_linear_gamma(0.0181f, 4.5f, 1.0993f, 1.0f/0.45f, value);
+}
+
+
+float ct_EOTF_gamma22(in float value){
+	return ct_EOTF_gamma(1.0f, 2.2f, value);
+}
+
+float ct_OETF_gamma22(in float value){
+	return ct_OETF_gamma(1.0f, 2.2f, value);
+}
+
+
+float ct_EOTF_gamma26(in float value){
+	return ct_EOTF_gamma(1.0f, 2.6f, value);
+}
+
+float ct_OETF_gamma26(in float value){
+	return ct_OETF_gamma(1.0f, 2.6f, value);
+}
+
+
+float ct_EOTF_gamma28(in float value){
+	return ct_EOTF_gamma(1.0f, 2.8f, value);
+}
+
+float ct_OETF_gamma28(in float value){
+	return ct_OETF_gamma(1.0f, 2.8f, value);
+}
+
+
+float ct_EOTF_IEC61966_2_1(in float value){
+	return ct_EOTF_hybrid_linear_gamma(0.0031308f, 12.92f, 1.055f, 12.0f/5.0f, value);
+}
+
+float ct_OETF_IEC61966_2_1(in float value){
+	return ct_OETF_hybrid_linear_gamma(0.0031308f, 12.92f, 1.055f, 12.0f/5.0f, value);
+}
+
+
+float ct_EOTF_SMPTE2084(in float value){
+	return ct_EOTF_PQ(3424.0f/4096.0f, 32.0f*2413.0f/4096.0f, 0.25f*2610.0f/4096.0f, 128.0f*2523.0f/4096.0f, value);
+}
+
+float ct_OETF_SMPTE2084(in float value){
+	return ct_OETF_PQ(3424.0f/4096.0f, 32.0f*2413.0f/4096.0f, 0.25f*2610.0f/4096.0f, 128.0f*2523.0f/4096.0f, value);
+}
+
+
+float ct_EOTF_ARIB_STD_B67(in float value){
+	//ARIB STD-B67 is expressed for values between 0-12, thats why the result gets divided by 12
+	return ct_EOTF_hybrid_log_gamma(1.0f, 0.5f, 1.0f/0.5f, 0.17883277f, 0.28466892f, value) / 12.0f;
+}
+
+float ct_OETF_ARIB_STD_B67(in float value){
+	//ARIB STD-B67 is expressed for values between 0-12, thats why the value gets multiplied by 12
+	return ct_OETF_hybrid_log_gamma(1.0f, 0.5f, 1.0f/0.5f, 0.17883277f, 0.28466892f, value * 12.0f);
+}
+
+
+vec4 ct_EOTF(in int encoding, in vec4 color){
 	vec4 result;
 
 	switch(encoding){
+	case ct_COLOR_TRANSFER_FUNCTION_BT601:
+	case ct_COLOR_TRANSFER_FUNCTION_BT709:
+	case ct_COLOR_TRANSFER_FUNCTION_BT2020_10:
+		result.r = ct_EOTF_bt601_709_2020(color.r);
+		result.g = ct_EOTF_bt601_709_2020(color.g);
+		result.b = ct_EOTF_bt601_709_2020(color.b);
+		result.a = color.a;
+		break;
+	case ct_COLOR_TRANSFER_FUNCTION_BT2020_12:
+		result.r = ct_EOTF_bt2020_12(color.r);
+		result.g = ct_EOTF_bt2020_12(color.g);
+		result.b = ct_EOTF_bt2020_12(color.b);
+		result.a = color.a;
+		break;
+	case ct_COLOR_TRANSFER_FUNCTION_GAMMA22:
+		result.r = ct_EOTF_gamma22(color.r);
+		result.g = ct_EOTF_gamma22(color.g);
+		result.b = ct_EOTF_gamma22(color.b);
+		result.a = color.a;
+		break;
+	case ct_COLOR_TRANSFER_FUNCTION_GAMMA26:
+		result.r = ct_EOTF_gamma26(color.r);
+		result.g = ct_EOTF_gamma26(color.g);
+		result.b = ct_EOTF_gamma26(color.b);
+		result.a = color.a;
+		break;
+	case ct_COLOR_TRANSFER_FUNCTION_GAMMA28:
+		result.r = ct_EOTF_gamma28(color.r);
+		result.g = ct_EOTF_gamma28(color.g);
+		result.b = ct_EOTF_gamma28(color.b);
+		result.a = color.a;
+		break;
 	case ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_1:
-		result.r = ct_unlinearize_IEC61966_2_1(color.r);
-		result.g = ct_unlinearize_IEC61966_2_1(color.g);
-		result.b = ct_unlinearize_IEC61966_2_1(color.b);
+		result.r = ct_EOTF_IEC61966_2_1(color.r);
+		result.g = ct_EOTF_IEC61966_2_1(color.g);
+		result.b = ct_EOTF_IEC61966_2_1(color.b);
+		result.a = color.a;
+		break;
+	case ct_COLOR_TRANSFER_FUNCTION_SMPTE2084:
+		result.r = ct_EOTF_SMPTE2084(color.r);
+		result.g = ct_EOTF_SMPTE2084(color.g);
+		result.b = ct_EOTF_SMPTE2084(color.b);
+		result.a = color.a;
+		break;
+	case ct_COLOR_TRANSFER_FUNCTION_ARIB_STD_B67:
+		result.r = ct_EOTF_ARIB_STD_B67(color.r);
+		result.g = ct_EOTF_ARIB_STD_B67(color.g);
+		result.b = ct_EOTF_ARIB_STD_B67(color.b);
 		result.a = color.a;
 		break;
 	default: //ct_COLOR_TRANSFER_FUNCTION_LINEAR
@@ -125,14 +333,58 @@ vec4 ct_unlinearize(in int encoding, in vec4 color){
 	return result;
 }
 
-vec4 ct_linearize(in int encoding, in vec4 color){
+vec4 ct_OETF(in int encoding, in vec4 color){
 	vec4 result;
 
 	switch(encoding){
+	case ct_COLOR_TRANSFER_FUNCTION_BT601:
+	case ct_COLOR_TRANSFER_FUNCTION_BT709:
+	case ct_COLOR_TRANSFER_FUNCTION_BT2020_10:
+		result.r = ct_OETF_bt601_709_2020(color.r);
+		result.g = ct_OETF_bt601_709_2020(color.g);
+		result.b = ct_OETF_bt601_709_2020(color.b);
+		result.a = color.a;
+		break;
+	case ct_COLOR_TRANSFER_FUNCTION_BT2020_12:
+		result.r = ct_OETF_bt2020_12(color.r);
+		result.g = ct_OETF_bt2020_12(color.g);
+		result.b = ct_OETF_bt2020_12(color.b);
+		result.a = color.a;
+		break;
+	case ct_COLOR_TRANSFER_FUNCTION_GAMMA22:
+		result.r = ct_OETF_gamma22(color.r);
+		result.g = ct_OETF_gamma22(color.g);
+		result.b = ct_OETF_gamma22(color.b);
+		result.a = color.a;
+		break;
+	case ct_COLOR_TRANSFER_FUNCTION_GAMMA26:
+		result.r = ct_OETF_gamma26(color.r);
+		result.g = ct_OETF_gamma26(color.g);
+		result.b = ct_OETF_gamma26(color.b);
+		result.a = color.a;
+		break;
+	case ct_COLOR_TRANSFER_FUNCTION_GAMMA28:
+		result.r = ct_OETF_gamma28(color.r);
+		result.g = ct_OETF_gamma28(color.g);
+		result.b = ct_OETF_gamma28(color.b);
+		result.a = color.a;
+		break;
 	case ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_1:
-		result.r = ct_linearize_IEC61966_2_1(color.r);
-		result.g = ct_linearize_IEC61966_2_1(color.g);
-		result.b = ct_linearize_IEC61966_2_1(color.b);
+		result.r = ct_OETF_IEC61966_2_1(color.r);
+		result.g = ct_OETF_IEC61966_2_1(color.g);
+		result.b = ct_OETF_IEC61966_2_1(color.b);
+		result.a = color.a;
+		break;
+	case ct_COLOR_TRANSFER_FUNCTION_SMPTE2084:
+		result.r = ct_OETF_SMPTE2084(color.r);
+		result.g = ct_OETF_SMPTE2084(color.g);
+		result.b = ct_OETF_SMPTE2084(color.b);
+		result.a = color.a;
+		break;
+	case ct_COLOR_TRANSFER_FUNCTION_ARIB_STD_B67:
+		result.r = ct_OETF_ARIB_STD_B67(color.r);
+		result.g = ct_OETF_ARIB_STD_B67(color.g);
+		result.b = ct_OETF_ARIB_STD_B67(color.b);
 		result.a = color.a;
 		break;
 	default: //ct_COLOR_TRANSFER_FUNCTION_LINEAR
@@ -142,6 +394,7 @@ vec4 ct_linearize(in int encoding, in vec4 color){
 
 	return result;
 }
+
 
 vec4 ct_readColor(in ct_data inputProp, in ct_data outputProp, in vec4 color){
 	vec4 result = color;
@@ -149,8 +402,8 @@ vec4 ct_readColor(in ct_data inputProp, in ct_data outputProp, in vec4 color){
 	result = ct_expand(inputProp.colorRange, result); //Normalize the values into [0.0, 1.0]
 	result = ct_make_cbcr_negative(inputProp.isYCbCr, result);
 	result = inverse(inputProp.colorModel) * result; //Convert it into RGB color model
-	result = ct_linearize(inputProp.colorTransferFunction, result); //Undo all gamma-like compressions
-	result = outputProp.colorPrimaries * inverse(inputProp.colorPrimaries) * result; //Convert the destination's color primaries
+	result = ct_EOTF(inputProp.colorTransferFunction, result); //Undo all gamma-like compressions
+	result = inverse(outputProp.colorPrimaries) * inputProp.colorPrimaries * result; //Convert the destination's color primaries
 
 	return result;
 }
@@ -158,7 +411,7 @@ vec4 ct_readColor(in ct_data inputProp, in ct_data outputProp, in vec4 color){
 vec4 ct_writeColor(in ct_data outputProp, in vec4 color){
 	vec4 result = color;
 
-	result = ct_unlinearize(outputProp.colorTransferFunction, result); //Apply a gamma-like compression
+	result = ct_OETF(outputProp.colorTransferFunction, result); //Apply a gamma-like compression
 	result = outputProp.colorModel * result; //Convert it into the destination color model
 	result = ct_make_cbcr_positive(outputProp.isYCbCr, result);
 	result = ct_contract(outputProp.colorRange, result); //Convert it into the corresponding range

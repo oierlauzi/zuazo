@@ -29,7 +29,13 @@ ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorModel)
 ZUAZO_ENUM_COMP_OPERATORS(ColorModel)
 
 constexpr bool isYCbCr(ColorModel colorModel);
-constexpr Math::Mat4x4f getConversionMatrix(ColorModel colorModel);
+
+template<typename T>
+constexpr Math::Mat4x4<T> constructRGB2YCbCrConversionMatrix(	const T y_r,  const T y_g,  const T y_b,
+																const T cb_r, const T cb_g, const T cb_b,
+																const T cr_r, const T cr_g, const T cr_b );
+
+constexpr Math::Mat4x4f getRGB2YCbCrConversionMatrix(ColorModel colorModel);
 
 constexpr std::string_view toString(ColorModel colorModel);
 std::ostream& operator<<(std::ostream& os, ColorModel model);
