@@ -23,20 +23,21 @@ public:
 	Layout::PadProxy<Output<T>>&		getOutput();
 	const Layout::PadProxy<Output<T>>&	getOutput() const;
 
+	//Magic operator in order to concatenate
+	Layout::PadProxy<Output<T>>&		operator<<(Layout::PadProxy<Output<T>>& src);
+
 private:
 	struct IO {
 		IO(std::string name);
 		~IO() = default;
 
-
 		Input<T> input;
 		Output<T> output;
+
 	};
 
 	//Dynamically allocated so that its address remains invariant
 	Utils::Pimpl<IO>					m_io;
-
-	static PullCallback					makePullCbk(Output<T>& output, const Input<T>& input);
 
 };
 

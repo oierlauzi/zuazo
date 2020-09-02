@@ -3,9 +3,13 @@
 namespace Zuazo::Signal {
 
 template<typename T>
-inline BinomialLayout<T>::BinomialLayout(std::string name, std::string inputName, std::string outputName, PullCallback pullCbk)
+inline BinomialLayout<T>::BinomialLayout(	std::string name, 
+											std::string inputName, 
+											std::string outputName,
+											typename Input<T>::PushCallback pushCbk,
+											typename Output<T>::PullCallback pullCbk )
 	: Layout(std::move(name))
-	, m_io({}, std::move(inputName), std::move(outputName), std::move(pullCbk))
+	, m_io({}, std::move(inputName), std::move(outputName), std::move(pushCbk), std::move(pullCbk))
 {
 	Layout::registerPads( { m_io->input, m_io->output } );
 }
@@ -33,6 +37,13 @@ inline const Layout::PadProxy<Output<T>>& BinomialLayout<T>::getOutput() const {
 }
 
 
+template<typename T>
+inline Layout::PadProxy<Output<T>>& BinomialLayout<T>::operator<<(Layout::PadProxy<Output<T>>& src) {
+	getInput() << src;
+	return getOutput();
+}
+
+
 
 template<typename T>
 inline Input<T>& BinomialLayout<T>::getInputPad() {
@@ -57,9 +68,12 @@ inline const Output<T>& BinomialLayout<T>::getOutputPad() const {
 
 
 template<typename T>
-inline BinomialLayout<T>::IO::IO(std::string inputName, std::string outputName, PullCallback pullcbk)
-	: input(std::move(inputName))
-	, output(std::move(outputName), std::move(pullcbk))
+inline BinomialLayout<T>::IO::IO(	std::string inputName, 
+									std::string outputName, 
+									typename Input<T>::PushCallback pushCbk, 
+									typename Output<T>::PullCallback pullCbk)
+	: input(std::move(inputName), std::move(pushCbk))
+	, output(std::move(outputName), std::move(pullCbk))
 {
 }
 

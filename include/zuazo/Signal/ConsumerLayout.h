@@ -16,7 +16,8 @@ class ConsumerLayout
 {
 public:
 	explicit ConsumerLayout(std::string name, 
-							std::string inputName = std::string(makeInputName<T>()) );
+							std::string inputName = std::string(makeInputName<T>()),
+							typename Input<T>::PushCallback pushCbk = {} );
 	ConsumerLayout(const ConsumerLayout& other) = delete;
 	ConsumerLayout(ConsumerLayout&& other) = default;
 	~ConsumerLayout() = default;
@@ -33,7 +34,8 @@ protected:
 
 private:
 	struct IO {
-		IO(std::string inputName);
+		IO(	std::string inputName, 
+			typename Input<T>::PushCallback pushCbk );
 		~IO() = default;
 
 		Input<T> input;

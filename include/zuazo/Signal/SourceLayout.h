@@ -17,7 +17,7 @@ class SourceLayout
 public:
 	explicit SourceLayout(	std::string name, 
 							std::string outputName = std::string(makeOutputName<T>()),
-							PullCallback pullCbk = {} );
+							typename Output<T>::PullCallback pullCbk = {} );
 	SourceLayout(const SourceLayout& other) = delete;
 	SourceLayout(SourceLayout&& other) = default;
 	~SourceLayout() = default;
@@ -34,7 +34,8 @@ protected:
 
 private:
 	struct IO {
-		IO(std::string outputName, PullCallback pullcbk);
+		IO(	std::string outputName, 
+			typename Output<T>::PullCallback pullCbk pullcbk);
 		~IO() = default;
 
 		Output<T> output;

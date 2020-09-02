@@ -9,7 +9,7 @@ namespace Zuazo::Signal {
  */
 
 template <typename T>
-inline const T Output<T>::NO_SIGNAL = T();
+inline const typename Output<T>::Element Output<T>::NO_SIGNAL = T();
 
 template <typename T>
 inline Output<T>::Output(std::string name, PullCallback pullCbk)
@@ -17,6 +17,8 @@ inline Output<T>::Output(std::string name, PullCallback pullCbk)
 	, m_pullCallback(std::move(pullCbk))
 {
 }
+
+
 
 template <typename T>
 inline typename Output<T>::Consumers Output<T>::getConsumers() const {
@@ -36,21 +38,7 @@ inline typename Output<T>::Consumers Output<T>::getConsumers() const {
 	return result;
 }
 
-template <typename T>
-inline void Output<T>::reset() {
-	m_lastElement = T();
-}
 
-template <typename T>
-void Output<T>::push(T element) {
-	m_lastElement = std::move(element);
-}
-
-template <typename T>
-inline const T& Output<T>::pull() const {
-	if(m_pullCallback) m_pullCallback();
-	return m_lastElement;
-}
 
 template <typename T>
 inline void Output<T>::setPullCallback(PullCallback cbk) {
@@ -58,8 +46,39 @@ inline void Output<T>::setPullCallback(PullCallback cbk) {
 }
 
 template <typename T>
-inline const PullCallback& Output<T>::getPullCallback() const {
+inline const typename Output<T>::PullCallback& Output<T>::getPullCallback() const {
 	return m_pullCallback;
+}
+
+
+
+template <typename T>
+inline void Output<T>::reset() {
+	push(Element());
+}
+
+template <typename T>
+void Output<T>::push(T element) {
+	m_lastElement = std::move(element);
+
+	for(auto& consumer : getObservers()) {
+		assert(consumer);
+		static_cast<Consumer*>(consumer)->push(m_lastElement);
+	}
+}
+
+template <typename T>
+inline const typename Output<T>::Element& Output<T>::pull() {
+	if(m_pullCallback) {
+		m_lastElement = m_pullCallback();
+	}
+
+	return m_lastElement;
+}
+
+template <typename T>
+inline const typename Output<T>::Element& Output<T>::getLastElement() const {
+	return m_lastElement;
 }
 
 

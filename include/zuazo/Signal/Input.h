@@ -7,7 +7,7 @@
 
 #include <vector>
 #include <string_view>
-#include <optional>
+#include <functional>
 
 namespace Zuazo::Signal {
 
@@ -28,9 +28,11 @@ class Input
 	, private Utils::Observer
 {
 public:
-	using Source = Output<T>; friend Source;
+	using Element = T;
+	using Source = Output<Element>; friend Source;
+	using PushCallback = std::function<void(const Element&)>;
 
-	explicit Input(std::string name = std::string(makeInputName<T>()));
+	explicit Input(std::string name = std::string(makeInputName<Element>()), PushCallback pushCbk = {});
 	Input(const Input& other) = default;
 	Input(Input&& other) = default;
 	virtual ~Input() = default;
@@ -44,20 +46,25 @@ public:
 	void						setSource(Source* src);
 	Source*						getSource() const;
 
+	void						setPushCallback(PushCallback cbk);
+	const PushCallback&			getPushCallback() const;
+
 	void						setNoSignalAction(NoSignalAction nsa);
 	NoSignalAction				getNoSignalAction() const;
 
 	void						reset();
-	const T&					pull() const;
-	bool						hasChanged() const;
-	const T&					getLastElement() const;
+	void						push(const Element& el);
+	const Element&				pull(); ///< \note This function MUST NOT be called from the push callback
+	const Element&				getLastElement() const; 
+	bool						hasChanged() const; ///< \note This function MUST NOT be called from the push callback
 
 private:
-	mutable T					m_lastElement;
+	PushCallback				m_pushCallback;
 	NoSignalAction				m_onNoSignal;
+	Element						m_lastElement;
 
 
-	const T&					pullFromSource() const;
+	const Element&				pullFromSource() const;
 	bool						needsToHold(const T& element) const;
 };
 

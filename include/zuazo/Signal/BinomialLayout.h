@@ -15,10 +15,11 @@ class BinomialLayout
 	: public Layout
 {
 public:
-	explicit BinomialLayout(std::string name, 
+	explicit BinomialLayout(std::string name,
 							std::string inputName = std::string(makeInputName<T>()), 
 							std::string outputName = std::string(makeOutputName<T>()),
-							PullCallback pullCbk = {} );
+							typename Input<T>::PushCallback pushCbk = {},
+							typename Output<T>::PullCallback pullCbk = {} );
 	BinomialLayout(const BinomialLayout& other) = delete;
 	BinomialLayout(BinomialLayout&& other) = default;
 	~BinomialLayout() = default;
@@ -31,6 +32,9 @@ public:
 	PadProxy<Output<T>>&				getOutput();
 	const PadProxy<Output<T>>&			getOutput() const;
 
+	//Magic operator in order to concatenate
+	PadProxy<Output<T>>&				operator<<(PadProxy<Output<T>>& src);
+
 protected:
 	Input<T>&							getInputPad();
 	const Input<T>&						getInputPad() const;
@@ -39,7 +43,10 @@ protected:
 
 private:
 	struct IO {
-		IO(std::string inputName, std::string outputName, PullCallback pullcbk);
+		IO(	std::string inputName, 
+			std::string outputName, 
+			typename Input<T>::PushCallback pushCbk, 
+			typename Output<T>::PullCallback pullCbk );
 		~IO() = default;
 
 		Input<T> input;

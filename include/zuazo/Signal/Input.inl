@@ -7,11 +7,14 @@ namespace Zuazo::Signal {
  */
 
 template <typename T>
-inline Input<T>::Input(std::string name) 
+inline Input<T>::Input(std::string name, PushCallback pushCbk) 
 	: PadBase(std::move(name))
+	, m_pushCallback(std::move(pushCbk))
 	, m_onNoSignal(NoSignalAction::RETURN_EMPTY)
 {
 }
+
+
 
 template <typename T>
 inline void Input<T>::operator<<(NoSignal) {
@@ -34,6 +37,7 @@ inline typename Input<T>::Source* Input<T>::getSource() const{
 }
 
 
+
 template <typename T>
 inline void Input<T>::setNoSignalAction(NoSignalAction nsa) {
 	m_onNoSignal = nsa;
@@ -45,19 +49,45 @@ inline NoSignalAction Input<T>::getNoSignalAction() const {
 }
 
 
+
 template <typename T>
-inline void Input<T>::reset() {
-	m_lastElement = T();
+inline void Input<T>::setPushCallback(PushCallback cbk) {
+	m_pushCallback = std::move(cbk);
 }
 
 template <typename T>
-inline const T& Input<T>::pull() const {
+inline const typename Input<T>::PushCallback& Input<T>::getPushCallback() const {
+	return m_pushCallback;
+}
+
+
+
+template <typename T>
+inline void Input<T>::reset() {
+	m_lastElement = Element();
+}
+
+template <typename T>
+void Input<T>::push(const Element& el) {
+	if(m_pushCallback){
+		m_lastElement = el;
+		m_pushCallback(m_lastElement);
+	} 
+}
+
+template <typename T>
+inline const typename Input<T>::Element& Input<T>::pull() {
 	const auto& newElement = pullFromSource();
 
 	if(!needsToHold(newElement)){
 		m_lastElement = newElement;
 	}
 
+	return m_lastElement;
+}
+
+template <typename T>
+inline const typename Input<T>::Element& Input<T>::getLastElement() const {
 	return m_lastElement;
 }
 
@@ -72,16 +102,12 @@ inline bool Input<T>::hasChanged() const {
 	}
 }
 
-template <typename T>
-inline const T& Input<T>::getLastElement() const {
-	return m_lastElement;
-}
 
 
 template <typename T>
-inline const T& Input<T>::pullFromSource() const{
-	const auto* source = getSource();
-	return source ? source->pull() : Output<T>::NO_SIGNAL;
+inline const typename Input<T>::Element& Input<T>::pullFromSource() const{
+	auto* source = getSource();
+	return source ? source->pull() : Source::NO_SIGNAL;
 }
 
 template <typename T>

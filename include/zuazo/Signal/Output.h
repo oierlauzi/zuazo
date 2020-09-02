@@ -12,18 +12,19 @@ namespace Zuazo::Signal {
 template <typename T>
 class Input;
 
-using PullCallback = std::function<void()>;
-
 template <typename T>
 class Output 
 	: public PadBase
 	, private Utils::Subject
 {
 public:
-	using Consumer = Input<T>; friend Consumer;
+	using Element = T;
+	using Consumer = Input<Element>; friend Consumer;
 	using Consumers = std::vector<std::reference_wrapper<Consumer>>;
 
-	explicit Output(std::string name = std::string(makeOutputName<T>()), PullCallback pullCbk = {});
+	using PullCallback = std::function<Element()>;
+
+	explicit Output(std::string name = std::string(makeOutputName<Element>()), PullCallback pullCbk = {});
 	Output(const Output& other) = default;
 	Output(Output&& other) = default;
 	virtual ~Output() = default;
@@ -33,18 +34,19 @@ public:
 
 	Consumers					getConsumers() const;
 
-	void						reset();
-	void						push(T element);
-	const T&					pull() const;
-
 	void						setPullCallback(PullCallback cbk);
 	const PullCallback&			getPullCallback() const;
 
-	static const T				NO_SIGNAL;
+	void						reset();
+	void						push(Element element); ///< \note This function MUST NOT be called from the pull callback
+	const Element&				pull();
+	const Element&				getLastElement() const;
+
+	static const Element		NO_SIGNAL;
 
 private:
-	T							m_lastElement;
 	PullCallback				m_pullCallback;
+	T							m_lastElement;
 
 };
 

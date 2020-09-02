@@ -28,17 +28,20 @@ inline const Layout::PadProxy<Output<T>>& DummyPad<T>::getOutput() const {
 	return Layout::makeProxy(m_io->output);
 }
 
+
+
 template<typename T>
-inline PullCallback DummyPad<T>::makePullCbk(Output<T>& output, const Input<T>& input) {
-	return [&output, &input] () -> void {
-		output.push(input.pull());
-	};
+inline Layout::PadProxy<Output<T>>& DummyPad<T>::operator<<(Layout::PadProxy<Output<T>>& src) {
+	getInput() << src;
+	return getOutput();
 }
+
+
 
 template<typename T>
 inline DummyPad<T>::IO::IO(std::string name)
-	: input(name)
-	, output(std::move(name), makePullCbk(output, input))
+	: input(name, 				std::bind(&Output<T>::push, std::ref(output), std::placeholders::_1))
+	, output(std::move(name), 	std::bind(&Input<T>::pull, std::ref(input)))
 {
 }
 

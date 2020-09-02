@@ -3,7 +3,9 @@
 namespace Zuazo::Signal {
 
 template<typename T>
-inline SourceLayout<T>::SourceLayout(std::string name, std::string outputName, PullCallback pullCbk)
+inline SourceLayout<T>::SourceLayout(	std::string name, 
+										std::string outputName, 
+										typename Output<T>::PullCallback pullCbk )
 	: Layout(std::move(name))
 	, m_io({}, std::move(outputName), std::move(pullCbk))
 {
@@ -37,7 +39,8 @@ inline const Output<T>& SourceLayout<T>::getOutputPad() const {
 
 
 template<typename T>
-inline SourceLayout<T>::IO::IO(std::string outputName, PullCallback pullcbk)
+inline SourceLayout<T>::IO::IO(	std::string outputName, 
+								typename Output<T>::PullCallback pullCbk )
 	: output(std::move(outputName), std::move(pullcbk))
 {
 }
