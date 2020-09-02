@@ -15,6 +15,13 @@ vec4 ct_sample(in int planeFormat, in sampler2D images[ct_SAMPLER_COUNT], in vec
 		result.r = texture(images[2], texCoords).r;
 		result.a = 1.0f;
 		break;
+	case ct_PLANE_FORMAT_G_B_R_A:
+		result.g = texture(images[0], texCoords).r;
+		result.b = texture(images[1], texCoords).r;
+		result.r = texture(images[2], texCoords).r;
+		result.a = texture(images[3], texCoords).r;
+		break;
+	
 	default: //ct_PLANE_FORMAT_RGBA
 		result = texture(images[0], texCoords);
 		break;

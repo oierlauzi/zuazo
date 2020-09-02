@@ -117,6 +117,7 @@ enum class ColorFormat {
 	G8R8G8B8, ///<\note This format must have 4:2:2 color subsampling
 	G8B8G8R8, ///<\note This format must have 4:2:2 color subsampling
 
+	G8_B8_R8_A8,
 	G8_B8_R8,
 	G8_B8R8,
 	G8_R8B8,
@@ -152,6 +153,7 @@ enum class ColorFormat {
 	G10X6R10X6G10X6B10X6_16, ///<\note This format must have 4:2:2 color subsampling
 	G10X6B10X6G10X6R10X6_16, ///<\note This format must have 4:2:2 color subsampling
 
+	G10X6_B10X6_R10X6_A10X6_16,
 	G10X6_B10X6_R10X6_16,
 	G10X6_B10X6R10X6_16,
 	G10X6_R10X6B10X6_16,
@@ -177,6 +179,7 @@ enum class ColorFormat {
 	G12X4R12X4G12X4B12X4_16, ///<\note This format must have 4:2:2 color subsampling
 	G12X4B12X4G12X4R12X4_16, ///<\note This format must have 4:2:2 color subsampling
 
+	G12X4_B12X4_R12X4_A12X4_16,
 	G12X4_B12X4_R12X4_16,
 	G12X4_B12X4R12X4_16,
 	G12X4_R12X4B12X4_16,
@@ -226,10 +229,13 @@ enum class ColorFormat {
 	G16R16G16B16, 	///<\note This format must have 4:2:2 color subsampling
 	G16B16G16R16, 	///<\note This format must have 4:2:2 color subsampling
 
+	G16_B16_R16_A16,
 	G16_B16_R16,
 	G16_B16R16,
 	G16_R16B16,
 
+	G16f_B16f_R16f_A16f,
+	G16f_B16f_R16f,
 
 	//32 BIT COMPONENTS
 	Y32f,
@@ -251,6 +257,9 @@ enum class ColorFormat {
 	G32fR32fB32fA32f,
 	G32fB32fR32fA32f,
 
+	G32f_B32f_R32f_A32f,
+	G32f_B32f_R32f,
+
 
 	//64 BIT COMPONENTS
 	Y64f,
@@ -271,6 +280,10 @@ enum class ColorFormat {
 	B64fG64fR64fA64f,
 	G64fR64fB64fA64f,
 	G64fB64fR64fA64f,
+
+	G64f_B64f_R64f_A64f,
+	G64f_B64f_R64f,
+
 
 	//Add here
 

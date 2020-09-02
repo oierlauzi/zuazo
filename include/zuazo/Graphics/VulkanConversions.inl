@@ -178,7 +178,11 @@ constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COU
 	case ColorFormat::G8R8G8B8:			return { std::tuple{ vk::Format::eG8B8G8R8422Unorm, swizzle("RGBA", "BGRA") } };
 	case ColorFormat::G8B8G8R8:			return { std::tuple{ vk::Format::eG8B8G8R8422Unorm, swizzle("RGBA", "RGBA")  } };
 
-
+	case ColorFormat::G8_B8_R8_A8:		return { 
+		std::tuple{ vk::Format::eR8Unorm, swizzle("") },
+		std::tuple{ vk::Format::eR8Unorm, swizzle("") },
+		std::tuple{ vk::Format::eR8Unorm, swizzle("") },
+		std::tuple{ vk::Format::eR8Unorm, swizzle("") } };
 	case ColorFormat::G8_B8_R8:			return { 
 		std::tuple{ vk::Format::eR8Unorm, swizzle("") },
 		std::tuple{ vk::Format::eR8Unorm, swizzle("") },
@@ -220,7 +224,11 @@ constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COU
 	case ColorFormat::G10X6R10X6G10X6B10X6_16:	return { std::tuple{ vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16, swizzle("RGBA", "BGRA") } };
 	case ColorFormat::G10X6B10X6G10X6R10X6_16:	return { std::tuple{ vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16, swizzle("RGBA", "RGBA")  } };
 
-
+	case ColorFormat::G10X6_B10X6_R10X6_A10X6_16: return { 
+		std::tuple{ vk::Format::eR10X6UnormPack16, swizzle("") },
+		std::tuple{ vk::Format::eR10X6UnormPack16, swizzle("") },
+		std::tuple{ vk::Format::eR10X6UnormPack16, swizzle("") },
+		std::tuple{ vk::Format::eR10X6UnormPack16, swizzle("") } };
 	case ColorFormat::G10X6_B10X6_R10X6_16:	return { 
 		std::tuple{ vk::Format::eR10X6UnormPack16, swizzle("") },
 		std::tuple{ vk::Format::eR10X6UnormPack16, swizzle("") },
@@ -253,6 +261,11 @@ constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COU
 	case ColorFormat::G12X4B12X4G12X4R12X4_16:	return { std::tuple{ vk::Format::eG12X4B12X4G12X4R12X4422Unorm4Pack16, swizzle("RGBA", "RGBA")  } };
 
 
+	case ColorFormat::G12X4_B12X4_R12X4_A12X4_16: return { 
+		std::tuple{ vk::Format::eR12X4UnormPack16, swizzle("") },
+		std::tuple{ vk::Format::eR12X4UnormPack16, swizzle("") },
+		std::tuple{ vk::Format::eR12X4UnormPack16, swizzle("") },
+		std::tuple{ vk::Format::eR12X4UnormPack16, swizzle("") } };
 	case ColorFormat::G12X4_B12X4_R12X4_16:	return { 
 		std::tuple{ vk::Format::eR12X4UnormPack16, swizzle("") },
 		std::tuple{ vk::Format::eR12X4UnormPack16, swizzle("") },
@@ -309,6 +322,11 @@ constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COU
 	case ColorFormat::G16B16G16R16:		return { std::tuple{ vk::Format::eG16B16G16R16422Unorm, swizzle("RGBA", "RGBA")  } };
 
 
+	case ColorFormat::G16_B16_R16_A16: return { 
+		std::tuple{ vk::Format::eR16Unorm, swizzle("") },
+		std::tuple{ vk::Format::eR16Unorm, swizzle("") },
+		std::tuple{ vk::Format::eR16Unorm, swizzle("") },
+		std::tuple{ vk::Format::eR16Unorm, swizzle("") } };
 	case ColorFormat::G16_B16_R16:			return { 
 		std::tuple{ vk::Format::eR16Unorm, swizzle("") },
 		std::tuple{ vk::Format::eR16Unorm, swizzle("") },
@@ -319,6 +337,17 @@ constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COU
 	case ColorFormat::G16_R16B16:			return {
 		std::tuple{ vk::Format::eR16Unorm, swizzle("") },
 		std::tuple{ vk::Format::eR16G16Unorm, swizzle("GR") } };
+
+	case ColorFormat::G16f_B16f_R16f_A16f: return { 
+		std::tuple{ vk::Format::eR16Sfloat, swizzle("") },
+		std::tuple{ vk::Format::eR16Sfloat, swizzle("") },
+		std::tuple{ vk::Format::eR16Sfloat, swizzle("") },
+		std::tuple{ vk::Format::eR16Sfloat, swizzle("") } };
+	case ColorFormat::G16f_B16f_R16f: return { 
+		std::tuple{ vk::Format::eR16Sfloat, swizzle("") },
+		std::tuple{ vk::Format::eR16Sfloat, swizzle("") },
+		std::tuple{ vk::Format::eR16Sfloat, swizzle("") } };
+
 
 	//32 bits per component
 	case ColorFormat::Y32f:				return { std::tuple{ vk::Format::eR32Sfloat, swizzle("RRR1") } };
@@ -340,6 +369,17 @@ constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COU
 	case ColorFormat::G32fR32fB32fA32f:	return { std::tuple{ vk::Format::eR32G32B32A32Sfloat, swizzle("RGBA", "GRBA") } };
 	case ColorFormat::G32fB32fR32fA32f:	return { std::tuple{ vk::Format::eR32G32B32A32Sfloat, swizzle("RGBA", "GBRA") } };
 
+	case ColorFormat::G32f_B32f_R32f_A32f: return { 
+		std::tuple{ vk::Format::eR32Sfloat, swizzle("") },
+		std::tuple{ vk::Format::eR32Sfloat, swizzle("") },
+		std::tuple{ vk::Format::eR32Sfloat, swizzle("") },
+		std::tuple{ vk::Format::eR32Sfloat, swizzle("") } };
+	case ColorFormat::G32f_B32f_R32f: return { 
+		std::tuple{ vk::Format::eR32Sfloat, swizzle("") },
+		std::tuple{ vk::Format::eR32Sfloat, swizzle("") },
+		std::tuple{ vk::Format::eR32Sfloat, swizzle("") } };
+
+
 	//64 bits per component
 	case ColorFormat::Y64f:				return { std::tuple{ vk::Format::eR64Sfloat, swizzle("RRR1") } };
 
@@ -359,6 +399,17 @@ constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COU
 	case ColorFormat::B64fG64fR64fA64f:	return { std::tuple{ vk::Format::eR64G64B64A64Sfloat, swizzle("RGBA", "BGRA") } };
 	case ColorFormat::G64fR64fB64fA64f:	return { std::tuple{ vk::Format::eR64G64B64A64Sfloat, swizzle("RGBA", "GRBA") } };
 	case ColorFormat::G64fB64fR64fA64f:	return { std::tuple{ vk::Format::eR64G64B64A64Sfloat, swizzle("RGBA", "GBRA") } };
+
+	case ColorFormat::G64f_B64f_R64f_A64f: return { 
+		std::tuple{ vk::Format::eR64Sfloat, swizzle("") },
+		std::tuple{ vk::Format::eR64Sfloat, swizzle("") },
+		std::tuple{ vk::Format::eR64Sfloat, swizzle("") },
+		std::tuple{ vk::Format::eR64Sfloat, swizzle("") } };
+	case ColorFormat::G64f_B64f_R64f: return { 
+		std::tuple{ vk::Format::eR64Sfloat, swizzle("") },
+		std::tuple{ vk::Format::eR64Sfloat, swizzle("") },
+		std::tuple{ vk::Format::eR64Sfloat, swizzle("") } };
+
 
 	default: return {};
 	}

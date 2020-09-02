@@ -113,6 +113,7 @@ private:
 		case 1: return ct_PLANE_FORMAT_RGBA;
 		case 2: return ct_PLANE_FORMAT_G_BR;
 		case 3: return ct_PLANE_FORMAT_G_B_R;
+		case 4: return ct_PLANE_FORMAT_G_B_R_A;
 		default: return -1;
 		}
 	}

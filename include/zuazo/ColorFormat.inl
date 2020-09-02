@@ -4,10 +4,21 @@ namespace Zuazo {
 
 constexpr size_t getPlaneCount(ColorFormat format){
 	switch(format){
+		case ColorFormat::G8_B8_R8_A8:
+		case ColorFormat::G10X6_B10X6_R10X6_A10X6_16:
+		case ColorFormat::G12X4_B12X4_R12X4_A12X4_16:
+		case ColorFormat::G16_B16_R16_A16:
+		case ColorFormat::G16f_B16f_R16f_A16f:
+		case ColorFormat::G32f_B32f_R32f_A32f:
+		case ColorFormat::G64f_B64f_R64f_A64f:
+			return 4;
 		case ColorFormat::G8_B8_R8:
 		case ColorFormat::G10X6_B10X6_R10X6_16:
 		case ColorFormat::G12X4_B12X4_R12X4_16:
 		case ColorFormat::G16_B16_R16:
+		case ColorFormat::G16f_B16f_R16f:
+		case ColorFormat::G32f_B32f_R32f:
+		case ColorFormat::G64f_B64f_R64f:
 			return 3;
 		case ColorFormat::G8_R8B8:
 		case ColorFormat::G8_B8R8:
@@ -98,6 +109,7 @@ constexpr std::string_view toString(ColorFormat format){
 	ZUAZO_ENUM2STR_CASE( ColorFormat, B8G8R8G8 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G8R8G8B8 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G8B8G8R8 )
+	ZUAZO_ENUM2STR_CASE( ColorFormat, G8_B8_R8_A8 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G8_B8_R8 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G8_R8B8 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G8_B8R8 )
@@ -125,6 +137,7 @@ constexpr std::string_view toString(ColorFormat format){
 	ZUAZO_ENUM2STR_CASE( ColorFormat, B10X6G10X6R10X6G10X6_16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G10X6R10X6G10X6B10X6_16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G10X6B10X6G10X6R10X6_16 )
+	ZUAZO_ENUM2STR_CASE( ColorFormat, G10X6_B10X6_R10X6_A10X6_16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G10X6_B10X6_R10X6_16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G10X6_R10X6B10X6_16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G10X6_B10X6R10X6_16 )
@@ -144,6 +157,7 @@ constexpr std::string_view toString(ColorFormat format){
 	ZUAZO_ENUM2STR_CASE( ColorFormat, B12X4G12X4R12X4G12X4_16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G12X4R12X4G12X4B12X4_16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G12X4B12X4G12X4R12X4_16 )
+	ZUAZO_ENUM2STR_CASE( ColorFormat, G12X4_B12X4_R12X4_A12X4_16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G12X4_B12X4_R12X4_16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G12X4_R12X4B12X4_16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G12X4_B12X4R12X4_16 )
@@ -182,9 +196,13 @@ constexpr std::string_view toString(ColorFormat format){
 	ZUAZO_ENUM2STR_CASE( ColorFormat, B16G16R16G16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G16R16G16B16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G16B16G16R16 )
+	ZUAZO_ENUM2STR_CASE( ColorFormat, G16_B16_R16_A16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G16_B16_R16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G16_R16B16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G16_B16R16 )
+	ZUAZO_ENUM2STR_CASE( ColorFormat, G16f_B16f_R16f_A16f )
+	ZUAZO_ENUM2STR_CASE( ColorFormat, G16f_B16f_R16f )
+
 	ZUAZO_ENUM2STR_CASE( ColorFormat, Y32f )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, Y32fA32f )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, A32fY32f )
@@ -200,6 +218,8 @@ constexpr std::string_view toString(ColorFormat format){
 	ZUAZO_ENUM2STR_CASE( ColorFormat, B32fG32fR32fA32f )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G32fR32fB32fA32f )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G32fB32fR32fA32f )
+	ZUAZO_ENUM2STR_CASE( ColorFormat, G32f_B32f_R32f_A32f )
+	ZUAZO_ENUM2STR_CASE( ColorFormat, G32f_B32f_R32f )
 
 	ZUAZO_ENUM2STR_CASE( ColorFormat, Y64f )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, Y64fA64f )
@@ -216,6 +236,8 @@ constexpr std::string_view toString(ColorFormat format){
 	ZUAZO_ENUM2STR_CASE( ColorFormat, B64fG64fR64fA64f )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G64fR64fB64fA64f )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G64fB64fR64fA64f )
+	ZUAZO_ENUM2STR_CASE( ColorFormat, G64f_B64f_R64f_A64f )
+	ZUAZO_ENUM2STR_CASE( ColorFormat, G64f_B64f_R64f )
 
 	default: return "";
 	}

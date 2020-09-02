@@ -22,6 +22,7 @@ ZUAZO_IF_CPP(constexpr uint32_t, const uint) ct_DATA_BINDING = 1;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_RGBA = 0;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_G_BR = 1;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_G_B_R = 2;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_G_B_R_A = 3;
 
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_YCBCR_FALSE = 0;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_YCBCR_TRUE = 1;
