@@ -14,11 +14,6 @@ namespace Zuazo::Signal {
 template <typename T>
 class Output;
 
-enum class NoSignalAction {
-	RETURN_EMPTY,
-	HOLD_LAST
-};
-
 class NoSignal {};
 constexpr NoSignal noSignal;
 
@@ -30,9 +25,8 @@ class Input
 public:
 	using Element = T;
 	using Source = Output<Element>; friend Source;
-	using PushCallback = std::function<void(const Element&)>;
 
-	explicit Input(std::string name = std::string(makeInputName<Element>()), PushCallback pushCbk = {});
+	explicit Input(std::string name = std::string(makeInputName<Element>()));
 	Input(const Input& other) = default;
 	Input(Input&& other) = default;
 	virtual ~Input() = default;
@@ -46,26 +40,16 @@ public:
 	void						setSource(Source* src);
 	Source*						getSource() const;
 
-	void						setPushCallback(PushCallback cbk);
-	const PushCallback&			getPushCallback() const;
-
-	void						setNoSignalAction(NoSignalAction nsa);
-	NoSignalAction				getNoSignalAction() const;
-
 	void						reset();
-	void						push(const Element& el);
 	const Element&				pull(); ///< \note This function MUST NOT be called from the push callback
 	const Element&				getLastElement() const; 
 	bool						hasChanged() const; ///< \note This function MUST NOT be called from the push callback
 
 private:
-	PushCallback				m_pushCallback;
-	NoSignalAction				m_onNoSignal;
 	Element						m_lastElement;
 
 
 	const Element&				pullFromSource() const;
-	bool						needsToHold(const T& element) const;
 };
 
 template<typename T>
@@ -90,8 +74,6 @@ public:
 	using Input<T>::operator>=;
 	using Input<T>::operator<<;
 	using Input<T>::getName;
-	using Input<T>::setNoSignalAction;
-	using Input<T>::getNoSignalAction;
 
 	void						setSource(Source* src);
 	Source*						getSource() const;

@@ -22,7 +22,7 @@ public:
 	using Consumer = Input<Element>; friend Consumer;
 	using Consumers = std::vector<std::reference_wrapper<Consumer>>;
 
-	using PullCallback = std::function<Element()>;
+	using PullCallback = std::function<void(Output<T>&)>;
 
 	explicit Output(std::string name = std::string(makeOutputName<Element>()), PullCallback pullCbk = {});
 	Output(const Output& other) = default;

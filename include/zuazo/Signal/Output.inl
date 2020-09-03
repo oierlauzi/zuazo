@@ -30,8 +30,8 @@ inline typename Output<T>::Consumers Output<T>::getConsumers() const {
 	std::transform(
 		observers.cbegin(), observers.cend(),
 		std::back_inserter(result),
-		[] (Utils::Observer* obs) -> Input<T>& {
-			return static_cast<Input<T>&>(*obs);
+		[] (Utils::Observer* obs) -> Consumer& {
+			return static_cast<Consumer&>(*obs);
 		}
 	);
 
@@ -58,19 +58,14 @@ inline void Output<T>::reset() {
 }
 
 template <typename T>
-void Output<T>::push(T element) {
+void Output<T>::push(Element element) {
 	m_lastElement = std::move(element);
-
-	for(auto& consumer : getObservers()) {
-		assert(consumer);
-		static_cast<Consumer*>(consumer)->push(m_lastElement);
-	}
 }
 
 template <typename T>
 inline const typename Output<T>::Element& Output<T>::pull() {
 	if(m_pullCallback) {
-		m_lastElement = m_pullCallback();
+		m_pullCallback(*this);
 	}
 
 	return m_lastElement;

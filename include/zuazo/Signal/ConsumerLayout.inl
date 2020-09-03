@@ -4,10 +4,9 @@ namespace Zuazo::Signal {
 
 template<typename T>
 inline ConsumerLayout<T>::ConsumerLayout(	std::string name, 
-											std::string inputName,
-											typename Input<T>::PushCallback pushCbk)
+											std::string inputName )
 	: Layout(std::move(name))
-	, m_io({}, std::move(inputName), std::move(pushCbk))
+	, m_io({}, std::move(inputName))
 {
 	Layout::registerPad(m_io->input);
 }
@@ -39,9 +38,8 @@ inline const Input<T>& ConsumerLayout<T>::getInputPad() const {
 
 
 template<typename T>
-inline ConsumerLayout<T>::IO::IO(	std::string inputName, 
-									typename Input<T>::PushCallback pushCbk)
-	: input(std::move(inputName), std::move(pushCbk))
+inline ConsumerLayout<T>::IO::IO(std::string inputName)
+	: input(std::move(inputName))
 {
 }
 

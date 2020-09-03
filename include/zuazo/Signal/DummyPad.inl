@@ -40,8 +40,8 @@ inline Layout::PadProxy<Output<T>>& DummyPad<T>::operator<<(Layout::PadProxy<Out
 
 template<typename T>
 inline DummyPad<T>::IO::IO(std::string name)
-	: input(name, 				std::bind(&Output<T>::push, std::ref(output), std::placeholders::_1))
-	, output(std::move(name), 	std::bind(&Input<T>::pull, std::ref(input)))
+	: input(name)
+	, output(std::move(name), [&input] (Output<T>& output) { output.push(input.pull()); }))
 {
 }
 

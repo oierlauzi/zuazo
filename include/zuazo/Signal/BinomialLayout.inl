@@ -6,10 +6,9 @@ template<typename T>
 inline BinomialLayout<T>::BinomialLayout(	std::string name, 
 											std::string inputName, 
 											std::string outputName,
-											typename Input<T>::PushCallback pushCbk,
 											typename Output<T>::PullCallback pullCbk )
 	: Layout(std::move(name))
-	, m_io({}, std::move(inputName), std::move(outputName), std::move(pushCbk), std::move(pullCbk))
+	, m_io({}, std::move(inputName), std::move(outputName), std::move(pullCbk))
 {
 	Layout::registerPads( { m_io->input, m_io->output } );
 }
@@ -70,9 +69,8 @@ inline const Output<T>& BinomialLayout<T>::getOutputPad() const {
 template<typename T>
 inline BinomialLayout<T>::IO::IO(	std::string inputName, 
 									std::string outputName, 
-									typename Input<T>::PushCallback pushCbk, 
 									typename Output<T>::PullCallback pullCbk)
-	: input(std::move(inputName), std::move(pushCbk))
+	: input(std::move(inputName))
 	, output(std::move(outputName), std::move(pullCbk))
 {
 }

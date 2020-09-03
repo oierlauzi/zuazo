@@ -7,10 +7,8 @@ namespace Zuazo::Signal {
  */
 
 template <typename T>
-inline Input<T>::Input(std::string name, PushCallback pushCbk) 
+inline Input<T>::Input(std::string name) 
 	: PadBase(std::move(name))
-	, m_pushCallback(std::move(pushCbk))
-	, m_onNoSignal(NoSignalAction::RETURN_EMPTY)
 {
 }
 
@@ -33,31 +31,7 @@ inline void Input<T>::setSource(Source* src){
 
 template <typename T>
 inline typename Input<T>::Source* Input<T>::getSource() const{
-	return static_cast<Output<T>*>(getSubject());
-}
-
-
-
-template <typename T>
-inline void Input<T>::setNoSignalAction(NoSignalAction nsa) {
-	m_onNoSignal = nsa;
-}
-
-template <typename T>
-inline NoSignalAction Input<T>::getNoSignalAction() const {
-	return m_onNoSignal;
-}
-
-
-
-template <typename T>
-inline void Input<T>::setPushCallback(PushCallback cbk) {
-	m_pushCallback = std::move(cbk);
-}
-
-template <typename T>
-inline const typename Input<T>::PushCallback& Input<T>::getPushCallback() const {
-	return m_pushCallback;
+	return static_cast<Source*>(getSubject());
 }
 
 
@@ -68,21 +42,8 @@ inline void Input<T>::reset() {
 }
 
 template <typename T>
-void Input<T>::push(const Element& el) {
-	if(m_pushCallback){
-		m_lastElement = el;
-		m_pushCallback(m_lastElement);
-	} 
-}
-
-template <typename T>
 inline const typename Input<T>::Element& Input<T>::pull() {
-	const auto& newElement = pullFromSource();
-
-	if(!needsToHold(newElement)){
-		m_lastElement = newElement;
-	}
-
+	m_lastElement = pullFromSource();
 	return m_lastElement;
 }
 
@@ -94,12 +55,7 @@ inline const typename Input<T>::Element& Input<T>::getLastElement() const {
 template <typename T>
 inline bool Input<T>::hasChanged() const {
 	const auto& newElement = pullFromSource();
-
-	if(needsToHold(newElement)){
-		return false; //If last element is held, it has not change
-	} else {
-		return m_lastElement != newElement;
-	}
+	return m_lastElement != newElement;
 }
 
 
@@ -110,11 +66,6 @@ inline const typename Input<T>::Element& Input<T>::pullFromSource() const{
 	return source ? source->pull() : Source::NO_SIGNAL;
 }
 
-template <typename T>
-inline bool Input<T>::needsToHold(const T& element) const {
-	//Last element will only be held if the option is set and an empty signal arrives
-	return (m_onNoSignal == NoSignalAction::HOLD_LAST) && (element == Output<T>::NO_SIGNAL);
-}
 
 /*
  * Layout::PadProxy<Input<T>>

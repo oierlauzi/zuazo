@@ -18,7 +18,6 @@ public:
 	explicit BinomialLayout(std::string name,
 							std::string inputName = std::string(makeInputName<T>()), 
 							std::string outputName = std::string(makeOutputName<T>()),
-							typename Input<T>::PushCallback pushCbk = {},
 							typename Output<T>::PullCallback pullCbk = {} );
 	BinomialLayout(const BinomialLayout& other) = delete;
 	BinomialLayout(BinomialLayout&& other) = default;
@@ -45,7 +44,6 @@ private:
 	struct IO {
 		IO(	std::string inputName, 
 			std::string outputName, 
-			typename Input<T>::PushCallback pushCbk, 
 			typename Output<T>::PullCallback pullCbk );
 		~IO() = default;
 
