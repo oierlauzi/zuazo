@@ -12,22 +12,24 @@ class ZuazoBase
 	: public Signal::Layout
 {
 public:
+	using MoveCallback = std::function<void(ZuazoBase&)>;
 	using OpenCallback = std::function<void(ZuazoBase&)>;
 	using CloseCallback = std::function<void(ZuazoBase&)>;
 	using UpdateCallback = std::function<void()>;
 
 	ZuazoBase(	Instance& instance, 
 				std::string name,
+				std::initializer_list<PadRef> pads = {},
+				MoveCallback moveCbk = {},
 				OpenCallback openCbk = {},
 				CloseCallback closeCbk = {},
-				UpdateCallback updateCbk = {},
-				std::initializer_list<PadRef> pads = {} );
+				UpdateCallback updateCbk = {} );
 	ZuazoBase(const ZuazoBase& other) = delete;
-	ZuazoBase(ZuazoBase&& other) = default;
+	ZuazoBase(ZuazoBase&& other);
 	virtual ~ZuazoBase();
 
 	ZuazoBase& 						operator=(const ZuazoBase& other) = delete;
-	ZuazoBase& 						operator=(ZuazoBase&& other) = default;
+	ZuazoBase& 						operator=(ZuazoBase&& other);
 
 	void 							open();
 	void 							close();
@@ -36,20 +38,23 @@ public:
 	Instance&						getInstance() const;
 
 	void							setPreUpdateCallback(UpdateCallback cbk);
-	const UpdateCallback&			setPreUpdateCallback() const;
+	const UpdateCallback&			getPreUpdateCallback() const;
 
 	void							setPostUpdateCallback(UpdateCallback cbk);
-	const UpdateCallback&			setPostUpdateCallback() const;
+	const UpdateCallback&			getPostUpdateCallback() const;
 
 protected:
 	void							setUpdateCallback(UpdateCallback cbk);
-	const UpdateCallback&			setUpdateCallback() const;
+	const UpdateCallback&			getUpdateCallback() const;
+
+	void							setMoveCallback(MoveCallback cbk);
+	const MoveCallback&				getMoveCallback() const;
 
 	void							setOpenCallback(OpenCallback cbk);
-	const OpenCallback&				setOpenCallback() const;
+	const OpenCallback&				getOpenCallback() const;
 
 	void							setCloseCallback(CloseCallback cbk);
-	const CloseCallback&			setCloseCallback() const;
+	const CloseCallback&			getCloseCallback() const;
 
 	void        					update() const;
 	void							enableRegularUpdate(Instance::Priority prior) const;
@@ -74,6 +79,7 @@ private:
 
 	bool    						m_isOpen;
 
+	MoveCallback					m_moveCallback;
 	OpenCallback					m_openCallback;
 	CloseCallback					m_closeCallback;
 	UpdateCallbacks					m_updateCallbacks;

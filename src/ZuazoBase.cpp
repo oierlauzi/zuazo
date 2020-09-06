@@ -4,13 +4,15 @@ namespace Zuazo {
 
 ZuazoBase::ZuazoBase(	Instance& instance, 
 						std::string name,
+						std::initializer_list<PadRef> pads,
+						MoveCallback moveCbk,
 						OpenCallback openCbk,
 						CloseCallback closeCbk,
-						UpdateCallback updateCbk,
-						std::initializer_list<PadRef> pads )
-	: Signal::Layout(move(name), pads)
+						UpdateCallback updateCbk )
+	: Signal::Layout(std::move(name), pads)
 	, m_instance(instance)
 	, m_isOpen(false)
+	, m_moveCallback(std::move(moveCbk))
 	, m_openCallback(std::move(openCbk))
 	, m_closeCallback(std::move(closeCbk))
 	, m_updateCallbacks{std::make_shared<UpdateCallback>(),
@@ -20,6 +22,19 @@ ZuazoBase::ZuazoBase(	Instance& instance,
 	ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Constructed");
 }
 
+ZuazoBase::ZuazoBase(ZuazoBase&& other)
+	: Signal::Layout(std::move(static_cast<Signal::Layout&>(other)))
+	, m_instance(other.m_instance)
+	, m_isOpen(other.m_isOpen)
+	, m_moveCallback(std::move(other.m_moveCallback))
+	, m_openCallback(std::move(other.m_openCallback))
+	, m_closeCallback(std::move(other.m_closeCallback))
+	, m_updateCallbacks(std::move(other.m_updateCallbacks))
+{
+	m_moveCallback(*this);
+	ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Moved");
+}
+
 ZuazoBase::~ZuazoBase() {
 	//Just in case upper class has not desuscribed from updates
 	disableRegularUpdate();
@@ -27,6 +42,23 @@ ZuazoBase::~ZuazoBase() {
 	
 	ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Destroyed");
 }
+
+ZuazoBase& ZuazoBase::operator=(ZuazoBase&& other) {
+	static_cast<Signal::Layout&>(*this) = std::move(static_cast<Signal::Layout&>(other));
+	m_instance = other.m_instance;
+	m_isOpen = other.m_isOpen;
+	m_moveCallback = std::move(other.m_moveCallback);
+	m_openCallback = std::move(other.m_openCallback);
+	m_closeCallback = std::move(other.m_closeCallback);
+	m_updateCallbacks = std::move(other.m_updateCallbacks);
+
+	m_moveCallback(*this);
+	ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Move assigned");
+
+	return *this;
+}
+
+
 
 void ZuazoBase::open() {
 	if(m_isOpen == false) {
@@ -64,7 +96,7 @@ void ZuazoBase::setPreUpdateCallback(UpdateCallback cbk) {
 	*(m_updateCallbacks[PRE_UPDATE]) = std::move(cbk);
 }
 
-const ZuazoBase::UpdateCallback& ZuazoBase::setPreUpdateCallback() const {
+const ZuazoBase::UpdateCallback& ZuazoBase::getPreUpdateCallback() const {
 	return *(m_updateCallbacks[PRE_UPDATE]);
 }
 
@@ -72,7 +104,7 @@ void ZuazoBase::setUpdateCallback(UpdateCallback cbk) {
 	*(m_updateCallbacks[UPDATE]) = std::move(cbk);
 }
 
-const ZuazoBase::UpdateCallback& ZuazoBase::setUpdateCallback() const {
+const ZuazoBase::UpdateCallback& ZuazoBase::getUpdateCallback() const {
 	return *(m_updateCallbacks[UPDATE]) ;
 }
 
@@ -80,8 +112,18 @@ void ZuazoBase::setPostUpdateCallback(UpdateCallback cbk) {
 	*(m_updateCallbacks[POST_UPDATE]) = std::move(cbk);
 }
 
-const ZuazoBase::UpdateCallback& ZuazoBase::setPostUpdateCallback() const {
+const ZuazoBase::UpdateCallback& ZuazoBase::getPostUpdateCallback() const {
 	return *(m_updateCallbacks[POST_UPDATE]);
+}
+
+
+
+void ZuazoBase::setMoveCallback(MoveCallback cbk) {
+	m_moveCallback = std::move(cbk);
+}
+
+const ZuazoBase::MoveCallback& ZuazoBase::getMoveCallback() const {
+	return m_moveCallback;
 }
 
 
@@ -90,7 +132,7 @@ void ZuazoBase::setOpenCallback(OpenCallback cbk) {
 	m_openCallback = std::move(cbk);
 }
 
-const ZuazoBase::OpenCallback& ZuazoBase::setOpenCallback() const {
+const ZuazoBase::OpenCallback& ZuazoBase::getOpenCallback() const {
 	return m_openCallback;
 }
 
@@ -98,7 +140,7 @@ void ZuazoBase::setCloseCallback(CloseCallback cbk) {
 	m_closeCallback = std::move(cbk);
 }
 
-const ZuazoBase::CloseCallback& ZuazoBase::setCloseCallback() const {
+const ZuazoBase::CloseCallback& ZuazoBase::getCloseCallback() const {
 	return m_closeCallback;
 }
 
