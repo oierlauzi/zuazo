@@ -21,7 +21,9 @@ public:
 	~Uploader() = default;
 
 	Uploader& 										operator=(const Uploader& other) = delete;
+	Uploader& 										operator=(Uploader&& other) = default;
 
+	const Vulkan&									getVulkan() const;
 	std::shared_ptr<StagedFrame>					acquireFrame() const;
 	void											clear();
 	void											shrink(size_t maxSpares = 0);
@@ -42,7 +44,7 @@ private:
 
 	};
 
-	const Vulkan&									m_vulkan;
+	std::reference_wrapper<const Vulkan>			m_vulkan;
 	std::shared_ptr<Frame::Descriptor>				m_frameDescriptor;
 	ColorTransfer									m_colorTransfer;
 	std::vector<Frame::PlaneDescriptor>				m_planeDescriptors;

@@ -22,6 +22,11 @@ Uploader::Uploader(	const Vulkan& vulkan,
 }
 
 
+
+const Vulkan& Uploader::getVulkan() const {
+	return m_vulkan;
+}
+
 std::shared_ptr<StagedFrame> Uploader::acquireFrame() const {
 	auto frame = m_pool.acquire();
 	frame->waitDependecies();
@@ -35,6 +40,7 @@ void Uploader::clear() {
 void Uploader::shrink(size_t maxSpares) {
 	m_pool.shrink(maxSpares);
 }
+
 
 
 std::vector<Frame::PlaneDescriptor> Uploader::createPlaneDescriptors(	const Vulkan& vulkan, 
