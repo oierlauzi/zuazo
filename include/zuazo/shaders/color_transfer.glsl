@@ -34,7 +34,7 @@ vec4 ct_make_cbcr_negative(in int isYCbCr, in vec4 color){
 	vec4 result = color;
 
 	if(isYCbCr == ct_YCBCR_TRUE) {
-		color.rb -= vec2(0.5f); //Values between -0.5 and 0.5
+		result.rb -= vec2(0.5f); //Values between -0.5 and 0.5
 	}
 
 	return result;
@@ -44,7 +44,7 @@ vec4 ct_make_cbcr_positive(in int isYCbCr, in vec4 color){
 	vec4 result = color;
 
 	if(isYCbCr == ct_YCBCR_TRUE) {
-		color.rb += vec2(0.5f); //Values between -0.5 and 0.5
+		result.rb += vec2(0.5f); //Values between -0.5 and 0.5
 	}
 
 	return result;
