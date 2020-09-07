@@ -16,7 +16,7 @@ struct Frame::Impl {
 
 	std::shared_ptr<const Descriptor> 	descriptor;
 	Math::Vec2f 						size;
-	std::shared_ptr<const Buffer> 		colorTransfer;
+	std::shared_ptr<const Buffer> 		colorTransferBuffer;
 
 	std::vector<vk::UniqueImage> 		images;
 	Vulkan::AggregatedAllocation		memory;
@@ -28,14 +28,14 @@ struct Frame::Impl {
 	mutable std::vector<vk::Fence> 		dependencies;
 
 	Impl(	const Vulkan& vulkan,
-			const std::shared_ptr<const Descriptor> desc,
-			const std::shared_ptr<const Buffer>& colorTransfer,
+			std::shared_ptr<const Descriptor> desc,
+			std::shared_ptr<const Buffer> colorTransfer,
 			Utils::BufferView<const PlaneDescriptor> planes,
 			vk::ImageUsageFlags usage )
 		: vulkan(vulkan)
-		, descriptor(desc)
-		, size(calcualteSize(*desc))
-		, colorTransfer(colorTransfer)
+		, descriptor(std::move(desc))
+		, size(calcualteSize(*descriptor))
+		, colorTransferBuffer(std::move(colorTransfer))
 		, images(createImages(vulkan, usage, planes))
 		, memory(allocateMemory(vulkan, images))
 		, imageViews(createImageViews(vulkan, planes, images))
@@ -43,7 +43,7 @@ struct Frame::Impl {
 		, descriptorSets(allocateDescriptorSets(vulkan, *descriptorPool))
 	{
 		assert(descriptor);
-		assert(colorTransfer);
+		assert(colorTransferBuffer);
 		assert(images.size());
 
 		writeDescriptorSets();
@@ -129,7 +129,7 @@ private:
 
 			const std::array buffers = {
 				vk::DescriptorBufferInfo(
-					colorTransfer->getBuffer(),								//Buffer
+					colorTransferBuffer->getBuffer(),						//Buffer
 					0,														//Offset
 					ColorTransfer::size()									//Size
 				)
@@ -302,11 +302,11 @@ private:
 
 
 Frame::Frame(	const Vulkan& vulkan,
-				const std::shared_ptr<const Descriptor> desc,
-				const std::shared_ptr<const Buffer>& colorTransfer,
+				std::shared_ptr<const Descriptor> desc,
+				std::shared_ptr<const Buffer> colorTransfer,
 				Utils::BufferView<const PlaneDescriptor> planes,
 				vk::ImageUsageFlags usage )
-	: m_impl({}, vulkan, desc, colorTransfer, planes, usage)
+	: m_impl({}, vulkan, std::move(desc), std::move(colorTransfer), planes, usage)
 {
 }
 
@@ -368,8 +368,8 @@ const vk::DeviceMemory& Frame::getMemory() const {
 
 
 
-std::shared_ptr<Buffer> Frame::createColorTransferBuffer(	const Vulkan& vulkan,
-															const ColorTransfer& colorTransfer )
+std::shared_ptr<StagedBuffer> Frame::createColorTransferBuffer(	const Vulkan& vulkan,
+																const ColorTransfer& colorTransfer )
 {
 	constexpr vk::BufferUsageFlags usage =
 		vk::BufferUsageFlagBits::eUniformBuffer;
@@ -384,8 +384,6 @@ std::shared_ptr<Buffer> Frame::createColorTransferBuffer(	const Vulkan& vulkan,
 		vk::AccessFlagBits::eUniformRead,
 		vk::PipelineStageFlagBits::eAllGraphics
 	);
-
-	result->waitCompletion(vulkan); //TODO try to avoid this call
 
 	return result;
 }

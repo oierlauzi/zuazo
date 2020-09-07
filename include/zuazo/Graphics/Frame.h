@@ -2,6 +2,7 @@
 
 #include "Vulkan.h"
 #include "Buffer.h"
+#include "StagedBuffer.h"
 #include "VulkanConversions.h"
 #include "../ScalingMode.h"
 #include "../Utils/BufferView.h"
@@ -50,8 +51,8 @@ public:
 	static constexpr size_t FILTER_COUNT = VK_FILTER_LINEAR - VK_FILTER_NEAREST + 1;
 
 	Frame(	const Vulkan& vulkan,
-			const std::shared_ptr<const Descriptor> desc,
-			const std::shared_ptr<const Buffer>& colorTransfer,
+			std::shared_ptr<const Descriptor> desc,
+			std::shared_ptr<const Buffer> colorTransfer,
 			Utils::BufferView<const PlaneDescriptor> planes,
 			vk::ImageUsageFlags usage );
 	Frame(const Frame& other) = delete;
@@ -78,7 +79,7 @@ public:
 	const std::vector<Utils::Area>&			getPlaneAreas() const;
 	const vk::DeviceMemory&					getMemory() const;
 
-	static std::shared_ptr<Buffer>			createColorTransferBuffer(	const Vulkan& vulkan,
+	static std::shared_ptr<StagedBuffer>	createColorTransferBuffer(	const Vulkan& vulkan,
 																		const ColorTransfer& colorTransfer );
 	static std::vector<PlaneDescriptor>		getPlaneDescriptors(const Descriptor& desc);
 	static vk::DescriptorSetLayout			getDescriptorSetLayout(	const Vulkan& vulkan,
