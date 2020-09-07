@@ -148,7 +148,8 @@ const ZuazoBase::CloseCallback& ZuazoBase::getCloseCallback() const {
 
 void ZuazoBase::update() const {
 	for(const auto& cbk : m_updateCallbacks) {
-		(*cbk)();
+		assert(cbk);
+		if(*cbk) (*cbk)();
 	}
 }
 
