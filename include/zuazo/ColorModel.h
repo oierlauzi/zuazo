@@ -19,6 +19,7 @@ enum class ColorModel {
 	BT601,						///<YCbCr color model used in SDTV \see https://www.itu.int/rec/R-REC-BT.601/en
 	BT709,						///<YCbCr color model used in HDTV \see https://www.itu.int/rec/R-REC-BT.709/en
 	BT2020,						///<YCbCr color model used in UHDTV \see https://www.itu.int/rec/R-REC-BT.2020/en
+	SMPTE240M,
 
 	//Add here
 
@@ -34,6 +35,9 @@ template<typename T>
 constexpr Math::Mat4x4<T> constructRGB2YCbCrConversionMatrix(	const T y_r,  const T y_g,  const T y_b,
 																const T cb_r, const T cb_g, const T cb_b,
 																const T cr_r, const T cr_g, const T cr_b );
+
+template<typename T>
+constexpr Math::Mat4x4<T> constructRGB2YCbCrConversionMatrix(const T kb,  const T kr);
 
 constexpr Math::Mat4x4f getRGB2YCbCrConversionMatrix(ColorModel colorModel);
 
