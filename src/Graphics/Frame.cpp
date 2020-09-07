@@ -385,6 +385,8 @@ std::shared_ptr<Buffer> Frame::createColorTransferBuffer(	const Vulkan& vulkan,
 		vk::PipelineStageFlagBits::eAllGraphics
 	);
 
+	result->waitCompletion(vulkan); //TODO try to avoid this call
+
 	return result;
 }
 

@@ -6,11 +6,14 @@
 #include <utility>
 #include <functional>
 
-#include "Functions.h"
-
 namespace Zuazo::Utils {
 
-template <typename T, typename Alloc = decltype(&makeShared<T>)>
+template <typename T>
+struct DefaultPoolAllocator {
+	std::shared_ptr<T> operator()() const;
+};
+
+template <typename T, typename Alloc = DefaultPoolAllocator<T>>
 class Pool {
 public:
 	class Recycler;

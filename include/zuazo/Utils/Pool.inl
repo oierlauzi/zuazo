@@ -5,6 +5,15 @@
 namespace Zuazo::Utils {
 
 /*
+ * DefaultPoolAllocator
+ */
+
+template <typename T>
+std::shared_ptr<T> DefaultPoolAllocator<T>::operator()() const {
+	return makeShared<T>();
+}
+
+/*
  * Pool
  */
 
