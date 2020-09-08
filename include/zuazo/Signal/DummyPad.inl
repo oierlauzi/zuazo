@@ -4,7 +4,7 @@ namespace Zuazo::Signal {
 
 template<typename T>
 inline DummyPad<T>::DummyPad(std::string name)
-	: m_io(std::move(name))
+	: m_io({}, std::move(name))
 {
 }
 
@@ -41,7 +41,7 @@ inline Layout::PadProxy<Output<T>>& DummyPad<T>::operator<<(Layout::PadProxy<Out
 template<typename T>
 inline DummyPad<T>::IO::IO(std::string name)
 	: input(name)
-	, output(std::move(name), [&input] (Output<T>& output) { output.push(input.pull()); }))
+	, output(std::move(name), [this] (Output<T>& output) { output.push(this->input.pull()); })
 {
 }
 

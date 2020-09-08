@@ -30,7 +30,7 @@ constexpr const T& max(std::initializer_list<T> ilist) {
 
 template<typename T>
 constexpr const T& clamp(const T& val, const T& lo, const T& hi) {
-	return min(hi, max(lo, val));
+	return Math::min(hi, Math::max(lo, val));
 }
 
 template<typename T, typename Q>
@@ -45,7 +45,7 @@ constexpr Q ilerp(const T& val, const T& a, const T& b) {
 
 template<typename T, typename Q>
 constexpr T map(const T& val, const T& lo1, const T& hi1, const T& lo2, const T& hi2) {
-	return lerp(lo2, hi2, ilerp<T, Q>(val, lo1, hi1));
+	return Math::lerp(lo2, hi2, Math::ilerp<T, Q>(val, lo1, hi1));
 }
 
 template<typename T>
