@@ -131,6 +131,15 @@ bool ClipBase::isPlaying() const {
 }
 
 
+Duration ClipBase::getDuration() const {
+	return m_duration;
+}
+
+Duration ClipBase::getTimeStep() const {
+	return m_timeStep;
+}
+
+
 
 void ClipBase::setRefreshCallback(RefreshCallback cbk) {
 	m_refreshCallback = std::move(cbk);

@@ -56,6 +56,9 @@ public:
 	void							stop();
 	bool							isPlaying() const;
 
+	Duration						getDuration() const;
+	Duration						getTimeStep() const;
+
 protected:
 	void							setRefreshCallback(RefreshCallback cbk);
 	const RefreshCallback&			getRefreshCallback() const;

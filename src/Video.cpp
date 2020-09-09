@@ -1,6 +1,5 @@
 #include <zuazo/Video.h>
 
-#include <zuazo/Exception.h>
 #include <zuazo/Macros.h>
 
 namespace Zuazo {
@@ -348,17 +347,13 @@ void VideoBase::updateVideoMode() {
 }
 
 VideoMode VideoBase::selectVideoMode() const {
-	if(m_videoModeCompatibility.size() > 0) {
-		for(const auto& compatibility : m_videoModeCompatibility) {
-			const auto interscetion = compatibility.intersect(m_videoModeLimits);
-			if(interscetion) return interscetion.values();
-		}
-
-		throw Exception("Unsupported video mode");
-	} else {
-		//If there is no compatibility list, fail silently.
-		return VideoMode();
+	for(const auto& compatibility : m_videoModeCompatibility) {
+		const auto interscetion = compatibility.intersect(m_videoModeLimits);
+		if(interscetion) return interscetion.values();
 	}
+
+	//If there is no compatibility, fail silently.
+	return VideoMode();
 }
 
 
