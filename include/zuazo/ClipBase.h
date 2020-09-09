@@ -64,7 +64,7 @@ protected:
 	void							setDuration(Duration dur);
 
 private:
-	TimePoint						m_timePoint;
+	TimePoint						m_time;
 	Duration						m_duration;
 	Duration						m_timeStep;
 

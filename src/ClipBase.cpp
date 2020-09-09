@@ -7,7 +7,7 @@ namespace Zuazo {
 ClipBase::ClipBase(	Duration duration,
 					Duration timeStep,
 					RefreshCallback refreshCbk )
-	: m_timePoint()
+	: m_time()
 	, m_duration(duration)
 	, m_timeStep(timeStep)
 	, m_state(State::PAUSED)
@@ -38,30 +38,43 @@ ClipBase::Repeat ClipBase::getRepeat() const {
 
 
 void ClipBase::setTime(TimePoint tp) {
+	const auto minTime = TimePoint();
+	const auto maxTime = TimePoint(m_duration);
+
 	//Ensure time point is within bounds
 	switch(m_repeat) {
 	case Repeat::REPEAT:
+		//Add m_duration to account for negative time values
 		tp = TimePoint(((tp.time_since_epoch() % m_duration) + m_duration) % m_duration);
 		break;
 
 	case Repeat::PING_PONG:
-		m_playSpeed = -m_playSpeed;
-		//break; //TODO
+		//Similar to the above one, but with double of the duration. If tp falls in the "second" duration,
+		//it gets inverted to simulate the ping-pong behaviour. m_play Speed also gets inverted
+		tp = TimePoint(((tp.time_since_epoch() % (m_duration * 2)) + (m_duration * 2)) % (m_duration * 2));
+		assert(minTime <= tp && tp <= TimePoint(m_duration * 2));
+
+		if(tp > maxTime) {
+			m_playSpeed = -m_playSpeed;
+			tp = TimePoint(2 * m_duration - tp.time_since_epoch());
+		}
+
+		break;
 
 	default: //Repeat::NONE
-		tp = Math::clamp(tp, TimePoint(), TimePoint(m_duration));
+		tp = Math::clamp(tp, minTime, maxTime);
 		break;
 	}
-	assert(TimePoint() <= tp && tp <= TimePoint(m_duration));
+	assert(Math::isInRange(tp, minTime, maxTime));
 
-	if(tp != m_timePoint) {
-		m_timePoint = tp;
+	if(tp != m_time) {
+		m_time = tp;
 		if(m_refreshCallback) m_refreshCallback(*this);
 	}
 }
 
 TimePoint ClipBase::getTime() const {
-	return m_timePoint;
+	return m_time;
 }
 
 
@@ -85,7 +98,7 @@ void ClipBase::rewind(Duration delta) {
 }
 
 void ClipBase::advanceNormalSpeed(Duration delta) {
-	setTime(m_timePoint + delta);
+	setTime(getTime() + delta);
 }
 
 void ClipBase::rewindNormalSpeed(Duration delta) {
