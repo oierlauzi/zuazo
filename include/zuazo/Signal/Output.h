@@ -72,6 +72,7 @@ public:
 	using Output<T>::operator>;
 	using Output<T>::operator>=;
 	using Output<T>::getName;
+	using Output<T>::getLastElement;
 
 	Consumers					getConsumers() const;
 
