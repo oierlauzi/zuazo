@@ -156,6 +156,7 @@ void ClipBase::setTimeStep(Duration step) {
 
 void ClipBase::setDuration(Duration dur) {
 	m_duration = dur;
+	setTime(getTime()); //So that in case it is shorter, time gets updated
 }
 
 
