@@ -52,8 +52,8 @@ void ClipBase::setTime(TimePoint tp) {
 		//Similar to the above one, but with double of the duration. If tp falls in the "second" duration,
 		//it gets inverted to simulate the ping-pong behaviour. m_play Speed also gets inverted
 		tp = TimePoint(((tp.time_since_epoch() % (m_duration * 2)) + (m_duration * 2)) % (m_duration * 2));
-		assert(minTime <= tp && tp <= TimePoint(m_duration * 2));
-
+		assert(Math::isInRange(tp, minTime, TimePoint(m_duration * 2)));
+		
 		if(tp > maxTime) {
 			m_playSpeed = -m_playSpeed;
 			tp = TimePoint(2 * m_duration - tp.time_since_epoch());
@@ -84,6 +84,15 @@ void ClipBase::setPlaySpeed(double speed) {
 
 double ClipBase::getPlaySpeed() const {
 	return m_playSpeed;
+}
+
+
+void ClipBase::setProgress(double progress) {
+	setTime(TimePoint(Duration(static_cast<Duration::rep>(getDuration().count() * progress))));
+}
+
+double ClipBase::getProgress() const {
+	return static_cast<double>(getTime().time_since_epoch().count()) / static_cast<double>(getDuration().count());
 }
 
 

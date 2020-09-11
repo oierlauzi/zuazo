@@ -45,6 +45,9 @@ public:
 	void							setPlaySpeed(double speed);
 	double							getPlaySpeed() const;
 
+	void							setProgress(double progress);
+	double							getProgress() const;
+
 	void							advance(Duration delta);
 	void							rewind(Duration delta);
 	void							advanceNormalSpeed(Duration delta);
