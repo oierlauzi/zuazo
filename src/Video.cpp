@@ -267,13 +267,11 @@ Graphics::Frame::Descriptor VideoMode::getFrameDescriptor() const {
 
 /*
  * VideoBase
- */ 
+ */
 
-VideoBase::VideoBase() = default;
-
-VideoBase::VideoBase(VideoMode videoMode, VideoModeCallback cbk)
+VideoBase::VideoBase(VideoMode videoModeLimits, VideoModeCallback cbk)
 	: m_videoModeCallbacks{std::move(cbk), {}}
-	, m_videoModeLimits(std::move(videoMode))
+	, m_videoModeLimits(std::move(videoModeLimits))
 {
 }
 
@@ -288,6 +286,15 @@ VideoBase& VideoBase::operator=(VideoBase&& other) = default;
 
 
 
+void VideoBase::setVideoModeCompatibilityCallback(VideoModeCompatibilityCallback cbk) {
+	m_videoModeCompatibilityCallback = std::move(cbk);
+}
+
+const VideoBase::VideoModeCompatibilityCallback& VideoBase::getVideoModeCompatibilityCallback() const {
+	return m_videoModeCompatibilityCallback;
+}
+
+
 void VideoBase::setVideoModeCallback(VideoModeCallback cbk) {
 	m_videoModeCallbacks[VMCBK_EXTERNAL] = std::move(cbk);
 }
@@ -300,6 +307,9 @@ const VideoBase::VideoModeCallback& VideoBase::getVideoModeCallback() const {
 
 void VideoBase::setVideoModeLimits(VideoMode videoMode) {
 	m_videoModeLimits = std::move(videoMode);
+
+	if(m_videoModeLimitCallback) m_videoModeLimitCallback(*this, m_videoModeLimits);
+
 	updateVideoMode();
 }
 
@@ -317,6 +327,15 @@ const VideoMode& VideoBase::getVideoMode() const {
 
 
 
+void VideoBase::setVideoModeLimitCallback(VideoModeCallback cbk) {
+	m_videoModeLimitCallback = std::move(cbk);
+}
+
+const VideoBase::VideoModeCallback& VideoBase::getVideoModeLimitCallback() const {
+	return m_videoModeLimitCallback;
+}
+
+
 void VideoBase::setInternalVideoModeCallback(VideoModeCallback cbk) {
 	m_videoModeCallbacks[VMCBK_INTERNAL] = std::move(cbk);
 }
@@ -327,6 +346,9 @@ const VideoBase::VideoModeCallback& VideoBase::getInternalVideoModeCallback() co
 
 void VideoBase::setVideoModeCompatibility(std::vector<VideoMode> comp) {
 	m_videoModeCompatibility = std::move(comp);
+
+	if(m_videoModeCompatibilityCallback) m_videoModeCompatibilityCallback(*this, m_videoModeCompatibility);
+
 	updateVideoMode();
 }
 

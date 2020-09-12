@@ -129,9 +129,9 @@ private:
 class VideoBase {
 public:
 	using VideoModeCallback = std::function<void(VideoBase&, const VideoMode&)>;
+	using VideoModeCompatibilityCallback = std::function<void(VideoBase&, const std::vector<VideoMode>&)>;
 
-	VideoBase();
-	VideoBase(VideoMode videoMode, VideoModeCallback cbk = {});
+	explicit VideoBase(VideoMode videoModeLimits = VideoMode::ANY, VideoModeCallback cbk = {});
 	VideoBase(const VideoBase& other);
 	VideoBase(VideoBase&& other);
 	virtual ~VideoBase();
@@ -139,6 +139,9 @@ public:
 	VideoBase&									operator=(const VideoBase& other);
 	VideoBase&									operator=(VideoBase&& other);
 
+
+	void										setVideoModeCompatibilityCallback(VideoModeCompatibilityCallback cbk);
+	const VideoModeCompatibilityCallback&		getVideoModeCompatibilityCallback() const;
 
 	void										setVideoModeCallback(VideoModeCallback cbk);
 	const VideoModeCallback&					getVideoModeCallback() const;
@@ -149,6 +152,9 @@ public:
 	const VideoMode&							getVideoMode() const;
 
 protected:
+	void										setVideoModeLimitCallback(VideoModeCallback cbk);
+	const VideoModeCallback&					getVideoModeLimitCallback() const;
+
 	void										setInternalVideoModeCallback(VideoModeCallback cbk);
 	const VideoModeCallback&					getInternalVideoModeCallback() const;
 
@@ -161,6 +167,9 @@ private:
 		VMCBK_COUNT
 	};
 
+
+	VideoModeCallback							m_videoModeLimitCallback;
+	VideoModeCompatibilityCallback				m_videoModeCompatibilityCallback;
 	std::array<VideoModeCallback, VMCBK_COUNT>	m_videoModeCallbacks;
 	
 	VideoMode									m_videoModeLimits;
