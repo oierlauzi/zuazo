@@ -355,24 +355,21 @@ constexpr Limit<T> intersection(const None<T>& none1, const None<T>& none2);
 template <typename T>
 constexpr Limit<T> intersection(const Limit<T>& limit1, const Limit<T>& limit2);
 
-}
-
-namespace Zuazo {
 
 template <typename T>
-std::ostream& operator<<(std::ostream& os, const Utils::Any<T>& any);
+std::ostream& operator<<(std::ostream& os, const Any<T>& any);
 template <typename T>
-std::ostream& operator<<(std::ostream& os, const Utils::Range<T>& range);
+std::ostream& operator<<(std::ostream& os, const Range<T>& range);
 template <typename T>
-std::ostream& operator<<(std::ostream& os, const Utils::DiscreteRange<T>& discreteRange);
+std::ostream& operator<<(std::ostream& os, const DiscreteRange<T>& discreteRange);
 template <typename T>
-std::ostream& operator<<(std::ostream& os, const Utils::Discrete<T>& discrete);
+std::ostream& operator<<(std::ostream& os, const Discrete<T>& discrete);
 template <typename T>
-std::ostream& operator<<(std::ostream& os, const Utils::MustBe<T>& mustBe);
+std::ostream& operator<<(std::ostream& os, const MustBe<T>& mustBe);
 template <typename T>
-std::ostream& operator<<(std::ostream& os, const Utils::None<T>& none);
+std::ostream& operator<<(std::ostream& os, const None<T>& none);
 template <typename T>
-std::ostream& operator<<(std::ostream& os, const Utils::Limit<T>& limit);
+std::ostream& operator<<(std::ostream& os, const Limit<T>& limit);
 
 }
 

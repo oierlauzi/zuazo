@@ -86,12 +86,10 @@ constexpr Math::Vec<T, dim> gcd(const Math::Vec<T, dim>& a, const Math::Vec<T, d
 template<typename T, int dim>
 constexpr Math::Vec<T, dim> lcm(const Math::Vec<T, dim>& a, const Math::Vec<T, dim>& b);
 
-}
 
-namespace Zuazo {
 
 template<typename T, int dim>
-std::ostream& operator<<(std::ostream& os, const Math::Vec<T, dim>& rat);
+std::ostream& operator<<(std::ostream& os, const Vec<T, dim>& vec);
 
 }
 

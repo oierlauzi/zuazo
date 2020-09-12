@@ -386,17 +386,18 @@ constexpr Rational<den_t, num_t> lcm(const Rational<den_t, num_t>& a, const Rati
 	);
 }
 
-}
 
-namespace Zuazo {
 
 template<typename num_t, typename den_t>
-inline std::ostream& operator<<(std::ostream& os, const Math::Rational<num_t, den_t>& rat) {
+inline std::ostream& operator<<(std::ostream& os, const Rational<num_t, den_t>& rat) {
 	os << rat.getNumerator() << "/" << rat.getDenominator();
 
 	return os;
 }
 
+}
+
+namespace Zuazo {
 
 namespace Utils {
 

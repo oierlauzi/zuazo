@@ -321,12 +321,14 @@ constexpr Rational<den_t, num_t> gcd(const Rational<den_t, num_t>& a, const Rati
 template<typename num_t, typename den_t>
 constexpr Rational<den_t, num_t> lcm(const Rational<den_t, num_t>& a, const Rational<den_t, num_t>& b);
 
+
+
+template<typename num_t, typename den_t>
+std::ostream& operator<<(std::ostream& os, const Rational<num_t, den_t>& rat);
+
 }
 
 namespace Zuazo {
-
-template<typename num_t, typename den_t>
-std::ostream& operator<<(std::ostream& os, const Math::Rational<num_t, den_t>& rat);
 
 namespace Utils {
 

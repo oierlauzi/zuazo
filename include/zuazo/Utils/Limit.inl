@@ -2,6 +2,7 @@
 
 #include "../Math/Functions.h"
 #include "../Exception.h"
+#include "../StringConversions.h"
 
 #include <algorithm>
 #include <cassert>
@@ -960,57 +961,67 @@ constexpr Limit<T> intersection(const Limit<T>& limit1, const Limit<T>& limit2) 
     );
 }
 
-}
 
-namespace Zuazo {
 
 template <typename T>
-inline std::ostream& operator<<(std::ostream& os, const Utils::Any<T>&) {
-	return os << std::forward_as_tuple();
+inline std::ostream& operator<<(std::ostream& os, const Any<T>&) {
+	return Zuazo::operator<<(os, std::forward_as_tuple());
 }
 
 template <typename T>
-inline std::ostream& operator<<(std::ostream& os, const Utils::Range<T>& range) {
-	return os << std::forward_as_tuple(
-		std::make_pair("min", std::cref(range.getMin())),
-		std::make_pair("max", std::cref(range.getMax()))
+inline std::ostream& operator<<(std::ostream& os, const Range<T>& range) {
+	return Zuazo::operator<<(
+		os, 
+		std::forward_as_tuple(
+			std::make_pair("min", std::cref(range.getMin())),
+			std::make_pair("max", std::cref(range.getMax()))
+		)
 	);
 }
 
 template <typename T>
-inline std::ostream& operator<<(std::ostream& os, const Utils::DiscreteRange<T>& discreteRange) {
-	return os << std::forward_as_tuple(
-		std::make_pair("min", std::cref(discreteRange.getMin())),
-		std::make_pair("max", std::cref(discreteRange.getMax())),
-		std::make_pair("step", std::cref(discreteRange.getStep()))
+inline std::ostream& operator<<(std::ostream& os, const DiscreteRange<T>& discreteRange) {
+	return Zuazo::operator<<(
+		os, 
+		std::forward_as_tuple(
+			std::make_pair("min", std::cref(discreteRange.getMin())),
+			std::make_pair("max", std::cref(discreteRange.getMax())),
+			std::make_pair("step", std::cref(discreteRange.getStep()))
+		)
 	);
 }
 
 
 template <typename T>
-inline std::ostream& operator<<(std::ostream& os, const Utils::Discrete<T>& discrete) {
+inline std::ostream& operator<<(std::ostream& os, const Discrete<T>& discrete) {
 	return toOstream(os, discrete.cbegin(), discrete.cend());
 }
 
 template <typename T>
-inline std::ostream& operator<<(std::ostream& os, const Utils::MustBe<T>& mustBe) {
-	return os << std::forward_as_tuple(
-		std::make_pair("value", std::cref(mustBe.getValue()))
+inline std::ostream& operator<<(std::ostream& os, const MustBe<T>& mustBe) {
+	return Zuazo::operator<<(
+		os, 
+		std::forward_as_tuple(
+			std::make_pair("value", std::cref(mustBe.getValue()))
+		)
 	);
 }
 
 template <typename T>
-inline std::ostream& operator<<(std::ostream& os, const Utils::None<T>&) {
-	return os << std::forward_as_tuple();
+inline std::ostream& operator<<(std::ostream& os, const None<T>&) {
+	return Zuazo::operator<<(os, std::forward_as_tuple());
 }
 
 template <typename T>
-inline std::ostream& operator<<(std::ostream& os, const Utils::Limit<T>& limit) {
+inline std::ostream& operator<<(std::ostream& os, const Limit<T>& limit) {
 	return std::visit(
 		[&os] (const auto& l) -> std::ostream& {
-			return os << std::forward_as_tuple(
-				std::make_pair("type", decltype(l)::LIMIT_TYPE),
-				std::make_pair("data", std::cref(l))
+			return Zuazo::operator<<(
+				os, 
+				std::forward_as_tuple(
+					std::make_pair("type", std::decay<decltype(l)>::type::LIMIT_TYPE),
+					std::make_pair("data", std::cref(l))
+				)
 			);
 		},
 		limit

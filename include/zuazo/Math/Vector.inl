@@ -92,9 +92,7 @@ constexpr Math::Vec<T, dim> lcm(const Math::Vec<T, dim>& a, const Math::Vec<T, d
 	return result;
 }
 
-}
 
-namespace Zuazo {
 
 template<typename T, int dim>
 inline std::ostream& operator<<(std::ostream& os, const Math::Vec<T, dim>& v) {
