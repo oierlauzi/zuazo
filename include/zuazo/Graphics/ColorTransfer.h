@@ -17,19 +17,19 @@
 
 namespace Zuazo::Graphics {
 
-class ColorTransfer {
+class InputColorTransfer {
 public:
-	ColorTransfer();
-	ColorTransfer(const Frame::Descriptor& desc);
-	ColorTransfer(const ColorTransfer& other) = delete;
-	ColorTransfer(ColorTransfer&& other);
-	~ColorTransfer();
+	InputColorTransfer();
+	InputColorTransfer(const Frame::Descriptor& desc);
+	InputColorTransfer(const InputColorTransfer& other) = delete;
+	InputColorTransfer(InputColorTransfer&& other);
+	~InputColorTransfer();
 
-	ColorTransfer&						operator=(const ColorTransfer& other) = delete;
-	ColorTransfer&						operator=(ColorTransfer&& other);
+	InputColorTransfer&					operator=(const InputColorTransfer& other) = delete;
+	InputColorTransfer&					operator=(InputColorTransfer&& other);
 
-	bool								operator==(const ColorTransfer& other) const;
-	bool								operator!=(const ColorTransfer& other) const;
+	bool								operator==(const InputColorTransfer& other) const;
+	bool								operator!=(const InputColorTransfer& other) const;
 
 	void								optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
 													Utils::BufferView<const vk::Format> supportedFormats );
@@ -39,6 +39,33 @@ public:
 	static uint32_t 					getSamplerCount();
 	static uint32_t 					getSamplerBinding();
 	static uint32_t 					getDataBinding();
+	static size_t						size();
+
+private:
+	struct Impl;
+	Utils::Pimpl<Impl>					m_impl;	
+};
+
+
+
+class OutputColorTransfer {
+public:
+	OutputColorTransfer();
+	OutputColorTransfer(const Frame::Descriptor& desc);
+	OutputColorTransfer(const OutputColorTransfer& other) = delete;
+	OutputColorTransfer(OutputColorTransfer&& other);
+	~OutputColorTransfer();
+
+	OutputColorTransfer&				operator=(const OutputColorTransfer& other) = delete;
+	OutputColorTransfer&				operator=(OutputColorTransfer&& other);
+
+	bool								operator==(const OutputColorTransfer& other) const;
+	bool								operator!=(const OutputColorTransfer& other) const;
+
+	void								optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
+													Utils::BufferView<const vk::Format> supportedFormats );
+
+	const std::byte*					data() const;
 	static size_t						size();
 
 private:

@@ -31,7 +31,7 @@ struct Uploader::Impl {
 
 	std::reference_wrapper<const Vulkan>			vulkan;
 	std::shared_ptr<Frame::Descriptor>				frameDescriptor;
-	ColorTransfer									colorTransfer;
+	InputColorTransfer								colorTransfer;
 	std::vector<Frame::PlaneDescriptor>				planeDescriptors;
 
 	std::shared_ptr<vk::UniqueCommandPool>			commandPool;
@@ -78,7 +78,7 @@ struct Uploader::Impl {
 private:
 	static std::vector<Frame::PlaneDescriptor> createPlaneDescriptors(	const Vulkan& vulkan, 
 																		const Frame::Descriptor& desc,
-																		ColorTransfer& colorTransfer )
+																		InputColorTransfer& colorTransfer )
 	{
 		std::vector<Frame::PlaneDescriptor> result = Frame::getPlaneDescriptors(desc);
 

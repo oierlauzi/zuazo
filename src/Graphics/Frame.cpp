@@ -131,14 +131,14 @@ private:
 				vk::DescriptorBufferInfo(
 					colorTransferBuffer->getBuffer(),						//Buffer
 					0,														//Offset
-					ColorTransfer::size()									//Size
+					InputColorTransfer::size()								//Size
 				)
 			};
 
 			const std::array writeDescriptorSets ={
 				vk::WriteDescriptorSet( //Image descriptor
 					descriptorSets[i],										//Descriptor set
-					ColorTransfer::getSamplerBinding(),						//Binding
+					InputColorTransfer::getSamplerBinding(),				//Binding
 					0, 														//Index
 					images.size(), 											//Descriptor count
 					vk::DescriptorType::eCombinedImageSampler,				//Descriptor type
@@ -148,7 +148,7 @@ private:
 				),
 				vk::WriteDescriptorSet( //Ubo descriptor set
 					descriptorSets[i],										//Descriptor set
-					ColorTransfer::getDataBinding(),						//Binding
+					InputColorTransfer::getDataBinding(),					//Binding
 					0, 														//Index
 					buffers.size(),											//Descriptor count		
 					vk::DescriptorType::eUniformBuffer,						//Descriptor type
@@ -257,7 +257,7 @@ private:
 		const std::array poolSizes = {
 			vk::DescriptorPoolSize(
 				vk::DescriptorType::eCombinedImageSampler,			//Descriptor type
-				FILTER_COUNT * ColorTransfer::getSamplerCount()		//Descriptor count
+				FILTER_COUNT * InputColorTransfer::getSamplerCount()//Descriptor count
 			),
 			vk::DescriptorPoolSize(
 				vk::DescriptorType::eUniformBuffer,					//Descriptor type
@@ -369,7 +369,7 @@ const vk::DeviceMemory& Frame::getMemory() const {
 
 
 std::shared_ptr<StagedBuffer> Frame::createColorTransferBuffer(	const Vulkan& vulkan,
-																const ColorTransfer& colorTransfer )
+																const InputColorTransfer& colorTransfer )
 {
 	constexpr vk::BufferUsageFlags usage =
 		vk::BufferUsageFlagBits::eUniformBuffer;
@@ -449,19 +449,19 @@ vk::DescriptorSetLayout	Frame::getDescriptorSetLayout(	const Vulkan& vulkan,
 		}
 
 		//Create the sampler array
-		const std::vector<vk::Sampler> inmutableSamplers(ColorTransfer::getSamplerCount(), sampler);
+		const std::vector<vk::Sampler> inmutableSamplers(InputColorTransfer::getSamplerCount(), sampler);
 
 		//Create the bindings
 		const std::array bindings = {
 			vk::DescriptorSetLayoutBinding( //Sampled image binding
-				ColorTransfer::getSamplerBinding(),				//Binding
+				InputColorTransfer::getSamplerBinding(),		//Binding
 				vk::DescriptorType::eCombinedImageSampler,		//Type
 				inmutableSamplers.size(),						//Count
 				vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
 				inmutableSamplers.data()						//Inmutable samplers
 			), 
 			vk::DescriptorSetLayoutBinding(	//Color transfer binding
-				ColorTransfer::getDataBinding(),				//Binding
+				InputColorTransfer::getDataBinding(),			//Binding
 				vk::DescriptorType::eUniformBuffer,				//Type
 				1,												//Count
 				vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage

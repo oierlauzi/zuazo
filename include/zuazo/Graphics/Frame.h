@@ -23,7 +23,7 @@
 
 namespace Zuazo::Graphics {
 
-class ColorTransfer;
+class InputColorTransfer;
 
 class Frame {
 public:
@@ -80,7 +80,7 @@ public:
 	const vk::DeviceMemory&					getMemory() const;
 
 	static std::shared_ptr<StagedBuffer>	createColorTransferBuffer(	const Vulkan& vulkan,
-																		const ColorTransfer& colorTransfer );
+																		const InputColorTransfer& colorTransfer );
 	static std::vector<PlaneDescriptor>		getPlaneDescriptors(const Descriptor& desc);
 	static vk::DescriptorSetLayout			getDescriptorSetLayout(	const Vulkan& vulkan,
 																	vk::Filter filt );
