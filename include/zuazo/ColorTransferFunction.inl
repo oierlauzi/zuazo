@@ -13,6 +13,8 @@ constexpr std::string_view toString(ColorTransferFunction colorTransferFunc) {
 	ZUAZO_ENUM2STR_CASE( ColorTransferFunction, GAMMA22 )
 	ZUAZO_ENUM2STR_CASE( ColorTransferFunction, GAMMA28 )
 	ZUAZO_ENUM2STR_CASE( ColorTransferFunction, IEC61966_2_1 )
+	ZUAZO_ENUM2STR_CASE( ColorTransferFunction, IEC61966_2_4 )
+	ZUAZO_ENUM2STR_CASE( ColorTransferFunction, SMPTE240M )
 	ZUAZO_ENUM2STR_CASE( ColorTransferFunction, SMPTE2084 )
 	ZUAZO_ENUM2STR_CASE( ColorTransferFunction, ARIB_STD_B67 )
 

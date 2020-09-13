@@ -22,8 +22,11 @@ enum class ColorTransferFunction {
 	GAMMA26,					///<2.6 gamma function
 	GAMMA28,					///<2.8 gamma function
 	IEC61966_2_1,				///<Non-linearly encoded according to the IEC 61966-2-1 standard. Used in sRGB and Display P3 color spaces.
-	SMPTE2084,
+	IEC61966_2_4,				///<Non-linearly encoded according to the IEC 61966-2-4 standard. Similar to BT709, but with support out of [0-1] range
+	SMPTE240M,					///<
+	SMPTE2084,					///<Also known as PQ
 	ARIB_STD_B67,				///<Also known as HLG or hybrid log-gamma
+			
 	
 	//Add here
 

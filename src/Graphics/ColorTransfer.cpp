@@ -79,30 +79,28 @@ struct ColorTransfer::Impl {
 
 private:
 	static int32_t getTransferFunction(ColorTransferFunction transferFunction) {
-		switch(transferFunction){
-		case ColorTransferFunction::LINEAR: 		return ct_COLOR_TRANSFER_FUNCTION_LINEAR;
-		case ColorTransferFunction::BT601:			return ct_COLOR_TRANSFER_FUNCTION_BT601;
-		case ColorTransferFunction::BT709:			return ct_COLOR_TRANSFER_FUNCTION_BT709;
-		case ColorTransferFunction::BT2020_10:		return ct_COLOR_TRANSFER_FUNCTION_BT2020_10;
-		case ColorTransferFunction::BT2020_12:		return ct_COLOR_TRANSFER_FUNCTION_BT2020_12;
+		switch(transferFunction){		
+		case ColorTransferFunction::BT601:
+		case ColorTransferFunction::BT709:
+		case ColorTransferFunction::BT2020_10:
+		case ColorTransferFunction::BT2020_12:		return ct_COLOR_TRANSFER_FUNCTION_BT601_709_2020;
 		case ColorTransferFunction::GAMMA22:		return ct_COLOR_TRANSFER_FUNCTION_GAMMA22;
 		case ColorTransferFunction::GAMMA26:		return ct_COLOR_TRANSFER_FUNCTION_GAMMA26;
 		case ColorTransferFunction::GAMMA28:		return ct_COLOR_TRANSFER_FUNCTION_GAMMA28;
 		case ColorTransferFunction::IEC61966_2_1:	return ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_1;
+		case ColorTransferFunction::IEC61966_2_4:	return ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_4;
+		case ColorTransferFunction::SMPTE240M:		return ct_COLOR_TRANSFER_FUNCTION_SMPTE240M;
 		case ColorTransferFunction::SMPTE2084:		return ct_COLOR_TRANSFER_FUNCTION_SMPTE2084;
 		case ColorTransferFunction::ARIB_STD_B67:	return ct_COLOR_TRANSFER_FUNCTION_ARIB_STD_B67;
-		default: break;
+		default: /*ColorTransferFunction::LINEAR*/	return ct_COLOR_TRANSFER_FUNCTION_LINEAR;
 		}
-
-		return -1;
 	}
 
 	static int32_t getRange(ColorRange range) {
 		switch(range){
-		case ColorRange::FULL: return ct_COLOR_RANGE_FULL;
-		case ColorRange::ITU_NARROW_RGB: return ct_COLOR_RANGE_ITU_NARROW_RGB;
-		case ColorRange::ITU_NARROW_YCBCR: return ct_COLOR_RANGE_ITU_NARROW_YCBCR;
-		default: return -1;;
+		case ColorRange::ITU_NARROW_RGB: 	return ct_COLOR_RANGE_ITU_NARROW_RGB;
+		case ColorRange::ITU_NARROW_YCBCR: 	return ct_COLOR_RANGE_ITU_NARROW_YCBCR;
+		default: /*ColorRange::FULL*/		return ct_COLOR_RANGE_FULL;
 		}
 	}
 
@@ -110,11 +108,10 @@ private:
 		const auto planeCount = getPlaneCount(format);
 
 		switch(planeCount){
-		case 1: return ct_PLANE_FORMAT_RGBA;
-		case 2: return ct_PLANE_FORMAT_G_BR;
-		case 3: return ct_PLANE_FORMAT_G_B_R;
-		case 4: return ct_PLANE_FORMAT_G_B_R_A;
-		default: return -1;
+		case 2: 		return ct_PLANE_FORMAT_G_BR;
+		case 3: 		return ct_PLANE_FORMAT_G_B_R;
+		case 4: 		return ct_PLANE_FORMAT_G_B_R_A;
+		default: /*1*/	return ct_PLANE_FORMAT_RGBA;
 		}
 	}
 };
