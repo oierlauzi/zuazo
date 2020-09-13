@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Instance.h"
+#include "Utils/Pimpl.h"
 #include "Signal/Layout.h"
 
-#include <utility>
 #include <functional>
 
 namespace Zuazo {
@@ -65,24 +65,8 @@ protected:
 	void							disablePeriodicUpdate() const;
 
 private:
-	enum Moments {
-		PRE_UPDATE,
-		UPDATE,
-		POST_UPDATE,
-
-		COUNT
-	};
-
-	using UpdateCallbacks = std::array<std::shared_ptr<UpdateCallback>, COUNT>;
-
-	std::reference_wrapper<Instance>m_instance;
-
-	bool    						m_isOpen;
-
-	MoveCallback					m_moveCallback;
-	OpenCallback					m_openCallback;
-	CloseCallback					m_closeCallback;
-	UpdateCallbacks					m_updateCallbacks;
+	struct Impl;
+	Utils::Pimpl<Impl>				m_impl;
 	
 };
 

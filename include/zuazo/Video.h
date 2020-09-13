@@ -14,11 +14,11 @@
 #include "ScalingFilter.h"
 
 #include "Graphics/Frame.h"
+#include "Utils/Pimpl.h"
 #include "Utils/Limit.h"
 
 #include "Signal/NamingConventions.h"
 
-#include <memory>
 #include <tuple>
 #include <vector>
 
@@ -132,11 +132,11 @@ public:
 	using VideoModeCompatibilityCallback = std::function<void(VideoBase&, const std::vector<VideoMode>&)>;
 
 	explicit VideoBase(VideoMode videoModeLimits = VideoMode::ANY, VideoModeCallback cbk = {});
-	VideoBase(const VideoBase& other);
+	VideoBase(const VideoBase& other) = delete;
 	VideoBase(VideoBase&& other);
 	virtual ~VideoBase();
 
-	VideoBase&									operator=(const VideoBase& other);
+	VideoBase&									operator=(const VideoBase& other) = delete;
 	VideoBase&									operator=(VideoBase&& other);
 
 
@@ -161,23 +161,8 @@ protected:
 	void										setVideoModeCompatibility(std::vector<VideoMode> comp);
 
 private:
-	enum VideoModeCallbacks {
-		VMCBK_INTERNAL,
-		VMCBK_EXTERNAL,
-		VMCBK_COUNT
-	};
-
-
-	VideoModeCallback							m_videoModeLimitCallback;
-	VideoModeCompatibilityCallback				m_videoModeCompatibilityCallback;
-	std::array<VideoModeCallback, VMCBK_COUNT>	m_videoModeCallbacks;
-	
-	VideoMode									m_videoModeLimits;
-	std::vector<VideoMode>						m_videoModeCompatibility;
-	VideoMode									m_videoMode;
-
-	void										updateVideoMode();
-	VideoMode									selectVideoMode() const;
+	struct Impl;
+	Utils::Pimpl<Impl>							m_impl;
 
 };
 
@@ -188,12 +173,12 @@ public:
 
 	VideoScalerBase(	ScalingModeCallback modeCbk = {}, 
 						ScalingFilterCallback filterCbk = {} );
-	VideoScalerBase(const VideoScalerBase& other) = default;
-	VideoScalerBase(VideoScalerBase&& other) = default;
-	virtual ~VideoScalerBase() = default;
+	VideoScalerBase(const VideoScalerBase& other) = delete;
+	VideoScalerBase(VideoScalerBase&& other);
+	virtual ~VideoScalerBase();
 
-	VideoScalerBase& 							operator=(const VideoScalerBase& other) = default;
-	VideoScalerBase& 							operator=(VideoScalerBase&& other) = default;
+	VideoScalerBase& 							operator=(const VideoScalerBase& other) = delete;
+	VideoScalerBase& 							operator=(VideoScalerBase&& other);
 
 	void 										setScalingMode(ScalingMode mode);
 	ScalingMode 								getScalingMode() const;
@@ -209,11 +194,8 @@ protected:
 	const ScalingFilterCallback&				getScalingFilterCallback() const;
 
 private:
-	ScalingMode									m_scalingMode;
-	ScalingFilter								m_scalingFilter;
-
-	ScalingModeCallback							m_scalingModeCallback;
-	ScalingFilterCallback						m_scalingFilterCallback;
+	struct Impl;
+	Utils::Pimpl<Impl>							m_impl;
 
 };
 

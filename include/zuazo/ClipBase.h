@@ -26,12 +26,12 @@ public:
 	ClipBase(	Duration duration = {},
 				Duration timeStep = {},
 				RefreshCallback refreshCbk = {} );
-	ClipBase(const ClipBase& other) = default;
-	ClipBase(ClipBase&& other) = default;
-	virtual ~ClipBase() = default;
+	ClipBase(const ClipBase& other) = delete;
+	ClipBase(ClipBase&& other);
+	virtual ~ClipBase();
 
-	ClipBase& 						operator=(const ClipBase& other) = default;
-	ClipBase& 						operator=(ClipBase&& other) = default;
+	ClipBase& 						operator=(const ClipBase& other) = delete;
+	ClipBase& 						operator=(ClipBase&& other);
 
 	void							setState(State st);
 	State							getState() const;
@@ -70,15 +70,8 @@ protected:
 	void							setDuration(Duration dur);
 
 private:
-	TimePoint						m_time;
-	Duration						m_duration;
-	Duration						m_timeStep;
-
-	State							m_state;
-	Repeat							m_repeat;
-	double							m_playSpeed;
-
-	RefreshCallback					m_refreshCallback;
+	struct Impl;
+	Utils::Pimpl<Impl>				m_impl;
 
 };
 

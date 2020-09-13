@@ -1,5 +1,7 @@
 #include "Scheduler.h"
 
+#include <zuazo/Utils/Functions.h>
+
 #include <map>
 #include <algorithm>
 #include <numeric>
@@ -54,9 +56,7 @@ void Scheduler::gotoTime(TimePoint tp) {
 		//Call all
 		for(const auto& c : m_calls){
 			const Callback& cbk = *(std::get<std::shared_ptr<Callback>>(c));
-			if(cbk) {
-				cbk();
-			}
+			Utils::invokeIf(cbk);
 		}
 }
 

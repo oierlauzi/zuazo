@@ -32,6 +32,15 @@ constexpr uintptr_t align(uintptr_t ptr, size_t alignment) {
 }
 
 
+template<typename Func, typename... Args>
+inline typename std::enable_if<!std::is_same<Func, typename std::invoke_result<Func, Args...>::type>::value, void>::type
+invokeIf(Func&& f, Args&&... args) {
+	if(f) {
+		std::invoke(std::forward<Func>(f), std::forward<Args>(args)...);
+	}
+}
+
+
 template<typename T, typename... Args>
 inline typename std::enable_if<!std::is_array<T>::value, std::unique_ptr<T>>::type
 makeUnique(Args&&... args)
