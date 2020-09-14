@@ -18,7 +18,7 @@ constexpr Math::Mat4x4<T> constructRGB2XYZConversionMatrix(	const T white_x,cons
 			green_z = T(1) - green_x - green_y,
 			blue_z = T(1) - blue_x - blue_y;
 
-	//Obtain the absolute (XYZ) white point
+	//Obtain the white point
 	const auto white = Math::Vec4<T>(
 		white_luminance * white_x / white_y, 
 		white_luminance,//white_y / white_y,
@@ -48,7 +48,7 @@ constexpr Math::Mat4x4<T> constructRGB2XYZConversionMatrix(	const T white_x,cons
 	);
 
 	//Scale the chromaticities accordingly
-	return scale * chromaticities;
+	return chromaticities * scale;
 }
 
 constexpr Math::Mat4x4f getRGB2XYZConversionMatrix(ColorPrimaries colorPrim){
