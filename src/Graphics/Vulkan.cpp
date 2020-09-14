@@ -184,7 +184,8 @@ struct Vulkan::Impl {
 
 	vk::UniquePipeline createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& createInfo ) const 
 	{
-		return device->createGraphicsPipelineUnique(*pipelineCache, createInfo, nullptr, dispatcher);
+		auto result = device->createGraphicsPipelineUnique(*pipelineCache, createInfo, nullptr, dispatcher);
+		return std::move(result.value);
 	}
 
 	vk::UniqueFramebuffer createFramebuffer(const vk::FramebufferCreateInfo& createInfo) const{
