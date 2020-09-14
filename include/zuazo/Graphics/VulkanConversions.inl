@@ -632,8 +632,6 @@ inline std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(	const std::t
 
 
 constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction enc){
-	constexpr vk::ColorSpaceKHR ERROR = static_cast<vk::ColorSpaceKHR>(-1);
-
 	switch(enc){
 	case ColorTransferFunction::LINEAR:
 		//Linear encoding
@@ -642,28 +640,67 @@ constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction 
 		case ColorPrimaries::BT2020:	return vk::ColorSpaceKHR::eBt2020LinearEXT;
 		case ColorPrimaries::SMPTE432:	return vk::ColorSpaceKHR::eDisplayP3LinearEXT;
 		case ColorPrimaries::ADOBE_RGB:	return vk::ColorSpaceKHR::eAdobergbLinearEXT;
-		default: return ERROR;
+		default: break;
 		}
+		break;
+	case ColorTransferFunction::BT709:
+		//IEC61966_2_1 non linear encoding
+		switch(prim){
+		case ColorPrimaries::BT709: 	return vk::ColorSpaceKHR::eBt709NonlinearEXT;
+		default: break;
+		}
+		break;
 	case ColorTransferFunction::IEC61966_2_1:
 		//IEC61966_2_1 non linear encoding
 		switch(prim){
 		case ColorPrimaries::BT709: 	return vk::ColorSpaceKHR::eSrgbNonlinear;
 		case ColorPrimaries::SMPTE432:	return vk::ColorSpaceKHR::eDisplayP3NonlinearEXT;
-		default: return ERROR;
+		default: break;
 		}
-	default: return ERROR;
+		break;
+	case ColorTransferFunction::SMPTE2084:
+		//IEC61966_2_1 non linear encoding
+		switch(prim){
+		case ColorPrimaries::BT2020: 	return vk::ColorSpaceKHR::eHdr10St2084EXT;
+		default: break;
+		}
+		break;
+	case ColorTransferFunction::ARIB_STD_B67:
+		//IEC61966_2_1 non linear encoding
+		switch(prim){
+		case ColorPrimaries::BT2020: 	return vk::ColorSpaceKHR::eHdr10HlgEXT;
+		default: break;
+		}
+		break;
+
+	default: break;
 	}
+
+	return static_cast<vk::ColorSpaceKHR>(-1);
 }
 
 constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::ColorSpaceKHR space){
 	switch(space){
-	case vk::ColorSpaceKHR::eBt709LinearEXT: return { ColorPrimaries::BT709, ColorTransferFunction::LINEAR };
-	case vk::ColorSpaceKHR::eBt2020LinearEXT: return { ColorPrimaries::BT2020, ColorTransferFunction::LINEAR};
-	case vk::ColorSpaceKHR::eDisplayP3LinearEXT: return { ColorPrimaries::SMPTE432, ColorTransferFunction::LINEAR };
-	case vk::ColorSpaceKHR::eAdobergbLinearEXT: return { ColorPrimaries::ADOBE_RGB, ColorTransferFunction::LINEAR };
-	case vk::ColorSpaceKHR::eSrgbNonlinear: return { ColorPrimaries::BT709, ColorTransferFunction::IEC61966_2_1 };
-	case vk::ColorSpaceKHR::eDisplayP3NonlinearEXT: return { ColorPrimaries::SMPTE432, ColorTransferFunction::IEC61966_2_1 };
-	default: return {};
+
+	case vk::ColorSpaceKHR::eSrgbNonlinear:				return { ColorPrimaries::BT709, 	ColorTransferFunction::IEC61966_2_1 };
+	case vk::ColorSpaceKHR::eDisplayP3NonlinearEXT:		return { ColorPrimaries::SMPTE432, 	ColorTransferFunction::IEC61966_2_1 };
+	//case vk::ColorSpaceKHR::eExtendedSrgbLinearEXT:	return {}; /*NOT SUPPORTED*/
+	case vk::ColorSpaceKHR::eDisplayP3LinearEXT:		return { ColorPrimaries::SMPTE432, 	ColorTransferFunction::LINEAR };
+	//case vk::ColorSpaceKHR::eDciP3NonlinearEXT:		return {}; /*NOT SUPPORTED: XYZ model expected*/
+	case vk::ColorSpaceKHR::eBt709LinearEXT:			return { ColorPrimaries::BT709, 	ColorTransferFunction::LINEAR };
+	case vk::ColorSpaceKHR::eBt709NonlinearEXT:			return { ColorPrimaries::BT709, 	ColorTransferFunction::BT709 };
+	case vk::ColorSpaceKHR::eBt2020LinearEXT:			return { ColorPrimaries::BT2020, 	ColorTransferFunction::LINEAR };
+	case vk::ColorSpaceKHR::eHdr10St2084EXT:			return { ColorPrimaries::BT2020, 	ColorTransferFunction::SMPTE2084 };
+	case vk::ColorSpaceKHR::eDolbyvisionEXT:			return { ColorPrimaries::BT2020, 	ColorTransferFunction::SMPTE2084 };
+	case vk::ColorSpaceKHR::eHdr10HlgEXT:				return { ColorPrimaries::BT2020, 	ColorTransferFunction::ARIB_STD_B67 };
+	case vk::ColorSpaceKHR::eAdobergbLinearEXT:			return { ColorPrimaries::ADOBE_RGB, ColorTransferFunction::LINEAR };
+	//case vk::ColorSpaceKHR::eAdobergbNonlinearEXT:	return {}; /*NOT SUPPORTED*/
+	//case vk::ColorSpaceKHR::ePassThroughEXT:			return {}; /*NOT SUPPORTED*/
+	//case vk::ColorSpaceKHR::eExtendedSrgbNonlinearEXT:return {}; /*NOT SUPPORTED*/
+	//case vk::ColorSpaceKHR::eDisplayNativeAMD:		return {}; /*NOT SUPPORTED*/
+	//case vk::ColorSpaceKHR::eVkColorspaceSrgbNonlinear:return { ColorPrimaries::BT709, 	ColorTransferFunction::IEC61966_2_1 };	
+	//case vk::ColorSpaceKHR::eDciP3LinearEXT:			return {}; /*NOT SUPPORTED wrongly named as DisplayP3*/
+	default: 											return {};
 	}
 }
 
