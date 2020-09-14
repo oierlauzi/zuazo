@@ -180,8 +180,9 @@ float ct_OETF_hybrid_linear_gamma_EG(in float thresh, in float gain1, in float g
 //Note: gain is expresed OETF-wise
 float ct_EOTF_PQ(in float c1, in float c2, in float m1, in float m2, in float value){
 	const float c3 = c1 + c2 - 1;
+	const float MIN = pow(c1, m2);
 
-	const float value2 = pow(value, 1.0f/m2);
+	const float value2 = pow(max(value, MIN), 1.0f/m2);
 	const float num = max(value2 - c1, 0.0f);
 	const float den = c2 - c3*value2;
 	return pow(num/den, 1.0f/m1);
@@ -193,7 +194,7 @@ float ct_OETF_PQ(in float c1, in float c2, in float m1, in float m2, in float va
 
 	const float c3 = c1 + c2 - 1;
 
-	const float value2 = pow(value, m1);
+	const float value2 = pow(max(value, 0.0f), m1);
 	const float num = c1 	+ c2*value2;
 	const float den = 1.0f 	+ c3*value2;
 	return pow(num/den, m2);
@@ -202,7 +203,9 @@ float ct_OETF_PQ(in float c1, in float c2, in float m1, in float m2, in float va
 
 //Note: gains are expresed OETF-wise
 float ct_EOTF_hybrid_log_gamma(in float thresh, in float gain1, in float gamma, in float gain2, in float b, in float value) {
-	if(value < ct_OETF_gamma(gain1, gamma, value)){
+	if(value <= 0.0f) {
+		return 0.0f;
+	} else if(value < ct_OETF_gamma(gain1, gamma, value)){
 		return ct_EOTF_gamma(gain1, gamma, value);
 	} else {
 		const float offset = ct_OETF_gamma(gain1, gamma, thresh) - ct_OETF_log(gain2, b, thresh);
@@ -214,7 +217,9 @@ float ct_OETF_hybrid_log_gamma(in float thresh, in float gain1, in float gamma, 
 	//Equations from:
 	//https://en.wikipedia.org/wiki/Hybrid_Log-Gamma
 
-	if(value < thresh){
+	if(value <= 0.0f) {
+		return 0.0f;
+	} else if(value < thresh){
 		return ct_OETF_gamma(gain1, gamma, value);
 	} else {
 		const float offset = ct_OETF_gamma(gain1, gamma, thresh) - ct_OETF_log(gain2, b, thresh);
