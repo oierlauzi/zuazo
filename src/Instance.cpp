@@ -40,7 +40,10 @@ struct Instance::Impl {
 			applicationInfo.getName().c_str(), 
 			Graphics::toVulkan(applicationInfo.getVersion()), 
 			applicationInfo.getVerbosity(),
+			getRequiredVulkanInstanceExtensions(applicationInfo.getModules()),
+			getRequiredVulkanDeviceExtensions(applicationInfo.getModules()),
 			std::bind(&Impl::vulkanLogCallback, std::ref(*this), std::placeholders::_1, std::placeholders::_2),
+			std::bind(&Impl::getPresentationSupport, std::cref(applicationInfo.getModules()), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
 			deviceScoreFunc
 		)
 		, mutex()
@@ -53,11 +56,20 @@ struct Instance::Impl {
 		std::lock_guard<Impl> lock(*this);
 		addRegularCallback(presentImages, PRESENT_PRIORITY);
 
+		for(Module& module : applicationInfo.getModules()) {
+			module.initialize(instance);
+		}
+
 		ZUAZO_LOG(instance, Severity::INFO, generateInitMessage());
 	}
 
 	~Impl() {
 		std::lock_guard<Impl> lock(*this);
+
+		for(Module& module : applicationInfo.getModules()) {
+			module.terminate(instance);
+		}
+
 		removeRegularCallback(presentImages);
 		ZUAZO_LOG(instance, Severity::INFO, "Terminated");
 	}
@@ -133,6 +145,48 @@ struct Instance::Impl {
 
 
 private:
+	static Module::VulkanExtensions getRequiredVulkanInstanceExtensions(const ApplicationInfo::Modules& modules) {
+		Module::VulkanExtensions result;
+
+		for(const auto& module : modules) {
+			const auto extensions = static_cast<const Module&>(module).getRequiredVulkanInstanceExtensions();
+			std::copy(
+				extensions.cbegin(), extensions.cend(),
+				std::back_inserter(result)
+			);
+		}
+
+		return result;
+	}
+
+	static Module::VulkanExtensions getRequiredVulkanDeviceExtensions(const ApplicationInfo::Modules& modules) {
+		Module::VulkanExtensions result;
+
+		for(const auto& module : modules) {
+			const auto extensions = static_cast<const Module&>(module).getRequiredVulkanDeviceExtensions();
+			std::copy(
+				extensions.cbegin(), extensions.cend(),
+				std::back_inserter(result)
+			);
+		}
+
+		return result;
+	}
+
+	static bool getPresentationSupport(	const ApplicationInfo::Modules& modules,
+										vk::Instance instance,
+										vk::PhysicalDevice device, 
+										uint32_t queueIndex ) 
+	{
+		return std::all_of(
+			modules.cbegin(), modules.cend(),
+			[instance, device, queueIndex] (const Module& module) -> bool {
+				return module.getPresentationSupport(instance, device, queueIndex);
+			}
+		);
+	}
+
+
 	std::string	generateInitMessage() const {
 		std::ostringstream message;
 
@@ -350,6 +404,32 @@ uint32_t Instance::defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp
 
 	return score;
 }
+
+
+
+/*
+ * Instance::Module
+ */
+
+void Instance::Module::initialize(Instance&) {}
+
+void Instance::Module::terminate(Instance&) {}
+
+Instance::Module::VulkanExtensions Instance::Module::getRequiredVulkanInstanceExtensions() const {
+	return {};
+}
+
+Instance::Module::VulkanExtensions Instance::Module::getRequiredVulkanDeviceExtensions() const {
+	return {};
+}
+
+bool Instance::Module::getPresentationSupport(	vk::Instance, 
+												vk::PhysicalDevice, 
+												uint32_t ) const 
+{
+	return true;
+}
+
 
 
 /*

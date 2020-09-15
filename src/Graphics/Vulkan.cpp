@@ -31,10 +31,11 @@ struct Vulkan::Impl {
 		QUEUE_NUM
 	};
 
+	LogCallback 									logCallback;
+
 	vk::DynamicLoader								loader;
 	vk::DispatchLoaderDynamic						dispatcher;
 	vk::UniqueInstance								instance;
-	LogCallback 									logCallback;
 	vk::UniqueDebugUtilsMessengerEXT				messenger;
 	vk::PhysicalDevice								physicalDevice;
 	vk::PhysicalDeviceProperties					physicalDeviceProperties;
@@ -64,14 +65,6 @@ struct Vulkan::Impl {
 	mutable std::vector<uint32_t>					presentIndices;
 	mutable std::vector<vk::Semaphore>				presentSemaphores;
 
-	/*
-	 * Static members
-	 */
-
-	static std::vector<vk::ExtensionProperties> 	requiredInstanceExtensions;
-	static std::vector<vk::ExtensionProperties> 	requiredDeviceExtensions;
-
-	static std::vector<PresentationSupportCallback>	presentationSupportCallbacks;
 
 	/*
 	 * Methods
@@ -79,17 +72,20 @@ struct Vulkan::Impl {
 	Impl(	std::string_view appName, 
 			Version appVersion,
 			Verbosity verbosity,
+			std::vector<vk::ExtensionProperties> requiredInstanceExtensions,	
+			std::vector<vk::ExtensionProperties> requiredDeviceExtensions,
 			LogCallback logCallback,
+			const PresentationSupportCallback& presentationSupportCbk,
 			const DeviceScoreFunc& scoreFunc )
-		: loader()
+		: logCallback(std::move(logCallback))
+		, loader()
 		, dispatcher(createDispatcher(loader))
-		, instance(createInstance(dispatcher, appName.data(), toVulkan(appVersion)))
-		, logCallback(std::move(logCallback))
+		, instance(createInstance(dispatcher, appName.data(), toVulkan(appVersion), std::move(requiredInstanceExtensions)))
 		, messenger(createMessenger(dispatcher, *instance, verbosity, this))
-		, physicalDevice(getBestPhysicalDevice(dispatcher, *instance, scoreFunc))
+		, physicalDevice(getBestPhysicalDevice(dispatcher, *instance, requiredDeviceExtensions, presentationSupportCbk, scoreFunc))
 		, physicalDeviceProperties(getPhysicalDeviceProperties(dispatcher, physicalDevice))
-		, queueIndices(getQueueIndices(dispatcher, *instance, physicalDevice))
-		, device(createDevice(dispatcher, physicalDevice, queueIndices))
+		, queueIndices(getQueueIndices(dispatcher, *instance, physicalDevice, presentationSupportCbk))
+		, device(createDevice(dispatcher, physicalDevice, queueIndices, std::move(requiredDeviceExtensions)))
 		, queues(getQueues(dispatcher, *device, queueIndices))
 		, formatSupport(getFormatSupport(dispatcher, physicalDevice))
 	{
@@ -618,20 +614,6 @@ struct Vulkan::Impl {
 		}
 	}
 
-	static void registerRequiredInstanceExtensions(Utils::BufferView<const vk::ExtensionProperties> ext) {
-		requiredInstanceExtensions.insert(requiredInstanceExtensions.cend(), ext.cbegin(), ext.cend());
-	}
-
-	static void registerRequiredDeviceExtensions(Utils::BufferView<const vk::ExtensionProperties> ext) {
-		requiredDeviceExtensions.insert(requiredDeviceExtensions.cend(), ext.cbegin(), ext.cend());
-	}
-
-	static void registerPresentationSupportCallback(PresentationSupportCallback cbk) {
-		presentationSupportCallbacks.emplace_back(std::move(cbk));
-	}
-
-
-
 private:
 	/*
 	 * Instantiation methods
@@ -648,7 +630,8 @@ private:
 
 	static vk::UniqueInstance createInstance(	vk::DispatchLoaderDynamic& disp, 
 												const char* appName, 
-												uint32_t appVersion )
+												uint32_t appVersion,
+												std::vector<vk::ExtensionProperties> ext )
 	{
 		//Set the application information
 		vk::ApplicationInfo appInfo(
@@ -680,7 +663,7 @@ private:
 
 
 		//Get the extensions
-		auto requiredExtensions = getRequiredInstanceExtensions();
+		auto requiredExtensions = getRequiredInstanceExtensions(std::move(ext));
 		const auto availableExtensions = vk::enumerateInstanceExtensionProperties(nullptr, disp);
 		const auto usedExtensions = getUsedExtensions(availableExtensions, requiredExtensions);
 
@@ -746,7 +729,9 @@ private:
 	}
 
 	static vk::PhysicalDevice getBestPhysicalDevice(const vk::DispatchLoaderDynamic& disp, 
-													vk::Instance instance, 
+													vk::Instance instance,
+													std::vector<vk::ExtensionProperties> ext,
+													const PresentationSupportCallback& presentationSupportCbk,
 													const DeviceScoreFunc& scoreFunc )
 	{
 		const auto devices = instance.enumeratePhysicalDevices(disp);
@@ -763,7 +748,7 @@ private:
 			}
 
 			//Check device extension support
-			auto requiredExtensions = getRequiredDeviceExtensions();
+			auto requiredExtensions = getRequiredDeviceExtensions(std::move(ext));
 			const auto availableExtensions = device.enumerateDeviceExtensionProperties(nullptr, disp);
 			getUsedExtensions(availableExtensions, requiredExtensions);
 			if(requiredExtensions.size()){
@@ -778,7 +763,7 @@ private:
 				continue;
 			}
 
-			if(getPresentationQueueFamilies(instance, device, availableQueueFamilies.size()).size() == 0){
+			if(getPresentationQueueFamilies(instance, device, availableQueueFamilies.size(), presentationSupportCbk).size() == 0){
 				continue;
 			}
 
@@ -806,7 +791,8 @@ private:
 
 	static std::array<uint32_t, QUEUE_NUM> getQueueIndices(	const vk::DispatchLoaderDynamic& disp, 
 															vk::Instance inst, 
-															vk::PhysicalDevice dev )
+															vk::PhysicalDevice dev,
+															const PresentationSupportCallback& presentationSupportCbk )
 	{
 		std::array<uint32_t, QUEUE_NUM>	queues;
 
@@ -818,7 +804,7 @@ private:
 		queues[TRANSFER_QUEUE] = getQueueFamilyIndex(queueFamilies, vk::QueueFlagBits::eTransfer);
 
 		//Find a queue family compatible with presentation
-		const auto presentFamilies = getPresentationQueueFamilies(inst, dev, queueFamilies.size());
+		const auto presentFamilies = getPresentationQueueFamilies(inst, dev, queueFamilies.size(), presentationSupportCbk);
 		assert(presentFamilies.size()); //It should have been checked before
 
 		//Try to assign the graphics queue
@@ -833,14 +819,15 @@ private:
 
 	static vk::UniqueDevice	createDevice(	vk::DispatchLoaderDynamic& disp, 
 											vk::PhysicalDevice physicalDevice, 
-											const std::array<uint32_t, QUEUE_NUM>& queueIndices )
+											const std::array<uint32_t, QUEUE_NUM>& queueIndices,
+											std::vector<vk::ExtensionProperties> ext )
 	{
 		//Get the validation layers and extensions.
 		//They should be available, as we have checked for them when
 		//choosing the physical device
 		const auto& layers = getRequiredLayers();
 		const auto layerNames = getNames(layers);
-		const auto& extensions = getRequiredDeviceExtensions();
+		const auto extensions = getRequiredDeviceExtensions(std::move(ext));
 		const auto extensionNames = getNames(extensions);
 
 		//Fill the queue create infos
@@ -932,12 +919,19 @@ private:
 		return validationLayers;
 	}
 
-	static const std::vector<vk::ExtensionProperties>& getRequiredInstanceExtensions() {
-		return requiredInstanceExtensions;
+	static std::vector<vk::ExtensionProperties> getRequiredInstanceExtensions(std::vector<vk::ExtensionProperties> ext) {
+		#ifndef ZUAZO_DISABLE_VALIDATION_LAYERS
+			//Add debug utils extension requirement
+			ext.push_back(vk::ExtensionProperties(std::array<char, VK_MAX_EXTENSION_NAME_SIZE>{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}));
+		#endif
+
+		removeDuplicated(ext);
+		return ext;
 	}
 
-	static const std::vector<vk::ExtensionProperties>& getRequiredDeviceExtensions() {
-		return requiredDeviceExtensions;
+	static std::vector<vk::ExtensionProperties> getRequiredDeviceExtensions(std::vector<vk::ExtensionProperties> ext) {
+		removeDuplicated(ext);
+		return ext;
 	}
 
 	static std::vector<vk::QueueFamilyProperties> getRequiredQueueFamilies() {
@@ -948,26 +942,42 @@ private:
 		};
 	}
 
-	static std::vector<uint32_t> getPresentationQueueFamilies(vk::Instance instance, vk::PhysicalDevice device, uint32_t count) {
+	static std::vector<uint32_t> getPresentationQueueFamilies(	vk::Instance instance, 
+																vk::PhysicalDevice device, 
+																uint32_t count,
+																const PresentationSupportCallback& presentationSupportCbk ) {
 		std::vector<uint32_t> result;
 
 		for(uint32_t i = 0; i < count; i++) {
-			//All of the callbacks must return true
-			//Note that if there are no callbacks this function will return true
-			const bool support = std::all_of(
-				presentationSupportCallbacks.cbegin(), presentationSupportCallbacks.cend(),
-				[instance, device, i] (const PresentationSupportCallback& cbk) -> bool {
-					return cbk(instance, device, i);
-				}
-			);
-
 			//This queue family can be used for presenting
-			if(support) {
+			if(presentationSupportCbk(instance, device, i)) {
 				result.emplace_back(i);
 			}
 		}
 
 		return result;
+	}
+
+	static void removeDuplicated(std::vector<vk::ExtensionProperties>& ext) {
+		for(auto ite1 = ext.begin(); ite1 != ext.end(); ++ite1) {
+			auto ite2 = ite1 + 1;
+			while(ite2 != ext.end()) {
+				const auto comp = std::strncmp(
+					ite1->extensionName.data(), 
+					ite2->extensionName.data(), 
+					Math::min(ite1->extensionName.size(), ite2->extensionName.size())
+				);
+
+				if(comp == 0) {
+					//Extension is duplicate
+					ite1->specVersion = Math::max(ite1->specVersion, ite2->specVersion); //Select the newest version
+					ite2 = ext.erase(ite2);
+				} else {
+					//Extension is unique
+					++ite2;
+				}
+			}
+		}
 	}
 
 	/*
@@ -1033,16 +1043,6 @@ private:
 };
 
 
-std::vector<vk::ExtensionProperties> Vulkan::Impl::requiredInstanceExtensions {
-	#ifndef ZUAZO_DISABLE_VALIDATION_LAYERS
-		//Add debug utils extension requirement
-		vk::ExtensionProperties(std::array<char, VK_MAX_EXTENSION_NAME_SIZE>{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}),
-	#endif
-};
-
-std::vector<vk::ExtensionProperties> Vulkan::Impl::requiredDeviceExtensions;
-
-std::vector<Vulkan::PresentationSupportCallback> Vulkan::Impl::presentationSupportCallbacks;
 
 /*
  * Interface implementation
@@ -1051,9 +1051,21 @@ std::vector<Vulkan::PresentationSupportCallback> Vulkan::Impl::presentationSuppo
 Vulkan::Vulkan(	std::string_view appName, 
 				Version appVersion,
 				Verbosity verbosity,
+				std::vector<vk::ExtensionProperties> requiredInstanceExtensions,	
+				std::vector<vk::ExtensionProperties> requiredDeviceExtensions,
 				LogCallback logCallback,
+				const PresentationSupportCallback& presentationSupportCbk,
 				const DeviceScoreFunc& scoreFunc )
-	: m_impl({}, appName, appVersion, verbosity, std::move(logCallback), scoreFunc)
+	: m_impl(
+		{}, 
+		appName, 
+		appVersion,
+		verbosity, 
+		std::move(requiredInstanceExtensions),
+		std::move(requiredDeviceExtensions),
+		std::move(logCallback), 
+		presentationSupportCbk,
+		scoreFunc )
 {
 }
 
@@ -1422,20 +1434,6 @@ void Vulkan::present(	vk::SwapchainKHR swapchain,
 
 void Vulkan::presentAll() const {
 	m_impl->presentAll();
-}
-
-
-
-void Vulkan::registerRequiredInstanceExtensions(Utils::BufferView<const vk::ExtensionProperties> ext) {
-	Impl::registerRequiredInstanceExtensions(ext);
-}
-
-void Vulkan::registerRequiredDeviceExtensions(Utils::BufferView<const vk::ExtensionProperties> ext) {
-	Impl::registerRequiredDeviceExtensions(ext);
-}
-
-void Vulkan::registerPresentationSupportCallback(PresentationSupportCallback cbk) {
-	Impl::registerPresentationSupportCallback(std::move(cbk));
 }
 
 }

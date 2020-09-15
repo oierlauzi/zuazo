@@ -97,6 +97,8 @@ private:
 
 class Instance::Module {
 public:
+	using VulkanExtensions = std::vector<vk::ExtensionProperties>;
+
 	Module() = default;
 	Module(const Module& other) = default;
 	Module(Module&& other) = default;
@@ -105,16 +107,22 @@ public:
 	Module& operator=(const Module& other) = default;
 	Module& operator=(Module&& other) = default;
 
-	virtual void 				initialize(Instance& instance) const = 0;
-	virtual void 				terminate(Instance& instance) const = 0;
+	virtual void 				initialize(Instance& instance);
+	virtual void 				terminate(Instance& instance);
 
+	//Vulkan related
+	virtual VulkanExtensions	getRequiredVulkanInstanceExtensions() const;
+	virtual VulkanExtensions	getRequiredVulkanDeviceExtensions() const;
+	virtual bool				getPresentationSupport(	vk::Instance  instance, 
+														vk::PhysicalDevice device, 
+														uint32_t queueIndex ) const;
 };
 
 
 
 class Instance::ApplicationInfo {
 public:
-	using Modules = std::vector<std::reference_wrapper<const Module>>;
+	using Modules = std::vector<std::reference_wrapper<Module>>;
 	using InstanceLogFunc = std::function<void(const Instance&, Severity, std::string_view)>;
 	using ElementLogFunc = std::function<void(const ZuazoBase&, Severity, std::string_view)>;
 

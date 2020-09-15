@@ -48,7 +48,10 @@ public:
 	Vulkan(	std::string_view appName, 
 			Version appVersion,
 			Verbosity verbosity,
+			std::vector<vk::ExtensionProperties> requiredInstanceExtensions,	
+			std::vector<vk::ExtensionProperties> requiredDeviceExtensions,
 			LogCallback logCallback,
+			const PresentationSupportCallback& presentationSupportCbk,
 			const DeviceScoreFunc& scoreFunc );
 	Vulkan(const Vulkan& other) = delete;
 	Vulkan(Vulkan&& other);
@@ -183,10 +186,6 @@ public:
 												vk::Semaphore waitSemaphore ) const;
 
 	void								presentAll() const;
-
-	static void							registerRequiredInstanceExtensions(Utils::BufferView<const vk::ExtensionProperties> ext);
-	static void							registerRequiredDeviceExtensions(Utils::BufferView<const vk::ExtensionProperties> ext);
-	static void							registerPresentationSupportCallback(PresentationSupportCallback cbk);
 
 private:
 	struct Impl;
