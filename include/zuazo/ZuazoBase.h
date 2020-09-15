@@ -70,11 +70,11 @@ private:
 	
 };
 
-#define ZUAZO_BASE_LOG(base, severity, message)														\
-	if(	(base).getInstance().getApplicationInfo().elementLogFunc && 								\
-		(((base).getInstance().getApplicationInfo().verbosity) & (severity)) != Verbosity::SILENT ) \
-	{																								\
-		(base).getInstance().getApplicationInfo().elementLogFunc(base, severity, message);			\
+#define ZUAZO_BASE_LOG(base, severity, message)															\
+	if(	(base).getInstance().getApplicationInfo().getElementLogFunc() && 								\
+		(((base).getInstance().getApplicationInfo().getVerbosity()) & (severity)) != Verbosity::SILENT )\
+	{																									\
+		(base).getInstance().getApplicationInfo().getElementLogFunc()(base, severity, message);			\
 	}
 
 }

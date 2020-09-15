@@ -12,14 +12,12 @@ int main() {
 	 * First of all create an application info struct which contains
 	 * all required information to properly instantiate Zuazo
 	 */
-	Zuazo::Instance::ApplicationInfo appInfo {
+	Zuazo::Instance::ApplicationInfo appInfo(
 		"Example 00",								//Application's name
 		Zuazo::Version(0, 1, 0),					//Application's version
 		Zuazo::Verbosity::GEQ_WARNING,				//Verbosity 
-		Zuazo::VideoMode::ANY,						//Default video-mode
-		Zuazo::Instance::defaultInstanceLogFunc,	//Instance log callback
-		Zuazo::Instance::defaultElementLogFunc		//Element log callback
-	};
+		{}											//Modules that are going to be used
+	);
 
 	/*
 	 * If you're too lazy you can leave it default initialized

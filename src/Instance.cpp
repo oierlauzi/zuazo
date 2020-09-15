@@ -37,9 +37,9 @@ struct Instance::Impl {
 		: instance(instance)
 		, applicationInfo(std::move(appInfo))
 		, vulkan(
-			applicationInfo.name.c_str(), 
-			Graphics::toVulkan(applicationInfo.version), 
-			applicationInfo.verbosity,
+			applicationInfo.getName().c_str(), 
+			Graphics::toVulkan(applicationInfo.getVersion()), 
+			applicationInfo.getVerbosity(),
 			std::bind(&Impl::vulkanLogCallback, std::ref(*this), std::placeholders::_1, std::placeholders::_2),
 			deviceScoreFunc
 		)
@@ -197,8 +197,8 @@ private:
 	}
 
 	void vulkanLogCallback(Severity severity, std::string msg) {
-		if(applicationInfo.instanceLogFunc) {
-			applicationInfo.instanceLogFunc(
+		if(applicationInfo.getInstanceLogFunc()) {
+			applicationInfo.getInstanceLogFunc()(
 				instance, 
 				severity, 
 				"Vulkan:\n" + msg
@@ -304,34 +304,6 @@ void Instance::unlock() {
 }
 
 
-
-
-void Instance::defaultInstanceLogFunc(	const Instance& inst, 
-										Severity severity, 
-										std::string_view msg )
-{
-	std::ostream& output = std::cerr;
-
-	output << "[" << toString(severity) << "] ";
-	output << &inst << " (" << inst.getApplicationInfo().name << "): ";
-	output << msg;
-	output << std::endl;
-}
-
-void Instance::defaultElementLogFunc(	const ZuazoBase& base, 
-										Severity severity, 
-										std::string_view msg )
-{
-	std::ostream& output = std::cerr;
-	Instance& inst = base.getInstance();
-
-	output << "[" << toString(severity) << "] ";
-	output << &inst << " (" << inst.getApplicationInfo().name << "): ";
-	output << "on " << &base << " (" << base.getName() << "): ";
-	output << msg;
-	output << std::endl;
-}
-
 uint32_t Instance::defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp,
 											vk::PhysicalDevice device )
 {
@@ -378,5 +350,80 @@ uint32_t Instance::defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp
 
 	return score;
 }
+
+
+/*
+ * Instance::ApplicationInfo
+ */
+
+Instance::ApplicationInfo::ApplicationInfo(	std::string name,
+											Version version,
+											Verbosity verbosity,
+											Modules modules,
+											InstanceLogFunc	instanceLogFunc,
+											ElementLogFunc elementLogFunc )
+	: m_name(std::move(name))
+	, m_version(version)
+	, m_verbosity(verbosity)
+	, m_modules(std::move(modules))
+	, m_instanceLogFunc(std::move(instanceLogFunc))
+	, m_elementLogFunc(std::move(elementLogFunc))
+{
+}
+
+
+
+const std::string& Instance::ApplicationInfo::getName() const {
+	return m_name;
+}
+
+Version Instance::ApplicationInfo::getVersion() const {
+	return m_version;
+}
+
+Verbosity Instance::ApplicationInfo::getVerbosity() const {
+	return m_verbosity;
+}
+
+const Instance::ApplicationInfo::Modules& Instance::ApplicationInfo::getModules() const {
+	return m_modules;
+}
+
+const Instance::ApplicationInfo::InstanceLogFunc& Instance::ApplicationInfo::getInstanceLogFunc() const {
+	return m_instanceLogFunc;
+}
+
+const Instance::ApplicationInfo::ElementLogFunc& Instance::ApplicationInfo::getElementLogFunc() const {
+	return m_elementLogFunc;
+}
+
+
+
+void Instance::ApplicationInfo::defaultInstanceLogFunc(	const Instance& inst, 
+														Severity severity, 
+														std::string_view msg )
+{
+	std::ostream& output = std::cerr;
+
+	output << "[" << toString(severity) << "] ";
+	output << &inst << " (" << inst.getApplicationInfo().getName() << "): ";
+	output << msg;
+	output << std::endl;
+}
+
+void Instance::ApplicationInfo::defaultElementLogFunc(	const ZuazoBase& base, 
+														Severity severity, 
+														std::string_view msg )
+{
+	std::ostream& output = std::cerr;
+	Instance& inst = base.getInstance();
+
+	output << "[" << toString(severity) << "] ";
+	output << &inst << " (" << inst.getApplicationInfo().getName() << "): ";
+	output << "on " << &base << " (" << base.getName() << "): ";
+	output << msg;
+	output << std::endl;
+}
+
 
 }

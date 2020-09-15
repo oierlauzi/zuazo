@@ -3,7 +3,8 @@
 #include "Macros.h"
 #include "Version.h"
 #include "Verbosity.h"
-#include "Video.h"
+#include "Resolution.h"
+#include "ColorFormat.h"
 #include "Graphics/Vulkan.h"
 #include "Chrono.h"
 #include "Utils/Pimpl.h"
@@ -20,19 +21,11 @@ class ZuazoBase;
 
 class Instance {
 public:
-	using InstanceLogFunc = std::function<void(const Instance&, Severity, std::string_view)>;
-	using ElementLogFunc = std::function<void(const ZuazoBase&, Severity, std::string_view)>;
 	using DeviceScoreFunc = Graphics::Vulkan::DeviceScoreFunc;
 	using ScheduledCallback = std::function<void()>;
 
-	struct ApplicationInfo {
-		std::string		name = "Zuazo Application";
-		Version			version = Version(0, 1, 0);
-		Verbosity		verbosity = ZUAZO_IS_DEBUG ? Verbosity::GEQ_INFO : Verbosity::SILENT;
-		VideoMode		defaultVideoMode = VideoMode::ANY;
-		InstanceLogFunc	instanceLogFunc = defaultInstanceLogFunc;
-		ElementLogFunc	elementLogFunc = defaultElementLogFunc;
-	};
+	class Module;
+	class ApplicationInfo;
 	
 	struct FormatSupport {
 		std::vector<ColorFormat> inputFormats;
@@ -91,14 +84,6 @@ public:
 	bool						try_lock();
 	void						unlock();
 
-	static void 				defaultInstanceLogFunc(	const Instance& inst, 
-														Severity severity, 
-														std::string_view msg );
-
-	static void 				defaultElementLogFunc(	const ZuazoBase& base, 
-														Severity severity, 
-														std::string_view msg );
-
 	static uint32_t				defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp, 
 														vk::PhysicalDevice device );
 
@@ -109,11 +94,74 @@ private:
 };
 
 
-#define ZUAZO_LOG(instance, severity, message)												\
-	if(	(instance).getApplicationInfo().instanceLogFunc && 									\
-		(((instance).getApplicationInfo().verbosity) & (severity)) != Verbosity::SILENT ) 	\
-	{																						\
-		(instance).getApplicationInfo().instanceLogFunc(instance, severity, message);		\
+
+class Instance::Module {
+public:
+	Module() = default;
+	Module(const Module& other) = default;
+	Module(Module&& other) = default;
+	virtual ~Module() = default;
+
+	Module& operator=(const Module& other) = default;
+	Module& operator=(Module&& other) = default;
+
+	virtual void 				initialize(Instance& instance) const = 0;
+	virtual void 				terminate(Instance& instance) const = 0;
+
+};
+
+
+
+class Instance::ApplicationInfo {
+public:
+	using Modules = std::vector<std::reference_wrapper<const Module>>;
+	using InstanceLogFunc = std::function<void(const Instance&, Severity, std::string_view)>;
+	using ElementLogFunc = std::function<void(const ZuazoBase&, Severity, std::string_view)>;
+
+	explicit ApplicationInfo(	std::string name = "Zuazo Application",
+								Version version = Version(0, 1, 0),
+								Verbosity verbosity = ZUAZO_IS_DEBUG ? Verbosity::GEQ_INFO : Verbosity::SILENT,
+								Modules modules = {},
+								InstanceLogFunc	instanceLogFunc = defaultInstanceLogFunc,
+								ElementLogFunc elementLogFunc = defaultElementLogFunc );
+	ApplicationInfo(const ApplicationInfo& other) = default;
+	ApplicationInfo(ApplicationInfo&& other) = default;
+	~ApplicationInfo() = default;
+
+	ApplicationInfo& operator=(const ApplicationInfo& other) = default;
+	ApplicationInfo& operator=(ApplicationInfo&& other) = default;
+
+	const std::string&			getName() const;
+	Version						getVersion() const;
+	Verbosity					getVerbosity() const;
+	const Modules&				getModules() const;
+	const InstanceLogFunc&		getInstanceLogFunc() const;
+	const ElementLogFunc&		getElementLogFunc() const;
+
+
+	static void 				defaultInstanceLogFunc(	const Instance& inst, 
+														Severity severity, 
+														std::string_view msg );
+
+	static void 				defaultElementLogFunc(	const ZuazoBase& base, 
+														Severity severity, 
+														std::string_view msg );
+
+private:
+	std::string					m_name;
+	Version						m_version;
+	Verbosity					m_verbosity;
+	Modules						m_modules;
+	InstanceLogFunc				m_instanceLogFunc;
+	ElementLogFunc				m_elementLogFunc;
+};
+
+
+#define ZUAZO_LOG(instance, severity, message)													\
+	if(	(instance).getApplicationInfo().getInstanceLogFunc() && 								\
+		(((instance).getApplicationInfo().getVerbosity()) & (severity)) != Verbosity::SILENT ) 	\
+	{																							\
+		(instance).getApplicationInfo().getInstanceLogFunc()(instance, severity, message);		\
 	}
 
 }
