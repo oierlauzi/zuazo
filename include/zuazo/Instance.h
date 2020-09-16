@@ -96,10 +96,11 @@ private:
 
 
 class Instance::Module {
+	friend Instance;
 public:
 	using VulkanExtensions = std::vector<vk::ExtensionProperties>;
 
-	Module() = default;
+	Module(std::string name, Version version);
 	Module(const Module& other) = default;
 	Module(Module&& other) = default;
 	virtual ~Module() = default;
@@ -107,8 +108,15 @@ public:
 	Module& operator=(const Module& other) = default;
 	Module& operator=(Module&& other) = default;
 
-	virtual void 				initialize(Instance& instance);
-	virtual void 				terminate(Instance& instance);
+	const std::string&			getName() const;
+	Version						getVersion() const;
+
+private:
+	std::string 				m_name;
+	Version 					m_version;
+
+	virtual void 				initialize(Instance& instance) const;
+	virtual void 				terminate(Instance& instance) const;
 
 	//Vulkan related
 	virtual VulkanExtensions	getRequiredVulkanInstanceExtensions() const;
@@ -122,7 +130,7 @@ public:
 
 class Instance::ApplicationInfo {
 public:
-	using Modules = std::vector<std::reference_wrapper<Module>>;
+	using Modules = std::vector<std::reference_wrapper<const Module>>;
 	using InstanceLogFunc = std::function<void(const Instance&, Severity, std::string_view)>;
 	using ElementLogFunc = std::function<void(const ZuazoBase&, Severity, std::string_view)>;
 

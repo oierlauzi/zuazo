@@ -56,22 +56,19 @@ struct Instance::Impl {
 		std::lock_guard<Impl> lock(*this);
 		addRegularCallback(presentImages, PRESENT_PRIORITY);
 
-		for(Module& module : applicationInfo.getModules()) {
+		for(const Module& module : applicationInfo.getModules()) {
 			module.initialize(instance);
 		}
-
-		ZUAZO_LOG(instance, Severity::INFO, generateInitMessage());
 	}
 
 	~Impl() {
 		std::lock_guard<Impl> lock(*this);
 
-		for(Module& module : applicationInfo.getModules()) {
+		for(const Module& module : applicationInfo.getModules()) {
 			module.terminate(instance);
 		}
 
 		removeRegularCallback(presentImages);
-		ZUAZO_LOG(instance, Severity::INFO, "Terminated");
 	}
 
 	const Instance::ApplicationInfo& getApplicationInfo() const {
@@ -93,29 +90,21 @@ struct Instance::Impl {
 	void addRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior) {
 		scheduler.addRegularCallback(cbk, prior);
 		loop.interrupt();
-
-		ZUAZO_LOG(instance, Severity::VERBOSE, generateAddRegularEventMessage(cbk, prior));
 	}
 
 	void removeRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk) {
 		scheduler.removeRegularCallback(cbk);
 		loop.interrupt();
-
-		ZUAZO_LOG(instance, Severity::VERBOSE, generateRemoveRegularEventMessage(cbk));
 	}
 
 	void addPeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior, Duration period) {
 		scheduler.addPeriodicCallback(cbk, prior, period);
 		loop.interrupt();
-
-		ZUAZO_LOG(instance, Severity::VERBOSE, generateAddPeriodicEventMessage(cbk, prior, period));
 	}
 
 	void removePeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk) {
 		scheduler.removePeriodicCallback(cbk);
 		loop.interrupt();
-
-		ZUAZO_LOG(instance, Severity::VERBOSE, generateRemovePeriodicEventMessage(cbk));
 	}
 
 	TimePoint getTime() const {
@@ -143,6 +132,76 @@ struct Instance::Impl {
 		mutex.unlock();
 	}
 
+
+
+	std::string	generateInitMessage() const {
+		std::ostringstream message;
+
+		//Show Version
+		message << "Instantiated Zuazo " << runtimeVersion << "\n";
+
+		//Show modules
+		message << "\t- Loaded modules:\n";
+		for(const Module& module : applicationInfo.getModules() ){
+			message << "\t\t- " << module.getName() << " " << module.getVersion() << "\n";
+		}
+
+		//Show selected device
+		const auto deviceProperties = vulkan.getPhysicalDevice().getProperties(vulkan.getDispatcher());
+		message << "\t- Selected GPU: " << deviceProperties.deviceName << "\n";
+
+		//Show supported formats
+		message << "\t- Supported input pixel formats:\n";
+		for(const auto& fmt : formatSupport.inputFormats ){
+			message << "\t\t- " << fmt << "\n";
+		}
+
+		message << "\t- Supported output pixel formats:\n";
+		for(const auto& fmt : formatSupport.outputFormats ){
+			message << "\t\t- " << fmt << "\n";
+		}
+
+		//Show resolution limits
+		message << "\t- Maximum input resolution: " << resolutionSupport.maxInputResolution << "\n";
+		message << "\t- Maximum output resolution: " << resolutionSupport.maxOutputResolution << "\n";
+
+		return message.str();
+	}
+
+	std::string generateAddRegularEventMessage(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior) const {
+		std::ostringstream message;
+
+		message << "Regular event added: " << cbk << " ";
+		message << "(Priority: " << prior << ")";
+
+		return message.str();
+	}
+	
+	std::string generateRemoveRegularEventMessage(const std::shared_ptr<ScheduledCallback>& cbk) const {
+		std::ostringstream message;
+
+		message << "Regular event removed: " << cbk << " ";
+
+		return message.str();
+	}
+
+	std::string generateAddPeriodicEventMessage(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior, Duration period) const {
+		std::ostringstream message;
+
+		message << "Periodic event added: " << cbk << " ";
+		message << "(Priority: " << prior << ", ";
+		message << "Rate: " << getRate(period) << " Hz)";
+
+		return message.str();
+	}
+
+	std::string generateRemovePeriodicEventMessage(const std::shared_ptr<ScheduledCallback>& cbk) const {
+		std::ostringstream message;
+
+		message << "Periodic event removed: " << cbk << " ";
+
+		return message.str();
+	}
 
 private:
 	static Module::VulkanExtensions getRequiredVulkanInstanceExtensions(const ApplicationInfo::Modules& modules) {
@@ -187,69 +246,6 @@ private:
 	}
 
 
-	std::string	generateInitMessage() const {
-		std::ostringstream message;
-
-		//Show Version
-		message << "Instantiated Zuazo " << toString(runtimeVersion) << "\n";
-
-		//Show selected device
-		const auto deviceProperties = vulkan.getPhysicalDevice().getProperties(vulkan.getDispatcher());
-		message << "\t- Selected GPU: " << deviceProperties.deviceName << "\n";
-
-		//Show supported formats
-		message << "\t- Supported input pixel formats:\n";
-		for(const auto& fmt : formatSupport.inputFormats ){
-			message << "\t\t- " << toString(fmt) << "\n";
-		}
-
-		message << "\t- Supported output pixel formats:\n";
-		for(const auto& fmt : formatSupport.outputFormats ){
-			message << "\t\t- " << toString(fmt) << "\n";
-		}
-
-		//Show resolution limits
-		message << "\t- Maximum input resolution: " <<  toString(resolutionSupport.maxInputResolution) << "\n";
-		message << "\t- Maximum output resolution: " <<  toString(resolutionSupport.maxOutputResolution) << "\n";
-
-		return message.str();
-	}
-
-	std::string generateAddRegularEventMessage(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior) const {
-		std::ostringstream message;
-
-		message << "Regular event added: " << cbk << " ";
-		message << "(Priority: " << prior << ")";
-
-		return message.str();
-	}
-	
-	std::string generateRemoveRegularEventMessage(const std::shared_ptr<ScheduledCallback>& cbk) const {
-		std::ostringstream message;
-
-		message << "Regular event removed: " << cbk << " ";
-
-		return message.str();
-	}
-
-	std::string generateAddPeriodicEventMessage(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior, Duration period) const {
-		std::ostringstream message;
-
-		message << "Periodic event added: " << cbk << " ";
-		message << "(Priority: " << prior << ", ";
-		message << "Rate: " << getRate(period) << " Hz)";
-
-		return message.str();
-	}
-
-	std::string generateRemovePeriodicEventMessage(const std::shared_ptr<ScheduledCallback>& cbk) const {
-		std::ostringstream message;
-
-		message << "Periodic event removed: " << cbk << " ";
-
-		return message.str();
-	}
-
 	void vulkanLogCallback(Severity severity, std::string msg) {
 		if(applicationInfo.getInstanceLogFunc()) {
 			applicationInfo.getInstanceLogFunc()(
@@ -289,9 +285,12 @@ Instance::Instance(	ApplicationInfo applicationInfo,
 					const DeviceScoreFunc& deviceScoreFunc )
 	: m_impl({}, *this, std::move(applicationInfo), deviceScoreFunc)
 {
+	ZUAZO_LOG(*this, Severity::INFO, m_impl->generateInitMessage());
 }
 
-Instance::~Instance() = default; 
+Instance::~Instance() {
+	ZUAZO_LOG(*this, Severity::INFO, "Terminated");
+}
 
 const Instance::ApplicationInfo& Instance::getApplicationInfo() const {
 	return m_impl->getApplicationInfo();
@@ -313,10 +312,12 @@ void Instance::addRegularCallback(	const std::shared_ptr<ScheduledCallback>& cbk
 									Priority prior ) 
 {
 	m_impl->addRegularCallback(cbk, prior);
+	ZUAZO_LOG(*this, Severity::VERBOSE, m_impl->generateAddRegularEventMessage(cbk, prior));
 }
 
 void Instance::removeRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk) {
 	m_impl->removeRegularCallback(cbk);
+	ZUAZO_LOG(*this, Severity::VERBOSE, m_impl->generateRemoveRegularEventMessage(cbk));
 }
 
 
@@ -325,10 +326,12 @@ void Instance::addPeriodicCallback(	const std::shared_ptr<ScheduledCallback>& cb
 									Duration period ) 
 {
 	m_impl->addPeriodicCallback(cbk, prior, period );
+	ZUAZO_LOG(*this, Severity::VERBOSE, m_impl->generateAddPeriodicEventMessage(cbk, prior, period));
 }
 
 void Instance::removePeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk) {
 	m_impl->removePeriodicCallback(cbk);
+	ZUAZO_LOG(*this, Severity::VERBOSE, m_impl->generateRemovePeriodicEventMessage(cbk));
 }
 
 TimePoint Instance::getTime() const {
@@ -411,9 +414,24 @@ uint32_t Instance::defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp
  * Instance::Module
  */
 
-void Instance::Module::initialize(Instance&) {}
+Instance::Module::Module(std::string name, Version version)
+	: m_name(std::move(name))
+	, m_version(version)
+{
+}
 
-void Instance::Module::terminate(Instance&) {}
+const std::string& Instance::Module::getName() const {
+	return m_name;
+}
+
+Version Instance::Module::getVersion() const {
+	return m_version;
+}
+
+
+void Instance::Module::initialize(Instance&) const {}
+
+void Instance::Module::terminate(Instance&) const {}
 
 Instance::Module::VulkanExtensions Instance::Module::getRequiredVulkanInstanceExtensions() const {
 	return {};
