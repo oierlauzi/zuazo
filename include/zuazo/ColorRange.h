@@ -14,11 +14,13 @@ namespace Zuazo {
 enum class ColorRange {
 	NONE = 0,					///<Not supported
 
-	FULL,						///<Components use all the available range
-	ITU_NARROW,					///<Compoents leave a headroom and footroom according to the ITU standard. 
-								///<This means that if the ColorModel is RGB all components encompass a range 
-								///<from 16/255 to 235/255. If it is a YCbCr ColorModel is chosen, G and A 
-								///<(or Y and A) encompass the same range as before, whilst R and B (or Cr and Cb)
+	FULL_RGB,					///<Components use all the available range in [0, 1]
+	FULL_YCBCR,					///<Components use all the available range in [0, 1] for G and A and [-0.5, 0.5] for R and B
+	ITU_NARROW_RGB,				///<Compoents leave a headroom and footroom according to the ITU standard. 
+								///<This means that all components encompass a range from 16/255 to 235/255.
+								///<\see https://www.itu.int/rec/R-REC-BT.601/en
+	ITU_NARROW_YCBCR,			///<Compoents leave a headroom and footroom according to the ITU standard. 
+								///< G and A (or Y and A) encompass the same range as before, whilst R and B (or Cr and Cb)
 								///<encompass a range from 16/255 to 240/255.
 								///<\see https://www.itu.int/rec/R-REC-BT.601/en
 
