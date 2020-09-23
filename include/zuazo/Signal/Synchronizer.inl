@@ -6,7 +6,8 @@ namespace Zuazo::Signal {
 
 template<typename T>
 inline Synchronizer<T>::Synchronizer(std::string name, size_t maxDelay, size_t maxDropped)
-	: BinomialLayout<T>(std::move(name))
+	: Layout(std::move(name), { m_input, m_output })
+	, ProcessorLayout<T, T>(makeProxy(m_input), makeProxy(m_output))
 	, m_queue(maxDelay)
 	, m_maxDropped(maxDropped)
 	, m_dropped(0)
@@ -42,7 +43,7 @@ inline size_t Synchronizer<T>::getDropped() const {
 template<typename T>
 inline void Synchronizer<T>::updateInput() {
 	if(!m_queue.full()) {
-		m_queue.push(getInputPad().pull());
+		m_input.pull());
 	}
 }
 
@@ -51,12 +52,12 @@ inline void Synchronizer<T>::updateOutput() {
 	if(m_queue.size() > 0) {
 		//There is at least one element
 		m_dropped.load(0);
-		getOutputPad().push(std::move(m_queue.front()));
+		m_output.push(std::move(m_queue.front()));
 		m_queue.pop();
 	} else {
 		//Could not retrieve an element
 		if(m_dropped.fetch_add(1) >= getMaxDropped()) {
-			getOutputPad().reset();
+			m_output.reset();
 		}
 	}
 }

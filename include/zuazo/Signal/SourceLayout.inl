@@ -2,47 +2,29 @@
 
 namespace Zuazo::Signal {
 
-template<typename T>
-inline SourceLayout<T>::SourceLayout(	std::string name, 
-										std::string outputName, 
-										typename Output<T>::PullCallback pullCbk )
-	: Layout(std::move(name))
-	, m_io({}, std::move(outputName), std::move(pullCbk))
+template <typename Tout>
+inline SourceLayout<Tout>::SourceLayout(Layout::PadProxy<Output>& output)
+	: m_output(output)
 {
-	Layout::registerPad(m_io->output);
 }
 
 
 
-template<typename T>
-inline Layout::PadProxy<Output<T>>& SourceLayout<T>::getOutput() {
-	return Layout::makeProxy(getOutputPad());
+template <typename Tout>
+inline Layout::PadProxy<typename SourceLayout<Tout>::Output>& SourceLayout<Tout>::getOutput() {
+	return m_output;
 }
 
-template<typename T>
-inline const Layout::PadProxy<Output<T>>& SourceLayout<T>::getOutput() const {
-	return Layout::makeProxy(getOutputPad());
-}
-
-
-
-template<typename T>
-inline Output<T>& SourceLayout<T>::getOutputPad() {
-	return m_io->output;
-}
-
-template<typename T>
-inline const Output<T>& SourceLayout<T>::getOutputPad() const {
-	return m_io->output;
+template <typename Tout>
+inline const Layout::PadProxy<typename SourceLayout<Tout>::Output>& SourceLayout<Tout>::getOutput() const {
+	return m_output;
 }
 
 
 
-template<typename T>
-inline SourceLayout<T>::IO::IO(	std::string outputName, 
-								typename Output<T>::PullCallback pullCbk )
-	: output(std::move(outputName), std::move(pullcbk))
-{
+template <typename Tout>
+inline void operator<<(Layout::PadProxy<Input<Tout>>& dst, SourceLayout<Tout>& src) {
+	dst << src.getOutput();
 }
 
 }

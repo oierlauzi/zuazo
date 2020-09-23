@@ -21,16 +21,6 @@ constexpr T bit(T pos){
 	return T(1) << pos;
 }
 
-template<typename T>
-inline T* align(T* ptr, size_t alignment) {
-	static_assert(sizeof(T*) == sizeof(uintptr_t));
-	return reinterpret_cast<T*>(align(reinterpret_cast<uintptr_t>(ptr), alignment));
-}
-
-constexpr uintptr_t align(uintptr_t ptr, size_t alignment) {
-	return ((ptr + alignment - 1) / alignment) * alignment;
-}
-
 
 template<typename Func, typename... Args>
 inline typename std::enable_if<!std::is_same<Func, typename std::invoke_result<Func, Args...>::type>::value, void>::type

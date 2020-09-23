@@ -13,10 +13,6 @@ constexpr void ignore(const T&...);
 template<typename T>
 constexpr T bit(T pos);
 
-template<typename T>
-T* align(T* ptr, size_t alignment);
-constexpr uintptr_t align(uintptr_t ptr, size_t alignment);
-
 
 template<typename Func, typename... Args>
 typename std::enable_if<!std::is_same<Func, typename std::invoke_result<Func, Args...>::type>::value, void>::type

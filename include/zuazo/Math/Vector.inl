@@ -92,21 +92,4 @@ constexpr Math::Vec<T, dim> lcm(const Math::Vec<T, dim>& a, const Math::Vec<T, d
 	return result;
 }
 
-
-
-template<typename T, int dim>
-inline std::ostream& operator<<(std::ostream& os, const Math::Vec<T, dim>& v) {
-	constexpr size_t size = dim;
-
-	size_t i = 0;
-	os << "[";
-	while(i < size) {
-		os << v[i];
-		if(++i != size) os << ", "; //Add a comma only if it is not the last one
-	}
-	os << "]";
-	
-	return os;
-}
-
 }

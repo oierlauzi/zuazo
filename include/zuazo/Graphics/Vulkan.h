@@ -45,7 +45,7 @@ public:
 		Utils::Range{ vk::Filter::eNearest, vk::Filter::eLinear }
 	};
 
-	Vulkan(	std::string_view appName, 
+	Vulkan(	const std::string& appName, 
 			Version appVersion,
 			Verbosity verbosity,
 			std::vector<vk::ExtensionProperties> requiredInstanceExtensions,	
@@ -82,7 +82,6 @@ public:
 	vk::UniqueSwapchainKHR				createSwapchain(const vk::SwapchainCreateInfoKHR& createInfo) const;
 	vk::UniqueImage						createImage(const vk::ImageCreateInfo& createInfo) const;
 	vk::UniqueImageView					createImageView(const vk::ImageViewCreateInfo& createInfo) const;
-	vk::UniqueRenderPass				createRenderPass(const vk::RenderPassCreateInfo& createInfo) const;
 	vk::UniquePipeline					createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& createInfo ) const;
 	vk::UniqueFramebuffer				createFramebuffer(const vk::FramebufferCreateInfo& createInfo) const;
 	vk::UniqueCommandPool				createCommandPool(const vk::CommandPoolCreateInfo& createInfo) const;
@@ -90,6 +89,11 @@ public:
 	vk::UniqueDescriptorPool			createDescriptorPool(const vk::DescriptorPoolCreateInfo& createInfo) const;
 	vk::UniqueSemaphore					createSemaphore() const;
 	vk::UniqueFence						createFence(bool signaled = false) const;
+
+	vk::UniqueRenderPass				createRenderPass(const vk::RenderPassCreateInfo& createInfo) const;
+	vk::RenderPass						createRenderPass(size_t id) const;
+	vk::RenderPass						createRenderPass(	size_t id,
+															const vk::RenderPassCreateInfo& createInfo ) const;
 
 	vk::UniqueShaderModule				createShaderModule(Utils::BufferView<const uint32_t> code) const;
 	vk::ShaderModule					createShaderModule(size_t id) const;

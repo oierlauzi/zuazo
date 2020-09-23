@@ -10,10 +10,10 @@ class StagedFrame
 {
 public:
 	StagedFrame(const Vulkan& vulkan,
-				const std::shared_ptr<const Descriptor> desc,
-				const std::shared_ptr<const Buffer>& colorTransfer,
+				std::shared_ptr<const Descriptor> desc,
+				std::shared_ptr<const Buffer> colorTransfer,
 				Utils::BufferView<const PlaneDescriptor> planes,
-				const std::shared_ptr<const vk::UniqueCommandPool>& cmdPool );
+				std::shared_ptr<const vk::UniqueCommandPool> cmdPool );
 	StagedFrame(const StagedFrame& other) = delete;
 	StagedFrame(StagedFrame&& other) = default;
 	virtual ~StagedFrame(); 

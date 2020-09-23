@@ -1,52 +1,43 @@
-#pragma once 
+#pragma once W
 
 #include "Layout.h"
 #include "Input.h"
 #include "Output.h"
-#include "NamingConventions.h"
-#include "../Utils/Pimpl.h"
 
-#include <string_view>
+#include <utility>
 
 namespace Zuazo::Signal {
 
-template <typename T>
-class SourceLayout 
-	: public Layout
-{
+template <typename Tout>
+class SourceLayout {
 public:
-	explicit SourceLayout(	std::string name, 
-							std::string outputName = std::string(makeOutputName<T>()),
-							typename Output<T>::PullCallback pullCbk = {} );
-	SourceLayout(const SourceLayout& other) = delete;
+	using OutputType = Tout;
+	using Output = Signal::Output<OutputType>;
+
+	explicit SourceLayout(Layout::PadProxy<Output>& output);
+	SourceLayout(const SourceLayout& other) = default;
 	SourceLayout(SourceLayout&& other) = default;
-	~SourceLayout() = default;
+	virtual ~SourceLayout() = default;
 
-	SourceLayout&						operator=(const SourceLayout& other) = delete;
-	SourceLayout&						operator=(SourceLayout&& other) = default;
-
-	PadProxy<Output<T>>&				getOutput();
-	const PadProxy<Output<T>>&			getOutput() const;
-
-protected:
-	Output<T>&							getOutputPad();
-	const Output<T>&					getOutputPad() const;
+	SourceLayout&										operator=(const SourceLayout& other) = default;
+	SourceLayout&										operator=(SourceLayout&& other) = default;
+	
+	Layout::PadProxy<Output>&							getOutput();
+	const Layout::PadProxy<Output>&						getOutput() const;
 
 private:
-	struct IO {
-		IO(	std::string outputName, 
-			typename Output<T>::PullCallback pullCbk pullcbk);
-		~IO() = default;
-
-		Output<T> output;
-	};
-
-	//Dynamically allocated so that its address remains invariant
-	Utils::Pimpl<IO>					m_io;
+	std::reference_wrapper<Layout::PadProxy<Output>>	m_output;
 
 };
 
-	
+
+//Magic operator in order to concatenate
+template <typename Tout>
+void operator<<(Layout::PadProxy<Input<Tout>>& dst, SourceLayout<Tout>& src);
+
+//template <typename Tout>
+//void operator<<(ConsumerLayout<Tout>& dst, SourceLayout<Tout>& src); //Already defined
+
 }
 
 #include "SourceLayout.inl"

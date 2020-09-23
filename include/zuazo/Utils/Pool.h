@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vector>
+#include <queue>
 #include <memory>
 #include <tuple>
 #include <utility>
@@ -8,46 +8,40 @@
 
 namespace Zuazo::Utils {
 
-template <typename T>
-struct DefaultPoolAllocator {
-	std::shared_ptr<T> operator()() const;
-};
-
-template <typename T, typename Alloc = DefaultPoolAllocator<T>>
+template <typename T, typename Alloc = std::allocator<T>>
 class Pool {
 public:
-	class Recycler;
-
 	using ElementType = T;
 	using Allocator = Alloc;
+	class Recycler;
 
-	explicit Pool(Allocator alloc = Allocator());
+	explicit Pool(size_t maxSpareCount = 1, Allocator alloc = Allocator());
 	Pool(const Pool& other) = delete;
-	Pool(Pool&& other) = default;
-	~Pool() = default;
+	~Pool();
 
-	Pool& 						operator=(const Pool& other) = delete;
-	Pool& 						operator=(Pool&& other) = default;
+	Pool& 									operator=(const Pool& other) = delete;
 
-	std::shared_ptr<T>			acquire();
-	void						clear();
-	void						shrink(size_t maxSpares = 0);
+	void									setMaxSpareCount(size_t spares);
+	size_t									getMaxSpareCount() const;
+	size_t									getSpareCount() const;
+
+	std::unique_ptr<ElementType, Recycler>	acquire();
 
 private:
-	using Spares = std::vector<std::shared_ptr<T>>;
-	using Data = std::tuple<Spares, Allocator>; //In order to use EBO, store as a tuple
+	class Deleter;
 
-	enum DataIndices{
-		m_spares,
-		m_allocator
-	};
+	//Using tuple so that EBO is used in case of sizeof(Allocator) = 0
+	using SharedData = std::tuple<Pool*, Allocator>; 
+	enum SharedDataIndices { poolPtrIdx, allocatorIdx };
 
-	Data						m_data;
+	using Spares = std::queue<std::unique_ptr<ElementType, Deleter>>;
 
-	Spares&						spares();
-	const Spares&				spares() const;
-	Allocator&					allocator();
-	const Allocator&			allocator() const;
+	std::shared_ptr<SharedData>				m_sharedData;
+	Spares									m_spares;
+	size_t									m_maxSpareCount;
+
+	Recycler								makeRecycler() const;
+	void									recycle(ElementType* el);
 
 };
 

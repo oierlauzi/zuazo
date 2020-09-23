@@ -20,6 +20,8 @@ inline Layout::Layout(std::string name, std::initializer_list<PadRef> pads)
 {
 }
 
+
+
 inline void Layout::setName(std::string name) {
 	m_name = std::move(name);
 }
@@ -70,18 +72,8 @@ inline Layout::PadProxy<T>& Layout::getPad(std::string_view name) {
 }
 
 template<typename T>
-inline Layout::PadProxy<T>& Layout::getPad(const T& pad) {
-	return makeProxy(findPad(pad));
-}
-
-template<typename T>
 inline const Layout::PadProxy<T>& Layout::getPad(std::string_view name) const {
 	return makeProxy(findPad<T>(name));
-}
-
-template<typename T>
-inline const Layout::PadProxy<T>& Layout::getPad(const T& pad) const {
-	return makeProxy(findPad(pad));
 }
 
 
@@ -107,8 +99,9 @@ inline void Layout::registerPad(PadProxy<T>& pad) {
 	registerPad(static_cast<T&>(pad));
 }
 
-inline void Layout::registerPads(std::initializer_list<PadRef> pads) {
-	m_pads.insert(m_pads.cend(), pads);
+template<typename InputIt>
+inline void Layout::registerPad(InputIt begin, InputIt end) {
+	m_pads.insert(m_pads.cend(), begin, end);
 }
 
 inline void Layout::removePad(PadRef pad) {
@@ -134,11 +127,6 @@ inline T& Layout::findPad(std::string_view str) const {
 	}
 
 	throw Exception("Requested pad not found");
-}
-
-template <typename T>
-T& Layout::findPad(const T& pad) const {
-	return findPad<T>(pad.getName());
 }
 
 template <typename T>

@@ -21,9 +21,12 @@ public:
 	Uploader& 										operator=(Uploader&& other);
 
 	const Vulkan&									getVulkan() const;
+
+	void											setMaxSpareCount(size_t spares);
+	size_t											getMaxSpareCount() const;
+	size_t											getSpareCount() const;
+
 	std::shared_ptr<StagedFrame>					acquireFrame() const;
-	void											clear();
-	void											shrink(size_t maxSpares = 0);
 
 private:
 	struct Impl;

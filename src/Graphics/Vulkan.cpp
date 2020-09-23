@@ -52,6 +52,7 @@ struct Vulkan::Impl {
 	template<typename T>
 	using HashMap = std::unordered_map<size_t, T>;
 
+	mutable HashMap<vk::UniqueRenderPass>			renderPasses;
 	mutable HashMap<vk::UniqueShaderModule>			shaders;
 	mutable HashMap<vk::UniquePipelineLayout>		pipelineLayouts;
 	mutable HashMap<vk::UniqueDescriptorSetLayout>	descriptorSetLayouts;
@@ -69,7 +70,7 @@ struct Vulkan::Impl {
 	/*
 	 * Methods
 	 */
-	Impl(	std::string_view appName, 
+	Impl(	const std::string&  appName, 
 			Version appVersion,
 			Verbosity verbosity,
 			std::vector<vk::ExtensionProperties> requiredInstanceExtensions,	
@@ -80,7 +81,7 @@ struct Vulkan::Impl {
 		: logCallback(std::move(logCallback))
 		, loader()
 		, dispatcher(createDispatcher(loader))
-		, instance(createInstance(dispatcher, appName.data(), toVulkan(appVersion), std::move(requiredInstanceExtensions)))
+		, instance(createInstance(dispatcher, appName.c_str(), toVulkan(appVersion), std::move(requiredInstanceExtensions)))
 		, messenger(createMessenger(dispatcher, *instance, verbosity, this))
 		, physicalDevice(getBestPhysicalDevice(dispatcher, *instance, requiredDeviceExtensions, presentationSupportCbk, scoreFunc))
 		, physicalDeviceProperties(getPhysicalDeviceProperties(dispatcher, physicalDevice))
@@ -174,10 +175,6 @@ struct Vulkan::Impl {
 		return device->createImageViewUnique(createInfo, nullptr, dispatcher);
 	}
 
-	vk::UniqueRenderPass createRenderPass(const vk::RenderPassCreateInfo& createInfo) const{
-		return device->createRenderPassUnique(createInfo, nullptr, dispatcher);
-	}
-
 	vk::UniquePipeline createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& createInfo ) const 
 	{
 		auto result = device->createGraphicsPipelineUnique(*pipelineCache, createInfo, nullptr, dispatcher);
@@ -213,6 +210,27 @@ struct Vulkan::Impl {
 	}
 
 
+	vk::UniqueRenderPass createRenderPass(const vk::RenderPassCreateInfo& createInfo) const{
+		return device->createRenderPassUnique(createInfo, nullptr, dispatcher);
+	}
+
+	vk::RenderPass createRenderPass(size_t id) const {
+		auto ite = renderPasses.find(id);
+		return ite != renderPasses.cend() ? *(ite->second) : vk::RenderPass();
+	}
+
+	vk::RenderPass createRenderPass(size_t id,
+									const vk::RenderPassCreateInfo& createInfo ) const
+	{
+		auto [ite, result] = renderPasses.emplace(
+			id,
+			createRenderPass(createInfo)
+		);
+
+		assert(result);
+		assert(ite != renderPasses.cend());
+		return *(ite->second);
+	}
 
 	vk::UniqueShaderModule createShaderModule(Utils::BufferView<const uint32_t> code) const
 	{
@@ -226,8 +244,7 @@ struct Vulkan::Impl {
 
 	vk::ShaderModule createShaderModule(size_t id) const {
 		auto ite = shaders.find(id);
-		if(ite != shaders.cend()) return *(ite->second);
-		else return {};	
+		return ite != shaders.cend() ? *(ite->second) : vk::ShaderModule();
 	}
 
 	vk::ShaderModule createShaderModule(size_t id, 
@@ -249,8 +266,7 @@ struct Vulkan::Impl {
 
 	vk::PipelineLayout createPipelineLayout(size_t id) const {
 		auto ite = pipelineLayouts.find(id);
-		if(ite != pipelineLayouts.cend()) return *(ite->second);
-		else return {};	
+		return ite != pipelineLayouts.cend() ? *(ite->second) : vk::PipelineLayout();
 	}
 
 	vk::PipelineLayout createPipelineLayout(size_t id, 
@@ -272,8 +288,7 @@ struct Vulkan::Impl {
 
 	vk::DescriptorSetLayout createDescriptorSetLayout(size_t id) const {
 		auto ite = descriptorSetLayouts.find(id);
-		if(ite != descriptorSetLayouts.cend()) return *(ite->second);
-		else return {};	
+		return ite != descriptorSetLayouts.cend() ? *(ite->second) : vk::DescriptorSetLayout();
 	}
 
 	vk::DescriptorSetLayout createDescriptorSetLayout(	size_t id, 
@@ -295,8 +310,7 @@ struct Vulkan::Impl {
 
 	vk::Sampler createSampler(size_t id) const {
 		auto ite = samplers.find(id);
-		if(ite != samplers.cend()) return *(ite->second);
-		else return {};	
+		return ite != samplers.cend() ? *(ite->second) : vk::Sampler();
 	}
 
 	vk::Sampler createSampler(	size_t id,
@@ -1048,7 +1062,7 @@ private:
  * Interface implementation
  */
 
-Vulkan::Vulkan(	std::string_view appName, 
+Vulkan::Vulkan(	const std::string& appName, 
 				Version appVersion,
 				Verbosity verbosity,
 				std::vector<vk::ExtensionProperties> requiredInstanceExtensions,	
@@ -1157,10 +1171,6 @@ vk::UniqueImageView Vulkan::createImageView(const vk::ImageViewCreateInfo& creat
 	return m_impl->createImageView(createInfo);
 }
 
-vk::UniqueRenderPass Vulkan::createRenderPass(const vk::RenderPassCreateInfo& createInfo) const{
-	return m_impl->createRenderPass(createInfo);
-}
-
 vk::UniquePipeline Vulkan::createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& createInfo ) const 
 {
 	return m_impl->createGraphicsPipeline(createInfo);
@@ -1191,8 +1201,21 @@ vk::UniqueFence Vulkan::createFence(bool signaled) const {
 }
 
 
+vk::UniqueRenderPass Vulkan::createRenderPass(const vk::RenderPassCreateInfo& createInfo) const {
+	return m_impl->createRenderPass(createInfo);
+}
 
-vk::UniqueShaderModule Vulkan::createShaderModule(Utils::BufferView<const uint32_t> code) const  {
+vk::RenderPass Vulkan::createRenderPass(size_t id) const {
+	return m_impl->createRenderPass(id);
+}
+
+vk::RenderPass Vulkan::createRenderPass(size_t id,
+										const vk::RenderPassCreateInfo& createInfo ) const
+{
+	return m_impl->createRenderPass(id, createInfo);
+}
+
+vk::UniqueShaderModule Vulkan::createShaderModule(Utils::BufferView<const uint32_t> code) const {
 	return m_impl->createShaderModule(code);
 }
 

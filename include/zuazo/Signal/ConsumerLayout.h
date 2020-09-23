@@ -3,48 +3,43 @@
 #include "Layout.h"
 #include "Input.h"
 #include "Output.h"
-#include "NamingConventions.h"
-#include "../Utils/Pimpl.h"
+#include "SourceLayout.h"
 
-#include <string_view>
+#include <utility>
 
 namespace Zuazo::Signal {
 
-template <typename T>
-class ConsumerLayout 
-	: public Layout
-{
+template <typename Tin>
+class ConsumerLayout {
 public:
-	explicit ConsumerLayout(std::string name, 
-							std::string inputName = std::string(makeInputName<T>()) );
-	ConsumerLayout(const ConsumerLayout& other) = delete;
+	using InputType = Tin;
+	using Input = Signal::Input<InputType>;
+
+	explicit ConsumerLayout(Layout::PadProxy<Input>& input);
+	ConsumerLayout(const ConsumerLayout& other) = default;
 	ConsumerLayout(ConsumerLayout&& other) = default;
-	~ConsumerLayout() = default;
+	virtual ~ConsumerLayout() = default;
 
-	ConsumerLayout&						operator=(const ConsumerLayout& other) = delete;
-	ConsumerLayout&						operator=(ConsumerLayout&& other) = default;
+	ConsumerLayout&										operator=(const ConsumerLayout& other) = default;
+	ConsumerLayout&										operator=(ConsumerLayout&& other) = default;
 
-	PadProxy<Input<T>>&					getInput();
-	const PadProxy<Input<T>>&			getInput() const;
-
-protected:
-	Input<T>&							getInputPad();
-	const Input<T>&						getInputPad() const;
+	Layout::PadProxy<Input>&							getInput();
+	const Layout::PadProxy<Input>&						getInput() const;
 
 private:
-	struct IO {
-		IO(std::string inputName);
-		~IO() = default;
-
-		Input<T> input;
-	};
-
-	//Dynamically allocated so that its address remains invariant
-	Utils::Pimpl<IO>					m_io;
+	std::reference_wrapper<Layout::PadProxy<Input>>		m_input;
 
 };
 
-	
+
+//Magic operator in order to concatenate
+template <typename Tin>
+void operator<<(ConsumerLayout<Tin>& dst, Layout::PadProxy<Output<Tin>>& src);
+
+template <typename Tin>
+void operator<<(ConsumerLayout<Tin>& dsr, SourceLayout<Tin>& src);
+
+
 }
 
 #include "ConsumerLayout.inl"

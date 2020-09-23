@@ -2,101 +2,152 @@
 
 #include "Functions.h"
 
+#include <cassert>
+#include <utility>
+
 namespace Zuazo::Utils {
 
 /*
- * DefaultPoolAllocator
+ * Pool::Deleter
  */
 
-template <typename T>
-std::shared_ptr<T> DefaultPoolAllocator<T>::operator()() const {
-	return makeShared<T>();
-}
+template <typename T, typename Alloc>
+class Pool<T, Alloc>::Deleter {
+public:
+	Deleter(Allocator& alloc)
+		: m_allocator(alloc)
+	{
+	}
+
+	Deleter(const Deleter& other) = default;
+	~Deleter() = default;
+
+	Deleter& operator=(const Deleter& other) = default;
+
+	void operator()(ElementType* el) const {
+		std::allocator_traits<Allocator>::destroy(m_allocator, el);
+		std::allocator_traits<Allocator>::deallocate(m_allocator, el, 1);
+	}
+
+private:
+	std::reference_wrapper<Allocator> m_allocator;
+};
+
+
+/*
+ * Pool::Recycler
+ */
+
+template <typename T, typename Alloc>
+class Pool<T, Alloc>::Recycler {
+public:
+	Recycler(std::shared_ptr<SharedData> sharedData)
+		: m_sharedData(std::move(sharedData))
+	{
+	}
+
+	Recycler(const Recycler& other) = default;
+	Recycler(Recycler&& other) = default;
+	~Recycler() = default;
+
+	Recycler& operator=(const Recycler& other) = default;
+	Recycler& operator=(Recycler&& other) = default;
+
+	void operator()(ElementType* el) const {
+		assert(m_sharedData);
+		auto* poolPtr = std::get<poolPtrIdx>(*m_sharedData);
+
+		if(poolPtr) {
+			//Pool still exists
+			poolPtr->recycle(el);
+		} else {
+			//Pool was deallocated. Delete the element
+			Deleter del(std::get<allocatorIdx>(*m_sharedData));
+			del(el);
+		}
+	}
+
+private:
+	std::shared_ptr<SharedData> m_sharedData;
+};
 
 /*
  * Pool
  */
 
 template <typename T, typename Alloc>
-inline Pool<T, Alloc>::Pool(Allocator alloc)
-	: m_data(Spares(), std::move(alloc))
+inline Pool<T, Alloc>::Pool(size_t maxSpares, Allocator alloc)
+	: m_sharedData(Utils::makeShared<SharedData>(this, std::move(alloc)))
+	, m_maxSpareCount(maxSpares)
 {
 }
 
+template <typename T, typename Alloc>
+inline Pool<T, Alloc>::~Pool() {
+	assert(m_sharedData);
+	std::get<poolPtrIdx>(*m_sharedData) = nullptr; //So that they don't try to recycle
+}
+
+
 
 template <typename T, typename Alloc>
-inline std::shared_ptr<T> Pool<T, Alloc>::acquire() {
-	for(const auto& el : spares()) {
-		assert(el.use_count() > 0);
-		if(el.use_count() == 1) return el;
+inline void Pool<T, Alloc>::setMaxSpareCount(size_t spares) {
+	m_maxSpareCount = spares;
+}
+
+template <typename T, typename Alloc>
+inline size_t Pool<T, Alloc>::getMaxSpareCount() const {
+	return m_maxSpareCount;
+}
+
+template <typename T, typename Alloc>
+inline size_t Pool<T, Alloc>::getSpareCount() const {
+	return m_spares.size();
+}
+
+
+
+template <typename T, typename Alloc>
+inline std::unique_ptr<typename Pool<T, Alloc>::ElementType, typename Pool<T, Alloc>::Recycler> 
+Pool<T, Alloc>::acquire() {
+	assert(m_sharedData);
+	ElementType* result;
+
+	if(m_spares.empty()) {
+		Allocator& allocator = std::get<allocatorIdx>(*m_sharedData);
+
+		//Allocate the a new element
+		result = std::allocator_traits<Allocator>::allocate(allocator, 1);
+		std::allocator_traits<Allocator>::construct(allocator, result);
+	} else {
+		//Acquire it from the spare queue
+		result = m_spares.front().release();
+		m_spares.pop();
 	}
 
-	spares().push_back(allocator()());
-	assert(spares().back().use_count() == 1);
-	return spares().back();
+	assert(result);
+	return std::unique_ptr<ElementType, Recycler>(
+		result, 
+		makeRecycler()
+	);
+}
+
+
+
+template <typename T, typename Alloc>
+inline typename Pool<T, Alloc>::Recycler Pool<T, Alloc>::makeRecycler() const {
+	assert(m_sharedData);
+	return Recycler(m_sharedData);
 }
 
 template <typename T, typename Alloc>
-inline void Pool<T, Alloc>::clear() {
-	spares().clear();
-}
+inline void Pool<T, Alloc>::recycle(ElementType* el) {
+	assert(m_sharedData);
+	std::unique_ptr<ElementType, Deleter> ptr(el, Deleter(std::get<allocatorIdx>(*m_sharedData)));
 
-template <typename T, typename Alloc>
-inline void Pool<T, Alloc>::shrink(size_t maxSpares) {
-	auto ite = spares().begin();
-
-	while(ite != spares().end()) {
-		assert(ite->use_count() > 0);
-		if(ite->use_count() == 1) {
-			//This ptr is unused (only held by me)
-			if(maxSpares > 0) {
-				maxSpares--; //Count this one to store one spare less
-				++ite;
-			} else {
-				//No room for more spares
-				ite = spares().erase(ite);
-			}
-		} else {
-			++ite;
-		}
-	}
-
-	for(auto& el : spares()) {
-		assert(el.use_count() > 0);
-		if(el.use_count() == 1) {
-			//This ptr is unused (only held by me)
-			if(maxSpares > 0) {
-				maxSpares--;
-			} else {
-
-			}
-		}
+	if(m_spares.size() < m_maxSpareCount) {
+		m_spares.emplace(std::move(ptr));
 	}
 }
-
-
-
-
-template <typename T, typename Alloc>
-inline typename Pool<T, Alloc>::Spares& Pool<T, Alloc>::spares() {
-	return std::get<m_spares>(m_data);
-}
-
-template <typename T, typename Alloc>
-inline const typename Pool<T, Alloc>::Spares& Pool<T, Alloc>::spares() const {
-	return std::get<m_spares>(m_data);
-}
-
-
-template <typename T, typename Alloc>
-inline typename Pool<T, Alloc>::Allocator& Pool<T, Alloc>::allocator() {
-	return std::get<m_allocator>(m_data);
-}
-
-template <typename T, typename Alloc>
-inline const typename Pool<T, Alloc>::Allocator& Pool<T, Alloc>::allocator() const {
-	return std::get<m_allocator>(m_data);
-}
-
 
 }

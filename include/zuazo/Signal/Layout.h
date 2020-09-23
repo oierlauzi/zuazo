@@ -37,11 +37,7 @@ public:
 	template<typename T>
 	PadProxy<T>&											getPad(std::string_view name);
 	template<typename T>
-	PadProxy<T>&											getPad(const T& pad);
-	template<typename T>
 	const PadProxy<T>&										getPad(std::string_view name) const;
-	template<typename T>
-	const PadProxy<T>&										getPad(const T& pad) const;
 
 	template<typename T>
 	static PadProxy<T>&										makeProxy(T& pad);
@@ -52,7 +48,8 @@ protected:
 	void													registerPad(PadRef pad);
 	template<typename T>
 	void													registerPad(PadProxy<T>& pad);
-	void													registerPads(std::initializer_list<PadRef> pads);
+	template<typename InputIt>
+	void													registerPad(InputIt begin, InputIt end);
 	void													removePad(PadRef pad);
 
 private:
@@ -61,8 +58,6 @@ private:
 
 	template<typename T>
 	T&														findPad(std::string_view name) const;
-	template<typename T>
-	T&														findPad(const T& pad) const;
 	template<typename T>
 	std::vector<std::reference_wrapper<T>>					findPads() const;
 	

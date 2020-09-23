@@ -4,52 +4,33 @@ namespace Zuazo::Signal {
 
 template<typename T>
 inline FailOver<T>::FailOver(std::string name)
-	: Layout(std::move(name))
+	: Layout(std::move(name), { m_backupInput, m_input, m_output })
+	, ProcessorLayout<T, T>(makeProxy(m_input), makeProxy(m_output))
+	, m_backupInput(std::string(BACKUP_INPUT_NAME))
+	, m_input()
+	, m_output(std::string(makeOutputName<T>()), makePullCallback(m_backupInput, m_input))
 {
-	Layout::registerPads( {m_io->input, m_io->backup, m_io->output} );
 }
 
 
-
-template<typename T>
-inline Layout::PadProxy<Input<T>>& FailOver<T>::getInput() {
-	return Layout::makeProxy(m_io->input);
-}
-
-template<typename T>
-inline const Layout::PadProxy<Input<T>>& FailOver<T>::getInput() const {
-	return Layout::makeProxy(m_io->input);
-}
 
 template<typename T>
 inline Layout::PadProxy<Input<T>>& FailOver<T>::getBackupInput() {
-	return Layout::makeProxy(m_io->backup);
+	return m_backupInput;
 }
 
 template<typename T>
 inline const Layout::PadProxy<Input<T>>& FailOver<T>::getBackupInput() const {
-	return Layout::makeProxy(m_io->backup);
+	return m_backupInput;
 }
 
 template<typename T>
-inline Layout::PadProxy<Output<T>>& FailOver<T>::getOutput() {
-	return Layout::makeProxy(m_io->output);
-}
-
-template<typename T>
-inline const Layout::PadProxy<Output<T>>& FailOver<T>::getOutput() const {
-	return Layout::makeProxy(m_io->output);
-}
-
-
-
-template<typename T>
-inline PullCallback FailOver<T>::makePullCbk(Output<T>& output, const Input<T>& input, const Input<T>& backup) {
-	return [&output, &input, &backup] () -> void {
+inline typename Output<T>::PullCallback FailOver<T>::makePullCallback(Input<T>& backupInput, Input<T>& input) {
+	return [&backup, &input] (Output<T>& output) {
 		//Retrieve an element from the primary input
 		const auto& x = input.pull();
 
-		if(x != Input<T>::NO_SIGNAL) {
+		if(x != Output<T>::NO_SIGNAL) {
 			//Primary input OK
 			output.push(x);
 		} else {

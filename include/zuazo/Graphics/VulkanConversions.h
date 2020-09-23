@@ -55,6 +55,9 @@ constexpr vk::ComponentMapping swizzle(std::string_view src, std::string_view ds
 constexpr vk::Format toSrgb(vk::Format format);
 constexpr vk::Format fromSrgb(vk::Format format);
 
+constexpr bool hasDepth(vk::Format format);
+constexpr bool hasStencil(vk::Format format);
+
 constexpr vk::Filter toVulkan(ScalingFilter filt);
 constexpr ScalingFilter fromVulkan(vk::Filter filt);
 

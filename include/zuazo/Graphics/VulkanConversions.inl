@@ -782,6 +782,37 @@ constexpr vk::Format fromSrgb(vk::Format format) {
 }
 
 
+
+constexpr bool hasDepth(vk::Format format) {
+	switch(format) {
+	case vk::Format::eD16Unorm:
+	case vk::Format::eX8D24UnormPack32:
+	case vk::Format::eD32Sfloat:
+	case vk::Format::eD16UnormS8Uint:
+	case vk::Format::eD24UnormS8Uint:
+	case vk::Format::eD32SfloatS8Uint:
+		return true;
+	
+	default:
+		return false;
+	}
+}
+
+constexpr bool hasStencil(vk::Format format) {
+	switch(format) {
+	case vk::Format::eS8Uint:
+	case vk::Format::eD16UnormS8Uint:
+	case vk::Format::eD24UnormS8Uint:
+	case vk::Format::eD32SfloatS8Uint:
+		return true;
+	
+	default:
+		return false;
+	}
+}
+
+
+
 constexpr vk::Filter toVulkan(ScalingFilter filt) {
 	switch(filt){
 	case ScalingFilter::NEAREST: return vk::Filter::eNearest;

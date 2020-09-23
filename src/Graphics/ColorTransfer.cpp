@@ -213,6 +213,7 @@ struct OutputColorTransfer::Impl {
 			getRGB2YCbCrConversionMatrix(desc.colorModel),
 			getColorTransferFunction(desc.colorTransferFunction),
 			getColorRange(desc.colorRange),
+			getPlaneFormat(desc.colorFormat)
 		}
 	{
 	}

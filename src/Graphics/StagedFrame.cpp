@@ -3,19 +3,19 @@
 namespace Zuazo::Graphics {
 
 StagedFrame::StagedFrame(	const Vulkan& vulkan,
-							const std::shared_ptr<const Descriptor> desc,
-							const std::shared_ptr<const Buffer>& colorTransfer,
+							std::shared_ptr<const Descriptor> desc,
+							std::shared_ptr<const Buffer> colorTransfer,
 							Utils::BufferView<const Frame::PlaneDescriptor> planes,
-							const std::shared_ptr<const vk::UniqueCommandPool>& cmdPool )
+							std::shared_ptr<const vk::UniqueCommandPool> cmdPool )
 	: Frame(
 		vulkan,
-		desc,
-		colorTransfer,
+		std::move(desc),
+		std::move(colorTransfer),
 		planes,
 		vk::ImageUsageFlagBits::eTransferDst )
 	, m_stagingBuffer(createStagingBuffer(vulkan, getPlaneAreas()))
 	, m_pixelData(getPixelData(vulkan, getPlaneAreas(), m_stagingBuffer))
-	, m_commandPool(cmdPool)
+	, m_commandPool(std::move(cmdPool))
 	, m_commandBuffer(createCommandBuffer(getVulkan(), planes, **m_commandPool, getImages(), getPlaneAreas(), m_stagingBuffer))
 	, m_commandBufferSubmit(createSubmitInfo(*m_commandBuffer))
 	, m_uploadComplete(vulkan.createFence(false))

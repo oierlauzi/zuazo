@@ -7,6 +7,7 @@
 #include <zuazo/Exception.h>
 
 #include <utility>
+#include <memory>
 
 namespace Zuazo::Graphics {
 
@@ -15,18 +16,34 @@ namespace Zuazo::Graphics {
  */
 
 struct Uploader::Impl {
-	struct Allocator {
-		std::reference_wrapper<const Uploader::Impl> uploader;
+	class Allocator : public std::allocator<StagedFrame> {
+	
+	public:
+		Allocator(const Impl& impl) 
+			: m_uploader(impl) 
+		{
+		}
 
-		std::shared_ptr<StagedFrame> operator()() const {
-			return Utils::makeShared<StagedFrame>(
-				uploader.get().vulkan,
-				uploader.get().frameDescriptor,
-				uploader.get().colorTransferBuffer,
-				uploader.get().planeDescriptors,
-				uploader.get().commandPool
+		Allocator(const Allocator& other) = default;
+		~Allocator() = default;
+
+		Allocator& operator=(const Allocator& other) = default;
+
+		void construct(StagedFrame* x) {
+			const Impl& uplo = m_uploader;
+
+			new (x) StagedFrame(
+				uplo.vulkan,
+				uplo.frameDescriptor,
+				uplo.colorTransferBuffer,
+				uplo.planeDescriptors,
+				uplo.commandPool
 			);
 		}
+
+	private:
+		std::reference_wrapper<const Impl>				m_uploader;
+
 	};
 
 	std::reference_wrapper<const Vulkan>			vulkan;
@@ -48,7 +65,7 @@ struct Uploader::Impl {
 		, planeDescriptors(createPlaneDescriptors(vulkan, conf, colorTransfer))
 		, commandPool(createCommandPool(vulkan))
 		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, colorTransfer))
-		, framePool(Allocator{*this})
+		, framePool(1, Allocator(*this))
 	{
 	}
 
@@ -61,18 +78,24 @@ struct Uploader::Impl {
 		return vulkan;
 	}
 
+
+	void setMaxSpareCount(size_t spares) {
+		framePool.setMaxSpareCount(spares);
+	}
+
+	size_t getMaxSpareCount() const {
+		return framePool.getMaxSpareCount();
+	}
+
+	size_t getSpareCount() const {
+		return framePool.getSpareCount();
+	}
+
+
 	std::shared_ptr<StagedFrame> acquireFrame() const {
 		auto frame = framePool.acquire();
 		frame->waitDependecies();
 		return frame;
-	}
-
-	void clear() {
-		framePool.clear();
-	}
-
-	void shrink(size_t maxSpares) {
-		framePool.shrink(maxSpares);
 	}
 
 private:
@@ -127,16 +150,22 @@ const Vulkan& Uploader::getVulkan() const {
 	return m_impl->getVulkan();
 }
 
+
+void Uploader::setMaxSpareCount(size_t spares) {
+	m_impl->setMaxSpareCount(spares);
+}
+
+size_t Uploader::getMaxSpareCount() const {
+	return m_impl->getMaxSpareCount();
+}
+
+size_t Uploader::getSpareCount() const {
+	return m_impl->getSpareCount();
+}
+
+
 std::shared_ptr<StagedFrame> Uploader::acquireFrame() const {
 	return m_impl->acquireFrame();
-}
-
-void Uploader::clear() {
-	m_impl->clear();
-}
-
-void Uploader::shrink(size_t maxSpares) {
-	m_impl->shrink(maxSpares);
 }
 
 }

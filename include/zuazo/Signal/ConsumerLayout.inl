@@ -2,45 +2,34 @@
 
 namespace Zuazo::Signal {
 
-template<typename T>
-inline ConsumerLayout<T>::ConsumerLayout(	std::string name, 
-											std::string inputName )
-	: Layout(std::move(name))
-	, m_io({}, std::move(inputName))
+template <typename Tin>
+inline ConsumerLayout<Tin>::ConsumerLayout(Layout::PadProxy<Input>& input)
+	: m_input(input)
 {
-	Layout::registerPad(m_io->input);
 }
 
 
 
-template<typename T>
-inline Layout::PadProxy<Input<T>>& ConsumerLayout<T>::getInput() {
-	return Layout::makeProxy(getInputPad());
+template <typename Tin>
+inline Layout::PadProxy<typename ConsumerLayout<Tin>::Input>& ConsumerLayout<Tin>::getInput() {
+	return m_input;
 }
 
-template<typename T>
-inline const Layout::PadProxy<Input<T>>& ConsumerLayout<T>::getInput() const {
-	return Layout::makeProxy(getInputPad());
-}
-
-
-
-template<typename T>
-inline Input<T>& ConsumerLayout<T>::getInputPad() {
-	return m_io->input;
-}
-
-template<typename T>
-inline const Input<T>& ConsumerLayout<T>::getInputPad() const {
-	return m_io->input;
+template <typename Tin>
+inline const Layout::PadProxy<typename ConsumerLayout<Tin>::Input>& ConsumerLayout<Tin>::getInput() const {
+	return m_input;
 }
 
 
 
-template<typename T>
-inline ConsumerLayout<T>::IO::IO(std::string inputName)
-	: input(std::move(inputName))
-{
+template <typename Tin>
+inline void operator<<(ConsumerLayout<Tin>& dst, Layout::PadProxy<Output<Tin>>& src) {
+	dst.getInput() << src;
+}
+
+template <typename Tin>
+inline void operator<<(ConsumerLayout<Tin>& dst, SourceLayout<Tin>& src) {
+	dst.getInput() << src;
 }
 
 }

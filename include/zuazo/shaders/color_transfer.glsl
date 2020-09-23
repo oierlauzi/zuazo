@@ -1,6 +1,6 @@
 #include "color_transfer.h"
 
-vec4 ct_sample(in int planeFormat, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords){
+vec4 ct_load(in int planeFormat, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords){
 	vec4 result;
 
 	switch(planeFormat){
@@ -28,6 +28,31 @@ vec4 ct_sample(in int planeFormat, in sampler2D images[ct_SAMPLER_COUNT], in vec
 	}
 
 	return result;
+}
+
+void ct_store(in int planeFormat, out vec4 plane0, out vec4 plane1, out vec4 plane2, out vec4 plane3, in vec4 color){
+	//Attach the alpha channel so that it gets correctly blended
+	switch(planeFormat){
+	case ct_PLANE_FORMAT_G_BR:
+		plane0.ra = color.ga;
+		plane1.rga = color.bra;
+		break;
+	case ct_PLANE_FORMAT_G_B_R:
+		plane0.ra = color.ga;
+		plane1.ra = color.ba;
+		plane2.ra = color.ra;
+		break;
+	case ct_PLANE_FORMAT_G_B_R_A:
+		plane0.ra = color.ga;
+		plane1.ra = color.ba;
+		plane2.ra = color.ra;
+		plane3.ra = color.aa;
+		break;
+	
+	default: //ct_PLANE_FORMAT_RGBA
+		plane0 = color;
+		break;
+	}
 }
 
 
@@ -533,10 +558,16 @@ vec4 ct_transferColor(in ct_read_data inputProp, in ct_write_data outputProp, in
 }
 
 vec4 ct_getColor(in ct_read_data inputProp, in ct_write_data outputProp, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords){
-	vec4 result = ct_sample(inputProp.planeFormat, images, texCoords);
+	vec4 result = ct_load(inputProp.planeFormat, images, texCoords);
 	result = ct_readColor(inputProp, outputProp, result);
 	return result;
 }
+
+void ct_setColor(in ct_write_data outputProp, out vec4 plane0, out vec4 plane1, out vec4 plane2, out vec4 plane3, in vec4 color) {
+	vec4 result = ct_writeColor(outputProp, color);
+	ct_store(outputProp.planeFormat, plane0, plane1, plane2, plane3, result);
+}
+
 
 
 vec4 ct_readColorYCbCr(in ct_read_data inputProp, in ct_write_data outputProp, in vec4 color){
@@ -561,7 +592,12 @@ vec4 ct_writeColorYCbCr(in ct_write_data outputProp, in vec4 color){
 }
 
 vec4 ct_getColorYCbCr(in ct_read_data inputProp, in ct_write_data outputProp, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords){
-	vec4 result = ct_sample(inputProp.planeFormat, images, texCoords);
+	vec4 result = ct_load(inputProp.planeFormat, images, texCoords);
 	result = ct_readColorYCbCr(inputProp, outputProp, result);
 	return result;
+}
+
+void ct_setColorYCbCr(in ct_write_data outputProp, out vec4 plane0, out vec4 plane1, out vec4 plane2, out vec4 plane3, in vec4 color){
+	vec4 result = ct_writeColorYCbCr(outputProp, color);
+	ct_store(outputProp.planeFormat, plane0, plane1, plane2, plane3, result);
 }

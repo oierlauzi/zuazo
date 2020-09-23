@@ -59,4 +59,5 @@ struct ct_write_data {
 	ZUAZO_IF_CPP(glm::mat4, mat4) 		mtxRGB2YCbCr;
 	ZUAZO_IF_CPP(int32_t, int) 			colorTransferFunction;
 	ZUAZO_IF_CPP(int32_t, int) 			colorRange;
+	ZUAZO_IF_CPP(int32_t, int) 			planeFormat;
 };

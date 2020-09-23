@@ -1,6 +1,9 @@
 #pragma once 
 
-#include "BinomialLayout.h"
+#include "Layout.h"
+#include "ProcessorLayout.h"
+#include "Input.h"
+#include "Output.h"
 
 #include <queue>
 
@@ -8,22 +11,24 @@ namespace Zuazo::Signal {
 
 template <typename T>
 class Queue 
-	: public BinomialLayout<T>
+	: public Layout
+	, public ProcessorLayout<T, T>
 {
 public:
 	explicit Queue(std::string name);
 	Queue(const Queue& other) = delete;
-	Queue(Queue&& other) = default;
 	~Queue() = default;
 
 	Queue&							operator=(const Queue& other) = delete;
-	Queue&							operator=(Queue&& other) = default;
 
 	void							updateInput();
 	void							updateOutput();
 
 private:
 	std::queue<T>					m_queue;
+
+	Input<T>						m_input;
+	Output<T>						m_output;
 
 };
 
