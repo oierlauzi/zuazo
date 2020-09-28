@@ -12,6 +12,7 @@
 #include "../ColorModel.h"
 #include "../ColorPrimaries.h"
 #include "../ScalingFilter.h"
+#include "../BlendingMode.h"
 #include "../Utils/BufferView.h"
 
 #include <tuple>
@@ -61,11 +62,13 @@ constexpr bool hasStencil(vk::Format format);
 constexpr vk::Filter toVulkan(ScalingFilter filt);
 constexpr ScalingFilter fromVulkan(vk::Filter filt);
 
+
+constexpr vk::PipelineColorBlendAttachmentState toVulkan(BlendingMode mode);
+
 template<typename T>
 constexpr vk::ArrayProxy<T> toVulkan(Utils::BufferView<T> bv);
 template<typename T>
 constexpr Utils::BufferView<T> fromVulkan(vk::ArrayProxy<T> ap);
-
 
 }
 

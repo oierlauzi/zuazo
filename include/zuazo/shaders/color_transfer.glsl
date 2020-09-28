@@ -31,6 +31,9 @@ vec4 ct_load(in int planeFormat, in sampler2D images[ct_SAMPLER_COUNT], in vec2 
 }
 
 void ct_store(in int planeFormat, out vec4 plane0, out vec4 plane1, out vec4 plane2, out vec4 plane3, in vec4 color){
+	//Premultiply the color with the alpha channel
+	color = vec4(color.rgb * color.a, color.a);
+
 	//Attach the alpha channel so that it gets correctly blended
 	switch(planeFormat){
 	case ct_PLANE_FORMAT_G_BR:

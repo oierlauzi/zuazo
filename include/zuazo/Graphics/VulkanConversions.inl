@@ -830,6 +830,124 @@ constexpr ScalingFilter fromVulkan(vk::Filter filt) {
 }
 
 
+
+constexpr vk::PipelineColorBlendAttachmentState toVulkan(BlendingMode mode) {
+	constexpr vk::ColorComponentFlags colorWriteMask = 
+		vk::ColorComponentFlagBits::eR |
+		vk::ColorComponentFlagBits::eG |
+		vk::ColorComponentFlagBits::eB |
+		vk::ColorComponentFlagBits::eA ;
+
+	//This blending modes have been configured considering that src color is alpha pre-multiplied
+
+
+	switch(mode) {
+	case BlendingMode::WRITE:
+		return vk::PipelineColorBlendAttachmentState(
+			true,
+			vk::BlendFactor::eOne,
+			vk::BlendFactor::eZero,
+			vk::BlendOp::eAdd,
+			vk::BlendFactor::eOne,
+			vk::BlendFactor::eZero,
+			vk::BlendOp::eAdd,
+			colorWriteMask
+		);
+	case BlendingMode::OPACITY:
+		return vk::PipelineColorBlendAttachmentState(
+			true,
+			vk::BlendFactor::eOne,
+			vk::BlendFactor::eOneMinusSrcAlpha,
+			vk::BlendOp::eAdd,
+			vk::BlendFactor::eOne,
+			vk::BlendFactor::eOneMinusSrcAlpha,
+			vk::BlendOp::eAdd,
+			colorWriteMask
+		);
+	case BlendingMode::ADD:
+		return vk::PipelineColorBlendAttachmentState(
+			true,
+			vk::BlendFactor::eOne,
+			vk::BlendFactor::eOne,
+			vk::BlendOp::eAdd,
+			vk::BlendFactor::eOne,
+			vk::BlendFactor::eOne,
+			vk::BlendOp::eAdd,
+			colorWriteMask
+		);
+	case BlendingMode::DIFFERENCE:
+		return vk::PipelineColorBlendAttachmentState(
+			true,
+			vk::BlendFactor::eOne,
+			vk::BlendFactor::eOne,
+			vk::BlendOp::eSubtract,
+			vk::BlendFactor::eOne,
+			vk::BlendFactor::eOne,
+			vk::BlendOp::eSubtract,
+			colorWriteMask
+		);
+	case BlendingMode::DIFFERENCE_1:
+		return vk::PipelineColorBlendAttachmentState(
+			true,
+			vk::BlendFactor::eOne,
+			vk::BlendFactor::eOne,
+			vk::BlendOp::eReverseSubtract,
+			vk::BlendFactor::eOne,
+			vk::BlendFactor::eOne,
+			vk::BlendOp::eReverseSubtract,
+			colorWriteMask
+		);
+	case BlendingMode::DARKEN:
+		return vk::PipelineColorBlendAttachmentState(
+			true,
+			vk::BlendFactor::eOne,
+			vk::BlendFactor::eOne,
+			vk::BlendOp::eMin,
+			vk::BlendFactor::eOne,
+			vk::BlendFactor::eOne,
+			vk::BlendOp::eMin,
+			colorWriteMask
+		);
+	case BlendingMode::LIGHTEN:
+		return vk::PipelineColorBlendAttachmentState(
+			true,
+			vk::BlendFactor::eOne,
+			vk::BlendFactor::eOne,
+			vk::BlendOp::eMax,
+			vk::BlendFactor::eOne,
+			vk::BlendFactor::eOne,
+			vk::BlendOp::eMax,
+			colorWriteMask
+		);
+	case BlendingMode::MULTIPLY:
+		return vk::PipelineColorBlendAttachmentState(
+			true,
+			vk::BlendFactor::eDstColor,
+			vk::BlendFactor::eZero,
+			vk::BlendOp::eAdd,
+			vk::BlendFactor::eDstColor,
+			vk::BlendFactor::eZero,
+			vk::BlendOp::eAdd,
+			colorWriteMask
+		);
+	case BlendingMode::SCREEN:
+		return vk::PipelineColorBlendAttachmentState(
+			true,
+			vk::BlendFactor::eOne,
+			vk::BlendFactor::eOneMinusSrcColor,
+			vk::BlendOp::eAdd,
+			vk::BlendFactor::eOne,
+			vk::BlendFactor::eOneMinusSrcColor,
+			vk::BlendOp::eAdd,
+			colorWriteMask
+		);
+	default:
+		return vk::PipelineColorBlendAttachmentState();
+	}
+}
+
+
+
 template<typename T>
 constexpr vk::ArrayProxy<T> toVulkan(Utils::BufferView<T> bv) {
 	return vk::ArrayProxy<T>(bv.size(), bv.data());
