@@ -37,7 +37,7 @@ constexpr Math::Mat4x4<T> constructRGB2YCbCrConversionMatrix(	const T y_r,  cons
 																const T cr_r, const T cr_g, const T cr_b );
 
 template<typename T>
-constexpr Math::Mat4x4<T> constructRGB2YCbCrConversionMatrix(const T kb,  const T kr);
+constexpr Math::Mat4x4<T> constructRGB2YCbCrConversionMatrix(const T k_r,  const T k_b);
 
 constexpr Math::Mat4x4f getRGB2YCbCrConversionMatrix(ColorModel colorModel);
 

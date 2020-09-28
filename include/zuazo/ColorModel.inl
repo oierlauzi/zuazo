@@ -30,21 +30,20 @@ constexpr Math::Mat4x4<T> constructRGB2YCbCrConversionMatrix(	const T y_r,  cons
 }
 
 template<typename T>
-constexpr Math::Mat4x4<T> constructRGB2YCbCrConversionMatrix(const T k_b,  const T k_r) {
-	const T k_g = T(1) - k_b - k_r; //As k_r + k_g + k_b = 1
-	const T half = T(1) / T(2);
+constexpr Math::Mat4x4<T> constructRGB2YCbCrConversionMatrix(const T k_r,  const T k_b) {
+	const T k_g = T(1) - k_r - k_b; //As k_r + k_g + k_b = 1
 
 	return constructRGB2YCbCrConversionMatrix(
 		+k_r, 						+k_g,						+k_b,
-		-half * k_r / (1 - k_b),	-half * k_g / (1 - k_b),	+half,
-		+half,						-half * k_g / (1 - k_r),	-half * k_b / (1 - k_r)
+		-T(0.5) * k_r / (1 - k_b),	-T(0.5) * k_g / (1 - k_b),	+T(0.5),
+		+T(0.5),					-T(0.5) * k_g / (1 - k_r),	-T(0.5) * k_b / (1 - k_r)
 	);
 }
 
 constexpr Math::Mat4x4f getRGB2YCbCrConversionMatrix(ColorModel colorModel){
 	switch(colorModel){
-
-	//This matrices are defined in row major order and then transposed to be in column major
+	
+	//From https://en.wikipedia.org/wiki/YCbCr
 	case ColorModel::RGB: return Math::Mat4x4f(1.0f); //Identity
 	case ColorModel::BT601: return constructRGB2YCbCrConversionMatrix(0.299f, 0.114f);
 	case ColorModel::BT709: return constructRGB2YCbCrConversionMatrix(0.2126f, 0.0722f);

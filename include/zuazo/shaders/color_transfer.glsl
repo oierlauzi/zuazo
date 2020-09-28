@@ -31,9 +31,6 @@ vec4 ct_load(in int planeFormat, in sampler2D images[ct_SAMPLER_COUNT], in vec2 
 }
 
 void ct_store(in int planeFormat, out vec4 plane0, out vec4 plane1, out vec4 plane2, out vec4 plane3, in vec4 color){
-	//Premultiply the color with the alpha channel
-	color = vec4(color.rgb * color.a, color.a);
-
 	//Attach the alpha channel so that it gets correctly blended
 	switch(planeFormat){
 	case ct_PLANE_FORMAT_G_BR:
@@ -533,6 +530,12 @@ vec4 ct_OETF(in int encoding, in vec4 color){
 
 
 
+vec4 ct_premultiplyAlpha(in vec4 color) {
+	return vec4(color.rgb * color.a, color.a);
+}
+
+
+
 vec4 ct_readColor(in ct_read_data inputProp, in ct_write_data outputProp, in vec4 color){
 	vec4 result = color;
 
@@ -550,6 +553,7 @@ vec4 ct_writeColor(in ct_write_data outputProp, in vec4 color){
 	result = ct_OETF(outputProp.colorTransferFunction, result); //Apply a gamma-like compression
 	result = outputProp.mtxRGB2YCbCr * result; //Convert it into the destination color model
 	result = ct_contract(outputProp.colorRange, result); //Convert it into the corresponding range
+	result = ct_premultiplyAlpha(result); //Premultiply the color with the alpha channel
 
 	return result;
 }
@@ -590,6 +594,7 @@ vec4 ct_writeColorYCbCr(in ct_write_data outputProp, in vec4 color){
 	vec4 result = color;
 
 	result = ct_contract(outputProp.colorRange, result); //Convert it into the corresponding range
+	result = ct_premultiplyAlpha(result); //Premultiply the color with the alpha channel
 
 	return result;
 }
