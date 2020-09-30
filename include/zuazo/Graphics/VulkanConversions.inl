@@ -844,7 +844,7 @@ constexpr vk::PipelineColorBlendAttachmentState toVulkan(BlendingMode mode) {
 	switch(mode) {
 	case BlendingMode::WRITE:
 		return vk::PipelineColorBlendAttachmentState(
-			true,
+			false, //Don't blend
 			vk::BlendFactor::eOne,
 			vk::BlendFactor::eZero,
 			vk::BlendOp::eAdd,

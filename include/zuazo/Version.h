@@ -31,7 +31,7 @@ private:
 
 	DataType m_data;
 
-	static constexpr size_t DATA_BITS = sizeof(DataType) * Utils::BYTE_SIZE;
+	static constexpr size_t DATA_BITS = sizeof(DataType) * Utils::getByteSize();
 
 	static constexpr size_t MAJOR_BITS = 16;
 	static constexpr size_t MINOR_BITS = 8;

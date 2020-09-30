@@ -542,7 +542,7 @@ vec4 ct_readColor(in ct_read_data inputProp, in ct_write_data outputProp, in vec
 	result = ct_expand(inputProp.colorRange, result); //Normalize the values into [0.0, 1.0] (or [-0.5, 0.5] for chroma)
 	result = inputProp.mtxYCbCr2RGB * result; //Convert it into RGB color model
 	result = ct_EOTF(inputProp.colorTransferFunction, result); //Undo all gamma-like compressions
-	result = (outputProp.mtxXYZ2RGB * inputProp.mtxRGB2XYZ) * result; //Convert it into the destination color primaries
+	result = outputProp.mtxXYZ2RGB * inputProp.mtxRGB2XYZ * result; //Convert it into the destination color primaries
 
 	return result;
 }
@@ -583,7 +583,7 @@ vec4 ct_readColorYCbCr(in ct_read_data inputProp, in ct_write_data outputProp, i
 	result = ct_expand(inputProp.colorRange, result); //Normalize the values into [0.0, 1.0] (or [-0.5, 0.5] for chroma)
 	result = inputProp.mtxYCbCr2RGB * result; //Convert it into RGB color model
 	result = ct_EOTF(inputProp.colorTransferFunction, result); //Undo all gamma-like compressions
-	result = (outputProp.mtxXYZ2RGB * inputProp.mtxRGB2XYZ) * result; //Convert it into the destination color primaries
+	result = outputProp.mtxXYZ2RGB * inputProp.mtxRGB2XYZ * result; //Convert it into the destination color primaries
 	result = ct_OETF(outputProp.colorTransferFunction, result); //Apply a gamma-like compression
 	result = outputProp.mtxRGB2YCbCr * result; //Convert it into the destination color model
 
