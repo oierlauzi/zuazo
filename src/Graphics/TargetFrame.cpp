@@ -4,15 +4,12 @@
 
 namespace Zuazo::Graphics {
 
-/*
- * TargetFrame
- */
-
 TargetFrame::TargetFrame(	const Vulkan& vulkan,
 							std::shared_ptr<const Descriptor> desc,
 							std::shared_ptr<const Buffer> colorTransfer,
 							Utils::BufferView<const Frame::PlaneDescriptor> planes,
-							std::shared_ptr<const vk::UniqueRenderPass> renderPass )
+							std::shared_ptr<const vk::UniqueRenderPass> renderPass,
+							std::shared_ptr<const DepthStencil> depthStencil )
 	: Frame(
 		vulkan,
 		std::move(desc),
@@ -20,7 +17,8 @@ TargetFrame::TargetFrame(	const Vulkan& vulkan,
 		planes,
 		vk::ImageUsageFlagBits::eColorAttachment )
 	, m_renderPass(std::move(renderPass))
-	, m_frameBuffer(createFrameBuffer(vulkan, planes, m_renderPass, getImageViews()))
+	, m_depthStencil(std::move(depthStencil))
+	, m_framebuffer(createFramebuffer(vulkan, planes, m_renderPass, m_depthStencil, getImageViews()))
 	, m_renderComplete(vulkan.createFence(true))
 {
 }
@@ -31,16 +29,71 @@ TargetFrame::~TargetFrame() {
 
 
 
+vk::Framebuffer TargetFrame::getFramebuffer() const {
+	return *m_framebuffer;
+}
 
-vk::UniqueFramebuffer TargetFrame::createFrameBuffer(	const Graphics::Vulkan& vulkan,
+void TargetFrame::beginRenderPass(	vk::CommandBuffer cmd, 
+									vk::Rect2D renderArea,
+									Utils::BufferView<const vk::ClearValue>& clearValues,
+									vk::SubpassContents contents ) const 
+{
+	const vk::RenderPassBeginInfo beginInfo(
+		**m_renderPass,
+		*m_framebuffer,
+		renderArea,
+		clearValues.size(), clearValues.data()
+	);
+
+	getVulkan().beginRenderPass(cmd, beginInfo, contents);
+}
+
+void TargetFrame::endRenderPass(vk::CommandBuffer cmd) const {
+	getVulkan().endRenderPass(cmd);
+}
+
+
+
+void TargetFrame::draw(std::shared_ptr<const CommandBuffer> cmd) {
+	waitDependecies(); //Wait until rendering finishes
+	m_commandBuffer = std::move(cmd);
+	assert(m_commandBuffer);
+
+	const std::array commandBuffers = {
+		m_commandBuffer->getCommandBuffer()
+	};
+
+	const vk::SubmitInfo submitInfo(
+		0, nullptr,										//Wait semaphores
+		nullptr,										//Pipeline stages //TODO
+		commandBuffers.size(), commandBuffers.data(),	//Command buffers
+		0, nullptr										//Signal semaphores
+	);
+
+
+	//Send it to the queue
+	getVulkan().resetFences(*m_renderComplete);
+	getVulkan().submit(
+		getVulkan().getGraphicsQueue(),
+		submitInfo,
+		*m_renderComplete
+	);
+
+	addDependecy(*m_renderComplete);
+}
+
+
+
+vk::UniqueFramebuffer TargetFrame::createFramebuffer(	const Graphics::Vulkan& vulkan,
 														Utils::BufferView<const PlaneDescriptor> planes,
 														const std::shared_ptr<const vk::UniqueRenderPass>& renderPass,
+														const std::shared_ptr<const DepthStencil>& depthStencil,
 														const std::vector<vk::UniqueImageView>& imageViews )
 {
 	assert(renderPass);
 	assert(*renderPass);
 	assert(imageViews.size() == planes.size());
-	const auto attachmentCount = imageViews.size();
+	const auto attachmentCount = imageViews.size() + (depthStencil ? 1 : 0);
 
 	//Enumerate all attachments
 	std::vector<vk::ImageView> attachments;
@@ -52,6 +105,10 @@ vk::UniqueFramebuffer TargetFrame::createFrameBuffer(	const Graphics::Vulkan& vu
 			return *iv;
 		}
 	);
+
+	if(depthStencil) {
+		attachments.emplace_back(depthStencil->getImageView());
+	}
 
 	assert(attachments.size() == attachmentCount);
 
@@ -79,31 +136,6 @@ vk::UniqueFramebuffer TargetFrame::createFrameBuffer(	const Graphics::Vulkan& vu
  * TargetFrame::RenderPass
  */
 /*
-TargetFrame::RenderPass::RenderPass(const Vulkan& vulkan,
-									Utils::BufferView<const PlaneDescriptor> planes, 
-									vk::Format depthStencilFmt )
-	: m_renderPass(createRenderPass(vulkan, planes, depthStencilFmt))
-	, m_depthStencilImage(createDepthStencilImage(vulkan, planes, depthStencilFmt))
-	, m_depthStencilImageMemory(createDepthStencilMemory(vulkan, *m_depthStencilImage))
-	, m_depthStencilImageView(createDepthStencilImageView(vulkan, *m_depthStencilImage, depthStencilFmt))
-{
-}
-
-
-
-vk::RenderPass TargetFrame::RenderPass::getRenderPass() const {
-	return *m_renderPass;
-}
-
-vk::Image TargetFrame::RenderPass::getDepthStencilImage() const {
-	return *m_depthStencilImage;
-}
-
-vk::ImageView TargetFrame::RenderPass::getDepthStencilImageView() const {
-	return *m_depthStencilImageView;
-}
-
-
 
 vk::UniqueRenderPass TargetFrame::RenderPass::createRenderPass(	const Vulkan& vulkan,
 																Utils::BufferView<const PlaneDescriptor> planes, 
@@ -201,78 +233,6 @@ vk::UniqueRenderPass TargetFrame::RenderPass::createRenderPass(	const Vulkan& vu
 	);
 
 	return vulkan.createRenderPass(createInfo);
-}
-
-vk::UniqueImage TargetFrame::RenderPass::createDepthStencilImage(	const Vulkan& vulkan,
-																	Utils::BufferView<const PlaneDescriptor> planes, 
-																	vk::Format depthStencilFmt )
-{
-	//Ensure a valid format is provided
-	if(depthStencilFmt == vk::Format::eUndefined) return vk::UniqueImage();
-
-	constexpr vk::ImageUsageFlags usageFlags = 
-		vk::ImageUsageFlagBits::eDepthStencilAttachment;
-
-	const vk::ImageCreateInfo createInfo(
-		{},											//Flags
-		vk::ImageType::e2D,							//Image type
-		depthStencilFmt,							//Pixel format
-		vk::Extent3D(planes[0].extent, 1), 			//Extent
-		1,											//Mip levels
-		1,											//Array layers
-		vk::SampleCountFlagBits::e1,				//Sample count
-		vk::ImageTiling::eOptimal,					//Tiling
-		usageFlags,									//Usage
-		vk::SharingMode::eExclusive,				//Sharing mode
-		0, nullptr,									//Queue family indices
-		vk::ImageLayout::eUndefined					//Initial layout
-	);
-
-	return vulkan.createImage(createInfo);
-}
-
-vk::UniqueDeviceMemory TargetFrame::RenderPass::createDepthStencilMemory(	const Vulkan& vulkan,
-																			vk::Image image )
-{
-	//Ensure that the provided image is valid
-	if(!image) return vk::UniqueDeviceMemory();
-
-	constexpr vk::MemoryPropertyFlags memoryProperties =
-			vk::MemoryPropertyFlagBits::eDeviceLocal;
-
-	const auto requirements = vulkan.getMemoryRequirements(image);
-	auto result = vulkan.allocateMemory(requirements, memoryProperties);
-	vulkan.bindMemory(image, *result);
-
-	return result;
-}
-
-vk::UniqueImageView TargetFrame::RenderPass::createDepthStencilImageView(const Vulkan& vulkan,
-																		vk::Image image,
-																		vk::Format depthStencilFmt ) 
-{
-	//Ensure that the provided image is valid
-	if(!image) return vk::UniqueImageView();
-
-	const vk::ImageAspectFlags aspectMask = 
-		(hasDepth(depthStencilFmt) ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits{}) |
-		(hasStencil(depthStencilFmt) ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits{});
-
-	assert(aspectMask != vk::ImageAspectFlags());
-
-	const vk::ImageViewCreateInfo createInfo(
-		{},												//Flags
-		image,											//Image
-		vk::ImageViewType::e2D,							//ImageView type
-		depthStencilFmt,								//Image format
-		vk::ComponentSwizzle(),							//Swizzle
-		vk::ImageSubresourceRange(						//Image subresources
-			aspectMask,										//Aspect mask
-			0, 1, 0, 1										//Base mipmap level, mipmap levels, base array layer, layers
-		)
-	);
-
-	return vulkan.createImageView(createInfo);
 }
 */
 }
