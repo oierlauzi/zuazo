@@ -29,7 +29,7 @@ public:
 	vk::Framebuffer								getFramebuffer() const;
 	void										beginRenderPass(	vk::CommandBuffer cmd, 
 																	vk::Rect2D renderArea,
-																	Utils::BufferView<const vk::ClearValue>& clearValues,
+																	Utils::BufferView<const vk::ClearValue> clearValues,
 																	vk::SubpassContents contents ) const;
 	void										endRenderPass(vk::CommandBuffer cmd) const;
 	void										draw(std::shared_ptr<const CommandBuffer> cmd);
