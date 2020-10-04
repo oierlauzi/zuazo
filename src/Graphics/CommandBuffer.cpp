@@ -47,14 +47,153 @@ void CommandBuffer::end() {
 	getVulkan().end(getCommandBuffer());
 }
 
+
+
+void CommandBuffer::execute(Utils::BufferView<const vk::CommandBuffer> buf) {
+	getVulkan().execute(getCommandBuffer(), buf);
+}
+
+
+
+void CommandBuffer::pipelineBarrier(vk::PipelineStageFlags srcStageMask,
+									vk::PipelineStageFlags dstStageMask,
+									vk::DependencyFlags dependencyFlags,
+									Utils::BufferView<const vk::MemoryBarrier> memoryBarriers,
+									Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers,
+									Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers )
+{
+	getVulkan().pipelineBarrier(getCommandBuffer(), srcStageMask, dstStageMask, dependencyFlags, memoryBarriers, bufferMemoryBarriers, imageMemoryBarriers);
+}
+
+void CommandBuffer::pipelineBarrier(vk::PipelineStageFlags srcStageMask,
+									vk::PipelineStageFlags dstStageMask,
+									vk::DependencyFlags dependencyFlags,
+									Utils::BufferView<const vk::MemoryBarrier> memoryBarriers )
+{
+	getVulkan().pipelineBarrier(getCommandBuffer(), srcStageMask, dstStageMask, dependencyFlags, memoryBarriers);
+}
+
+void CommandBuffer::pipelineBarrier(vk::PipelineStageFlags srcStageMask,
+									vk::PipelineStageFlags dstStageMask,
+									vk::DependencyFlags dependencyFlags,
+									Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers )
+{
+	getVulkan().pipelineBarrier(getCommandBuffer(), srcStageMask, dstStageMask, dependencyFlags, bufferMemoryBarriers);
+}
+
+void CommandBuffer::pipelineBarrier(vk::PipelineStageFlags srcStageMask,
+									vk::PipelineStageFlags dstStageMask,
+									vk::DependencyFlags dependencyFlags,
+									Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers )
+{
+	getVulkan().pipelineBarrier(getCommandBuffer(), srcStageMask, dstStageMask, dependencyFlags, imageMemoryBarriers);
+}
+
+
+
+void CommandBuffer::clear(	vk::Image image,
+							vk::ImageLayout imageLayout,
+							const vk::ClearColorValue& value,
+							Utils::BufferView<const vk::ImageSubresourceRange> ranges )
+{
+	getVulkan().clear(getCommandBuffer(), image, imageLayout, value, ranges);
+}
+
+void CommandBuffer::clear(	vk::Image image,
+							vk::ImageLayout imageLayout,
+							const vk::ClearDepthStencilValue& value,
+							Utils::BufferView<const vk::ImageSubresourceRange> ranges )
+{
+	getVulkan().clear(getCommandBuffer(), image, imageLayout, value, ranges);
+}
+
+void CommandBuffer::clear(	Utils::BufferView<const vk::ClearAttachment> attachments,
+							Utils::BufferView<const vk::ClearRect> rects )
+{
+	getVulkan().clear(getCommandBuffer(), attachments, rects);
+}
+
+void CommandBuffer::clear(	vk::Buffer buffer,
+							const Utils::Area& area,
+							uint32_t data )
+{
+	getVulkan().clear(getCommandBuffer(), buffer, area, data);
+}
+
+void CommandBuffer::clear(	vk::Buffer buffer,
+							const Utils::Area& area,
+							const std::byte* data )
+{
+	getVulkan().clear(getCommandBuffer(), buffer, area, data);
+}
+
+
+
+void CommandBuffer::copy(	vk::Buffer srcBuffer,
+							vk::Buffer dstBuffer,
+							Utils::BufferView<const vk::BufferCopy> regions )
+{
+	getVulkan().copy(getCommandBuffer(), srcBuffer, dstBuffer, regions);
+}
+
+void CommandBuffer::copy(	vk::Image srcImage,
+							vk::ImageLayout srcImageLayout,
+							vk::Image dstImage,
+							vk::ImageLayout dstImageLayout,
+							Utils::BufferView<const vk::ImageCopy> regions )
+{
+	getVulkan().copy(getCommandBuffer(), srcImage, srcImageLayout, dstImage, dstImageLayout, regions);
+}
+
+void CommandBuffer::copy(	vk::Buffer srcBuffer,
+							vk::Image dstImage,
+							vk::ImageLayout dstImageLayout,
+							Utils::BufferView<const vk::BufferImageCopy> regions )
+{
+	getVulkan().copy(getCommandBuffer(), srcBuffer, dstImage, dstImageLayout, regions);
+}
+
+void CommandBuffer::copy(	vk::Image srcImage,
+							vk::ImageLayout srcImageLayout,
+							vk::Buffer dstBuffer,
+							Utils::BufferView<const vk::BufferImageCopy> regions )
+{
+	getVulkan().copy(getCommandBuffer(), srcImage, srcImageLayout, dstBuffer, regions);
+}
+
+void CommandBuffer::blit(	vk::Image srcImage,
+							vk::ImageLayout srcImageLayout,
+							vk::Image dstImage,
+							vk::ImageLayout dstImageLayout,
+							Utils::BufferView<const vk::ImageBlit> regions,
+							vk::Filter filter )
+{
+	getVulkan().blit(getCommandBuffer(), srcImage, srcImageLayout, dstImage, dstImageLayout, regions, filter);
+}
+
+void CommandBuffer::resolve(vk::Image srcImage,
+							vk::ImageLayout srcImageLayout,
+							vk::Image dstImage,
+							vk::ImageLayout dstImageLayout,
+							Utils::BufferView<const vk::ImageResolve> regions )
+{
+	getVulkan().resolve(getCommandBuffer(), srcImage, srcImageLayout, dstImage, dstImageLayout, regions);
+}
+
+
+
 void CommandBuffer::beginRenderPass(const vk::RenderPassBeginInfo& beginInfo,
 									vk::SubpassContents contents )
 {
 	getVulkan().beginRenderPass(getCommandBuffer(), beginInfo, contents);
 }
 
-void CommandBuffer::CommandBuffer::endRenderPass() {
+void CommandBuffer::endRenderPass() {
 	getVulkan().endRenderPass(getCommandBuffer());
+}
+
+void CommandBuffer::nextSubpass(vk::SubpassContents contents) {
+		getVulkan().nextSubpass(getCommandBuffer(), contents);
 }
 
 void CommandBuffer::bindPipeline(	vk::PipelineBindPoint bindPoint, 
@@ -87,7 +226,30 @@ void CommandBuffer::draw(	uint32_t vertexCount,
 	getVulkan().draw(getCommandBuffer(), vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
+void CommandBuffer::draw(	vk::Buffer buffer,
+							size_t offset,
+							uint32_t drawCount,
+							uint32_t stride )
+{
+	getVulkan().draw(getCommandBuffer(), buffer, offset, drawCount, stride);
+}
 
+void CommandBuffer::drawIndexed(uint32_t indexCount,
+								uint32_t instanceCount,
+								uint32_t firstIndex,
+								int32_t vertexOffset,
+								uint32_t firstInstance )
+{
+	getVulkan().drawIndexed(getCommandBuffer(), indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+}
+
+void CommandBuffer::drawIndexed(vk::Buffer buffer,
+								size_t offset,
+								uint32_t drawCount,
+								uint32_t stride )
+{
+	getVulkan().drawIndexed(getCommandBuffer(), buffer, offset, drawCount, stride);
+}
 
 
 

@@ -118,38 +118,44 @@ vk::UniqueCommandBuffer StagedFrame::createCommandBuffer(	const Vulkan& vulkan,
 		);
 
 		//Transition the layout of the images
-		for(size_t i = 0; i < images.size(); i++){
-			constexpr vk::AccessFlags srcAccess = {};
-			constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eTransferWrite;
+		{
+			for(size_t i = 0; i < images.size(); i++){
+				constexpr vk::AccessFlags srcAccess = {};
+				constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eTransferWrite;
 
-			constexpr vk::ImageLayout srcLayout = vk::ImageLayout::eUndefined;
-			constexpr vk::ImageLayout dstLayout = vk::ImageLayout::eTransferDstOptimal;
+				constexpr vk::ImageLayout srcLayout = vk::ImageLayout::eUndefined;
+				constexpr vk::ImageLayout dstLayout = vk::ImageLayout::eTransferDstOptimal;
 
-			//We don't mind about the previous contents, so skip the ownewship transfer
-			constexpr auto srcFamily = VK_QUEUE_FAMILY_IGNORED;
-			constexpr auto dstFamily = VK_QUEUE_FAMILY_IGNORED;
+				//We don't mind about the previous contents, so skip the ownewship transfer
+				constexpr auto srcFamily = VK_QUEUE_FAMILY_IGNORED;
+				constexpr auto dstFamily = VK_QUEUE_FAMILY_IGNORED;
 
-			memoryBarriers[i] = vk::ImageMemoryBarrier(
-				srcAccess,								//Old access mask
-				dstAccess,								//New access mask
-				srcLayout,								//Old layout
-				dstLayout,								//New layout
-				srcFamily,								//Old queue family
-				dstFamily,								//New queue family
-				*(images[i]),							//Image
-				imageSubresourceRange					//Image subresource
+				memoryBarriers[i] = vk::ImageMemoryBarrier(
+					srcAccess,								//Old access mask
+					dstAccess,								//New access mask
+					srcLayout,								//Old layout
+					dstLayout,								//New layout
+					srcFamily,								//Old queue family
+					dstFamily,								//New queue family
+					*(images[i]),							//Image
+					imageSubresourceRange					//Image subresource
+				);
+			}
+
+			constexpr vk::PipelineStageFlags srcStages = 
+				vk::PipelineStageFlagBits::eTopOfPipe;
+
+			constexpr vk::PipelineStageFlags dstStages = 
+				vk::PipelineStageFlagBits::eTransfer;
+
+			vulkan.pipelineBarrier(
+				*cmdBuffer,									//Command buffer
+				srcStages,									//Generating stages
+				dstStages,									//Consuming stages
+				{},											//Dependency flags
+				Utils::BufferView<const vk::ImageMemoryBarrier>(memoryBarriers) //Memory barriers
 			);
 		}
-
-		cmdBuffer->pipelineBarrier(
-			vk::PipelineStageFlagBits::eTopOfPipe,		//Generating stages
-			vk::PipelineStageFlagBits::eTransfer,		//Consuming stages
-			{},											//dependency flags
-			{},											//Memory barriers
-			{},											//Buffer memory barriers
-			memoryBarriers,								//Image memory barriers
-			vulkan.getDispatcher()
-		);
 
 		//Copy the buffer to the image
 		for(size_t i = 0; i < images.size(); i++){
@@ -167,47 +173,56 @@ vk::UniqueCommandBuffer StagedFrame::createCommandBuffer(	const Vulkan& vulkan,
 				vk::Extent3D(planes[i].extent, 1)		//Image extent
 			);
 
-			cmdBuffer->copyBufferToImage(
+
+			vulkan.copy(
+				*cmdBuffer,
 				stagingBuffer.getBuffer(),
 				*(images[i]),
 				vk::ImageLayout::eTransferDstOptimal,
-				region,
-				vulkan.getDispatcher()
+				region
 			);
 		}
 
 		//Transition the layout of the images (again)
-		for(size_t i = 0; i < images.size(); i++){
-			constexpr vk::AccessFlags srcAccess = vk::AccessFlagBits::eTransferWrite;
-			constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eShaderRead;
+		{
+			for(size_t i = 0; i < images.size(); i++){
+				constexpr vk::AccessFlags srcAccess = vk::AccessFlagBits::eTransferWrite;
+				constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eShaderRead;
 
-			constexpr vk::ImageLayout srcLayout = vk::ImageLayout::eTransferDstOptimal;
-			constexpr vk::ImageLayout dstLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+				constexpr vk::ImageLayout srcLayout = vk::ImageLayout::eTransferDstOptimal;
+				constexpr vk::ImageLayout dstLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-			const auto srcFamily = queueOwnershipTransfer ? vulkan.getTransferQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
-			const auto dstFamily = queueOwnershipTransfer ? vulkan.getGraphicsQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
+				const auto srcFamily = queueOwnershipTransfer ? vulkan.getTransferQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
+				const auto dstFamily = queueOwnershipTransfer ? vulkan.getGraphicsQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
 
-			memoryBarriers[i] = vk::ImageMemoryBarrier(
-				srcAccess,								//Old access mask
-				dstAccess,								//New access mask
-				srcLayout,								//Old layout
-				dstLayout,								//New layout
-				srcFamily,								//Old queue family
-				dstFamily,								//New queue family
-				*(images[i]),							//Image
-				imageSubresourceRange					//Image subresource
+				memoryBarriers[i] = vk::ImageMemoryBarrier(
+					srcAccess,								//Old access mask
+					dstAccess,								//New access mask
+					srcLayout,								//Old layout
+					dstLayout,								//New layout
+					srcFamily,								//Old queue family
+					dstFamily,								//New queue family
+					*(images[i]),							//Image
+					imageSubresourceRange					//Image subresource
+				);
+			}
+
+			constexpr vk::PipelineStageFlags srcStages = 
+				vk::PipelineStageFlagBits::eTransfer;
+
+			constexpr vk::PipelineStageFlags dstStages = 
+				vk::PipelineStageFlagBits::eAllGraphics;
+
+			vulkan.pipelineBarrier(
+				*cmdBuffer,									//Command buffer
+				srcStages,									//Generating stages
+				dstStages,									//Consuming stages
+				{},											//Dependency flags
+				Utils::BufferView<const vk::ImageMemoryBarrier>(memoryBarriers) //Memory barriers
 			);
 		}
 
-		cmdBuffer->pipelineBarrier(
-			vk::PipelineStageFlagBits::eTransfer,		//Generating stages
-			vk::PipelineStageFlagBits::eAllGraphics,	//Consuming stages
-			{},											//Dependency flags
-			{},											//Memory barriers
-			{},											//Buffer memory barriers
-			memoryBarriers,								//Image memory barriers
-			vulkan.getDispatcher()
-		);
+		
 	}
 	vulkan.end(*cmdBuffer);
 

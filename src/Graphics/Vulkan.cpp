@@ -529,6 +529,162 @@ struct Vulkan::Impl {
 		cmd.end(dispatcher);
 	}
 
+
+	void execute(	vk::CommandBuffer cmd,
+					Utils::BufferView<const vk::CommandBuffer> buf ) const
+	{
+		cmd.executeCommands(toVulkan(buf), dispatcher);
+	}
+
+
+	void pipelineBarrier(	vk::CommandBuffer cmd,
+							vk::PipelineStageFlags srcStageMask,
+							vk::PipelineStageFlags dstStageMask,
+							vk::DependencyFlags dependencyFlags,
+							Utils::BufferView<const vk::MemoryBarrier> memoryBarriers,
+							Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers,
+							Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) const
+	{
+		cmd.pipelineBarrier(
+			srcStageMask, 
+			dstStageMask, 
+			dependencyFlags, 
+			toVulkan(memoryBarriers), 
+			toVulkan(bufferMemoryBarriers), 
+			toVulkan(imageMemoryBarriers), 
+			dispatcher
+		);
+	}
+
+	void pipelineBarrier(	vk::CommandBuffer cmd,
+							vk::PipelineStageFlags srcStageMask,
+							vk::PipelineStageFlags dstStageMask,
+							vk::DependencyFlags dependencyFlags,
+							Utils::BufferView<const vk::MemoryBarrier> memoryBarriers ) const
+	{
+		pipelineBarrier(cmd, srcStageMask, dstStageMask, dependencyFlags, memoryBarriers, {}, {});
+	}
+
+	void pipelineBarrier(	vk::CommandBuffer cmd,
+							vk::PipelineStageFlags srcStageMask,
+							vk::PipelineStageFlags dstStageMask,
+							vk::DependencyFlags dependencyFlags,
+							Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers ) const
+	{
+		pipelineBarrier(cmd, srcStageMask, dstStageMask, dependencyFlags, {}, bufferMemoryBarriers, {});
+	}
+
+	void pipelineBarrier(	vk::CommandBuffer cmd,
+							vk::PipelineStageFlags srcStageMask,
+							vk::PipelineStageFlags dstStageMask,
+							vk::DependencyFlags dependencyFlags,
+							Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) const
+	{
+		pipelineBarrier(cmd, srcStageMask, dstStageMask, dependencyFlags, {}, {}, imageMemoryBarriers);
+	}
+
+
+	void clear(	vk::CommandBuffer cmd,
+				vk::Image image,
+				vk::ImageLayout imageLayout,
+				const vk::ClearColorValue& value,
+				Utils::BufferView<const vk::ImageSubresourceRange> ranges ) const
+	{
+		cmd.clearColorImage(image, imageLayout, value, toVulkan(ranges), dispatcher);
+	}
+
+	void clear(	vk::CommandBuffer cmd,
+				vk::Image image,
+				vk::ImageLayout imageLayout,
+				const vk::ClearDepthStencilValue& value,
+				Utils::BufferView<const vk::ImageSubresourceRange> ranges ) const
+	{
+		cmd.clearDepthStencilImage(image, imageLayout, value, toVulkan(ranges), dispatcher);
+	}
+
+	void clear(	vk::CommandBuffer cmd,
+				Utils::BufferView<const vk::ClearAttachment> attachments,
+				Utils::BufferView<const vk::ClearRect> rects ) const
+	{
+		cmd.clearAttachments(toVulkan(attachments), toVulkan(rects), dispatcher);
+	}
+
+	void clear(	vk::CommandBuffer cmd,
+				vk::Buffer buffer,
+				const Utils::Area& area,
+				uint32_t data ) const
+	{
+		cmd.fillBuffer(buffer, area.offset(), area.size(), data, dispatcher);
+	}
+
+	void clear(	vk::CommandBuffer cmd,
+				vk::Buffer buffer,
+				const Utils::Area& area,
+				const std::byte* data ) const
+	{
+		cmd.updateBuffer(buffer, area.offset(), area.size(), static_cast<const void*>(data), dispatcher);
+	}
+
+
+	void copy(	vk::CommandBuffer cmd,
+				vk::Buffer srcBuffer,
+				vk::Buffer dstBuffer,
+				Utils::BufferView<const vk::BufferCopy> regions ) const
+	{
+		cmd.copyBuffer(srcBuffer, dstBuffer, toVulkan(regions), dispatcher);
+	}
+
+	void copy(	vk::CommandBuffer cmd,
+				vk::Image srcImage,
+    			vk::ImageLayout srcImageLayout,
+    			vk::Image dstImage,
+    			vk::ImageLayout dstImageLayout,
+				Utils::BufferView<const vk::ImageCopy> regions ) const
+	{
+		cmd.copyImage(srcImage, srcImageLayout, dstImage, dstImageLayout, toVulkan(regions), dispatcher);
+	}
+
+	void copy(	vk::CommandBuffer cmd,
+				vk::Buffer srcBuffer,
+    			vk::Image dstImage,
+    			vk::ImageLayout dstImageLayout,
+				Utils::BufferView<const vk::BufferImageCopy> regions ) const
+	{
+		cmd.copyBufferToImage(srcBuffer, dstImage, dstImageLayout, toVulkan(regions), dispatcher);
+	}
+
+	void copy(	vk::CommandBuffer cmd,
+				vk::Image srcImage,
+    			vk::ImageLayout srcImageLayout,
+    			vk::Buffer dstBuffer,
+				Utils::BufferView<const vk::BufferImageCopy> regions ) const
+	{
+		cmd.copyImageToBuffer(srcImage, srcImageLayout, dstBuffer, toVulkan(regions), dispatcher);
+	}
+
+	void blit(	vk::CommandBuffer cmd,
+				vk::Image srcImage,
+    			vk::ImageLayout srcImageLayout,
+    			vk::Image dstImage,
+    			vk::ImageLayout dstImageLayout,
+				Utils::BufferView<const vk::ImageBlit> regions,
+    			vk::Filter filter ) const
+	{
+		cmd.blitImage(srcImage, srcImageLayout, dstImage, dstImageLayout, toVulkan(regions), filter, dispatcher);
+	}
+
+	void resolve(	vk::CommandBuffer cmd,
+					vk::Image srcImage,
+					vk::ImageLayout srcImageLayout,
+					vk::Image dstImage,
+					vk::ImageLayout dstImageLayout,
+					Utils::BufferView<const vk::ImageResolve> regions ) const
+	{
+		cmd.resolveImage(srcImage, srcImageLayout, dstImage, dstImageLayout, toVulkan(regions), dispatcher);
+	}
+
+
+
 	void beginRenderPass(	vk::CommandBuffer cmd, 
 							const vk::RenderPassBeginInfo& beginInfo, 
 							vk::SubpassContents contents ) const
@@ -538,6 +694,12 @@ struct Vulkan::Impl {
 
 	void endRenderPass(vk::CommandBuffer cmd) const {
 		cmd.endRenderPass(dispatcher);
+	}
+
+	void nextSubpass(	vk::CommandBuffer cmd,
+						vk::SubpassContents contents ) const
+	{
+		cmd.nextSubpass(contents, dispatcher);
 	}
 
 	void bindPipeline(	vk::CommandBuffer cmd, 
@@ -583,6 +745,34 @@ struct Vulkan::Impl {
 				uint32_t firstInstance ) const
 	{
 		cmd.draw(vertexCount, instanceCount, firstVertex, firstInstance, dispatcher);
+	}
+
+	void draw(	vk::CommandBuffer cmd, 
+				vk::Buffer buffer,
+				size_t offset,
+				uint32_t drawCount,
+				uint32_t stride ) const
+	{
+		cmd.drawIndirect(buffer, offset, drawCount, stride, dispatcher);
+	}
+
+	void drawIndexed(	vk::CommandBuffer cmd, 
+						uint32_t indexCount,
+						uint32_t instanceCount,
+						uint32_t firstIndex,
+						int32_t vertexOffset,
+						uint32_t firstInstance ) const
+	{
+		cmd.drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance, dispatcher);
+	}
+	
+	void drawIndexed(	vk::CommandBuffer cmd,
+						vk::Buffer buffer,
+    					size_t offset,
+    					uint32_t drawCount,
+    					uint32_t stride ) const
+	{
+		cmd.drawIndexedIndirect(buffer, offset, drawCount, stride, dispatcher);
 	}
 
 
@@ -1401,6 +1591,161 @@ void Vulkan::end(vk::CommandBuffer cmd) const {
 	m_impl->end(cmd);
 }
 
+
+void Vulkan::execute(	vk::CommandBuffer cmd,
+						Utils::BufferView<const vk::CommandBuffer> buf ) const
+{
+	m_impl->execute(cmd, buf);
+}
+
+
+void Vulkan::pipelineBarrier(	vk::CommandBuffer cmd,
+								vk::PipelineStageFlags srcStageMask,
+								vk::PipelineStageFlags dstStageMask,
+								vk::DependencyFlags dependencyFlags,
+								Utils::BufferView<const vk::MemoryBarrier> memoryBarriers,
+								Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers,
+								Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) const
+{
+	m_impl->pipelineBarrier(
+		cmd,
+		srcStageMask, 
+		dstStageMask, 
+		dependencyFlags, 
+		memoryBarriers,
+		bufferMemoryBarriers,
+		imageMemoryBarriers
+	);
+}
+
+void Vulkan::pipelineBarrier(	vk::CommandBuffer cmd,
+								vk::PipelineStageFlags srcStageMask,
+								vk::PipelineStageFlags dstStageMask,
+								vk::DependencyFlags dependencyFlags,
+								Utils::BufferView<const vk::MemoryBarrier> memoryBarriers ) const
+{
+	m_impl->pipelineBarrier(cmd, srcStageMask, dstStageMask, dependencyFlags, memoryBarriers);
+}
+
+void Vulkan::pipelineBarrier(	vk::CommandBuffer cmd,
+								vk::PipelineStageFlags srcStageMask,
+								vk::PipelineStageFlags dstStageMask,
+								vk::DependencyFlags dependencyFlags,
+								Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers ) const
+{
+	m_impl->pipelineBarrier(cmd, srcStageMask, dstStageMask, dependencyFlags, bufferMemoryBarriers);
+}
+
+void Vulkan::pipelineBarrier(	vk::CommandBuffer cmd,
+								vk::PipelineStageFlags srcStageMask,
+								vk::PipelineStageFlags dstStageMask,
+								vk::DependencyFlags dependencyFlags,
+								Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) const
+{
+	m_impl->pipelineBarrier(cmd, srcStageMask, dstStageMask, dependencyFlags, imageMemoryBarriers);
+}
+
+
+void Vulkan::clear(	vk::CommandBuffer cmd,
+					vk::Image image,
+					vk::ImageLayout imageLayout,
+					const vk::ClearColorValue& value,
+					Utils::BufferView<const vk::ImageSubresourceRange> ranges ) const
+{
+	m_impl->clear(cmd, image, imageLayout, value, ranges);
+}
+
+void Vulkan::clear(	vk::CommandBuffer cmd,
+					vk::Image image,
+					vk::ImageLayout imageLayout,
+					const vk::ClearDepthStencilValue& value,
+					Utils::BufferView<const vk::ImageSubresourceRange> ranges ) const
+{
+	m_impl->clear(cmd, image, imageLayout, value, ranges);
+}
+
+void Vulkan::clear(	vk::CommandBuffer cmd,
+					Utils::BufferView<const vk::ClearAttachment> attachments,
+					Utils::BufferView<const vk::ClearRect> rects ) const
+{
+	m_impl->clear(cmd, attachments, rects);
+}
+
+void Vulkan::clear(	vk::CommandBuffer cmd,
+					vk::Buffer buffer,
+					const Utils::Area& area,
+					uint32_t data ) const
+{
+	m_impl->clear(cmd, buffer, area, data);
+}
+
+void Vulkan::clear(	vk::CommandBuffer cmd,
+					vk::Buffer buffer,
+					const Utils::Area& area,
+					const std::byte* data ) const
+{
+	m_impl->clear(cmd, buffer, area, data);
+}
+
+
+void Vulkan::copy(	vk::CommandBuffer cmd,
+					vk::Buffer srcBuffer,
+					vk::Buffer dstBuffer,
+					Utils::BufferView<const vk::BufferCopy> regions ) const
+{
+	m_impl->copy(cmd, srcBuffer, dstBuffer, regions);
+}
+
+void Vulkan::copy(	vk::CommandBuffer cmd,
+					vk::Image srcImage,
+					vk::ImageLayout srcImageLayout,
+					vk::Image dstImage,
+					vk::ImageLayout dstImageLayout,
+					Utils::BufferView<const vk::ImageCopy> regions ) const
+{
+	m_impl->copy(cmd, srcImage, srcImageLayout, dstImage, dstImageLayout, regions);
+}
+
+void Vulkan::copy(	vk::CommandBuffer cmd,
+					vk::Buffer srcBuffer,
+					vk::Image dstImage,
+					vk::ImageLayout dstImageLayout,
+					Utils::BufferView<const vk::BufferImageCopy> regions ) const
+{
+	m_impl->copy(cmd, srcBuffer, dstImage, dstImageLayout, regions);
+}
+
+void Vulkan::copy(	vk::CommandBuffer cmd,
+					vk::Image srcImage,
+					vk::ImageLayout srcImageLayout,
+					vk::Buffer dstBuffer,
+					Utils::BufferView<const vk::BufferImageCopy> regions ) const
+{
+	m_impl->copy(cmd, srcImage, srcImageLayout, dstBuffer, regions);
+}
+
+void Vulkan::blit(	vk::CommandBuffer cmd,
+					vk::Image srcImage,
+					vk::ImageLayout srcImageLayout,
+					vk::Image dstImage,
+					vk::ImageLayout dstImageLayout,
+					Utils::BufferView<const vk::ImageBlit> regions,
+					vk::Filter filter ) const
+{
+	m_impl->blit(cmd, srcImage, srcImageLayout, dstImage, dstImageLayout, regions, filter);
+}
+
+void Vulkan::resolve(	vk::CommandBuffer cmd,
+						vk::Image srcImage,
+						vk::ImageLayout srcImageLayout,
+						vk::Image dstImage,
+						vk::ImageLayout dstImageLayout,
+						Utils::BufferView<const vk::ImageResolve> regions ) const
+{
+	m_impl->resolve(cmd, srcImage, srcImageLayout, dstImage, dstImageLayout, regions);
+}
+
+
 void Vulkan::beginRenderPass(vk::CommandBuffer cmd, 
 							const vk::RenderPassBeginInfo& beginInfo, 
 							vk::SubpassContents contents ) const
@@ -1410,6 +1755,12 @@ void Vulkan::beginRenderPass(vk::CommandBuffer cmd,
 
 void Vulkan::endRenderPass(vk::CommandBuffer cmd) const {
 	m_impl->endRenderPass(cmd);
+}
+
+void Vulkan::nextSubpass(	vk::CommandBuffer cmd,
+							vk::SubpassContents contents ) const
+{
+	m_impl->nextSubpass(cmd, contents);
 }
 
 void Vulkan::bindPipeline(	vk::CommandBuffer cmd, 
@@ -1444,6 +1795,34 @@ void Vulkan::draw(	vk::CommandBuffer cmd,
 					uint32_t firstInstance ) const
 {
 	m_impl->draw(cmd, vertexCount, instanceCount, firstVertex, firstInstance);
+}
+
+void Vulkan::draw(	vk::CommandBuffer cmd, 
+					vk::Buffer buffer,
+					size_t offset,
+					uint32_t drawCount,
+					uint32_t stride ) const
+{
+	m_impl->draw(cmd, buffer, offset, drawCount, stride);
+}
+
+void Vulkan::drawIndexed(	vk::CommandBuffer cmd, 
+							uint32_t indexCount,
+							uint32_t instanceCount,
+							uint32_t firstIndex,
+							int32_t vertexOffset,
+							uint32_t firstInstance ) const
+{
+	m_impl->drawIndexed(cmd, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+}
+
+void Vulkan::drawIndexed(	vk::CommandBuffer cmd,
+							vk::Buffer buffer,
+							size_t offset,
+							uint32_t drawCount,
+							uint32_t stride ) const
+{
+	m_impl->drawIndexed(cmd, buffer, offset, drawCount, stride);
 }
 
 

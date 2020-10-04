@@ -162,10 +162,95 @@ public:
 	void								begin(	vk::CommandBuffer cmd,
 												const vk::CommandBufferBeginInfo& beginInfo ) const;
 	void								end(vk::CommandBuffer cmd) const;
+
+	void								execute(vk::CommandBuffer cmd,
+												Utils::BufferView<const vk::CommandBuffer> buf ) const;
+
+	void								pipelineBarrier(vk::CommandBuffer cmd,
+														vk::PipelineStageFlags srcStageMask,
+														vk::PipelineStageFlags dstStageMask,
+														vk::DependencyFlags dependencyFlags,
+														Utils::BufferView<const vk::MemoryBarrier> memoryBarriers,
+														Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers,
+														Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) const;
+	void								pipelineBarrier(vk::CommandBuffer cmd,
+														vk::PipelineStageFlags srcStageMask,
+														vk::PipelineStageFlags dstStageMask,
+														vk::DependencyFlags dependencyFlags,
+														Utils::BufferView<const vk::MemoryBarrier> memoryBarriers ) const;
+	void								pipelineBarrier(vk::CommandBuffer cmd,
+														vk::PipelineStageFlags srcStageMask,
+														vk::PipelineStageFlags dstStageMask,
+														vk::DependencyFlags dependencyFlags,
+														Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers ) const;
+	void								pipelineBarrier(vk::CommandBuffer cmd,
+														vk::PipelineStageFlags srcStageMask,
+														vk::PipelineStageFlags dstStageMask,
+														vk::DependencyFlags dependencyFlags,
+														Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) const;
+
+	void								clear(	vk::CommandBuffer cmd,
+												vk::Image image,
+												vk::ImageLayout imageLayout,
+												const vk::ClearColorValue& value,
+												Utils::BufferView<const vk::ImageSubresourceRange> ranges ) const;
+	void								clear(	vk::CommandBuffer cmd,
+												vk::Image image,
+												vk::ImageLayout imageLayout,
+												const vk::ClearDepthStencilValue& value,
+												Utils::BufferView<const vk::ImageSubresourceRange> ranges ) const;
+	void								clear(	vk::CommandBuffer cmd,
+												Utils::BufferView<const vk::ClearAttachment> attachments,
+												Utils::BufferView<const vk::ClearRect> rects ) const;
+	void								clear(	vk::CommandBuffer cmd,
+												vk::Buffer buffer,
+												const Utils::Area& area,
+												uint32_t data = 0 ) const;
+	void								clear(	vk::CommandBuffer cmd,
+												vk::Buffer buffer,
+												const Utils::Area& area,
+												const std::byte* data ) const;
+
+	void								copy(	vk::CommandBuffer cmd,
+												vk::Buffer srcBuffer,
+												vk::Buffer dstBuffer,
+												Utils::BufferView<const vk::BufferCopy> regions ) const;
+	void 								copy(	vk::CommandBuffer cmd,
+												vk::Image srcImage,
+    											vk::ImageLayout srcImageLayout,
+    											vk::Image dstImage,
+    											vk::ImageLayout dstImageLayout,
+												Utils::BufferView<const vk::ImageCopy> regions ) const;
+	void 								copy(	vk::CommandBuffer cmd,
+												vk::Buffer srcBuffer,
+    											vk::Image dstImage,
+    											vk::ImageLayout dstImageLayout,
+												Utils::BufferView<const vk::BufferImageCopy> regions ) const;
+	void 								copy(	vk::CommandBuffer cmd,
+												vk::Image srcImage,
+    											vk::ImageLayout srcImageLayout,
+    											vk::Buffer dstBuffer,
+												Utils::BufferView<const vk::BufferImageCopy> regions ) const;
+	void 								blit(	vk::CommandBuffer cmd,
+												vk::Image srcImage,
+    											vk::ImageLayout srcImageLayout,
+    											vk::Image dstImage,
+    											vk::ImageLayout dstImageLayout,
+												Utils::BufferView<const vk::ImageBlit> regions,
+    											vk::Filter filter ) const;
+	void 								resolve(vk::CommandBuffer cmd,
+												vk::Image srcImage,
+    											vk::ImageLayout srcImageLayout,
+    											vk::Image dstImage,
+    											vk::ImageLayout dstImageLayout,
+												Utils::BufferView<const vk::ImageResolve> regions ) const;
+
 	void								beginRenderPass(vk::CommandBuffer cmd, 
 														const vk::RenderPassBeginInfo& beginInfo, 
 														vk::SubpassContents contents ) const;
 	void								endRenderPass(vk::CommandBuffer cmd) const;
+	void								nextSubpass(	vk::CommandBuffer cmd,
+														vk::SubpassContents contents ) const;
 	void								bindPipeline(	vk::CommandBuffer cmd, 
 														vk::PipelineBindPoint bindPoint, 
 														vk::Pipeline pipeline ) const;
@@ -173,6 +258,9 @@ public:
 															uint32_t firstBinding, 
 															Utils::BufferView<const vk::Buffer> buffers, 
 															Utils::BufferView<const vk::DeviceSize> offsets ) const;
+	void								bindIndexBuffer(vk::Buffer buffer,
+   														size_t offset,
+    													vk::IndexType indexType );
 	void								bindDescriptorSets(	vk::CommandBuffer cmd, 
 															vk::PipelineBindPoint pipelineBindPoint, 
 															vk::PipelineLayout layout, 
@@ -184,6 +272,22 @@ public:
 												uint32_t instanceCount, 
 												uint32_t firstVertex, 
 												uint32_t firstInstance ) const;
+	void								draw(	vk::CommandBuffer cmd, 
+												vk::Buffer buffer,
+    											size_t offset,
+    											uint32_t drawCount,
+    											uint32_t stride ) const;
+	void								drawIndexed(vk::CommandBuffer cmd, 
+													uint32_t indexCount,
+    												uint32_t instanceCount,
+    												uint32_t firstIndex,
+    												int32_t vertexOffset,
+    												uint32_t firstInstance ) const;
+	void								drawIndexed(vk::CommandBuffer cmd,
+													vk::Buffer buffer,
+    												size_t offset,
+    												uint32_t drawCount,
+    												uint32_t stride ) const;
 
 	void								present(vk::SwapchainKHR swapchain,
 												uint32_t imageIndex,

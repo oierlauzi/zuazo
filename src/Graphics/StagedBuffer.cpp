@@ -147,7 +147,7 @@ vk::CommandBuffer StagedBuffer::createCommandBuffer(const Vulkan& vulkan,
 		nullptr
 	);
 
-	cmdBuffer->begin(beginInfo, vulkan.getDispatcher()); 
+	vulkan.begin(*cmdBuffer, beginInfo);
 	{
 		{
 			//Insert a memory barrier
@@ -173,24 +173,22 @@ vk::CommandBuffer StagedBuffer::createCommandBuffer(const Vulkan& vulkan,
 
 			constexpr vk::PipelineStageFlags dstStages = 
 				vk::PipelineStageFlagBits::eTransfer;
-			
-			cmdBuffer->pipelineBarrier(
+
+			vulkan.pipelineBarrier(
+				*cmdBuffer,						//Command buffer
 				srcStages,						//Generating stages
 				dstStages,						//Consuming stages
 				{},								//dependency flags
-				{},								//Memory barriers
-				memoryBarrier,					//Buffer memory barriers
-				{},								//Image memory barriers
-				vulkan.getDispatcher()
+				memoryBarrier					//Buffer memory barriers
 			);
 		}
 
 		//Copy the data into the vertex buffer
-		cmdBuffer->copyBuffer(
+		vulkan.copy(
+			*cmdBuffer,
 			m_stagingBuffer.getBuffer(),
 			getBuffer(),
-			vk::BufferCopy(offset, offset, size),
-			vulkan.getDispatcher()
+			vk::BufferCopy(offset, offset, size)
 		);
 
 		//Insert a memory barrier, so that changes are visible
@@ -217,18 +215,16 @@ vk::CommandBuffer StagedBuffer::createCommandBuffer(const Vulkan& vulkan,
 
 			const vk::PipelineStageFlags dstStages = stage;
 			
-			cmdBuffer->pipelineBarrier(
+			vulkan.pipelineBarrier(
+				*cmdBuffer,						//Command buffer
 				srcStages,						//Generating stages
 				dstStages,						//Consuming stages
-				{},								//Dependency flags
-				{},								//Memory barriers
-				memoryBarrier,					//Buffer memory barriers
-				{},								//Image memory barriers
-				vulkan.getDispatcher()
+				{},								//dependency flags
+				memoryBarrier					//Buffer memory barriers
 			);
 		}
 	}
-	cmdBuffer->end(vulkan.getDispatcher());
+	vulkan.end(*cmdBuffer);
 
 	return cmdBuffer.release();
 }
