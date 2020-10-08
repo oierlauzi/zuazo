@@ -55,7 +55,9 @@ void StagedBuffer::flushData(	const Vulkan& vulkan,
 
 	//Size must be a multiple of nonCoherentAtomSize or reach the end of the buffer
 	const auto nonCoherentAtomSize = vulkan.getPhysicalDeviceProperties().limits.nonCoherentAtomSize;
-	const auto flushSize = (size == VK_WHOLE_SIZE) ? VK_WHOLE_SIZE : Utils::align(size, nonCoherentAtomSize);
+	const auto flushSize = 	(size == VK_WHOLE_SIZE)
+							? VK_WHOLE_SIZE 
+							: Math::min(Utils::align(size, nonCoherentAtomSize), m_data.size() - offset);
 
 	//Flush the memory
 	const vk::MappedMemoryRange range(
@@ -65,7 +67,7 @@ void StagedBuffer::flushData(	const Vulkan& vulkan,
 	vulkan.flushMappedMemory(range);
 
 	//vkCopyBuffer does not support VK_WHOLE_SIZE, so use the real value
-	const auto copySize = (size == VK_WHOLE_SIZE) ? m_data.size() : size;
+	const auto copySize = (size == VK_WHOLE_SIZE) ? m_data.size() - offset : size;
 
 	//Ensure that the adecuate command buffer exists
 	const auto key = Key(offset, copySize, queue, access, stage);
