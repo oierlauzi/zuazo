@@ -45,6 +45,9 @@ std::ostream& operator<<(std::ostream& os, const std::tuple<Types...>& tuple);
 template<typename T>
 std::ostream& enquote(std::ostream& os, T&& x);
 
+template<typename... Types>
+std::ostream& printAsTuple(std::ostream& os, const Types&... elements);
+
 template<typename InputIt>
 std::ostream& toOstream(std::ostream& os, InputIt begin, InputIt end);
 

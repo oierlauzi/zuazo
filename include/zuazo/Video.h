@@ -27,6 +27,7 @@ namespace Zuazo {
 using Video = std::shared_ptr<const Graphics::Frame>;
 
 class VideoMode {
+	friend std::ostream& operator<<(std::ostream& os, const VideoMode& videoMode);
 public:
 	VideoMode(	Utils::Limit<Rate> frameRate = {},
 				Utils::Limit<Resolution> resolution = {},
@@ -198,6 +199,8 @@ private:
 	Utils::Pimpl<Impl>							m_impl;
 
 };
+
+std::ostream& operator<<(std::ostream& os, const VideoMode& videoMode);
 
 namespace Signal {
 

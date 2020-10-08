@@ -1,5 +1,6 @@
 #include <zuazo/Video.h>
 
+#include <zuazo/StringConversions.h>
 #include <zuazo/Utils/Functions.h>
 
 namespace Zuazo {
@@ -582,5 +583,28 @@ void VideoScalerBase::setScalingFilterCallback(ScalingFilterCallback cbk) {
 const VideoScalerBase::ScalingFilterCallback& VideoScalerBase::getScalingFilterCallback() const {
 	return m_impl->getScalingFilterCallback();
 }
+
+
+/*
+ * operator<< std::ostream
+ */
+
+std::ostream& operator<<(std::ostream& os, const VideoMode& videoMode) {
+	return Zuazo::operator<<(
+		os, 
+		std::forward_as_tuple(
+			std::make_pair("frameRate", 			std::get<VideoMode::m_frameRate>(videoMode.m_data)),
+			std::make_pair("resolution", 			std::get<VideoMode::m_resolution>(videoMode.m_data)),
+			std::make_pair("pixelAspectRatio", 		std::get<VideoMode::m_pixelAspectRatio>(videoMode.m_data)),
+			std::make_pair("colorPrimaries", 		std::get<VideoMode::m_colorPrimaries>(videoMode.m_data)),
+			std::make_pair("colorModel", 			std::get<VideoMode::m_colorModel>(videoMode.m_data)),
+			std::make_pair("colorTransferFunction", std::get<VideoMode::m_colorTransferFunction>(videoMode.m_data)),
+			std::make_pair("colorSubsampling", 		std::get<VideoMode::m_colorSubsampling>(videoMode.m_data)),
+			std::make_pair("colorRange", 			std::get<VideoMode::m_colorRange>(videoMode.m_data)),
+			std::make_pair("colorFormat", 			std::get<VideoMode::m_colorFormat>(videoMode.m_data))
+		)
+	);
+}
+
 
 }

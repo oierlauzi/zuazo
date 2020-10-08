@@ -84,25 +84,33 @@ inline std::ostream& operator<<(std::ostream& os, const std::pair<T1, T2>& pair)
 
 template <typename... Types>
 inline std::ostream& operator<<(std::ostream& os, const std::tuple<Types...>& tuple) {
-	//Based on:
-	//https://en.cppreference.com/w/cpp/utility/apply
-	os << '{';
-	std::apply(
-		[&os](const Types&... elements) {
-            size_t i{0};
-            ((os << elements << (++i != sizeof...(Types) ? ", " : "")), ...); //Add a comma only if it is not the last one
+	return std::apply(
+		[&os](const Types&... elements) -> std::ostream& {
+			return printAsTuple(os, elements...);
         },
 		tuple
 	);
-	os << '}';
-
-	return os;
 }
 
 
 template<typename T>
 inline std::ostream& enquote(std::ostream& os, T&& x) {
     return os << '\"' << std::forward<T>(x) << '\"';
+}
+
+template<typename... Types>
+inline std::ostream& printAsTuple(std::ostream& os, const Types&... elements) {
+	//Based on:
+	//https://en.cppreference.com/w/cpp/utility/apply
+
+	os << '{';
+
+	size_t i{0};
+	((os << elements << (++i != sizeof...(Types) ? ", " : "")), ...); //Add a comma only if it is not the last one
+
+	os << '}';
+
+	return os;
 }
 
 template<typename InputIt>
