@@ -18,7 +18,7 @@ enum class BlendingMode {
 	DARKEN,				///<C = min(C_src, C_dst)
 	LIGHTEN,			///<C = max(C_src, C_dst)
 	MULTIPLY,			///<C = C_src * C_dst
-	SCREEN,				///<C - 1 = (1 - C_src) * (1 - C_dst) => C = C_src + C_dst * (1 - C_src)
+	SCREEN,				///<1 - C = (1 - C_src) * (1 - C_dst) => C = C_src + C_dst * (1 - C_src)
 
 	//Add here
 
