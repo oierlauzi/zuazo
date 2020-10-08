@@ -49,10 +49,10 @@ struct Uploader::Impl {
 	std::reference_wrapper<const Vulkan>			vulkan;
 	std::shared_ptr<Frame::Descriptor>				frameDescriptor;
 	InputColorTransfer								colorTransfer;
+	std::shared_ptr<StagedBuffer>					colorTransferBuffer;
 	std::vector<Frame::PlaneDescriptor>				planeDescriptors;
 
 	std::shared_ptr<vk::UniqueCommandPool>			commandPool;
-	std::shared_ptr<StagedBuffer>					colorTransferBuffer;
 
 	mutable Utils::Pool<StagedFrame, Allocator>		framePool;
 
@@ -60,11 +60,11 @@ struct Uploader::Impl {
 	Impl(	const Vulkan& vulkan, 
 			const Frame::Descriptor& conf )
 		: vulkan(vulkan)
-		, frameDescriptor(std::make_shared<Frame::Descriptor>(conf))
+		, frameDescriptor(Utils::makeShared<Frame::Descriptor>(conf))
 		, colorTransfer(*frameDescriptor)
+		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, colorTransfer))
 		, planeDescriptors(createPlaneDescriptors(vulkan, conf, colorTransfer))
 		, commandPool(createCommandPool(vulkan))
-		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, colorTransfer))
 		, framePool(1, Allocator(*this))
 	{
 	}

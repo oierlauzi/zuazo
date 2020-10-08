@@ -15,7 +15,7 @@ int main() {
 	Zuazo::Instance::ApplicationInfo appInfo(
 		"Example 00",								//Application's name
 		Zuazo::Version(0, 1, 0),					//Application's version
-		Zuazo::Verbosity::GEQ_WARNING,				//Verbosity 
+		Zuazo::Verbosity::GEQ_INFO,					//Verbosity 
 		{}											//Modules that are going to be used
 	);
 

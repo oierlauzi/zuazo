@@ -18,9 +18,10 @@
 namespace Zuazo::Graphics {
 
 class InputColorTransfer {
+	friend class OutputColorTransfer;
 public:
 	InputColorTransfer();
-	InputColorTransfer(const Frame::Descriptor& desc);
+	explicit InputColorTransfer(const Frame::Descriptor& desc);
 	InputColorTransfer(const InputColorTransfer& other) = delete;
 	InputColorTransfer(InputColorTransfer&& other);
 	~InputColorTransfer();
@@ -51,7 +52,8 @@ private:
 class OutputColorTransfer {
 public:
 	OutputColorTransfer();
-	OutputColorTransfer(const Frame::Descriptor& desc);
+	explicit OutputColorTransfer(const Frame::Descriptor& desc);
+	explicit OutputColorTransfer(const InputColorTransfer& inputTransfer);
 	OutputColorTransfer(const OutputColorTransfer& other) = delete;
 	OutputColorTransfer(OutputColorTransfer&& other);
 	~OutputColorTransfer();

@@ -95,6 +95,15 @@ static int32_t optimizeColorTransferFunction(	int32_t colorRange,
 	return colorTransferFunction;
 }
 
+static ct_write_data convert2Output(const ct_read_data& read) {
+	return ct_write_data {
+		glm::inverse(read.mtxRGB2XYZ),
+		glm::inverse(read.mtxYCbCr2RGB),
+		read.colorTransferFunction,
+		read.colorRange,
+		read.planeFormat
+	};
+}
 
 
 /*
@@ -218,6 +227,12 @@ struct OutputColorTransfer::Impl {
 	{
 	}
 
+	Impl(const InputColorTransfer::Impl& input)
+		: transferData(convert2Output(input.transferData))
+	{
+	}
+
+
 	bool equals(const Impl& other) const {
 		return std::memcmp(data(), other.data(), size()) == 0;
 	}
@@ -250,6 +265,11 @@ OutputColorTransfer::OutputColorTransfer()
 
 OutputColorTransfer::OutputColorTransfer(const Frame::Descriptor& desc)
 	: m_impl({}, desc)
+{
+}
+
+OutputColorTransfer::OutputColorTransfer(const InputColorTransfer& inputTransfer)
+	: m_impl({}, *inputTransfer.m_impl)
 {
 }
 

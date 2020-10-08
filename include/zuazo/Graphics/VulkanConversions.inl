@@ -481,18 +481,28 @@ inline std::vector<ColorFormat> getFramebufferFormats(Utils::BufferView<const vk
 	assert(std::is_sorted(supported.cbegin(), supported.cend()));
 
 	for(ColorFormat format = ColorFormat::NONE; format < ColorFormat::COUNT; format++) {
-		if(getPlaneCount(format) != 1) continue;
+		const auto conv = toVulkan(format);
+		const auto supportedPlanes = std::count_if(
+			conv.cbegin(), conv.cend(),
+			[&supported] (std::tuple<vk::Format, vk::ComponentMapping> plane) -> bool {
+				//Try to remove the swizzle
+				plane = optimizeFormat(plane);
 
-		auto planes = toVulkan(format);
-		assert(std::get<vk::Format>(planes[1]) == vk::Format::eUndefined);
+				//It must not contain any swizzle
+				if(std::get<vk::ComponentMapping>(plane) != vk::ComponentMapping()) return false;
 
-		auto& plane = planes[0];
-		plane = optimizeFormat(plane);
+				//Format must be supported
+				if(!std::binary_search(supported.cbegin(), supported.cend(), std::get<vk::Format>(plane))) return false;
 
-		if(std::get<vk::ComponentMapping>(plane) != vk::ComponentMapping()) continue;
-		if(!std::binary_search(supported.cbegin(), supported.cend(), std::get<vk::Format>(plane))) continue;
+				//All ok!
+				return true;
+			}
+		);
 
-		result.push_back(format);
+		//Check if all planes are supported
+		if(getPlaneCount(format) == static_cast<size_t>(supportedPlanes) && supportedPlanes > 0) {
+			result.push_back(format);
+		}
 	}
 
 	return result;
@@ -505,21 +515,22 @@ inline std::vector<ColorFormat> getSamplerFormats(Utils::BufferView<const vk::Fo
 	assert(std::is_sorted(supported.cbegin(), supported.cend()));
 
 	for(ColorFormat format = ColorFormat::NONE; format < ColorFormat::COUNT; format++) {
-		const auto planes = toVulkan(format);
-		if(std::get<vk::Format>(planes[0]) == vk::Format::eUndefined) continue;
+		const auto conv = toVulkan(format);
+		const auto supportedPlanes = std::count_if(
+			conv.cbegin(), conv.cend(),
+			[&supported] (std::tuple<vk::Format, vk::ComponentMapping> plane) -> bool {
+				//Format must be supported
+				if(!std::binary_search(supported.cbegin(), supported.cend(), std::get<vk::Format>(plane))) return false;
 
-		bool support = true;
-		for(const auto& plane : planes) {
-			if(std::get<vk::Format>(plane) != vk::Format::eUndefined) {
-				if(!std::binary_search(supported.cbegin(), supported.cend(), std::get<vk::Format>(plane))){
-					support = false;
-					break;
-				}
+				//All ok!
+				return true;
 			}
-		}
-		if(!support) continue;
+		);
 
-		result.push_back(format);
+		//Check if all planes are supported
+		if(getPlaneCount(format) == static_cast<size_t>(supportedPlanes) && supportedPlanes > 0) {
+			result.push_back(format);
+		}
 	}
 
 	return result;
