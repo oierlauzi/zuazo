@@ -5,7 +5,7 @@
 namespace Zuazo {
 
 template<typename T>
-constexpr Math::Vec2<T> scale(const Math::Vec2<T>& srcSize, const Math::Vec2<T>& dstSize, ScalingMode mode) {
+constexpr Math::Vec2<T> scale(const Math::Vec2<T>& srcSize, const Math::Vec2<T>& dstSize, ScalingMode mode) noexcept {
 	auto scale = dstSize / srcSize; 
 
 	switch(mode){
@@ -28,7 +28,7 @@ constexpr Math::Vec2<T> scale(const Math::Vec2<T>& srcSize, const Math::Vec2<T>&
 	return srcSize * scale;
 }
 
-constexpr std::string_view toString(ScalingMode  mode){
+constexpr std::string_view toString(ScalingMode  mode) noexcept {
 	switch(mode){
 
 	ZUAZO_ENUM2STR_CASE( ScalingMode, STRETCH )
@@ -48,11 +48,11 @@ inline std::ostream& operator<<(std::ostream& os, ScalingMode scalingMode) {
 
 namespace Utils {
 
-constexpr ScalingMode lowest(const Any<ScalingMode>&) {
+constexpr ScalingMode lowest(const Any<ScalingMode>&) noexcept {
 	return ScalingMode::NONE + static_cast<ScalingMode>(1);
 }
 
-constexpr ScalingMode highest(const Any<ScalingMode>&) {
+constexpr ScalingMode highest(const Any<ScalingMode>&) noexcept {
 	return ScalingMode::COUNT - static_cast<ScalingMode>(1);
 }
 

@@ -17,17 +17,17 @@ public:
 				std::shared_ptr<const vk::UniqueRenderPass> renderPass,
 				vk::Format depthStencilFmt );
 	Drawtable(const Drawtable& other) = delete;
-	Drawtable(Drawtable&& other);
+	Drawtable(Drawtable&& other) noexcept;
 	~Drawtable();
 
 	Drawtable& 										operator=(const Drawtable& other) = delete;
-	Drawtable& 										operator=(Drawtable&& other);
+	Drawtable& 										operator=(Drawtable&& other) noexcept;
 
-	const Vulkan&									getVulkan() const;
+	const Vulkan&									getVulkan() const noexcept;
 
-	void											setMaxSpareCount(size_t spares);
-	size_t											getMaxSpareCount() const;
-	size_t											getSpareCount() const;
+	void											setMaxSpareCount(size_t spares) noexcept;
+	size_t											getMaxSpareCount() const noexcept;
+	size_t											getSpareCount() const noexcept;
 
 	std::shared_ptr<TargetFrame>					acquireFrame() const;
 	OutputColorTransfer								getOutputColorTransfer() const;

@@ -36,7 +36,7 @@ enum class ColorTransferFunction {
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorTransferFunction)
 ZUAZO_ENUM_COMP_OPERATORS(ColorTransferFunction)	
 	
-constexpr std::string_view toString(ColorTransferFunction colorTransferFunc);
+constexpr std::string_view toString(ColorTransferFunction colorTransferFunc) noexcept;
 std::ostream& operator<<(std::ostream& os, ColorTransferFunction colorTransferFunc);
 
 namespace Utils {
@@ -44,8 +44,8 @@ namespace Utils {
 template<typename T>
 class Any;
 
-constexpr ColorTransferFunction lowest(const Any<ColorTransferFunction>& any);
-constexpr ColorTransferFunction highest(const Any<ColorTransferFunction>& any);
+constexpr ColorTransferFunction lowest(const Any<ColorTransferFunction>& any) noexcept;
+constexpr ColorTransferFunction highest(const Any<ColorTransferFunction>& any) noexcept;
 
 }
 

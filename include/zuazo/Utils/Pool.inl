@@ -14,15 +14,15 @@ namespace Zuazo::Utils {
 template <typename T, typename Alloc>
 class Pool<T, Alloc>::Deleter {
 public:
-	Deleter(Allocator& alloc)
+	Deleter(Allocator& alloc) noexcept
 		: m_allocator(alloc)
 	{
 	}
 
-	Deleter(const Deleter& other) = default;
+	Deleter(const Deleter& other) noexcept = default;
 	~Deleter() = default;
 
-	Deleter& operator=(const Deleter& other) = default;
+	Deleter& operator=(const Deleter& other) noexcept = default;
 
 	void operator()(ElementType* el) const {
 		std::allocator_traits<Allocator>::destroy(m_allocator, el);
@@ -41,17 +41,17 @@ private:
 template <typename T, typename Alloc>
 class Pool<T, Alloc>::Recycler {
 public:
-	Recycler(std::shared_ptr<SharedData> sharedData)
+	Recycler(std::shared_ptr<SharedData> sharedData) noexcept
 		: m_sharedData(std::move(sharedData))
 	{
 	}
 
-	Recycler(const Recycler& other) = default;
-	Recycler(Recycler&& other) = default;
+	Recycler(const Recycler& other) noexcept = default;
+	Recycler(Recycler&& other) noexcept = default;
 	~Recycler() = default;
 
-	Recycler& operator=(const Recycler& other) = default;
-	Recycler& operator=(Recycler&& other) = default;
+	Recycler& operator=(const Recycler& other) noexcept = default;
+	Recycler& operator=(Recycler&& other) noexcept = default;
 
 	void operator()(ElementType* el) const {
 		assert(m_sharedData);
@@ -91,17 +91,17 @@ inline Pool<T, Alloc>::~Pool() {
 
 
 template <typename T, typename Alloc>
-inline void Pool<T, Alloc>::setMaxSpareCount(size_t spares) {
+inline void Pool<T, Alloc>::setMaxSpareCount(size_t spares) noexcept {
 	m_maxSpareCount = spares;
 }
 
 template <typename T, typename Alloc>
-inline size_t Pool<T, Alloc>::getMaxSpareCount() const {
+inline size_t Pool<T, Alloc>::getMaxSpareCount() const noexcept {
 	return m_maxSpareCount;
 }
 
 template <typename T, typename Alloc>
-inline size_t Pool<T, Alloc>::getSpareCount() const {
+inline size_t Pool<T, Alloc>::getSpareCount() const noexcept {
 	return m_spares.size();
 }
 
@@ -135,7 +135,7 @@ Pool<T, Alloc>::acquire() {
 
 
 template <typename T, typename Alloc>
-inline typename Pool<T, Alloc>::Recycler Pool<T, Alloc>::makeRecycler() const {
+inline typename Pool<T, Alloc>::Recycler Pool<T, Alloc>::makeRecycler() const noexcept {
 	assert(m_sharedData);
 	return Recycler(m_sharedData);
 }

@@ -5,7 +5,7 @@
 namespace Zuazo::Signal {
 
 template<typename T>
-constexpr std::string_view makeInputName() {
+constexpr std::string_view makeInputName() noexcept {
 	return "in";
 }
 
@@ -17,7 +17,7 @@ inline std::string makeInputName(size_t index) {
 
 
 template<typename T>
-constexpr std::string_view makeOutputName() {
+constexpr std::string_view makeOutputName() noexcept {
 	return "out";
 }
 

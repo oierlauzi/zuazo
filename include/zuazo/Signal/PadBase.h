@@ -8,23 +8,23 @@ namespace Zuazo::Signal {
 
 class PadBase {
 public:
-	explicit PadBase(std::string name);
+	explicit PadBase(std::string name) noexcept;
 	PadBase(const PadBase& other) = default; 
-	PadBase(PadBase&& other) = default;
+	PadBase(PadBase&& other) noexcept = default;
 	virtual ~PadBase() = default;
 
 	PadBase&						operator=(const PadBase& other) = default;
-	PadBase&						operator=(PadBase&& other) = default;
+	PadBase&						operator=(PadBase&& other) noexcept = default;
 	
-	bool							operator==(const PadBase& other) const;
-	bool							operator!=(const PadBase& other) const;
-	bool							operator<(const PadBase& other) const;
-	bool							operator<=(const PadBase& other) const;
-	bool							operator>(const PadBase& other) const;
-	bool							operator>=(const PadBase& other) const;
+	bool							operator==(const PadBase& other) const noexcept;
+	bool							operator!=(const PadBase& other) const noexcept;
+	bool							operator<(const PadBase& other) const noexcept;
+	bool							operator<=(const PadBase& other) const noexcept;
+	bool							operator>(const PadBase& other) const noexcept;
+	bool							operator>=(const PadBase& other) const noexcept;
 
-	void                			setName(std::string name);
-	const std::string&				getName() const;
+	void                			setName(std::string name) noexcept;
+	const std::string&				getName() const noexcept;
 
 private:
 	std::string						m_name;

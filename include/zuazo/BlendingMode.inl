@@ -2,7 +2,7 @@
 
 namespace Zuazo {
 
-constexpr std::string_view toString(BlendingMode format){
+constexpr std::string_view toString(BlendingMode format) noexcept {
 	switch(format){
 
 	ZUAZO_ENUM2STR_CASE( BlendingMode, WRITE )
@@ -25,11 +25,11 @@ inline std::ostream& operator<<(std::ostream& os, BlendingMode format) {
 
 namespace Utils {
 
-constexpr BlendingMode lowest(const Any<BlendingMode>&) {
+constexpr BlendingMode lowest(const Any<BlendingMode>&) noexcept {
 	return BlendingMode::NONE + static_cast<BlendingMode>(1);
 }
 
-constexpr BlendingMode highest(const Any<BlendingMode>&) {
+constexpr BlendingMode highest(const Any<BlendingMode>&) noexcept {
 	return BlendingMode::COUNT - static_cast<BlendingMode>(1);
 }
 

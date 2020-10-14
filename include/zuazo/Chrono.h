@@ -17,18 +17,18 @@ template<intmax_t rate_num, intmax_t rate_den = 1>
 using Frames = std::chrono::duration<	Duration::rep, 
 										std::ratio<rate_den, rate_num>>; //Note that they are inverted
 
-constexpr Duration getPeriod(const Rate& rate);
-constexpr Rate getRate(const Duration& period);
+constexpr Duration getPeriod(const Rate& rate) noexcept;
+constexpr Rate getRate(const Duration& period) noexcept;
 
-TimePoint now();
+TimePoint now() noexcept;
 
 namespace Utils {
 
 template<typename T>
 class Any;
 
-constexpr Duration lowest(const Any<Duration>& any);
-constexpr Duration highest(const Any<Duration>& any);
+constexpr Duration lowest(const Any<Duration>& any) noexcept;
+constexpr Duration highest(const Any<Duration>& any) noexcept;
 
 }
 }

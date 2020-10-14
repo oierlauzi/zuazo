@@ -4,7 +4,7 @@
 
 namespace Zuazo::Utils {
 
-inline Observer::Observer()
+inline Observer::Observer() noexcept
 	: m_subject(nullptr)
 {
 }
@@ -16,7 +16,7 @@ inline Observer::Observer(const Observer& other)
 }
 
 
-inline Observer::~Observer() {
+inline Observer::~Observer() noexcept {
 	detachSubject();
 }
 
@@ -34,7 +34,7 @@ inline void Observer::setSubject(Subject* subject) {
 	attachSubject();
 }
 
-inline Subject* Observer::getSubject() const {
+inline Subject* Observer::getSubject() const noexcept {
     return m_subject;
 }
 
@@ -72,7 +72,7 @@ inline Subject& Subject::operator=(Subject&& other) {
 	return *this;
 }
 
-inline const Subject::Observers& Subject::getObservers() const {
+inline const Subject::Observers& Subject::getObservers() const noexcept {
 	return m_observers;
 }
 

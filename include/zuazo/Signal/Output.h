@@ -24,23 +24,23 @@ public:
 
 	using PullCallback = std::function<void(Output<T>&)>;
 
-	explicit Output(std::string name = std::string(makeOutputName<Element>()), PullCallback pullCbk = {});
+	explicit Output(std::string name = std::string(makeOutputName<Element>()), PullCallback pullCbk = {}) noexcept;
 	Output(const Output& other) = default;
-	Output(Output&& other) = default;
+	Output(Output&& other) noexcept = default;
 	virtual ~Output() = default;
 
-	Output&						operator=(const Output& other) = default;
-	Output&						operator=(Output&& other) = default;
+	Output&						operator=(const Output& other) noexcept = default;
+	Output&						operator=(Output&& other) noexcept = default;
 
 	Consumers					getConsumers() const;
 
-	void						setPullCallback(PullCallback cbk);
-	const PullCallback&			getPullCallback() const;
+	void						setPullCallback(PullCallback cbk) noexcept;
+	const PullCallback&			getPullCallback() const noexcept;
 
-	void						reset();
-	void						push(Element element); ///< \note This function MUST NOT be called from the pull callback
-	const Element&				pull();
-	const Element&				getLastElement() const;
+	void						reset() noexcept;
+	void						push(Element element) noexcept;
+	const Element&				pull() noexcept;
+	const Element&				getLastElement() const noexcept;
 
 	static const Element		NO_SIGNAL;
 

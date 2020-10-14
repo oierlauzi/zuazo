@@ -18,20 +18,20 @@ public:
 
 	Scheduler() = default;
 	Scheduler(const Scheduler& other) = delete;
-	Scheduler(Scheduler&& other) = default;
+	Scheduler(Scheduler&& other) noexcept  = default;
 	~Scheduler() = default;
 
 	Scheduler&				operator=(const Scheduler& other) = delete;
-	Scheduler&				operator=(Scheduler&& other) = default;
+	Scheduler&				operator=(Scheduler&& other) noexcept  = default;
 
-	void					setEpoch(TimePoint tp);
-	TimePoint				getEpoch() const;
+	void					setEpoch(TimePoint tp) noexcept ;
+	TimePoint				getEpoch() const noexcept ;
 
 	void					gotoTime(TimePoint tp);
-	TimePoint				getTime() const;
-	Duration				getDeltaT() const;
+	TimePoint				getTime() const noexcept ;
+	Duration				getDeltaT() const noexcept ;
 
-	Duration               	getTimeForNextEvent() const;
+	Duration               	getTimeForNextEvent() const noexcept;
 
 	void					addRegularCallback(const std::shared_ptr<Callback>& cbk, Priority prior);
 	void					removeRegularCallback(const std::shared_ptr<Callback>& cbk);

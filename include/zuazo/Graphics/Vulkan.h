@@ -54,28 +54,28 @@ public:
 			const PresentationSupportCallback& presentationSupportCbk,
 			const DeviceScoreFunc& scoreFunc );
 	Vulkan(const Vulkan& other) = delete;
-	Vulkan(Vulkan&& other);
+	Vulkan(Vulkan&& other) noexcept;
 	~Vulkan();
 
 	Vulkan&								operator=(const Vulkan& other) = delete;
-	Vulkan&								operator=(Vulkan&& other);
+	Vulkan&								operator=(Vulkan&& other) noexcept;
 
-	const vk::DynamicLoader&			getLoader() const;
-	const vk::DispatchLoaderDynamic&	getDispatcher() const;
-	vk::Instance						getInstance() const;
-	vk::PhysicalDevice					getPhysicalDevice() const;
-	const vk::PhysicalDeviceProperties&	getPhysicalDeviceProperties() const;
-	vk::Device							getDevice() const;
-	uint32_t							getGraphicsQueueIndex() const;
-	vk::Queue							getGraphicsQueue() const;
-	uint32_t							getComputeQueueIndex() const;
-	vk::Queue							getComputeQueue() const;
-	uint32_t							getTransferQueueIndex() const;
-	vk::Queue							getTransferQueue() const;
-	uint32_t							getPresentationQueueIndex() const;
-	vk::Queue							getPresentationQueue() const;
-	vk::PipelineCache					getPipelineCache() const;
-	const FormatSupport&				getFormatSupport() const;
+	const vk::DynamicLoader&			getLoader() const noexcept;
+	const vk::DispatchLoaderDynamic&	getDispatcher() const noexcept;
+	vk::Instance						getInstance() const noexcept;
+	vk::PhysicalDevice					getPhysicalDevice() const noexcept;
+	const vk::PhysicalDeviceProperties&	getPhysicalDeviceProperties() const noexcept;
+	vk::Device							getDevice() const noexcept;
+	uint32_t							getGraphicsQueueIndex() const noexcept;
+	vk::Queue							getGraphicsQueue() const noexcept;
+	uint32_t							getComputeQueueIndex() const noexcept;
+	vk::Queue							getComputeQueue() const noexcept;
+	uint32_t							getTransferQueueIndex() const noexcept;
+	vk::Queue							getTransferQueue() const noexcept;
+	uint32_t							getPresentationQueueIndex() const noexcept;
+	vk::Queue							getPresentationQueue() const noexcept;
+	vk::PipelineCache					getPipelineCache() const noexcept;
+	const FormatSupport&				getFormatSupport() const noexcept;
 	
 	vk::FormatProperties				getFormatFeatures(vk::Format format) const;
 
@@ -164,7 +164,7 @@ public:
 	void								end(vk::CommandBuffer cmd) const;
 
 	void								execute(vk::CommandBuffer cmd,
-												Utils::BufferView<const vk::CommandBuffer> buf ) const;
+												Utils::BufferView<const vk::CommandBuffer> buf ) const noexcept;
 
 	void								pipelineBarrier(vk::CommandBuffer cmd,
 														vk::PipelineStageFlags srcStageMask,
@@ -172,122 +172,122 @@ public:
 														vk::DependencyFlags dependencyFlags,
 														Utils::BufferView<const vk::MemoryBarrier> memoryBarriers,
 														Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers,
-														Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) const;
+														Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) const noexcept;
 	void								pipelineBarrier(vk::CommandBuffer cmd,
 														vk::PipelineStageFlags srcStageMask,
 														vk::PipelineStageFlags dstStageMask,
 														vk::DependencyFlags dependencyFlags,
-														Utils::BufferView<const vk::MemoryBarrier> memoryBarriers ) const;
+														Utils::BufferView<const vk::MemoryBarrier> memoryBarriers ) const noexcept;
 	void								pipelineBarrier(vk::CommandBuffer cmd,
 														vk::PipelineStageFlags srcStageMask,
 														vk::PipelineStageFlags dstStageMask,
 														vk::DependencyFlags dependencyFlags,
-														Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers ) const;
+														Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers ) const noexcept;
 	void								pipelineBarrier(vk::CommandBuffer cmd,
 														vk::PipelineStageFlags srcStageMask,
 														vk::PipelineStageFlags dstStageMask,
 														vk::DependencyFlags dependencyFlags,
-														Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) const;
+														Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) const noexcept;
 
 	void								clear(	vk::CommandBuffer cmd,
 												vk::Image image,
 												vk::ImageLayout imageLayout,
 												const vk::ClearColorValue& value,
-												Utils::BufferView<const vk::ImageSubresourceRange> ranges ) const;
+												Utils::BufferView<const vk::ImageSubresourceRange> ranges ) const noexcept;
 	void								clear(	vk::CommandBuffer cmd,
 												vk::Image image,
 												vk::ImageLayout imageLayout,
 												const vk::ClearDepthStencilValue& value,
-												Utils::BufferView<const vk::ImageSubresourceRange> ranges ) const;
+												Utils::BufferView<const vk::ImageSubresourceRange> ranges ) const noexcept;
 	void								clear(	vk::CommandBuffer cmd,
 												Utils::BufferView<const vk::ClearAttachment> attachments,
-												Utils::BufferView<const vk::ClearRect> rects ) const;
+												Utils::BufferView<const vk::ClearRect> rects ) const noexcept;
 	void								clear(	vk::CommandBuffer cmd,
 												vk::Buffer buffer,
 												const Utils::Area& area,
-												uint32_t data = 0 ) const;
+												uint32_t data = 0 ) const noexcept;
 	void								clear(	vk::CommandBuffer cmd,
 												vk::Buffer buffer,
 												const Utils::Area& area,
-												const std::byte* data ) const;
+												const std::byte* data ) const noexcept;
 
 	void								copy(	vk::CommandBuffer cmd,
 												vk::Buffer srcBuffer,
 												vk::Buffer dstBuffer,
-												Utils::BufferView<const vk::BufferCopy> regions ) const;
+												Utils::BufferView<const vk::BufferCopy> regions ) const noexcept;
 	void 								copy(	vk::CommandBuffer cmd,
 												vk::Image srcImage,
     											vk::ImageLayout srcImageLayout,
     											vk::Image dstImage,
     											vk::ImageLayout dstImageLayout,
-												Utils::BufferView<const vk::ImageCopy> regions ) const;
+												Utils::BufferView<const vk::ImageCopy> regions ) const noexcept;
 	void 								copy(	vk::CommandBuffer cmd,
 												vk::Buffer srcBuffer,
     											vk::Image dstImage,
     											vk::ImageLayout dstImageLayout,
-												Utils::BufferView<const vk::BufferImageCopy> regions ) const;
+												Utils::BufferView<const vk::BufferImageCopy> regions ) const noexcept;
 	void 								copy(	vk::CommandBuffer cmd,
 												vk::Image srcImage,
     											vk::ImageLayout srcImageLayout,
     											vk::Buffer dstBuffer,
-												Utils::BufferView<const vk::BufferImageCopy> regions ) const;
+												Utils::BufferView<const vk::BufferImageCopy> regions ) const noexcept;
 	void 								blit(	vk::CommandBuffer cmd,
 												vk::Image srcImage,
     											vk::ImageLayout srcImageLayout,
     											vk::Image dstImage,
     											vk::ImageLayout dstImageLayout,
 												Utils::BufferView<const vk::ImageBlit> regions,
-    											vk::Filter filter ) const;
+    											vk::Filter filter ) const noexcept;
 	void 								resolve(vk::CommandBuffer cmd,
 												vk::Image srcImage,
     											vk::ImageLayout srcImageLayout,
     											vk::Image dstImage,
     											vk::ImageLayout dstImageLayout,
-												Utils::BufferView<const vk::ImageResolve> regions ) const;
+												Utils::BufferView<const vk::ImageResolve> regions ) const noexcept;
 
 	void								beginRenderPass(vk::CommandBuffer cmd, 
 														const vk::RenderPassBeginInfo& beginInfo, 
-														vk::SubpassContents contents ) const;
-	void								endRenderPass(vk::CommandBuffer cmd) const;
+														vk::SubpassContents contents ) const noexcept;
+	void								endRenderPass(vk::CommandBuffer cmd) const noexcept;
 	void								nextSubpass(	vk::CommandBuffer cmd,
-														vk::SubpassContents contents ) const;
+														vk::SubpassContents contents ) const noexcept;
 	void								bindPipeline(	vk::CommandBuffer cmd, 
 														vk::PipelineBindPoint bindPoint, 
-														vk::Pipeline pipeline ) const;
+														vk::Pipeline pipeline ) const noexcept;
 	void								bindVertexBuffers(	vk::CommandBuffer cmd, 
 															uint32_t firstBinding, 
 															Utils::BufferView<const vk::Buffer> buffers, 
-															Utils::BufferView<const vk::DeviceSize> offsets ) const;
+															Utils::BufferView<const vk::DeviceSize> offsets ) const noexcept;
 	void								bindIndexBuffer(vk::Buffer buffer,
    														size_t offset,
-    													vk::IndexType indexType );
+    													vk::IndexType indexType ) noexcept;
 	void								bindDescriptorSets(	vk::CommandBuffer cmd, 
 															vk::PipelineBindPoint pipelineBindPoint, 
 															vk::PipelineLayout layout, 
 															uint32_t firstSet, 
 															Utils::BufferView<const vk::DescriptorSet> descriptorSets, 
-															Utils::BufferView<const uint32_t> dynamicOffsets) const;
+															Utils::BufferView<const uint32_t> dynamicOffsets) const noexcept;
 	void								draw(	vk::CommandBuffer cmd, 
 												uint32_t vertexCount, 
 												uint32_t instanceCount, 
 												uint32_t firstVertex, 
-												uint32_t firstInstance ) const;
+												uint32_t firstInstance ) const noexcept;
 	void								draw(	vk::CommandBuffer cmd, 
 												vk::Buffer buffer,
     											size_t offset,
     											uint32_t drawCount,
-    											uint32_t stride ) const;
+    											uint32_t stride ) const noexcept;
 	void								drawIndexed(vk::CommandBuffer cmd, 
 													uint32_t indexCount,
     												uint32_t instanceCount,
     												uint32_t firstIndex,
     												int32_t vertexOffset,
-    												uint32_t firstInstance ) const;
+    												uint32_t firstInstance ) const noexcept;
 	void								drawIndexed(vk::CommandBuffer cmd,
 													vk::Buffer buffer,
     												size_t offset,
     												uint32_t drawCount,
-    												uint32_t stride ) const;
+    												uint32_t stride ) const noexcept;
 
 	void								present(vk::SwapchainKHR swapchain,
 												uint32_t imageIndex,

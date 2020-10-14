@@ -19,53 +19,53 @@ struct Resolution{
     	uint32_t height, y;
     };
 
-    constexpr Resolution();
-    constexpr Resolution(uint32_t width, uint32_t height);
+    constexpr Resolution() noexcept;
+    constexpr Resolution(uint32_t width, uint32_t height) noexcept;
     template<typename T>
-    explicit constexpr Resolution(const Math::Vec2<T>& res);
-    constexpr Resolution(const Resolution& other) = default;
+    explicit constexpr Resolution(const Math::Vec2<T>& res) noexcept;
+    constexpr Resolution(const Resolution& other) noexcept = default;
     ~Resolution() = default;
 
     template<typename T>
-    constexpr Resolution& operator=(const Math::Vec2<T>& res);
-    constexpr Resolution& operator=(const Resolution& other) = default;
+    constexpr Resolution& operator=(const Math::Vec2<T>& res) noexcept;
+    constexpr Resolution& operator=(const Resolution& other) noexcept = default;
 
-    constexpr Resolution operator==(const Resolution& other) const;
-    constexpr Resolution operator!=(const Resolution& other) const;
-    constexpr Resolution operator<(const Resolution& other) const;
-    constexpr Resolution operator<=(const Resolution& other) const;
-    constexpr Resolution operator>(const Resolution& other) const;
-    constexpr Resolution operator>=(const Resolution& other) const;
+    constexpr Resolution operator==(const Resolution& other) const noexcept;
+    constexpr Resolution operator!=(const Resolution& other) const noexcept;
+    constexpr Resolution operator<(const Resolution& other) const noexcept;
+    constexpr Resolution operator<=(const Resolution& other) const noexcept;
+    constexpr Resolution operator>(const Resolution& other) const noexcept;
+    constexpr Resolution operator>=(const Resolution& other) const noexcept;
 
-    constexpr Resolution operator+(const Resolution& other) const;
-    constexpr Resolution operator-(const Resolution& other) const;
-    constexpr Resolution operator*(const Resolution& other) const;
-    constexpr Resolution operator/(const Resolution& other) const;
-    constexpr Resolution operator%(const Resolution& other) const;
+    constexpr Resolution operator+(const Resolution& other) const noexcept;
+    constexpr Resolution operator-(const Resolution& other) const noexcept;
+    constexpr Resolution operator*(const Resolution& other) const noexcept;
+    constexpr Resolution operator/(const Resolution& other) const noexcept;
+    constexpr Resolution operator%(const Resolution& other) const noexcept;
 
-    constexpr Resolution& operator+=(const Resolution& other);
-    constexpr Resolution& operator-=(const Resolution& other);
-    constexpr Resolution& operator*=(const Resolution& other);
-    constexpr Resolution& operator/=(const Resolution& other);
-    constexpr Resolution& operator%=(const Resolution& other);
+    constexpr Resolution& operator+=(const Resolution& other) noexcept;
+    constexpr Resolution& operator-=(const Resolution& other) noexcept;
+    constexpr Resolution& operator*=(const Resolution& other) noexcept;
+    constexpr Resolution& operator/=(const Resolution& other) noexcept;
+    constexpr Resolution& operator%=(const Resolution& other) noexcept;
 
 
     template<typename T>
-    constexpr operator Math::Vec2<T>() const;
-    constexpr operator bool() const;
+    constexpr operator Math::Vec2<T>() const noexcept;
+    constexpr operator bool() const noexcept;
 
-	constexpr AspectRatio getAspectRatio() const;
+	constexpr AspectRatio getAspectRatio() const noexcept;
 };
 
 std::ostream& operator<<(std::ostream& os, Resolution res);
 
 namespace Math {
 
-constexpr Resolution min(const Resolution& a, const Resolution& b);
-constexpr Resolution max(const Resolution& a, const Resolution& b);
-constexpr Resolution mod(const Resolution& num, const Resolution& den);
-constexpr Resolution gcd(const Resolution& a, const Resolution& b);
-constexpr Resolution lcm(const Resolution& a, const Resolution& b);
+constexpr Resolution min(const Resolution& a, const Resolution& b) noexcept;
+constexpr Resolution max(const Resolution& a, const Resolution& b) noexcept;
+constexpr Resolution mod(const Resolution& num, const Resolution& den) noexcept;
+constexpr Resolution gcd(const Resolution& a, const Resolution& b) noexcept;
+constexpr Resolution lcm(const Resolution& a, const Resolution& b) noexcept;
 
 }
 
@@ -74,8 +74,8 @@ namespace Utils {
 template<typename T>
 class Any;
 
-constexpr Resolution lowest(const Any<Resolution>& any);
-constexpr Resolution highest(const Any<Resolution>& any);
+constexpr Resolution lowest(const Any<Resolution>& any) noexcept;
+constexpr Resolution highest(const Any<Resolution>& any) noexcept;
 
 }
 

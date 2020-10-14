@@ -28,7 +28,7 @@ enum class BlendingMode {
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(BlendingMode)
 ZUAZO_ENUM_COMP_OPERATORS(BlendingMode)	
 
-constexpr std::string_view toString(BlendingMode format);
+constexpr std::string_view toString(BlendingMode format) noexcept;
 std::ostream& operator<<(std::ostream& os, BlendingMode format);
 
 namespace Utils {
@@ -36,8 +36,8 @@ namespace Utils {
 template<typename T>
 class Any;
 
-constexpr BlendingMode lowest(const Any<BlendingMode>& any);
-constexpr BlendingMode highest(const Any<BlendingMode>& any);
+constexpr BlendingMode lowest(const Any<BlendingMode>& any) noexcept;
+constexpr BlendingMode highest(const Any<BlendingMode>& any) noexcept;
 
 }
 

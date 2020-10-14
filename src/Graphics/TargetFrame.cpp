@@ -29,7 +29,7 @@ TargetFrame::~TargetFrame() {
 
 
 
-vk::Framebuffer TargetFrame::getFramebuffer() const {
+vk::Framebuffer TargetFrame::getFramebuffer() const noexcept {
 	return *m_framebuffer;
 }
 

@@ -81,20 +81,20 @@ struct Drawtable::Impl {
 	}
 
 
-	const Vulkan& getVulkan() const {
+	const Vulkan& getVulkan() const noexcept {
 		return vulkan;
 	}
 
 
-	void setMaxSpareCount(size_t spares) {
+	void setMaxSpareCount(size_t spares) noexcept {
 		framePool.setMaxSpareCount(spares);
 	}
 
-	size_t getMaxSpareCount() const {
+	size_t getMaxSpareCount() const noexcept {
 		return framePool.getMaxSpareCount();
 	}
 
-	size_t getSpareCount() const {
+	size_t getSpareCount() const noexcept {
 		return framePool.getSpareCount();
 	}
 
@@ -166,28 +166,28 @@ Drawtable::Drawtable(	const Vulkan& vulkan,
 {
 }
 
-Drawtable::Drawtable(Drawtable&& other) = default;
+Drawtable::Drawtable(Drawtable&& other) noexcept = default;
 
 Drawtable::~Drawtable() = default;
 
-Drawtable& Drawtable::operator=(Drawtable&& other) = default;
+Drawtable& Drawtable::operator=(Drawtable&& other) noexcept = default;
 
 
 
-const Vulkan& Drawtable::getVulkan() const {
+const Vulkan& Drawtable::getVulkan() const noexcept {
 	return m_impl->getVulkan();
 }
 
 
-void Drawtable::setMaxSpareCount(size_t spares) {
+void Drawtable::setMaxSpareCount(size_t spares) noexcept {
 	m_impl->setMaxSpareCount(spares);
 }
 
-size_t Drawtable::getMaxSpareCount() const {
+size_t Drawtable::getMaxSpareCount() const noexcept {
 	return m_impl->getMaxSpareCount();
 }
 
-size_t Drawtable::getSpareCount() const {
+size_t Drawtable::getSpareCount() const noexcept {
 	return m_impl->getSpareCount();
 }
 

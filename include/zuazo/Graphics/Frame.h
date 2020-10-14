@@ -56,28 +56,28 @@ public:
 			Utils::BufferView<const PlaneDescriptor> planes,
 			vk::ImageUsageFlags usage );
 	Frame(const Frame& other) = delete;
-	Frame(Frame&& other);
+	Frame(Frame&& other) noexcept;
 	virtual ~Frame();
 
 	Frame& 									operator=(const Frame& other) = delete;
-	Frame&									operator=(Frame&& other);
+	Frame&									operator=(Frame&& other) noexcept;
 
 	void									bind(	vk::CommandBuffer cmd,
 													vk::PipelineLayout layout,
 													uint32_t index,
-													vk::Filter filter ) const;
+													vk::Filter filter ) const noexcept;
 
-	void									addDependecy(vk::Fence fence);
-	void									waitDependecies(uint64_t timeo = Vulkan::NO_TIMEOUT) const;
+	void									addDependecy(vk::Fence fence) noexcept;
+	void									waitDependecies(uint64_t timeo = Vulkan::NO_TIMEOUT) const noexcept;
 
-	const Vulkan&							getVulkan() const;
-	const Descriptor&						getDescriptor() const;
-	const Math::Vec2f&						getSize() const;
+	const Vulkan&							getVulkan() const noexcept;
+	const Descriptor&						getDescriptor() const noexcept;
+	const Math::Vec2f&						getSize() const noexcept;
 
-	const std::vector<vk::UniqueImage>&		getImages() const;
-	const std::vector<vk::UniqueImageView>&	getImageViews() const;
-	const std::vector<Utils::Area>&			getPlaneAreas() const;
-	const vk::DeviceMemory&					getMemory() const;
+	const std::vector<vk::UniqueImage>&		getImages() const noexcept;
+	const std::vector<vk::UniqueImageView>&	getImageViews() const noexcept;
+	const std::vector<Utils::Area>&			getPlaneAreas() const noexcept;
+	const vk::DeviceMemory&					getMemory() const noexcept;
 
 	static std::shared_ptr<StagedBuffer>	createColorTransferBuffer(	const Vulkan& vulkan,
 																		const InputColorTransfer& colorTransfer );
@@ -99,23 +99,23 @@ public:
 				size_t positionOffset,
 				size_t texCoordOffset,
 				ScalingMode scaling = ScalingMode::STRETCH,
-				Math::Vec2f targetSize = Math::Vec2f() );
-	Geometry(const Geometry& other) = default;
+				Math::Vec2f targetSize = Math::Vec2f() ) noexcept;
+	Geometry(const Geometry& other) noexcept = default;
 	~Geometry() = default;
 
-	Geometry&								operator=(const Geometry& other) = default;
+	Geometry&								operator=(const Geometry& other) noexcept = default;
 
-	void									setScalingMode(ScalingMode scaling);
-	ScalingMode								getScalingMode() const;
+	void									setScalingMode(ScalingMode scaling) noexcept;
+	ScalingMode								getScalingMode() const noexcept;
 
-	void									setTargetSize(Math::Vec2f size);
-	const Math::Vec2f&						getTargetSize() const;
+	void									setTargetSize(Math::Vec2f size) noexcept;
+	const Math::Vec2f&						getTargetSize() const noexcept;
 
 	bool									useFrame(const Frame& frame);
 	
 	static constexpr size_t					VERTEX_COUNT = 4;
 
-	static Math::Vec2f						calculateSize(Resolution res, AspectRatio par);
+	static Math::Vec2f						calculateSize(Resolution res, AspectRatio par) noexcept;
 
 private:
 	std::byte*								m_data;

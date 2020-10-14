@@ -2,7 +2,7 @@
 
 namespace Zuazo {
 	
-constexpr std::string_view toString(ColorTransferFunction colorTransferFunc) {
+constexpr std::string_view toString(ColorTransferFunction colorTransferFunc) noexcept {
 	switch(colorTransferFunc){
 
 	ZUAZO_ENUM2STR_CASE( ColorTransferFunction, LINEAR )
@@ -29,11 +29,11 @@ inline std::ostream& operator<<(std::ostream& os, ColorTransferFunction colorTra
 
 namespace Utils {
 
-constexpr ColorTransferFunction lowest(const Any<ColorTransferFunction>&) {
+constexpr ColorTransferFunction lowest(const Any<ColorTransferFunction>&) noexcept {
 	return ColorTransferFunction::NONE + static_cast<ColorTransferFunction>(1);
 }
 
-constexpr ColorTransferFunction highest(const Any<ColorTransferFunction>&) {
+constexpr ColorTransferFunction highest(const Any<ColorTransferFunction>&) noexcept {
 	return ColorTransferFunction::COUNT - static_cast<ColorTransferFunction>(1);
 }
 

@@ -14,31 +14,31 @@ StagedBuffer::StagedBuffer(	const Vulkan& vulkan,
 {
 }
 
-StagedBuffer::StagedBuffer(StagedBuffer&& other) = default;
+StagedBuffer::StagedBuffer(StagedBuffer&& other) noexcept = default;
 
 StagedBuffer::~StagedBuffer() = default;
 
-StagedBuffer& StagedBuffer::operator=(StagedBuffer&& other) = default;
+StagedBuffer& StagedBuffer::operator=(StagedBuffer&& other) noexcept = default;
 
 
 
-std::byte* StagedBuffer::data() {
+std::byte* StagedBuffer::data() noexcept {
 	return m_data.data();
 }
 
-const std::byte* StagedBuffer::data() const {
+const std::byte* StagedBuffer::data() const noexcept {
 	return m_data.data();
 }
 
-size_t StagedBuffer::size() const {
+size_t StagedBuffer::size() const noexcept {
 	return m_data.size();
 }
 
-const Utils::BufferView<std::byte>& StagedBuffer::getData() {
+const Utils::BufferView<std::byte>& StagedBuffer::getData() noexcept {
 	return m_data;
 }
 
-Utils::BufferView<const std::byte> StagedBuffer::getData() const {
+Utils::BufferView<const std::byte> StagedBuffer::getData() const noexcept {
 	return m_data;
 }
 

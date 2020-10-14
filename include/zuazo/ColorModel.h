@@ -29,19 +29,19 @@ enum class ColorModel {
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorModel)
 ZUAZO_ENUM_COMP_OPERATORS(ColorModel)
 
-constexpr bool isYCbCr(ColorModel colorModel);
+constexpr bool isYCbCr(ColorModel colorModel) noexcept;
 
 template<typename T>
 constexpr Math::Mat4x4<T> constructRGB2YCbCrConversionMatrix(	const T y_r,  const T y_g,  const T y_b,
 																const T cb_r, const T cb_g, const T cb_b,
-																const T cr_r, const T cr_g, const T cr_b );
+																const T cr_r, const T cr_g, const T cr_b ) noexcept;
 
 template<typename T>
-constexpr Math::Mat4x4<T> constructRGB2YCbCrConversionMatrix(const T k_r,  const T k_b);
+constexpr Math::Mat4x4<T> constructRGB2YCbCrConversionMatrix(const T k_r,  const T k_b) noexcept;
 
-constexpr Math::Mat4x4f getRGB2YCbCrConversionMatrix(ColorModel colorModel);
+constexpr Math::Mat4x4f getRGB2YCbCrConversionMatrix(ColorModel colorModel) noexcept;
 
-constexpr std::string_view toString(ColorModel colorModel);
+constexpr std::string_view toString(ColorModel colorModel) noexcept;
 std::ostream& operator<<(std::ostream& os, ColorModel model);
 
 namespace Utils {
@@ -49,8 +49,8 @@ namespace Utils {
 template<typename T>
 class Any;
 
-constexpr ColorModel lowest(const Any<ColorModel>& any);
-constexpr ColorModel highest(const Any<ColorModel>& any);
+constexpr ColorModel lowest(const Any<ColorModel>& any) noexcept;
+constexpr ColorModel highest(const Any<ColorModel>& any) noexcept;
 
 }
 

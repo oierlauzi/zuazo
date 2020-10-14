@@ -1,7 +1,5 @@
 #include <zuazo/Graphics/Vulkan.h>
 
-#include "VulkanUtils.h"
-
 #include <zuazo/Graphics/VulkanConversions.h>
 #include <zuazo/Utils/Functions.h>
 #include <zuazo/Zuazo.h>
@@ -94,71 +92,71 @@ struct Vulkan::Impl {
 
 	~Impl() = default;
 
-	const vk::DynamicLoader& getLoader() const{
+	const vk::DynamicLoader& getLoader() const noexcept {
 		return loader;
 	}
 
-	const vk::DispatchLoaderDynamic& getDispatcher() const{
+	const vk::DispatchLoaderDynamic& getDispatcher() const noexcept {
 		return dispatcher;
 	}
 
-	vk::Instance getInstance() const{
+	vk::Instance getInstance() const noexcept {
 		return *instance;
 	}
 
-	vk::PhysicalDevice getPhysicalDevice() const{
+	vk::PhysicalDevice getPhysicalDevice() const noexcept {
 		return physicalDevice;
 	}
 
-	const vk::PhysicalDeviceProperties&	getPhysicalDeviceProperties() const {
+	const vk::PhysicalDeviceProperties&	getPhysicalDeviceProperties() const noexcept {
 		return physicalDeviceProperties;
 	}
 
-	vk::Device getDevice() const{
+	vk::Device getDevice() const noexcept {
 		return *device;
 	}
 
-	uint32_t getGraphicsQueueIndex() const{
+	uint32_t getGraphicsQueueIndex() const noexcept {
 		return queueIndices[GRAPHICS_QUEUE];
 	}
 
-	vk::Queue getGraphicsQueue() const{
+	vk::Queue getGraphicsQueue() const noexcept {
 		return queues[GRAPHICS_QUEUE];
 	}
 
-	uint32_t getComputeQueueIndex() const{
+	uint32_t getComputeQueueIndex() const noexcept {
 		return queueIndices[COMPUTE_QUEUE];
 	}
 
-	vk::Queue getComputeQueue() const{
+	vk::Queue getComputeQueue() const noexcept {
 		return queues[COMPUTE_QUEUE];
 	}
 
-	uint32_t getTransferQueueIndex() const{
+	uint32_t getTransferQueueIndex() const noexcept {
 		return queueIndices[TRANSFER_QUEUE];
 	}
 
-	vk::Queue getTransferQueue() const{
+	vk::Queue getTransferQueue() const noexcept {
 		return queues[TRANSFER_QUEUE];
 	}
 
-	uint32_t getPresentationQueueIndex() const{
+	uint32_t getPresentationQueueIndex() const noexcept {
 		return queueIndices[PRESENTATION_QUEUE];
 	}
 
-	vk::Queue getPresentationQueue() const{
+	vk::Queue getPresentationQueue() const noexcept {
 		return queues[PRESENTATION_QUEUE];
 	}
 
-	vk::PipelineCache getPipelineCache() const {
+	vk::PipelineCache getPipelineCache() const noexcept {
 		return *pipelineCache;
 	}
 
-	const FormatSupport& getFormatSupport() const{
+	const FormatSupport& getFormatSupport() const noexcept {
 		return formatSupport;
 	}
 
-	vk::FormatProperties getFormatFeatures(vk::Format format) const {
+	vk::FormatProperties getFormatFeatures(vk::Format format) const{
 		return physicalDevice.getFormatProperties(format, dispatcher);
 	}
 
@@ -531,7 +529,7 @@ struct Vulkan::Impl {
 
 
 	void execute(	vk::CommandBuffer cmd,
-					Utils::BufferView<const vk::CommandBuffer> buf ) const
+					Utils::BufferView<const vk::CommandBuffer> buf ) const noexcept
 	{
 		cmd.executeCommands(toVulkan(buf), dispatcher);
 	}
@@ -543,7 +541,7 @@ struct Vulkan::Impl {
 							vk::DependencyFlags dependencyFlags,
 							Utils::BufferView<const vk::MemoryBarrier> memoryBarriers,
 							Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers,
-							Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) const
+							Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) const noexcept
 	{
 		cmd.pipelineBarrier(
 			srcStageMask, 
@@ -560,7 +558,7 @@ struct Vulkan::Impl {
 							vk::PipelineStageFlags srcStageMask,
 							vk::PipelineStageFlags dstStageMask,
 							vk::DependencyFlags dependencyFlags,
-							Utils::BufferView<const vk::MemoryBarrier> memoryBarriers ) const
+							Utils::BufferView<const vk::MemoryBarrier> memoryBarriers ) const noexcept
 	{
 		pipelineBarrier(cmd, srcStageMask, dstStageMask, dependencyFlags, memoryBarriers, {}, {});
 	}
@@ -569,7 +567,7 @@ struct Vulkan::Impl {
 							vk::PipelineStageFlags srcStageMask,
 							vk::PipelineStageFlags dstStageMask,
 							vk::DependencyFlags dependencyFlags,
-							Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers ) const
+							Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers ) const noexcept
 	{
 		pipelineBarrier(cmd, srcStageMask, dstStageMask, dependencyFlags, {}, bufferMemoryBarriers, {});
 	}
@@ -578,7 +576,7 @@ struct Vulkan::Impl {
 							vk::PipelineStageFlags srcStageMask,
 							vk::PipelineStageFlags dstStageMask,
 							vk::DependencyFlags dependencyFlags,
-							Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) const
+							Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) const noexcept
 	{
 		pipelineBarrier(cmd, srcStageMask, dstStageMask, dependencyFlags, {}, {}, imageMemoryBarriers);
 	}
@@ -588,7 +586,7 @@ struct Vulkan::Impl {
 				vk::Image image,
 				vk::ImageLayout imageLayout,
 				const vk::ClearColorValue& value,
-				Utils::BufferView<const vk::ImageSubresourceRange> ranges ) const
+				Utils::BufferView<const vk::ImageSubresourceRange> ranges ) const noexcept
 	{
 		cmd.clearColorImage(image, imageLayout, value, toVulkan(ranges), dispatcher);
 	}
@@ -597,14 +595,14 @@ struct Vulkan::Impl {
 				vk::Image image,
 				vk::ImageLayout imageLayout,
 				const vk::ClearDepthStencilValue& value,
-				Utils::BufferView<const vk::ImageSubresourceRange> ranges ) const
+				Utils::BufferView<const vk::ImageSubresourceRange> ranges ) const noexcept
 	{
 		cmd.clearDepthStencilImage(image, imageLayout, value, toVulkan(ranges), dispatcher);
 	}
 
 	void clear(	vk::CommandBuffer cmd,
 				Utils::BufferView<const vk::ClearAttachment> attachments,
-				Utils::BufferView<const vk::ClearRect> rects ) const
+				Utils::BufferView<const vk::ClearRect> rects ) const noexcept
 	{
 		cmd.clearAttachments(toVulkan(attachments), toVulkan(rects), dispatcher);
 	}
@@ -612,7 +610,7 @@ struct Vulkan::Impl {
 	void clear(	vk::CommandBuffer cmd,
 				vk::Buffer buffer,
 				const Utils::Area& area,
-				uint32_t data ) const
+				uint32_t data ) const noexcept
 	{
 		cmd.fillBuffer(buffer, area.offset(), area.size(), data, dispatcher);
 	}
@@ -620,7 +618,7 @@ struct Vulkan::Impl {
 	void clear(	vk::CommandBuffer cmd,
 				vk::Buffer buffer,
 				const Utils::Area& area,
-				const std::byte* data ) const
+				const std::byte* data ) const noexcept
 	{
 		cmd.updateBuffer(buffer, area.offset(), area.size(), static_cast<const void*>(data), dispatcher);
 	}
@@ -629,7 +627,7 @@ struct Vulkan::Impl {
 	void copy(	vk::CommandBuffer cmd,
 				vk::Buffer srcBuffer,
 				vk::Buffer dstBuffer,
-				Utils::BufferView<const vk::BufferCopy> regions ) const
+				Utils::BufferView<const vk::BufferCopy> regions ) const noexcept
 	{
 		cmd.copyBuffer(srcBuffer, dstBuffer, toVulkan(regions), dispatcher);
 	}
@@ -639,7 +637,7 @@ struct Vulkan::Impl {
     			vk::ImageLayout srcImageLayout,
     			vk::Image dstImage,
     			vk::ImageLayout dstImageLayout,
-				Utils::BufferView<const vk::ImageCopy> regions ) const
+				Utils::BufferView<const vk::ImageCopy> regions ) const noexcept
 	{
 		cmd.copyImage(srcImage, srcImageLayout, dstImage, dstImageLayout, toVulkan(regions), dispatcher);
 	}
@@ -648,7 +646,7 @@ struct Vulkan::Impl {
 				vk::Buffer srcBuffer,
     			vk::Image dstImage,
     			vk::ImageLayout dstImageLayout,
-				Utils::BufferView<const vk::BufferImageCopy> regions ) const
+				Utils::BufferView<const vk::BufferImageCopy> regions ) const noexcept
 	{
 		cmd.copyBufferToImage(srcBuffer, dstImage, dstImageLayout, toVulkan(regions), dispatcher);
 	}
@@ -657,7 +655,7 @@ struct Vulkan::Impl {
 				vk::Image srcImage,
     			vk::ImageLayout srcImageLayout,
     			vk::Buffer dstBuffer,
-				Utils::BufferView<const vk::BufferImageCopy> regions ) const
+				Utils::BufferView<const vk::BufferImageCopy> regions ) const noexcept
 	{
 		cmd.copyImageToBuffer(srcImage, srcImageLayout, dstBuffer, toVulkan(regions), dispatcher);
 	}
@@ -668,7 +666,7 @@ struct Vulkan::Impl {
     			vk::Image dstImage,
     			vk::ImageLayout dstImageLayout,
 				Utils::BufferView<const vk::ImageBlit> regions,
-    			vk::Filter filter ) const
+    			vk::Filter filter ) const noexcept
 	{
 		cmd.blitImage(srcImage, srcImageLayout, dstImage, dstImageLayout, toVulkan(regions), filter, dispatcher);
 	}
@@ -678,7 +676,7 @@ struct Vulkan::Impl {
 					vk::ImageLayout srcImageLayout,
 					vk::Image dstImage,
 					vk::ImageLayout dstImageLayout,
-					Utils::BufferView<const vk::ImageResolve> regions ) const
+					Utils::BufferView<const vk::ImageResolve> regions ) const noexcept
 	{
 		cmd.resolveImage(srcImage, srcImageLayout, dstImage, dstImageLayout, toVulkan(regions), dispatcher);
 	}
@@ -687,24 +685,24 @@ struct Vulkan::Impl {
 
 	void beginRenderPass(	vk::CommandBuffer cmd, 
 							const vk::RenderPassBeginInfo& beginInfo, 
-							vk::SubpassContents contents ) const
+							vk::SubpassContents contents ) const noexcept
 	{
 		cmd.beginRenderPass(beginInfo, contents, dispatcher);
 	}
 
-	void endRenderPass(vk::CommandBuffer cmd) const {
+	void endRenderPass(vk::CommandBuffer cmd) const noexcept {
 		cmd.endRenderPass(dispatcher);
 	}
 
 	void nextSubpass(	vk::CommandBuffer cmd,
-						vk::SubpassContents contents ) const
+						vk::SubpassContents contents ) const noexcept
 	{
 		cmd.nextSubpass(contents, dispatcher);
 	}
 
 	void bindPipeline(	vk::CommandBuffer cmd, 
 						vk::PipelineBindPoint bindPoint, 
-						vk::Pipeline pipeline ) const
+						vk::Pipeline pipeline ) const noexcept
 	{
 		cmd.bindPipeline(bindPoint, pipeline, dispatcher);
 	}
@@ -712,7 +710,7 @@ struct Vulkan::Impl {
 	void bindVertexBuffers(	vk::CommandBuffer cmd, 
 							uint32_t firstBinding, 
 							Utils::BufferView<const vk::Buffer> buffers, 
-							Utils::BufferView<const vk::DeviceSize> offsets ) const
+							Utils::BufferView<const vk::DeviceSize> offsets ) const noexcept
 	{
 		cmd.bindVertexBuffers(
 			firstBinding, 
@@ -727,7 +725,7 @@ struct Vulkan::Impl {
 							vk::PipelineLayout layout, 
 							uint32_t firstSet, 
 							Utils::BufferView<const vk::DescriptorSet> descriptorSets, 
-							Utils::BufferView<const uint32_t> dynamicOffsets) const
+							Utils::BufferView<const uint32_t> dynamicOffsets) const noexcept
 	{
 		cmd.bindDescriptorSets(
 			pipelineBindPoint, 
@@ -742,7 +740,7 @@ struct Vulkan::Impl {
 				uint32_t vertexCount, 
 				uint32_t instanceCount, 
 				uint32_t firstVertex, 
-				uint32_t firstInstance ) const
+				uint32_t firstInstance ) const noexcept
 	{
 		cmd.draw(vertexCount, instanceCount, firstVertex, firstInstance, dispatcher);
 	}
@@ -751,7 +749,7 @@ struct Vulkan::Impl {
 				vk::Buffer buffer,
 				size_t offset,
 				uint32_t drawCount,
-				uint32_t stride ) const
+				uint32_t stride ) const noexcept
 	{
 		cmd.drawIndirect(buffer, offset, drawCount, stride, dispatcher);
 	}
@@ -761,7 +759,7 @@ struct Vulkan::Impl {
 						uint32_t instanceCount,
 						uint32_t firstIndex,
 						int32_t vertexOffset,
-						uint32_t firstInstance ) const
+						uint32_t firstInstance ) const noexcept
 	{
 		cmd.drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance, dispatcher);
 	}
@@ -770,7 +768,7 @@ struct Vulkan::Impl {
 						vk::Buffer buffer,
     					size_t offset,
     					uint32_t drawCount,
-    					uint32_t stride ) const
+    					uint32_t stride ) const noexcept
 	{
 		cmd.drawIndexedIndirect(buffer, offset, drawCount, stride, dispatcher);
 	}
@@ -779,7 +777,7 @@ struct Vulkan::Impl {
 
 	void present(	vk::SwapchainKHR swapchain,
 					uint32_t imageIndex,
-					vk::Semaphore waitSemaphore ) const 
+					vk::Semaphore waitSemaphore ) const
 	{
 		presentSwapchains.emplace_back(swapchain);
 		presentIndices.emplace_back(imageIndex);
@@ -1184,6 +1182,145 @@ private:
 		}
 	}
 
+	static std::vector<vk::LayerProperties> getUsedLayers(	const std::vector<vk::LayerProperties>& available, 
+															std::vector<vk::LayerProperties>& required )
+	{
+		std::vector<vk::LayerProperties> layers;
+
+		auto ite = required.begin();
+		while(ite != required.end()){
+			bool found = false;
+
+			for(const auto& availableVl : available){
+				if(std::strncmp(ite->layerName, availableVl.layerName, VK_MAX_EXTENSION_NAME_SIZE) == 0){
+					if(ite->specVersion <= availableVl.specVersion){
+						layers.push_back(availableVl);
+						found = true;
+						break;
+					}
+				}
+			}
+
+			//Advance to the next one
+			if(found){
+				ite = required.erase(ite);
+			}else {
+				++ite;
+			}
+		}
+
+		return layers;
+	}
+
+	static std::vector<const char*> getNames(const std::vector<vk::LayerProperties>& layers) {
+		std::vector<const char*> names(layers.size());
+
+		for(size_t i = 0; i < names.size(); i++){
+			names[i] = layers[i].layerName;
+		}
+
+		return names;
+	}
+
+
+
+
+	static std::vector<vk::ExtensionProperties> getUsedExtensions(	const std::vector<vk::ExtensionProperties>& available, 
+																	std::vector<vk::ExtensionProperties>& required )
+	{
+		std::vector<vk::ExtensionProperties> extensions;
+
+		//Check for availability of all required extensions
+		auto ite = required.begin();
+		while(ite != required.end()){
+			bool found = false;
+
+			for(const auto& availableExt : available){
+				if(std::strncmp(ite->extensionName, availableExt.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0){
+					if(ite->specVersion <= availableExt.specVersion){
+						extensions.push_back(availableExt);
+						found = true;
+						break;
+					}
+				}
+			}
+
+			//Advance to the next one
+			if(found){
+				ite = required.erase(ite);
+			}else {
+				++ite;
+			}
+		}
+
+		return extensions;
+	}
+
+	static std::vector<const char*> getNames(const std::vector<vk::ExtensionProperties>& ext) {
+		std::vector<const char*> names(ext.size());
+
+		for(size_t i = 0; i < names.size(); i++){
+			names[i] = ext[i].extensionName;
+		}
+
+		return names;
+	}
+
+	static std::vector<vk::QueueFamilyProperties> getUsedQueueFamilies(	const std::vector<vk::QueueFamilyProperties>& available, 
+																		std::vector<vk::QueueFamilyProperties>& required )
+	{
+		std::vector<vk::QueueFamilyProperties> queueFamilies;
+
+		auto ite = required.begin();
+		while(ite != required.end()){
+			for(const auto& availableQf : available){
+				if((ite->queueFlags & availableQf.queueFlags) == ite->queueFlags){
+					vk::QueueFamilyProperties queue = availableQf;
+
+					if(ite->queueCount > availableQf.queueCount){
+						//Not enough of this queue family. Add the exisiting ones
+						queueFamilies.push_back(queue);
+						ite->queueCount -= queue.queueCount;
+					} else {
+						//Add only the required amount
+						queue.queueCount = ite->queueCount;
+						queueFamilies.push_back(queue);
+						ite->queueCount = 0;
+						break;
+					}
+				}
+			}
+
+			//Next requirement
+			if(ite->queueCount == 0){
+				ite = required.erase(ite);
+			}else {
+				++ite;
+			}
+		}
+		
+		return queueFamilies;
+	}
+
+	static size_t getQueueFamilyIndex(const std::vector<vk::QueueFamilyProperties>& qf, vk::QueueFlags flags) {
+		size_t i;
+
+		for(i = 0; i < qf.size(); i++){
+			if((qf[i].queueFlags & flags) == flags && qf[i].queueCount > 0) {
+				return i;
+			}
+		}
+
+		if((flags & vk::QueueFlagBits::eTransfer) == vk::QueueFlagBits::eTransfer) {
+			//Graphics queue should be also OK
+			return getQueueFamilyIndex(qf, (flags ^ vk::QueueFlagBits::eTransfer) | vk::QueueFlagBits::eGraphics);
+		}
+
+		//Failed to find a suitable queue family
+		throw Exception("Requested queue family not found!");
+	}
+
+
 	/*
 	 * Validation layer callback
 	 */
@@ -1273,75 +1410,75 @@ Vulkan::Vulkan(	const std::string& appName,
 {
 }
 
-Vulkan::Vulkan(Vulkan&& other) = default;
+Vulkan::Vulkan(Vulkan&& other) noexcept  = default;
 
 Vulkan::~Vulkan() = default;
 
-Vulkan& Vulkan::operator=(Vulkan&& other) = default; 
+Vulkan& Vulkan::operator=(Vulkan&& other) noexcept  = default; 
 
 
 
-const vk::DynamicLoader& Vulkan::getLoader() const{
+const vk::DynamicLoader& Vulkan::getLoader() const noexcept {
 	return m_impl->getLoader();
 }
 
-const vk::DispatchLoaderDynamic& Vulkan::getDispatcher() const{
+const vk::DispatchLoaderDynamic& Vulkan::getDispatcher() const noexcept {
 	return m_impl->getDispatcher();
 }
 
-vk::Instance Vulkan::getInstance() const{
+vk::Instance Vulkan::getInstance() const noexcept {
 	return m_impl->getInstance();
 }
 
-vk::PhysicalDevice Vulkan::getPhysicalDevice() const{
+vk::PhysicalDevice Vulkan::getPhysicalDevice() const noexcept {
 	return m_impl->getPhysicalDevice();
 }
 
-const vk::PhysicalDeviceProperties&	Vulkan::getPhysicalDeviceProperties() const { 
+const vk::PhysicalDeviceProperties&	Vulkan::getPhysicalDeviceProperties() const noexcept { 
 	return m_impl->getPhysicalDeviceProperties();
 }
 
-vk::Device Vulkan::getDevice() const{
+vk::Device Vulkan::getDevice() const noexcept {
 	return m_impl->getDevice();
 }
 
-uint32_t Vulkan::getGraphicsQueueIndex() const{
+uint32_t Vulkan::getGraphicsQueueIndex() const noexcept {
 	return m_impl->getGraphicsQueueIndex();
 }
 
-vk::Queue Vulkan::getGraphicsQueue() const{
+vk::Queue Vulkan::getGraphicsQueue() const noexcept {
 	return m_impl->getGraphicsQueue();
 }
 
-uint32_t Vulkan::getComputeQueueIndex() const{
+uint32_t Vulkan::getComputeQueueIndex() const noexcept {
 	return m_impl->getComputeQueueIndex();
 }
 
-vk::Queue Vulkan::getComputeQueue() const{
+vk::Queue Vulkan::getComputeQueue() const noexcept {
 	return m_impl->getComputeQueue();
 }
 
-uint32_t Vulkan::getTransferQueueIndex() const{
+uint32_t Vulkan::getTransferQueueIndex() const noexcept {
 	return m_impl->getTransferQueueIndex();
 }
 
-vk::Queue Vulkan::getTransferQueue() const{
+vk::Queue Vulkan::getTransferQueue() const noexcept {
 	return m_impl->getTransferQueue();
 }
 
-uint32_t Vulkan::getPresentationQueueIndex() const{
+uint32_t Vulkan::getPresentationQueueIndex() const noexcept {
 	return m_impl->getPresentationQueueIndex();
 }
 
-vk::Queue Vulkan::getPresentationQueue() const{
+vk::Queue Vulkan::getPresentationQueue() const noexcept {
 	return m_impl->getPresentationQueue();
 }
 
-vk::PipelineCache Vulkan::getPipelineCache() const {
+vk::PipelineCache Vulkan::getPipelineCache() const noexcept {
 	return m_impl->getPipelineCache();
 }
 
-const Vulkan::FormatSupport& Vulkan::getFormatSupport() const {
+const Vulkan::FormatSupport& Vulkan::getFormatSupport() const noexcept {
 	return m_impl->getFormatSupport();
 }
 
@@ -1593,7 +1730,7 @@ void Vulkan::end(vk::CommandBuffer cmd) const {
 
 
 void Vulkan::execute(	vk::CommandBuffer cmd,
-						Utils::BufferView<const vk::CommandBuffer> buf ) const
+						Utils::BufferView<const vk::CommandBuffer> buf ) const noexcept
 {
 	m_impl->execute(cmd, buf);
 }
@@ -1605,7 +1742,7 @@ void Vulkan::pipelineBarrier(	vk::CommandBuffer cmd,
 								vk::DependencyFlags dependencyFlags,
 								Utils::BufferView<const vk::MemoryBarrier> memoryBarriers,
 								Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers,
-								Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) const
+								Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) const noexcept
 {
 	m_impl->pipelineBarrier(
 		cmd,
@@ -1622,7 +1759,7 @@ void Vulkan::pipelineBarrier(	vk::CommandBuffer cmd,
 								vk::PipelineStageFlags srcStageMask,
 								vk::PipelineStageFlags dstStageMask,
 								vk::DependencyFlags dependencyFlags,
-								Utils::BufferView<const vk::MemoryBarrier> memoryBarriers ) const
+								Utils::BufferView<const vk::MemoryBarrier> memoryBarriers ) const noexcept
 {
 	m_impl->pipelineBarrier(cmd, srcStageMask, dstStageMask, dependencyFlags, memoryBarriers);
 }
@@ -1631,7 +1768,7 @@ void Vulkan::pipelineBarrier(	vk::CommandBuffer cmd,
 								vk::PipelineStageFlags srcStageMask,
 								vk::PipelineStageFlags dstStageMask,
 								vk::DependencyFlags dependencyFlags,
-								Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers ) const
+								Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers ) const noexcept
 {
 	m_impl->pipelineBarrier(cmd, srcStageMask, dstStageMask, dependencyFlags, bufferMemoryBarriers);
 }
@@ -1640,7 +1777,7 @@ void Vulkan::pipelineBarrier(	vk::CommandBuffer cmd,
 								vk::PipelineStageFlags srcStageMask,
 								vk::PipelineStageFlags dstStageMask,
 								vk::DependencyFlags dependencyFlags,
-								Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) const
+								Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) const noexcept
 {
 	m_impl->pipelineBarrier(cmd, srcStageMask, dstStageMask, dependencyFlags, imageMemoryBarriers);
 }
@@ -1650,7 +1787,7 @@ void Vulkan::clear(	vk::CommandBuffer cmd,
 					vk::Image image,
 					vk::ImageLayout imageLayout,
 					const vk::ClearColorValue& value,
-					Utils::BufferView<const vk::ImageSubresourceRange> ranges ) const
+					Utils::BufferView<const vk::ImageSubresourceRange> ranges ) const noexcept
 {
 	m_impl->clear(cmd, image, imageLayout, value, ranges);
 }
@@ -1659,14 +1796,14 @@ void Vulkan::clear(	vk::CommandBuffer cmd,
 					vk::Image image,
 					vk::ImageLayout imageLayout,
 					const vk::ClearDepthStencilValue& value,
-					Utils::BufferView<const vk::ImageSubresourceRange> ranges ) const
+					Utils::BufferView<const vk::ImageSubresourceRange> ranges ) const noexcept
 {
 	m_impl->clear(cmd, image, imageLayout, value, ranges);
 }
 
 void Vulkan::clear(	vk::CommandBuffer cmd,
 					Utils::BufferView<const vk::ClearAttachment> attachments,
-					Utils::BufferView<const vk::ClearRect> rects ) const
+					Utils::BufferView<const vk::ClearRect> rects ) const noexcept
 {
 	m_impl->clear(cmd, attachments, rects);
 }
@@ -1674,7 +1811,7 @@ void Vulkan::clear(	vk::CommandBuffer cmd,
 void Vulkan::clear(	vk::CommandBuffer cmd,
 					vk::Buffer buffer,
 					const Utils::Area& area,
-					uint32_t data ) const
+					uint32_t data ) const noexcept
 {
 	m_impl->clear(cmd, buffer, area, data);
 }
@@ -1682,7 +1819,7 @@ void Vulkan::clear(	vk::CommandBuffer cmd,
 void Vulkan::clear(	vk::CommandBuffer cmd,
 					vk::Buffer buffer,
 					const Utils::Area& area,
-					const std::byte* data ) const
+					const std::byte* data ) const noexcept
 {
 	m_impl->clear(cmd, buffer, area, data);
 }
@@ -1691,7 +1828,7 @@ void Vulkan::clear(	vk::CommandBuffer cmd,
 void Vulkan::copy(	vk::CommandBuffer cmd,
 					vk::Buffer srcBuffer,
 					vk::Buffer dstBuffer,
-					Utils::BufferView<const vk::BufferCopy> regions ) const
+					Utils::BufferView<const vk::BufferCopy> regions ) const noexcept
 {
 	m_impl->copy(cmd, srcBuffer, dstBuffer, regions);
 }
@@ -1701,7 +1838,7 @@ void Vulkan::copy(	vk::CommandBuffer cmd,
 					vk::ImageLayout srcImageLayout,
 					vk::Image dstImage,
 					vk::ImageLayout dstImageLayout,
-					Utils::BufferView<const vk::ImageCopy> regions ) const
+					Utils::BufferView<const vk::ImageCopy> regions ) const noexcept
 {
 	m_impl->copy(cmd, srcImage, srcImageLayout, dstImage, dstImageLayout, regions);
 }
@@ -1710,7 +1847,7 @@ void Vulkan::copy(	vk::CommandBuffer cmd,
 					vk::Buffer srcBuffer,
 					vk::Image dstImage,
 					vk::ImageLayout dstImageLayout,
-					Utils::BufferView<const vk::BufferImageCopy> regions ) const
+					Utils::BufferView<const vk::BufferImageCopy> regions ) const noexcept
 {
 	m_impl->copy(cmd, srcBuffer, dstImage, dstImageLayout, regions);
 }
@@ -1719,7 +1856,7 @@ void Vulkan::copy(	vk::CommandBuffer cmd,
 					vk::Image srcImage,
 					vk::ImageLayout srcImageLayout,
 					vk::Buffer dstBuffer,
-					Utils::BufferView<const vk::BufferImageCopy> regions ) const
+					Utils::BufferView<const vk::BufferImageCopy> regions ) const noexcept
 {
 	m_impl->copy(cmd, srcImage, srcImageLayout, dstBuffer, regions);
 }
@@ -1730,7 +1867,7 @@ void Vulkan::blit(	vk::CommandBuffer cmd,
 					vk::Image dstImage,
 					vk::ImageLayout dstImageLayout,
 					Utils::BufferView<const vk::ImageBlit> regions,
-					vk::Filter filter ) const
+					vk::Filter filter ) const noexcept
 {
 	m_impl->blit(cmd, srcImage, srcImageLayout, dstImage, dstImageLayout, regions, filter);
 }
@@ -1740,7 +1877,7 @@ void Vulkan::resolve(	vk::CommandBuffer cmd,
 						vk::ImageLayout srcImageLayout,
 						vk::Image dstImage,
 						vk::ImageLayout dstImageLayout,
-						Utils::BufferView<const vk::ImageResolve> regions ) const
+						Utils::BufferView<const vk::ImageResolve> regions ) const noexcept
 {
 	m_impl->resolve(cmd, srcImage, srcImageLayout, dstImage, dstImageLayout, regions);
 }
@@ -1748,24 +1885,24 @@ void Vulkan::resolve(	vk::CommandBuffer cmd,
 
 void Vulkan::beginRenderPass(vk::CommandBuffer cmd, 
 							const vk::RenderPassBeginInfo& beginInfo, 
-							vk::SubpassContents contents ) const
+							vk::SubpassContents contents ) const noexcept
 {
 	m_impl->beginRenderPass(cmd, beginInfo, contents);
 }
 
-void Vulkan::endRenderPass(vk::CommandBuffer cmd) const {
+void Vulkan::endRenderPass(vk::CommandBuffer cmd) const noexcept {
 	m_impl->endRenderPass(cmd);
 }
 
 void Vulkan::nextSubpass(	vk::CommandBuffer cmd,
-							vk::SubpassContents contents ) const
+							vk::SubpassContents contents ) const noexcept
 {
 	m_impl->nextSubpass(cmd, contents);
 }
 
 void Vulkan::bindPipeline(	vk::CommandBuffer cmd, 
 							vk::PipelineBindPoint bindPoint, 
-							vk::Pipeline pipeline ) const
+							vk::Pipeline pipeline ) const noexcept
 {
 	m_impl->bindPipeline(cmd, bindPoint, pipeline);
 }
@@ -1773,7 +1910,7 @@ void Vulkan::bindPipeline(	vk::CommandBuffer cmd,
 void Vulkan::bindVertexBuffers(	vk::CommandBuffer cmd, 
 								uint32_t firstBinding, 
 								Utils::BufferView<const vk::Buffer> buffers, 
-								Utils::BufferView<const vk::DeviceSize> offsets ) const
+								Utils::BufferView<const vk::DeviceSize> offsets ) const noexcept
 {
 	m_impl->bindVertexBuffers(cmd, firstBinding, buffers, offsets);
 }
@@ -1783,7 +1920,7 @@ void Vulkan::bindDescriptorSets(vk::CommandBuffer cmd,
 								vk::PipelineLayout layout, 
 								uint32_t firstSet, 
 								Utils::BufferView<const vk::DescriptorSet> descriptorSets, 
-								Utils::BufferView<const uint32_t> dynamicOffsets) const
+								Utils::BufferView<const uint32_t> dynamicOffsets) const noexcept
 {
 	m_impl->bindDescriptorSets(cmd, pipelineBindPoint, layout, firstSet, descriptorSets, dynamicOffsets);
 }
@@ -1792,7 +1929,7 @@ void Vulkan::draw(	vk::CommandBuffer cmd,
 					uint32_t vertexCount, 
 					uint32_t instanceCount, 
 					uint32_t firstVertex, 
-					uint32_t firstInstance ) const
+					uint32_t firstInstance ) const noexcept
 {
 	m_impl->draw(cmd, vertexCount, instanceCount, firstVertex, firstInstance);
 }
@@ -1801,7 +1938,7 @@ void Vulkan::draw(	vk::CommandBuffer cmd,
 					vk::Buffer buffer,
 					size_t offset,
 					uint32_t drawCount,
-					uint32_t stride ) const
+					uint32_t stride ) const noexcept
 {
 	m_impl->draw(cmd, buffer, offset, drawCount, stride);
 }
@@ -1811,7 +1948,7 @@ void Vulkan::drawIndexed(	vk::CommandBuffer cmd,
 							uint32_t instanceCount,
 							uint32_t firstIndex,
 							int32_t vertexOffset,
-							uint32_t firstInstance ) const
+							uint32_t firstInstance ) const noexcept
 {
 	m_impl->drawIndexed(cmd, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
@@ -1820,7 +1957,7 @@ void Vulkan::drawIndexed(	vk::CommandBuffer cmd,
 							vk::Buffer buffer,
 							size_t offset,
 							uint32_t drawCount,
-							uint32_t stride ) const
+							uint32_t stride ) const noexcept
 {
 	m_impl->drawIndexed(cmd, buffer, offset, drawCount, stride);
 }

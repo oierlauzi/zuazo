@@ -14,16 +14,16 @@ public:
 	using OutputType = Tout;
 	using Output = Signal::Output<OutputType>;
 
-	explicit SourceLayout(Layout::PadProxy<Output>& output);
-	SourceLayout(const SourceLayout& other) = default;
-	SourceLayout(SourceLayout&& other) = default;
+	explicit SourceLayout(Layout::PadProxy<Output>& output) noexcept;
+	SourceLayout(const SourceLayout& other) noexcept = default;
+	SourceLayout(SourceLayout&& other) noexcept = default;
 	virtual ~SourceLayout() = default;
 
-	SourceLayout&										operator=(const SourceLayout& other) = default;
-	SourceLayout&										operator=(SourceLayout&& other) = default;
+	SourceLayout&										operator=(const SourceLayout& other) noexcept = default;
+	SourceLayout&										operator=(SourceLayout&& other) noexcept = default;
 	
-	Layout::PadProxy<Output>&							getOutput();
-	const Layout::PadProxy<Output>&						getOutput() const;
+	Layout::PadProxy<Output>&							getOutput() noexcept;
+	const Layout::PadProxy<Output>&						getOutput() const noexcept;
 
 private:
 	std::reference_wrapper<Layout::PadProxy<Output>>	m_output;
@@ -33,7 +33,7 @@ private:
 
 //Magic operator in order to concatenate
 template <typename Tout>
-void operator<<(Layout::PadProxy<Input<Tout>>& dst, SourceLayout<Tout>& src);
+void operator<<(Layout::PadProxy<Input<Tout>>& dst, SourceLayout<Tout>& src) noexcept;
 
 //template <typename Tout>
 //void operator<<(ConsumerLayout<Tout>& dst, SourceLayout<Tout>& src); //Already defined

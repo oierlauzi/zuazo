@@ -14,15 +14,15 @@ DepthStencil::DepthStencil(	const Vulkan& vulkan,
 
 
 
-vk::Image DepthStencil::getImage() const {
+vk::Image DepthStencil::getImage() const noexcept {
 	return *m_image;
 }
 
-vk::DeviceMemory DepthStencil::getDeviceMemory() const {
+vk::DeviceMemory DepthStencil::getDeviceMemory() const noexcept {
 	return *m_memory;
 }
 
-vk::ImageView DepthStencil::getImageView() const {
+vk::ImageView DepthStencil::getImageView() const noexcept {
 	return *m_imageView;
 }
 

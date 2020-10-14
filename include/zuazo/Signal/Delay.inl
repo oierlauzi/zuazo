@@ -13,12 +13,12 @@ inline Delay<T>::Delay(std::string name, Duration delay)
 
 
 template<typename T>
-inline void Delay<T>::setDelay(Duration delay) {
+inline void Delay<T>::setDelay(Duration delay) noexcept {
 	m_delay = delay;
 }
 
 template<typename T>
-inline Duration Delay<T>::getDelay() const {
+inline Duration Delay<T>::getDelay() const noexcept {
 	return m_delay;
 }
 

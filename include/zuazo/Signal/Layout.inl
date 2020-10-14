@@ -22,11 +22,11 @@ inline Layout::Layout(std::string name, std::initializer_list<PadRef> pads)
 
 
 
-inline void Layout::setName(std::string name) {
+inline void Layout::setName(std::string name) noexcept {
 	m_name = std::move(name);
 }
 
-inline const std::string& Layout::getName() const{
+inline const std::string& Layout::getName() const noexcept {
 	return m_name;
 }
 
@@ -79,12 +79,12 @@ inline const Layout::PadProxy<T>& Layout::getPad(std::string_view name) const {
 
 
 template<typename T>
-inline Layout::PadProxy<T>& Layout::makeProxy(T& pad) {
+inline Layout::PadProxy<T>& Layout::makeProxy(T& pad) noexcept {
 	return static_cast<PadProxy<T>&>(pad);
 }
 
 template<typename T>
-inline const Layout::PadProxy<T>& Layout::makeProxy(const T& pad) {
+inline const Layout::PadProxy<T>& Layout::makeProxy(const T& pad) noexcept {
 	return static_cast<const PadProxy<T>&>(pad);
 }
 
@@ -104,7 +104,7 @@ inline void Layout::registerPad(InputIt begin, InputIt end) {
 	m_pads.insert(m_pads.cend(), begin, end);
 }
 
-inline void Layout::removePad(PadRef pad) {
+inline void Layout::removePad(PadRef pad) noexcept {
 	const auto ite = std::find_if(
 		m_pads.cbegin(), m_pads.cend(),
 		[pad] (PadRef p) -> bool {

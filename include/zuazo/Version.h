@@ -10,22 +10,22 @@ namespace Zuazo {
 
 class Version {
 public:
-	constexpr Version(uint32_t major = 0, uint32_t minor = 0, uint32_t patch = 0);
-	constexpr Version(const Version& other) = default;
+	constexpr Version(uint32_t major = 0, uint32_t minor = 0, uint32_t patch = 0) noexcept;
+	constexpr Version(const Version& other) noexcept = default;
 	~Version() = default;
 
-	constexpr Version& operator=(const Version& other) = default;
+	constexpr Version& operator=(const Version& other) noexcept = default;
 
-	constexpr bool operator==(const Version& other) const;
-	constexpr bool operator!=(const Version& other) const;
-	constexpr bool operator<(const Version& other) const;
-	constexpr bool operator<=(const Version& other) const;
-	constexpr bool operator>(const Version& other) const;
-	constexpr bool operator>=(const Version& other) const;
+	constexpr bool operator==(const Version& other) const noexcept;
+	constexpr bool operator!=(const Version& other) const noexcept;
+	constexpr bool operator<(const Version& other) const noexcept;
+	constexpr bool operator<=(const Version& other) const noexcept;
+	constexpr bool operator>(const Version& other) const noexcept;
+	constexpr bool operator>=(const Version& other) const noexcept;
 
-	constexpr uint32_t getMajor() const;
-	constexpr uint32_t getMinor() const;
-	constexpr uint32_t getPatch() const;
+	constexpr uint32_t getMajor() const noexcept;
+	constexpr uint32_t getMinor() const noexcept;
+	constexpr uint32_t getPatch() const noexcept;
 private:
 	using DataType = uint32_t;
 

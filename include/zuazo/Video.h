@@ -132,34 +132,34 @@ public:
 	using VideoModeCallback = std::function<void(VideoBase&, const VideoMode&)>;
 	using VideoModeCompatibilityCallback = std::function<void(VideoBase&, const std::vector<VideoMode>&)>;
 
-	explicit VideoBase(VideoMode videoModeLimits = VideoMode::ANY, VideoModeCallback cbk = {});
+	explicit VideoBase(VideoMode videoModeLimits = VideoMode::ANY, VideoModeCallback cbk = {}) noexcept;
 	VideoBase(const VideoBase& other) = delete;
-	VideoBase(VideoBase&& other);
+	VideoBase(VideoBase&& other) noexcept;
 	virtual ~VideoBase();
 
 	VideoBase&									operator=(const VideoBase& other) = delete;
-	VideoBase&									operator=(VideoBase&& other);
+	VideoBase&									operator=(VideoBase&& other) noexcept;
 
 
-	void										setVideoModeCompatibilityCallback(VideoModeCompatibilityCallback cbk);
-	const VideoModeCompatibilityCallback&		getVideoModeCompatibilityCallback() const;
+	void										setVideoModeCompatibilityCallback(VideoModeCompatibilityCallback cbk) noexcept;
+	const VideoModeCompatibilityCallback&		getVideoModeCompatibilityCallback() const noexcept;
 
-	void										setVideoModeCallback(VideoModeCallback cbk);
-	const VideoModeCallback&					getVideoModeCallback() const;
+	void										setVideoModeCallback(VideoModeCallback cbk) noexcept;
+	const VideoModeCallback&					getVideoModeCallback() const noexcept;
 
-	void										setVideoModeLimits(VideoMode videoMode);
-	const VideoMode&							getVideoModeLimits() const;
-	const std::vector<VideoMode>& 				getVideoModeCompatibility() const;
-	const VideoMode&							getVideoMode() const;
+	void										setVideoModeLimits(VideoMode videoMode) noexcept;
+	const VideoMode&							getVideoModeLimits() const noexcept;
+	const std::vector<VideoMode>& 				getVideoModeCompatibility() const noexcept;
+	const VideoMode&							getVideoMode() const noexcept;
 
 protected:
-	void										setVideoModeLimitCallback(VideoModeCallback cbk);
-	const VideoModeCallback&					getVideoModeLimitCallback() const;
+	void										setVideoModeLimitCallback(VideoModeCallback cbk) noexcept;
+	const VideoModeCallback&					getVideoModeLimitCallback() const noexcept;
 
-	void										setInternalVideoModeCallback(VideoModeCallback cbk);
-	const VideoModeCallback&					getInternalVideoModeCallback() const;
+	void										setInternalVideoModeCallback(VideoModeCallback cbk) noexcept;
+	const VideoModeCallback&					getInternalVideoModeCallback() const noexcept;
 
-	void										setVideoModeCompatibility(std::vector<VideoMode> comp);
+	void										setVideoModeCompatibility(std::vector<VideoMode> comp) noexcept;
 
 private:
 	struct Impl;
@@ -173,26 +173,26 @@ public:
 	using ScalingFilterCallback = std::function<void(VideoScalerBase&, ScalingFilter)>;
 
 	VideoScalerBase(	ScalingModeCallback modeCbk = {}, 
-						ScalingFilterCallback filterCbk = {} );
+						ScalingFilterCallback filterCbk = {} ) noexcept;
 	VideoScalerBase(const VideoScalerBase& other) = delete;
-	VideoScalerBase(VideoScalerBase&& other);
+	VideoScalerBase(VideoScalerBase&& other) noexcept;
 	virtual ~VideoScalerBase();
 
 	VideoScalerBase& 							operator=(const VideoScalerBase& other) = delete;
-	VideoScalerBase& 							operator=(VideoScalerBase&& other);
+	VideoScalerBase& 							operator=(VideoScalerBase&& other) noexcept;
 
-	void 										setScalingMode(ScalingMode mode);
-	ScalingMode 								getScalingMode() const;
+	void 										setScalingMode(ScalingMode mode) noexcept;
+	ScalingMode 								getScalingMode() const noexcept;
 
-	void 										setScalingFilter(ScalingFilter filter);
-	ScalingFilter 								getScalingFilter() const;
+	void 										setScalingFilter(ScalingFilter filter) noexcept;
+	ScalingFilter 								getScalingFilter() const noexcept;
 
 protected:
-	void										setScalingModeCallback(ScalingModeCallback cbk);
-	const ScalingModeCallback&					getScalingModeCallback() const;
+	void										setScalingModeCallback(ScalingModeCallback cbk) noexcept;
+	const ScalingModeCallback&					getScalingModeCallback() const noexcept;
 
-	void										setScalingFilterCallback(ScalingFilterCallback cbk);
-	const ScalingFilterCallback&				getScalingFilterCallback() const;
+	void										setScalingFilterCallback(ScalingFilterCallback cbk) noexcept;
+	const ScalingFilterCallback&				getScalingFilterCallback() const noexcept;
 
 private:
 	struct Impl;
@@ -205,10 +205,10 @@ std::ostream& operator<<(std::ostream& os, const VideoMode& videoMode);
 namespace Signal {
 
 template<>
-constexpr std::string_view makeInputName<Video>() { return "videoIn"; }
+constexpr std::string_view makeInputName<Video>() noexcept { return "videoIn"; }
 
 template<>
-constexpr std::string_view makeOutputName<Video>() { return "videoOut"; }
+constexpr std::string_view makeOutputName<Video>() noexcept { return "videoOut"; }
 
 }
 

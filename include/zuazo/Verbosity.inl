@@ -2,7 +2,7 @@
 
 namespace Zuazo {
 	
-constexpr std::string_view toString(Severity severity) {
+constexpr std::string_view toString(Severity severity) noexcept {
 	switch(severity) {
 	ZUAZO_ENUM2STR_CASE( Severity, ERROR )
 	ZUAZO_ENUM2STR_CASE( Severity, WARNING )

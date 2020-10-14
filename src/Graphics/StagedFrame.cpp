@@ -26,7 +26,7 @@ StagedFrame::~StagedFrame() {
 	waitDependecies();
 }
 
-const Frame::PixelData& StagedFrame::getPixelData() {
+const Frame::PixelData& StagedFrame::getPixelData() noexcept {
 	return m_pixelData;
 }
 

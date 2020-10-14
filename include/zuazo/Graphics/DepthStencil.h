@@ -10,15 +10,15 @@ public:
 					vk::Extent2D ext,
 					vk::Format fmt );
 	DepthStencil(const DepthStencil& other) = delete;
-	DepthStencil(DepthStencil&& other) = default;
+	DepthStencil(DepthStencil&& other) noexcept = default;
 	~DepthStencil() = default;
 
 	DepthStencil&					operator=(const DepthStencil& other) = delete;
-	DepthStencil&					operator=(DepthStencil&& other) = default;
+	DepthStencil&					operator=(DepthStencil&& other) noexcept = default;
 
-	vk::Image						getImage() const;
-	vk::DeviceMemory				getDeviceMemory() const;
-	vk::ImageView					getImageView() const;
+	vk::Image						getImage() const noexcept;
+	vk::DeviceMemory				getDeviceMemory() const noexcept;
+	vk::ImageView					getImageView() const noexcept;
 
 private:
 	vk::UniqueImage					m_image;

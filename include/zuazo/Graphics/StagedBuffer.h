@@ -17,17 +17,17 @@ public:
 					vk::BufferUsageFlags usage,
 					size_t size );
 	StagedBuffer(const StagedBuffer& other) = delete;
-	StagedBuffer(StagedBuffer&& other);
+	StagedBuffer(StagedBuffer&& other) noexcept;
 	virtual ~StagedBuffer();
 
 	StagedBuffer& 						operator=(const StagedBuffer& other) = delete;
-	StagedBuffer& 						operator=(StagedBuffer&& other);
+	StagedBuffer& 						operator=(StagedBuffer&& other) noexcept;
 
-	std::byte*							data();
-	const std::byte*					data() const;
-	size_t								size() const;
-	const Utils::BufferView<std::byte>&	getData();
-	Utils::BufferView<const std::byte>	getData() const;
+	std::byte*							data() noexcept;
+	const std::byte*					data() const noexcept;
+	size_t								size() const noexcept;
+	const Utils::BufferView<std::byte>&	getData() noexcept;
+	Utils::BufferView<const std::byte>	getData() const noexcept;
 
 	void								flushData(	const Vulkan& vulkan, 
 													size_t offset, 

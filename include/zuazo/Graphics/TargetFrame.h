@@ -21,12 +21,12 @@ public:
 				std::shared_ptr<const vk::UniqueRenderPass> renderPass,
 				std::shared_ptr<const DepthStencil> depthStencil );
 	TargetFrame(const TargetFrame& other) = delete;
-	TargetFrame(TargetFrame&& other) = default;
+	TargetFrame(TargetFrame&& other) noexcept = default;
 	virtual ~TargetFrame(); 
 
 	TargetFrame& 								operator=(const TargetFrame& other) = delete;
 
-	vk::Framebuffer								getFramebuffer() const;
+	vk::Framebuffer								getFramebuffer() const noexcept;
 	void										beginRenderPass(	vk::CommandBuffer cmd, 
 																	vk::Rect2D renderArea,
 																	Utils::BufferView<const vk::ClearValue> clearValues,

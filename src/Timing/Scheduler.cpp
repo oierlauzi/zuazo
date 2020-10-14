@@ -8,16 +8,16 @@
 
 namespace Zuazo::Timing {
 
-void Scheduler::setEpoch(TimePoint tp) {
+void Scheduler::setEpoch(TimePoint tp) noexcept  {
 	m_epoch = tp;
 }
 
-TimePoint Scheduler::getEpoch() const {
+TimePoint Scheduler::getEpoch() const noexcept  {
 	return m_epoch;
 }
 
 
-void Scheduler::gotoTime(TimePoint tp) {
+void Scheduler::gotoTime(TimePoint tp)  {
 		//Update time related variables
 		m_deltaT = tp - m_currTime;
 		m_currTime = tp;
@@ -60,16 +60,16 @@ void Scheduler::gotoTime(TimePoint tp) {
 		}
 }
 
-TimePoint Scheduler::getTime() const {
+TimePoint Scheduler::getTime() const noexcept {
 	return m_currTime;
 }
 
-Duration Scheduler::getDeltaT() const {
+Duration Scheduler::getDeltaT() const noexcept {
 	return m_deltaT;
 }
 
 
-Duration Scheduler::getTimeForNextEvent() const {
+Duration Scheduler::getTimeForNextEvent() const noexcept {
 	//Calculate the minumum remaining time
 	auto result = Duration::max();
 

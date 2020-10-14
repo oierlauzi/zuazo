@@ -42,7 +42,7 @@ ZUAZO_ENUM_BIT_OPERATORS2(Verbosity, Severity)
 
 namespace Zuazo {
 	
-constexpr std::string_view toString(Severity severity);
+constexpr std::string_view toString(Severity severity) noexcept;
 std::ostream& operator<<(std::ostream& os, Severity severity);
 
 }

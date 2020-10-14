@@ -57,7 +57,7 @@ struct Frame::Impl {
 	void bind(	vk::CommandBuffer cmd,
 				vk::PipelineLayout layout,
 				uint32_t index,
-				vk::Filter filter ) const
+				vk::Filter filter ) const noexcept
 	{
 		const auto& descriptorSet = descriptorSets[static_cast<size_t>(filter)];
 
@@ -73,11 +73,11 @@ struct Frame::Impl {
 
 
 
-	void addDependecy(vk::Fence fence) {
+	void addDependecy(vk::Fence fence) noexcept {
 		dependencies.push_back(fence);
 	}
 
-	void waitDependecies(uint64_t timeo) const {
+	void waitDependecies(uint64_t timeo) const noexcept {
 		if(dependencies.size()) {
 			vulkan.waitForFences(dependencies, true, timeo);
 			dependencies.clear();
@@ -85,31 +85,31 @@ struct Frame::Impl {
 	}
 
 
-	const Vulkan& getVulkan() const { 
+	const Vulkan& getVulkan() const noexcept { 
 		return vulkan;
 	}
 
-	const Descriptor& getDescriptor() const {
+	const Descriptor& getDescriptor() const noexcept {
 		return *descriptor;
 	}
 
-	const Math::Vec2f& getSize() const {
+	const Math::Vec2f& getSize() const noexcept {
 		return size;
 	}
 
-	const std::vector<vk::UniqueImage>& getImages() const {
+	const std::vector<vk::UniqueImage>& getImages() const noexcept {
 		return images;
 	}
 
-	const std::vector<vk::UniqueImageView>& getImageViews() const {
+	const std::vector<vk::UniqueImageView>& getImageViews() const noexcept {
 		return imageViews;
 	}
 
-	const std::vector<Utils::Area>& getPlaneAreas() const {
+	const std::vector<Utils::Area>& getPlaneAreas() const noexcept {
 		return memory.areas;
 	}
 
-	const vk::DeviceMemory& getMemory() const {
+	const vk::DeviceMemory& getMemory() const noexcept {
 		return *(memory.memory);
 	}
 
@@ -162,7 +162,7 @@ private:
 		}
 	}
 
-	static Math::Vec2f calcualteSize(const Descriptor& desc) {
+	static Math::Vec2f calcualteSize(const Descriptor& desc) noexcept {
 		Resolution res = desc.resolution;
 		AspectRatio par = desc.pixelAspectRatio;
 		return Geometry::calculateSize(res, par);
@@ -310,59 +310,59 @@ Frame::Frame(	const Vulkan& vulkan,
 {
 }
 
-Frame::Frame(Frame&& other) = default;
+Frame::Frame(Frame&& other) noexcept = default;
 
 Frame::~Frame() = default;
 
-Frame& Frame::operator=(Frame&& other) = default;
+Frame& Frame::operator=(Frame&& other) noexcept = default;
 
 
 
 void Frame::bind( 	vk::CommandBuffer cmd,
 					vk::PipelineLayout layout,
 					uint32_t index,
-					vk::Filter filter ) const
+					vk::Filter filter ) const noexcept
 {
 	m_impl->bind(cmd, layout, index, filter);
 }
 
 
 
-void Frame::addDependecy(vk::Fence fence) {
+void Frame::addDependecy(vk::Fence fence) noexcept {
 	m_impl->addDependecy(fence);
 }
 
-void Frame::waitDependecies(uint64_t timeo) const {
+void Frame::waitDependecies(uint64_t timeo) const noexcept {
 	m_impl->waitDependecies(timeo);
 }
 
 
-const Vulkan& Frame::getVulkan() const { 
+const Vulkan& Frame::getVulkan() const noexcept { 
 	return m_impl->getVulkan();
 }
 
-const Frame::Descriptor& Frame::getDescriptor() const {
+const Frame::Descriptor& Frame::getDescriptor() const noexcept {
 	return m_impl->getDescriptor();
 }
 
-const Math::Vec2f& Frame::getSize() const{
+const Math::Vec2f& Frame::getSize() const noexcept {
 	return m_impl->getSize();
 }
 
 
-const std::vector<vk::UniqueImage>& Frame::getImages() const {
+const std::vector<vk::UniqueImage>& Frame::getImages() const noexcept {
 	return m_impl->getImages();
 }
 
-const std::vector<vk::UniqueImageView>& Frame::getImageViews() const {
+const std::vector<vk::UniqueImageView>& Frame::getImageViews() const noexcept {
 	return m_impl->getImageViews();
 }
 
-const std::vector<Utils::Area>& Frame::getPlaneAreas() const {
+const std::vector<Utils::Area>& Frame::getPlaneAreas() const noexcept {
 	return m_impl->getPlaneAreas();
 }
 
-const vk::DeviceMemory& Frame::getMemory() const {
+const vk::DeviceMemory& Frame::getMemory() const noexcept {
 	return m_impl->getMemory();
 }
 
@@ -489,7 +489,7 @@ Frame::Geometry::Geometry(	std::byte* data,
 							size_t positionOffset,
 							size_t texCoordOffset,
 							ScalingMode scaling,
-							Math::Vec2f targetSize )
+							Math::Vec2f targetSize ) noexcept
 	: m_data(data)
 	, m_stride(stride)
 	, m_positionOffset(positionOffset)
@@ -500,22 +500,22 @@ Frame::Geometry::Geometry(	std::byte* data,
 {
 }
 
-void Frame::Geometry::setScalingMode(ScalingMode scaling) {
+void Frame::Geometry::setScalingMode(ScalingMode scaling) noexcept {
 	m_scalingMode = scaling;
 	m_sourceSize = Math::Vec2f(0.0f); //So that it gets recalculated
 }
 
-ScalingMode Frame::Geometry::getScalingMode() const {
+ScalingMode Frame::Geometry::getScalingMode() const noexcept {
 	return m_scalingMode;
 }
 
 
-void Frame::Geometry::setTargetSize(Math::Vec2f size) {
+void Frame::Geometry::setTargetSize(Math::Vec2f size) noexcept {
 	m_targetSize = size;
 	m_sourceSize = Math::Vec2f(0.0f); //So that it gets recalculated
 }
 
-const Math::Vec2f& Frame::Geometry::getTargetSize() const {
+const Math::Vec2f& Frame::Geometry::getTargetSize() const noexcept {
 	return m_targetSize;
 }
 
@@ -530,7 +530,7 @@ bool Frame::Geometry::useFrame(const Frame& frame) {
 	}
 }
 
-Math::Vec2f Frame::Geometry::calculateSize(Resolution res, AspectRatio par) {
+Math::Vec2f Frame::Geometry::calculateSize(Resolution res, AspectRatio par) noexcept {
 	return Math::Vec2f(
 		static_cast<float>(par * res.x),
 		static_cast<float>(res.y)

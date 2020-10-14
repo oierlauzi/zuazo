@@ -27,47 +27,47 @@ public:
 				Duration timeStep = {},
 				RefreshCallback refreshCbk = {} );
 	ClipBase(const ClipBase& other) = delete;
-	ClipBase(ClipBase&& other);
+	ClipBase(ClipBase&& other) noexcept;
 	virtual ~ClipBase();
 
 	ClipBase& 						operator=(const ClipBase& other) = delete;
-	ClipBase& 						operator=(ClipBase&& other);
+	ClipBase& 						operator=(ClipBase&& other) noexcept;
 
-	void							setState(State st);
-	State							getState() const;
+	void							setState(State st) noexcept;
+	State							getState() const noexcept;
 
-	void							setRepeat(Repeat repeat);
-	Repeat							getRepeat() const;
+	void							setRepeat(Repeat repeat) noexcept;
+	Repeat							getRepeat() const noexcept;
 
-	void							setTime(TimePoint tp);
-	TimePoint						getTime() const;
+	void							setTime(TimePoint tp) noexcept;
+	TimePoint						getTime() const noexcept;
 
-	void							setPlaySpeed(double speed);
-	double							getPlaySpeed() const;
+	void							setPlaySpeed(double speed) noexcept;
+	double							getPlaySpeed() const noexcept;
 
-	void							setProgress(double progress);
-	double							getProgress() const;
+	void							setProgress(double progress) noexcept;
+	double							getProgress() const noexcept;
 
-	void							advance(Duration delta);
-	void							rewind(Duration delta);
-	void							advanceNormalSpeed(Duration delta);
-	void							rewindNormalSpeed(Duration delta);
-	void							nextStep();
-	void							prevStep();
-	void							play();
-	void							pause();
-	void							stop();
-	bool							isPlaying() const;
+	void							advance(Duration delta) noexcept;
+	void							rewind(Duration delta) noexcept;
+	void							advanceNormalSpeed(Duration delta) noexcept;
+	void							rewindNormalSpeed(Duration delta) noexcept;
+	void							nextStep() noexcept;
+	void							prevStep() noexcept;
+	void							play() noexcept;
+	void							pause() noexcept;
+	void							stop() noexcept;
+	bool							isPlaying() const noexcept;
 
-	Duration						getDuration() const;
-	Duration						getTimeStep() const;
+	Duration						getDuration() const noexcept;
+	Duration						getTimeStep() const noexcept;
 
 protected:
-	void							setRefreshCallback(RefreshCallback cbk);
-	const RefreshCallback&			getRefreshCallback() const;
+	void							setRefreshCallback(RefreshCallback cbk) noexcept;
+	const RefreshCallback&			getRefreshCallback() const noexcept;
 
-	void							setTimeStep(Duration step);
-	void							setDuration(Duration dur);
+	void							setTimeStep(Duration step) noexcept;
+	void							setDuration(Duration dur) noexcept;
 
 private:
 	struct Impl;

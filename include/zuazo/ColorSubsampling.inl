@@ -2,31 +2,28 @@
 
 namespace Zuazo {
 
-constexpr Resolution getSubsampledResolution(ColorSubsampling subs, Resolution res){
+constexpr Math::Vec2i getSubsamplingFactor(ColorSubsampling subs) noexcept {
 	switch(subs){
 
-	case ColorSubsampling::RB_444: 
-		return res;
-	case ColorSubsampling::RB_440:
-		return Resolution(res.width, res.height / 2);
-	case ColorSubsampling::RB_422: 
-		return Resolution(res.width / 2, res.height);
-	case ColorSubsampling::RB_420:
-		return Resolution(res.width / 2, res.height / 2);
-	case ColorSubsampling::RB_411:
-		return Resolution(res.width / 4, res.height);
-	case ColorSubsampling::RB_410:
-		return Resolution(res.width / 4, res.height / 2);
-	case ColorSubsampling::RB_311: 
-		return Resolution(res.width / 3, res.height);
-
-	default: return Resolution(0, 0);
+	case ColorSubsampling::RB_444: 	return Math::Vec2i(1, 1);
+	case ColorSubsampling::RB_440:  return Math::Vec2i(1, 2);
+	case ColorSubsampling::RB_422:	return Math::Vec2i(2, 1);
+	case ColorSubsampling::RB_420:	return Math::Vec2i(2, 2);
+	case ColorSubsampling::RB_411:	return Math::Vec2i(4, 1);
+	case ColorSubsampling::RB_410:	return Math::Vec2i(4, 2);
+	case ColorSubsampling::RB_311:	return Math::Vec2i(3, 1);
+	default: 						return Math::Vec2i(0, 0);
 	}
+}
+
+constexpr Resolution getSubsampledResolution(ColorSubsampling subs, Resolution res) noexcept {
+	const auto factor = Resolution(getSubsamplingFactor(subs));
+	return factor ? res / factor : Resolution(0, 0);
 }
 
 
 
-constexpr std::string_view toString(ColorSubsampling colorSubsampling){
+constexpr std::string_view toString(ColorSubsampling colorSubsampling) noexcept {
 	switch(colorSubsampling){
 
 	case ColorSubsampling::RB_444: return "4:4:4";
@@ -48,11 +45,11 @@ inline std::ostream& operator<<(std::ostream& os, ColorSubsampling colorSubsampl
 
 namespace Utils {
 
-constexpr ColorSubsampling lowest(const Any<ColorSubsampling>&) {
+constexpr ColorSubsampling lowest(const Any<ColorSubsampling>&) noexcept {
 	return ColorSubsampling::NONE + static_cast<ColorSubsampling>(1);
 }
 
-constexpr ColorSubsampling highest(const Any<ColorSubsampling>&) {
+constexpr ColorSubsampling highest(const Any<ColorSubsampling>&) noexcept {
 	return ColorSubsampling::COUNT - static_cast<ColorSubsampling>(1);
 }
 

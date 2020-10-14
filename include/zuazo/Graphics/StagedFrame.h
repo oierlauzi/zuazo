@@ -15,12 +15,12 @@ public:
 				Utils::BufferView<const PlaneDescriptor> planes,
 				std::shared_ptr<const vk::UniqueCommandPool> cmdPool );
 	StagedFrame(const StagedFrame& other) = delete;
-	StagedFrame(StagedFrame&& other) = default;
+	StagedFrame(StagedFrame&& other) noexcept = default;
 	virtual ~StagedFrame(); 
 
-	StagedFrame& 								operator=(const StagedFrame& other) = delete;
+	StagedFrame& 								operator=(const StagedFrame& other) noexcept = delete;
 
-	const PixelData&							getPixelData();
+	const PixelData&							getPixelData() noexcept;
 	void										flush();
 
 private:

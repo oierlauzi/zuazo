@@ -26,30 +26,30 @@ public:
 	using Element = T;
 	using Source = Output<Element>; friend Source;
 
-	explicit Input(std::string name = std::string(makeInputName<Element>()));
+	explicit Input(std::string name = std::string(makeInputName<Element>())) noexcept;
 	Input(const Input& other) = default;
-	Input(Input&& other) = default;
+	Input(Input&& other) noexcept = default;
 	virtual ~Input() = default;
 
-	Input&						operator=(const Input& other) = default;
-	Input&						operator=(Input&& other) = default;
+	Input&						operator=(const Input& other) noexcept = default;
+	Input&						operator=(Input&& other) noexcept = default;
 
-	void						operator<<(NoSignal);
-	void						operator<<(Source& src);
+	void						operator<<(NoSignal) noexcept;
+	void						operator<<(Source& src) noexcept;
 
-	void						setSource(Source* src);
-	Source*						getSource() const;
+	void						setSource(Source* src) noexcept;
+	Source*						getSource() const noexcept;
 
-	void						reset();
-	const Element&				pull(); ///< \note This function MUST NOT be called from the push callback
-	const Element&				getLastElement() const; 
-	bool						hasChanged() const; ///< \note This function MUST NOT be called from the push callback
-
+	void						reset() noexcept;
+	const Element&				pull() noexcept;
+	const Element&				getLastElement() const noexcept; 
+	bool						hasChanged() const noexcept;
+	
 private:
 	Element						m_lastElement;
 
 
-	const Element&				pullFromSource() const;
+	const Element&				pullFromSource() const noexcept;
 };
 
 template<typename T>
@@ -75,10 +75,10 @@ public:
 	using Input<T>::operator<<;
 	using Input<T>::getName;
 
-	void						setSource(Source* src);
-	Source*						getSource() const;
+	void						setSource(Source* src) noexcept;
+	Source*						getSource() const noexcept;
 	
-	void						operator<<(Source& src);
+	void						operator<<(Source& src) noexcept;
 
 private:
 	~PadProxy() = default;

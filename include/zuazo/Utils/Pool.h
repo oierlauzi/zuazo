@@ -21,9 +21,9 @@ public:
 
 	Pool& 									operator=(const Pool& other) = delete;
 
-	void									setMaxSpareCount(size_t spares);
-	size_t									getMaxSpareCount() const;
-	size_t									getSpareCount() const;
+	void									setMaxSpareCount(size_t spares) noexcept;
+	size_t									getMaxSpareCount() const noexcept;
+	size_t									getSpareCount() const noexcept;
 
 	std::unique_ptr<ElementType, Recycler>	acquire();
 
@@ -40,7 +40,7 @@ private:
 	Spares									m_spares;
 	size_t									m_maxSpareCount;
 
-	Recycler								makeRecycler() const;
+	Recycler								makeRecycler() const noexcept;
 	void									recycle(ElementType* el);
 
 };

@@ -74,20 +74,20 @@ struct Uploader::Impl {
 	}
 
 
-	const Vulkan& getVulkan() const {
+	const Vulkan& getVulkan() const noexcept {
 		return vulkan;
 	}
 
 
-	void setMaxSpareCount(size_t spares) {
+	void setMaxSpareCount(size_t spares) noexcept {
 		framePool.setMaxSpareCount(spares);
 	}
 
-	size_t getMaxSpareCount() const {
+	size_t getMaxSpareCount() const noexcept {
 		return framePool.getMaxSpareCount();
 	}
 
-	size_t getSpareCount() const {
+	size_t getSpareCount() const noexcept {
 		return framePool.getSpareCount();
 	}
 
@@ -138,28 +138,28 @@ Uploader::Uploader(	const Vulkan& vulkan,
 {
 }
 
-Uploader::Uploader(Uploader&& other) = default;
+Uploader::Uploader(Uploader&& other) noexcept = default;
 
 Uploader::~Uploader() = default;
 
-Uploader& Uploader::operator=(Uploader&& other) = default;
+Uploader& Uploader::operator=(Uploader&& other) noexcept = default;
 
 
 
-const Vulkan& Uploader::getVulkan() const {
+const Vulkan& Uploader::getVulkan() const noexcept {
 	return m_impl->getVulkan();
 }
 
 
-void Uploader::setMaxSpareCount(size_t spares) {
+void Uploader::setMaxSpareCount(size_t spares) noexcept {
 	m_impl->setMaxSpareCount(spares);
 }
 
-size_t Uploader::getMaxSpareCount() const {
+size_t Uploader::getMaxSpareCount() const noexcept {
 	return m_impl->getMaxSpareCount();
 }
 
-size_t Uploader::getSpareCount() const {
+size_t Uploader::getSpareCount() const noexcept {
 	return m_impl->getSpareCount();
 }
 

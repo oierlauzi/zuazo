@@ -15,41 +15,41 @@ CommandBuffer::CommandBuffer(	const Vulkan& vulkan,
 
 
 
-const Vulkan& CommandBuffer::getVulkan() const {
+const Vulkan& CommandBuffer::getVulkan() const noexcept {
 	return m_vulkan;
 }
 
-vk::CommandBuffer CommandBuffer::getCommandBuffer() const {
+vk::CommandBuffer CommandBuffer::getCommandBuffer() const noexcept {
 	return *m_commandBuffer;
 }
 
 
 
-void CommandBuffer::setDependencies(Dependencies dep) {
+void CommandBuffer::setDependencies(Dependencies dep) noexcept {
 	m_dependencies = std::move(dep);
 }
 
-CommandBuffer::Dependencies CommandBuffer::releaseDependencies() {
+CommandBuffer::Dependencies CommandBuffer::releaseDependencies() noexcept {
 	return std::move(m_dependencies);
 }
 
-const CommandBuffer::Dependencies& CommandBuffer::getDependencies() const {
+const CommandBuffer::Dependencies& CommandBuffer::getDependencies() const noexcept {
 	return m_dependencies;
 }
 
 
 
-void CommandBuffer::begin(const vk::CommandBufferBeginInfo& beginInfo) {
+void CommandBuffer::begin(const vk::CommandBufferBeginInfo& beginInfo) noexcept {
 	getVulkan().begin(getCommandBuffer(), beginInfo);
 }
 
-void CommandBuffer::end() {
+void CommandBuffer::end() noexcept {
 	getVulkan().end(getCommandBuffer());
 }
 
 
 
-void CommandBuffer::execute(Utils::BufferView<const vk::CommandBuffer> buf) {
+void CommandBuffer::execute(Utils::BufferView<const vk::CommandBuffer> buf) noexcept {
 	getVulkan().execute(getCommandBuffer(), buf);
 }
 
@@ -60,7 +60,7 @@ void CommandBuffer::pipelineBarrier(vk::PipelineStageFlags srcStageMask,
 									vk::DependencyFlags dependencyFlags,
 									Utils::BufferView<const vk::MemoryBarrier> memoryBarriers,
 									Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers,
-									Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers )
+									Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) noexcept
 {
 	getVulkan().pipelineBarrier(getCommandBuffer(), srcStageMask, dstStageMask, dependencyFlags, memoryBarriers, bufferMemoryBarriers, imageMemoryBarriers);
 }
@@ -68,7 +68,7 @@ void CommandBuffer::pipelineBarrier(vk::PipelineStageFlags srcStageMask,
 void CommandBuffer::pipelineBarrier(vk::PipelineStageFlags srcStageMask,
 									vk::PipelineStageFlags dstStageMask,
 									vk::DependencyFlags dependencyFlags,
-									Utils::BufferView<const vk::MemoryBarrier> memoryBarriers )
+									Utils::BufferView<const vk::MemoryBarrier> memoryBarriers ) noexcept
 {
 	getVulkan().pipelineBarrier(getCommandBuffer(), srcStageMask, dstStageMask, dependencyFlags, memoryBarriers);
 }
@@ -76,7 +76,7 @@ void CommandBuffer::pipelineBarrier(vk::PipelineStageFlags srcStageMask,
 void CommandBuffer::pipelineBarrier(vk::PipelineStageFlags srcStageMask,
 									vk::PipelineStageFlags dstStageMask,
 									vk::DependencyFlags dependencyFlags,
-									Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers )
+									Utils::BufferView<const vk::BufferMemoryBarrier> bufferMemoryBarriers ) noexcept
 {
 	getVulkan().pipelineBarrier(getCommandBuffer(), srcStageMask, dstStageMask, dependencyFlags, bufferMemoryBarriers);
 }
@@ -84,7 +84,7 @@ void CommandBuffer::pipelineBarrier(vk::PipelineStageFlags srcStageMask,
 void CommandBuffer::pipelineBarrier(vk::PipelineStageFlags srcStageMask,
 									vk::PipelineStageFlags dstStageMask,
 									vk::DependencyFlags dependencyFlags,
-									Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers )
+									Utils::BufferView<const vk::ImageMemoryBarrier> imageMemoryBarriers ) noexcept
 {
 	getVulkan().pipelineBarrier(getCommandBuffer(), srcStageMask, dstStageMask, dependencyFlags, imageMemoryBarriers);
 }
@@ -94,7 +94,7 @@ void CommandBuffer::pipelineBarrier(vk::PipelineStageFlags srcStageMask,
 void CommandBuffer::clear(	vk::Image image,
 							vk::ImageLayout imageLayout,
 							const vk::ClearColorValue& value,
-							Utils::BufferView<const vk::ImageSubresourceRange> ranges )
+							Utils::BufferView<const vk::ImageSubresourceRange> ranges ) noexcept
 {
 	getVulkan().clear(getCommandBuffer(), image, imageLayout, value, ranges);
 }
@@ -102,27 +102,27 @@ void CommandBuffer::clear(	vk::Image image,
 void CommandBuffer::clear(	vk::Image image,
 							vk::ImageLayout imageLayout,
 							const vk::ClearDepthStencilValue& value,
-							Utils::BufferView<const vk::ImageSubresourceRange> ranges )
+							Utils::BufferView<const vk::ImageSubresourceRange> ranges ) noexcept
 {
 	getVulkan().clear(getCommandBuffer(), image, imageLayout, value, ranges);
 }
 
 void CommandBuffer::clear(	Utils::BufferView<const vk::ClearAttachment> attachments,
-							Utils::BufferView<const vk::ClearRect> rects )
+							Utils::BufferView<const vk::ClearRect> rects ) noexcept
 {
 	getVulkan().clear(getCommandBuffer(), attachments, rects);
 }
 
 void CommandBuffer::clear(	vk::Buffer buffer,
 							const Utils::Area& area,
-							uint32_t data )
+							uint32_t data ) noexcept
 {
 	getVulkan().clear(getCommandBuffer(), buffer, area, data);
 }
 
 void CommandBuffer::clear(	vk::Buffer buffer,
 							const Utils::Area& area,
-							const std::byte* data )
+							const std::byte* data ) noexcept
 {
 	getVulkan().clear(getCommandBuffer(), buffer, area, data);
 }
@@ -131,7 +131,7 @@ void CommandBuffer::clear(	vk::Buffer buffer,
 
 void CommandBuffer::copy(	vk::Buffer srcBuffer,
 							vk::Buffer dstBuffer,
-							Utils::BufferView<const vk::BufferCopy> regions )
+							Utils::BufferView<const vk::BufferCopy> regions ) noexcept
 {
 	getVulkan().copy(getCommandBuffer(), srcBuffer, dstBuffer, regions);
 }
@@ -140,7 +140,7 @@ void CommandBuffer::copy(	vk::Image srcImage,
 							vk::ImageLayout srcImageLayout,
 							vk::Image dstImage,
 							vk::ImageLayout dstImageLayout,
-							Utils::BufferView<const vk::ImageCopy> regions )
+							Utils::BufferView<const vk::ImageCopy> regions ) noexcept
 {
 	getVulkan().copy(getCommandBuffer(), srcImage, srcImageLayout, dstImage, dstImageLayout, regions);
 }
@@ -148,7 +148,7 @@ void CommandBuffer::copy(	vk::Image srcImage,
 void CommandBuffer::copy(	vk::Buffer srcBuffer,
 							vk::Image dstImage,
 							vk::ImageLayout dstImageLayout,
-							Utils::BufferView<const vk::BufferImageCopy> regions )
+							Utils::BufferView<const vk::BufferImageCopy> regions ) noexcept
 {
 	getVulkan().copy(getCommandBuffer(), srcBuffer, dstImage, dstImageLayout, regions);
 }
@@ -156,7 +156,7 @@ void CommandBuffer::copy(	vk::Buffer srcBuffer,
 void CommandBuffer::copy(	vk::Image srcImage,
 							vk::ImageLayout srcImageLayout,
 							vk::Buffer dstBuffer,
-							Utils::BufferView<const vk::BufferImageCopy> regions )
+							Utils::BufferView<const vk::BufferImageCopy> regions ) noexcept
 {
 	getVulkan().copy(getCommandBuffer(), srcImage, srcImageLayout, dstBuffer, regions);
 }
@@ -166,7 +166,7 @@ void CommandBuffer::blit(	vk::Image srcImage,
 							vk::Image dstImage,
 							vk::ImageLayout dstImageLayout,
 							Utils::BufferView<const vk::ImageBlit> regions,
-							vk::Filter filter )
+							vk::Filter filter ) noexcept
 {
 	getVulkan().blit(getCommandBuffer(), srcImage, srcImageLayout, dstImage, dstImageLayout, regions, filter);
 }
@@ -175,7 +175,7 @@ void CommandBuffer::resolve(vk::Image srcImage,
 							vk::ImageLayout srcImageLayout,
 							vk::Image dstImage,
 							vk::ImageLayout dstImageLayout,
-							Utils::BufferView<const vk::ImageResolve> regions )
+							Utils::BufferView<const vk::ImageResolve> regions ) noexcept
 {
 	getVulkan().resolve(getCommandBuffer(), srcImage, srcImageLayout, dstImage, dstImageLayout, regions);
 }
@@ -183,28 +183,28 @@ void CommandBuffer::resolve(vk::Image srcImage,
 
 
 void CommandBuffer::beginRenderPass(const vk::RenderPassBeginInfo& beginInfo,
-									vk::SubpassContents contents )
+									vk::SubpassContents contents ) noexcept
 {
 	getVulkan().beginRenderPass(getCommandBuffer(), beginInfo, contents);
 }
 
-void CommandBuffer::endRenderPass() {
+void CommandBuffer::endRenderPass() noexcept {
 	getVulkan().endRenderPass(getCommandBuffer());
 }
 
-void CommandBuffer::nextSubpass(vk::SubpassContents contents) {
+void CommandBuffer::nextSubpass(vk::SubpassContents contents) noexcept {
 		getVulkan().nextSubpass(getCommandBuffer(), contents);
 }
 
 void CommandBuffer::bindPipeline(	vk::PipelineBindPoint bindPoint, 
-									vk::Pipeline pipeline )
+									vk::Pipeline pipeline ) noexcept
 {
 	getVulkan().bindPipeline(getCommandBuffer(), bindPoint, pipeline);
 }
 
 void CommandBuffer::bindVertexBuffers(	uint32_t firstBinding, 
 										Utils::BufferView<const vk::Buffer> buffers, 
-										Utils::BufferView<const vk::DeviceSize> offsets )
+										Utils::BufferView<const vk::DeviceSize> offsets ) noexcept
 {
 	getVulkan().bindVertexBuffers(getCommandBuffer(), firstBinding, buffers, offsets);
 }
@@ -213,7 +213,7 @@ void CommandBuffer::bindDescriptorSets(	vk::PipelineBindPoint pipelineBindPoint,
 										vk::PipelineLayout layout, 
 										uint32_t firstSet, 
 										Utils::BufferView<const vk::DescriptorSet> descriptorSets, 
-										Utils::BufferView<const uint32_t> dynamicOffsets )
+										Utils::BufferView<const uint32_t> dynamicOffsets ) noexcept
 {
 	getVulkan().bindDescriptorSets(getCommandBuffer(), pipelineBindPoint, layout, firstSet, descriptorSets, dynamicOffsets);
 }
@@ -221,7 +221,7 @@ void CommandBuffer::bindDescriptorSets(	vk::PipelineBindPoint pipelineBindPoint,
 void CommandBuffer::draw(	uint32_t vertexCount, 
 							uint32_t instanceCount, 
 							uint32_t firstVertex, 
-							uint32_t firstInstance )
+							uint32_t firstInstance ) noexcept
 {
 	getVulkan().draw(getCommandBuffer(), vertexCount, instanceCount, firstVertex, firstInstance);
 }
@@ -229,7 +229,7 @@ void CommandBuffer::draw(	uint32_t vertexCount,
 void CommandBuffer::draw(	vk::Buffer buffer,
 							size_t offset,
 							uint32_t drawCount,
-							uint32_t stride )
+							uint32_t stride ) noexcept
 {
 	getVulkan().draw(getCommandBuffer(), buffer, offset, drawCount, stride);
 }
@@ -238,7 +238,7 @@ void CommandBuffer::drawIndexed(uint32_t indexCount,
 								uint32_t instanceCount,
 								uint32_t firstIndex,
 								int32_t vertexOffset,
-								uint32_t firstInstance )
+								uint32_t firstInstance ) noexcept
 {
 	getVulkan().drawIndexed(getCommandBuffer(), indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
@@ -246,7 +246,7 @@ void CommandBuffer::drawIndexed(uint32_t indexCount,
 void CommandBuffer::drawIndexed(vk::Buffer buffer,
 								size_t offset,
 								uint32_t drawCount,
-								uint32_t stride )
+								uint32_t stride ) noexcept
 {
 	getVulkan().drawIndexed(getCommandBuffer(), buffer, offset, drawCount, stride);
 }

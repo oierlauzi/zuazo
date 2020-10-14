@@ -8,7 +8,7 @@
 
 namespace Zuazo::Graphics {
 
-constexpr uint32_t toVulkan(Version version){
+constexpr uint32_t toVulkan(Version version) noexcept {
 	return VK_MAKE_VERSION(
 		version.getMajor(),
 		version.getMinor(),
@@ -17,7 +17,7 @@ constexpr uint32_t toVulkan(Version version){
 }
 
 
-constexpr vk::DebugUtilsMessageSeverityFlagsEXT toVulkan(Verbosity ver) {
+constexpr vk::DebugUtilsMessageSeverityFlagsEXT toVulkan(Verbosity ver) noexcept {
 	vk::DebugUtilsMessageSeverityFlagsEXT result = {};
 
 	if((ver & Verbosity::VERBOSE) != Verbosity::SILENT)	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose;
@@ -28,7 +28,7 @@ constexpr vk::DebugUtilsMessageSeverityFlagsEXT toVulkan(Verbosity ver) {
 	return result;
 }
 
-constexpr Verbosity fromVulkan(vk::DebugUtilsMessageSeverityFlagsEXT ver) {
+constexpr Verbosity fromVulkan(vk::DebugUtilsMessageSeverityFlagsEXT ver) noexcept {
 	constexpr auto silent = vk::DebugUtilsMessageSeverityFlagsEXT();
 	Verbosity result = Verbosity::SILENT;
 
@@ -43,7 +43,7 @@ constexpr Verbosity fromVulkan(vk::DebugUtilsMessageSeverityFlagsEXT ver) {
 }	
 
 
-constexpr vk::DebugUtilsMessageSeverityFlagBitsEXT toVulkan(Severity sev) {
+constexpr vk::DebugUtilsMessageSeverityFlagBitsEXT toVulkan(Severity sev) noexcept {
 	constexpr auto FAILURE = static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>(0);
 
 	switch(sev) {
@@ -55,7 +55,7 @@ constexpr vk::DebugUtilsMessageSeverityFlagBitsEXT toVulkan(Severity sev) {
 	}
 }
 
-constexpr Severity fromVulkan(vk::DebugUtilsMessageSeverityFlagBitsEXT sev) {
+constexpr Severity fromVulkan(vk::DebugUtilsMessageSeverityFlagBitsEXT sev) noexcept {
 	constexpr auto FAILURE = static_cast<Severity>(0);
 
 	switch(sev) {
@@ -68,21 +68,21 @@ constexpr Severity fromVulkan(vk::DebugUtilsMessageSeverityFlagBitsEXT sev) {
 }
 
 
-constexpr vk::Extent2D toVulkan(Resolution res){
+constexpr vk::Extent2D toVulkan(Resolution res) noexcept {
 	return vk::Extent2D(
 		res.width,
 		res.height
 	);
 }
 
-constexpr Resolution fromVulkan(vk::Extent2D res){
+constexpr Resolution fromVulkan(vk::Extent2D res) noexcept {
 	return Resolution(
 		res.width,
 		res.height
 	);
 }
 
-constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COUNT> toVulkan(ColorFormat fmt){
+constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COUNT> toVulkan(ColorFormat fmt) noexcept {
 	switch(fmt){
 	//4 bit compoents
 	case ColorFormat::Y4X4_8: 			return { std::tuple{ vk::Format::eR4G4UnormPack8, swizzle("RRR1") } };
@@ -415,7 +415,7 @@ constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COU
 	}
 }
 
-constexpr std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format fmt){
+constexpr std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format fmt) noexcept {
 	switch(fmt){
 	//4 bit formats
 	case vk::Format::eR4G4B4A4UnormPack16: 	return { ColorFormat::R4G4B4A4_16, ColorTransferFunction::LINEAR };
@@ -537,7 +537,7 @@ inline std::vector<ColorFormat> getSamplerFormats(Utils::BufferView<const vk::Fo
 }
 
 
-constexpr std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std::tuple<vk::Format, vk::ComponentMapping>& fmt){
+constexpr std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std::tuple<vk::Format, vk::ComponentMapping>& fmt) noexcept {
 	const auto& format = std::get<vk::Format>(fmt);
 	const auto& swizzle = std::get<vk::ComponentMapping>(fmt);
 
@@ -622,7 +622,7 @@ constexpr std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std:
 }
 
 inline std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(	const std::tuple<vk::Format, vk::ComponentMapping>& fmt,
-																	Utils::BufferView<const vk::Format> supportedFormats )
+																	Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 {
 	//For binary search:
 	assert(std::is_sorted(supportedFormats.cbegin(), supportedFormats.cend()));
@@ -642,7 +642,7 @@ inline std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(	const std::t
 
 
 
-constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction enc){
+constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction enc) noexcept {
 	switch(enc){
 	case ColorTransferFunction::LINEAR:
 		//Linear encoding
@@ -690,7 +690,7 @@ constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction 
 	return static_cast<vk::ColorSpaceKHR>(-1);
 }
 
-constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::ColorSpaceKHR space){
+constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::ColorSpaceKHR space) noexcept {
 	switch(space){
 
 	case vk::ColorSpaceKHR::eSrgbNonlinear:				return { ColorPrimaries::BT709, 	ColorTransferFunction::IEC61966_2_1 };
@@ -716,14 +716,14 @@ constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::Color
 }
 
 
-constexpr vk::ComponentSwizzle getComponentDefaultValue(char component) {
+constexpr vk::ComponentSwizzle getComponentDefaultValue(char component) noexcept {
 	switch (component) {
 	case 'a': case 'A': return vk::ComponentSwizzle::eOne;
 	default: return vk::ComponentSwizzle::eZero;
 	}
 }
 
-constexpr vk::ComponentSwizzle getComponentSwizzle(char swizzle) {
+constexpr vk::ComponentSwizzle getComponentSwizzle(char swizzle) noexcept {
 	switch (swizzle) {
 	case 'r': case 'R': return vk::ComponentSwizzle::eR;
 	case 'g': case 'G': return vk::ComponentSwizzle::eG;
@@ -735,7 +735,7 @@ constexpr vk::ComponentSwizzle getComponentSwizzle(char swizzle) {
 	}
 }
 
-constexpr vk::ComponentSwizzle getComponentSwizzle(char component, std::string_view vulkanFromat, std::string_view memoryFormat) {
+constexpr vk::ComponentSwizzle getComponentSwizzle(char component, std::string_view vulkanFromat, std::string_view memoryFormat) noexcept {
 	//Find its position
 	size_t i = 0;
 	while(i < memoryFormat.size() && memoryFormat[i] != component) ++i;
@@ -745,7 +745,7 @@ constexpr vk::ComponentSwizzle getComponentSwizzle(char component, std::string_v
 	return getComponentSwizzle(vulkanFromat[i]); //Neeeds swizzle
 }
 
-constexpr vk::ComponentMapping swizzle(std::string_view swizzle) {
+constexpr vk::ComponentMapping swizzle(std::string_view swizzle) noexcept {
 	const auto n = swizzle.size();
 
 	return vk::ComponentMapping(
@@ -756,7 +756,7 @@ constexpr vk::ComponentMapping swizzle(std::string_view swizzle) {
 	);
 }
 
-constexpr vk::ComponentMapping swizzle(std::string_view vulkanFromat, std::string_view memoryFormat) {
+constexpr vk::ComponentMapping swizzle(std::string_view vulkanFromat, std::string_view memoryFormat) noexcept {
 	return vk::ComponentMapping(
 		getComponentSwizzle('R', vulkanFromat, memoryFormat),
 		getComponentSwizzle('G', vulkanFromat, memoryFormat),
@@ -768,7 +768,7 @@ constexpr vk::ComponentMapping swizzle(std::string_view vulkanFromat, std::strin
 
 
 
-constexpr vk::Format toSrgb(vk::Format format) {
+constexpr vk::Format toSrgb(vk::Format format) noexcept {
 	switch(format){
 	case vk::Format::eR8Unorm: 			return vk::Format::eR8Srgb;
 	case vk::Format::eR8G8Unorm:		return vk::Format::eR8G8Srgb;
@@ -780,7 +780,7 @@ constexpr vk::Format toSrgb(vk::Format format) {
 	}
 }
 
-constexpr vk::Format fromSrgb(vk::Format format) {
+constexpr vk::Format fromSrgb(vk::Format format) noexcept {
 	switch(format){
 	case vk::Format::eR8Srgb: 			return vk::Format::eR8Unorm;
 	case vk::Format::eR8G8Srgb:			return vk::Format::eR8G8Unorm;
@@ -794,7 +794,7 @@ constexpr vk::Format fromSrgb(vk::Format format) {
 
 
 
-constexpr bool hasDepth(vk::Format format) {
+constexpr bool hasDepth(vk::Format format) noexcept {
 	switch(format) {
 	case vk::Format::eD16Unorm:
 	case vk::Format::eX8D24UnormPack32:
@@ -809,7 +809,7 @@ constexpr bool hasDepth(vk::Format format) {
 	}
 }
 
-constexpr bool hasStencil(vk::Format format) {
+constexpr bool hasStencil(vk::Format format) noexcept {
 	switch(format) {
 	case vk::Format::eS8Uint:
 	case vk::Format::eD16UnormS8Uint:
@@ -824,7 +824,23 @@ constexpr bool hasStencil(vk::Format format) {
 
 
 
-constexpr vk::Filter toVulkan(ScalingFilter filt) {
+constexpr bool hasSamplerSupport(vk::FormatProperties features) noexcept {
+	constexpr auto FLAGS = 	vk::FormatFeatureFlagBits::eTransferDst |
+							vk::FormatFeatureFlagBits::eSampledImageFilterLinear;
+
+	return (features.optimalTilingFeatures & FLAGS) == FLAGS;
+}
+
+constexpr bool hasFramebufferSupport(vk::FormatProperties features) noexcept {
+	constexpr auto FLAGS = 	vk::FormatFeatureFlagBits::eTransferSrc |
+							vk::FormatFeatureFlagBits::eColorAttachmentBlend;
+
+	return (features.optimalTilingFeatures & FLAGS) == FLAGS;
+}
+
+
+
+constexpr vk::Filter toVulkan(ScalingFilter filt) noexcept {
 	switch(filt){
 	case ScalingFilter::NEAREST: return vk::Filter::eNearest;
 	case ScalingFilter::LINEAR: return vk::Filter::eLinear;
@@ -832,7 +848,7 @@ constexpr vk::Filter toVulkan(ScalingFilter filt) {
 	}
 }
 
-constexpr ScalingFilter fromVulkan(vk::Filter filt) {
+constexpr ScalingFilter fromVulkan(vk::Filter filt) noexcept {
 	switch(filt){
 	case vk::Filter::eNearest: return ScalingFilter::NEAREST;
 	case vk::Filter::eLinear: return ScalingFilter::LINEAR;
@@ -842,7 +858,7 @@ constexpr ScalingFilter fromVulkan(vk::Filter filt) {
 
 
 
-constexpr vk::PipelineColorBlendAttachmentState toVulkan(BlendingMode mode) {
+constexpr vk::PipelineColorBlendAttachmentState toVulkan(BlendingMode mode) noexcept {
 	constexpr vk::ColorComponentFlags colorWriteMask = 
 		vk::ColorComponentFlagBits::eR |
 		vk::ColorComponentFlagBits::eG |
@@ -960,12 +976,12 @@ constexpr vk::PipelineColorBlendAttachmentState toVulkan(BlendingMode mode) {
 
 
 template<typename T>
-constexpr vk::ArrayProxy<T> toVulkan(Utils::BufferView<T> bv) {
+constexpr vk::ArrayProxy<T> toVulkan(Utils::BufferView<T> bv) noexcept {
 	return vk::ArrayProxy<T>(bv.size(), bv.data());
 }
 
 template<typename T>
-constexpr Utils::BufferView<T> fromVulkan(vk::ArrayProxy<T> ap) {
+constexpr Utils::BufferView<T> fromVulkan(vk::ArrayProxy<T> ap) noexcept {
 	return Utils::BufferView<T>(ap.data(), ap.size());
 }
 

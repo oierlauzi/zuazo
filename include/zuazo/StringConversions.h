@@ -28,9 +28,9 @@ std::string	toString(float x);
 std::string	toString(double x);
 
 //Typeinfo-s
-std::string_view toString(const std::type_info& tinfo);
+std::string_view toString(const std::type_info& tinfo) noexcept;
 std::ostream& operator<<(std::ostream& os, const std::type_info& tinfo);
-std::string_view toString(std::type_index tid);
+std::string_view toString(std::type_index tid) noexcept;
 std::ostream& operator<<(std::ostream& os, std::type_index tid);
 
 //Pair (key and value)

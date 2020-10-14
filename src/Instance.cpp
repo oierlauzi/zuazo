@@ -1,6 +1,5 @@
 #include <zuazo/Instance.h>
 
-#include "Graphics/VulkanUtils.h"
 #include "Timing/MainLoop.h"
 #include "Timing/Scheduler.h"
 
@@ -71,19 +70,19 @@ struct Instance::Impl {
 		removeRegularCallback(presentImages);
 	}
 
-	const Instance::ApplicationInfo& getApplicationInfo() const {
+	const Instance::ApplicationInfo& getApplicationInfo() const noexcept {
 		return applicationInfo;
 	}
 
-	const Graphics::Vulkan& getVulkan() const{
+	const Graphics::Vulkan& getVulkan() const noexcept {
 		return vulkan;
 	}
 
-	const FormatSupport& getFormatSupport() const {
+	const FormatSupport& getFormatSupport() const noexcept {
 		return formatSupport;
 	}
 
-	const ResolutionSupport& getResolutionSupport() const {
+	const ResolutionSupport& getResolutionSupport() const noexcept {
 		return resolutionSupport;
 	}
 
@@ -107,28 +106,28 @@ struct Instance::Impl {
 		loop.interrupt();
 	}
 
-	TimePoint getTime() const {
+	TimePoint getTime() const noexcept {
 		return scheduler.getTime();
 	}
 
-	TimePoint getEpoch() const {
+	TimePoint getEpoch() const noexcept {
 		return scheduler.getEpoch();
 	}
 
-	Duration getDeltaT() const {
+	Duration getDeltaT() const noexcept {
 		return scheduler.getDeltaT();
 	}
 
 
-	void lock() {
+	void lock() noexcept {
 		mutex.lock();
 	}
 
-	bool try_lock() {
+	bool try_lock() noexcept {
 		return mutex.try_lock();
 	}
 
-	void unlock() {
+	void unlock() noexcept {
 		mutex.unlock();
 	}
 
@@ -292,19 +291,19 @@ Instance::~Instance() {
 	ZUAZO_LOG(*this, Severity::INFO, "Terminated");
 }
 
-const Instance::ApplicationInfo& Instance::getApplicationInfo() const {
+const Instance::ApplicationInfo& Instance::getApplicationInfo() const noexcept {
 	return m_impl->getApplicationInfo();
 }
 
-const Graphics::Vulkan& Instance::getVulkan() const{
+const Graphics::Vulkan& Instance::getVulkan() const noexcept {
 	return m_impl->getVulkan();
 }
 
-const Instance::FormatSupport& Instance::getFormatSupport() const {
+const Instance::FormatSupport& Instance::getFormatSupport() const noexcept {
 	return m_impl->getFormatSupport();
 }
 
-const Instance::ResolutionSupport& Instance::getResolutionSupport() const {
+const Instance::ResolutionSupport& Instance::getResolutionSupport() const noexcept {
 	return m_impl->getResolutionSupport();
 }
 
@@ -334,35 +333,35 @@ void Instance::removePeriodicCallback(const std::shared_ptr<ScheduledCallback>& 
 	ZUAZO_LOG(*this, Severity::VERBOSE, m_impl->generateRemovePeriodicEventMessage(cbk));
 }
 
-TimePoint Instance::getTime() const {
+TimePoint Instance::getTime() const noexcept {
 	return m_impl->getTime();
 }
 
-TimePoint Instance::getEpoch() const {
+TimePoint Instance::getEpoch() const noexcept {
 	return m_impl->getEpoch();
 }
 
-Duration Instance::getDeltaT() const {
+Duration Instance::getDeltaT() const noexcept {
 	return m_impl->getDeltaT();
 }
 
 
 
-void Instance::lock() {
+void Instance::lock() noexcept {
 	m_impl->lock();
 }
 
-bool Instance::try_lock() {
+bool Instance::try_lock() noexcept {
 	return m_impl->try_lock();
 }
 
-void Instance::unlock() {
+void Instance::unlock() noexcept {
 	m_impl->unlock();
 }
 
 
 uint32_t Instance::defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp,
-											vk::PhysicalDevice device )
+											vk::PhysicalDevice device ) noexcept
 {
 	//Scores
 	constexpr uint32_t MINIMUM_SCORE = 1;
@@ -414,17 +413,17 @@ uint32_t Instance::defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp
  * Instance::Module
  */
 
-Instance::Module::Module(std::string name, Version version)
+Instance::Module::Module(std::string name, Version version) noexcept
 	: m_name(std::move(name))
 	, m_version(version)
 {
 }
 
-const std::string& Instance::Module::getName() const {
+const std::string& Instance::Module::getName() const noexcept {
 	return m_name;
 }
 
-Version Instance::Module::getVersion() const {
+Version Instance::Module::getVersion() const noexcept {
 	return m_version;
 }
 
@@ -459,7 +458,7 @@ Instance::ApplicationInfo::ApplicationInfo(	std::string name,
 											Verbosity verbosity,
 											Modules modules,
 											InstanceLogFunc	instanceLogFunc,
-											ElementLogFunc elementLogFunc )
+											ElementLogFunc elementLogFunc ) noexcept
 	: m_name(std::move(name))
 	, m_version(version)
 	, m_verbosity(verbosity)
@@ -471,27 +470,27 @@ Instance::ApplicationInfo::ApplicationInfo(	std::string name,
 
 
 
-const std::string& Instance::ApplicationInfo::getName() const {
+const std::string& Instance::ApplicationInfo::getName() const noexcept {
 	return m_name;
 }
 
-Version Instance::ApplicationInfo::getVersion() const {
+Version Instance::ApplicationInfo::getVersion() const noexcept {
 	return m_version;
 }
 
-Verbosity Instance::ApplicationInfo::getVerbosity() const {
+Verbosity Instance::ApplicationInfo::getVerbosity() const noexcept {
 	return m_verbosity;
 }
 
-const Instance::ApplicationInfo::Modules& Instance::ApplicationInfo::getModules() const {
+const Instance::ApplicationInfo::Modules& Instance::ApplicationInfo::getModules() const noexcept {
 	return m_modules;
 }
 
-const Instance::ApplicationInfo::InstanceLogFunc& Instance::ApplicationInfo::getInstanceLogFunc() const {
+const Instance::ApplicationInfo::InstanceLogFunc& Instance::ApplicationInfo::getInstanceLogFunc() const noexcept {
 	return m_instanceLogFunc;
 }
 
-const Instance::ApplicationInfo::ElementLogFunc& Instance::ApplicationInfo::getElementLogFunc() const {
+const Instance::ApplicationInfo::ElementLogFunc& Instance::ApplicationInfo::getElementLogFunc() const noexcept {
 	return m_elementLogFunc;
 }
 

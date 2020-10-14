@@ -5,7 +5,7 @@
 
 namespace Zuazo::Utils {
 
-constexpr Endianess getEndianess() {
+constexpr Endianess getEndianess() noexcept {
 	//Based on rapidjson
 	//Detect with GCC 4.6's macro.
 	#if defined(__BYTE_ORDER__)
@@ -33,20 +33,20 @@ constexpr Endianess getEndianess() {
 }
 
 template<typename T>
-constexpr T& bele(T& be, T& le) {
+constexpr T& bele(T& be, T& le) noexcept {
 	constexpr auto endianess = getEndianess();
 	static_assert(endianess == Endianess::LITTLE || endianess == Endianess::BIG, "Endianess must be LE or BE");
 	return endianess == Endianess::BIG ? be : le;
 }
 
 template<typename T>
-constexpr const T& bele(const T& be, const T& le) {
+constexpr const T& bele(const T& be, const T& le) noexcept {
 	constexpr auto endianess = getEndianess();
 	static_assert(endianess == Endianess::LITTLE || endianess == Endianess::BIG, "Endianess must be LE or BE");
 	return endianess == Endianess::BIG ? be : le;
 }
 
-constexpr void swapEndianess(std::byte* begin, std::byte* end) {
+constexpr void swapEndianess(std::byte* begin, std::byte* end) noexcept {
 	end--;
 	while(begin < end) {
 		std::swap(*begin, *end);
@@ -56,7 +56,7 @@ constexpr void swapEndianess(std::byte* begin, std::byte* end) {
 }
 
 template<typename T>
-inline typename std::enable_if<std::is_scalar<T>::value, T>::type swapEndianess(T x) {
+inline typename std::enable_if<std::is_scalar<T>::value, T>::type swapEndianess(T x) noexcept {
 	swapEndianess(
 		reinterpret_cast<std::byte*>(&x),
 		reinterpret_cast<std::byte*>(&x + 1)
@@ -66,18 +66,18 @@ inline typename std::enable_if<std::is_scalar<T>::value, T>::type swapEndianess(
 
 
 
-constexpr size_t getByteSize() {
+constexpr size_t getByteSize() noexcept {
 	return CHAR_BIT; //Usually 8
 }
 
 
 
-constexpr uintptr_t align(uintptr_t ptr, size_t alignment) {
+constexpr uintptr_t align(uintptr_t ptr, size_t alignment) noexcept {
 	return ((ptr + alignment - 1) / alignment) * alignment;
 }
 
 template<typename T>
-inline T* align(T* ptr, size_t alignment) {
+inline T* align(T* ptr, size_t alignment) noexcept {
 	static_assert(sizeof(T*) == sizeof(uintptr_t));
 	return reinterpret_cast<T*>(align(reinterpret_cast<uintptr_t>(ptr), alignment));
 }

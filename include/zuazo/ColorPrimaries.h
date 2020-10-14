@@ -37,11 +37,11 @@ constexpr Math::Mat4x4<T> constructRGB2XYZConversionMatrix(	const T white_x,cons
 															const T red_x,	const T red_y,
 															const T green_x,const T green_y,
 															const T blue_x, const T blue_y,
-															const T white_luminance = T(1) );
+															const T white_luminance = T(1) ) noexcept;
 
-constexpr Math::Mat4x4f getRGB2XYZConversionMatrix(ColorPrimaries colorPrim);
+constexpr Math::Mat4x4f getRGB2XYZConversionMatrix(ColorPrimaries colorPrim) noexcept;
 
-constexpr std::string_view toString(ColorPrimaries colorPrim);
+constexpr std::string_view toString(ColorPrimaries colorPrim) noexcept;
 std::ostream& operator<<(std::ostream& os, ColorPrimaries colorPrim);
 
 namespace Utils {
@@ -49,8 +49,8 @@ namespace Utils {
 template<typename T>
 class Any;
 
-constexpr ColorPrimaries lowest(const Any<ColorPrimaries>& any);
-constexpr ColorPrimaries highest(const Any<ColorPrimaries>& any);
+constexpr ColorPrimaries lowest(const Any<ColorPrimaries>& any) noexcept;
+constexpr ColorPrimaries highest(const Any<ColorPrimaries>& any) noexcept;
 
 }
 

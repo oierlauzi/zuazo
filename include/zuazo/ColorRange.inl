@@ -6,7 +6,7 @@ namespace Zuazo {
 
 namespace Zuazo {
 
-constexpr std::string_view toString(ColorRange colorRange){
+constexpr std::string_view toString(ColorRange colorRange) noexcept {
 	switch(colorRange){
 
 	ZUAZO_ENUM2STR_CASE( ColorRange, FULL_RGB )
@@ -25,11 +25,11 @@ inline std::ostream& operator<<(std::ostream& os, ColorRange colorRange) {
 
 namespace Utils {
 
-constexpr ColorRange lowest(const Any<ColorRange>&) {
+constexpr ColorRange lowest(const Any<ColorRange>&) noexcept {
 	return ColorRange::NONE + static_cast<ColorRange>(1);
 }
 
-constexpr ColorRange highest(const Any<ColorRange>&) {
+constexpr ColorRange highest(const Any<ColorRange>&) noexcept {
 	return ColorRange::COUNT - static_cast<ColorRange>(1);
 }
 

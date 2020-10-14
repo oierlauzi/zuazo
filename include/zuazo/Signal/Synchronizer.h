@@ -22,11 +22,11 @@ public:
 
 	Synchronizer&					operator=(const Synchronizer& other) = delete;
 
-	size_t							getMaxDelay() const;
-	size_t							getDelay() const;
+	size_t							getMaxDelay() const noexcept;
+	size_t							getDelay() const noexcept;
 
-	size_t							getMaxDropped() const;
-	size_t							getDropped() const;
+	size_t							getMaxDropped() const noexcept;
+	size_t							getDropped() const noexcept;
 
 	void							updateInput();
 	void							updateOutput();

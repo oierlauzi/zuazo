@@ -17,24 +17,24 @@ inline Synchronizer<T>::Synchronizer(std::string name, size_t maxDelay, size_t m
 
 
 template<typename T>
-inline size_t Synchronizer<T>::getMaxDelay() const {
+inline size_t Synchronizer<T>::getMaxDelay() const noexcept {
 	return m_queue.capacity();
 }
 
 template<typename T>
-inline size_t Synchronizer<T>::getDelay() const {
+inline size_t Synchronizer<T>::getDelay() const noexcept {
 	return m_queue.size();
 }
 
 
 
 template<typename T>
-inline size_t Synchronizer<T>::getMaxDropped() const {
+inline size_t Synchronizer<T>::getMaxDropped() const noexcept {
 	return m_maxDropped;
 }
 
 template<typename T>
-inline size_t Synchronizer<T>::getDropped() const {
+inline size_t Synchronizer<T>::getDropped() const noexcept {
 	return m_dropped;
 }
 

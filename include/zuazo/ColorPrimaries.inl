@@ -7,7 +7,7 @@ constexpr Math::Mat4x4<T> constructRGB2XYZConversionMatrix(	const T white_x,cons
 															const T red_x,	const T red_y,
 															const T green_x,const T green_y,
 															const T blue_x, const T blue_y,
-															const T white_luminance )
+															const T white_luminance ) noexcept
 {
 	//Based on: 
 	//https://pdfs.semanticscholar.org/a7a3/0558ee8036460b8570f34a4dd0ef6c8a7fb3.pdf
@@ -51,7 +51,7 @@ constexpr Math::Mat4x4<T> constructRGB2XYZConversionMatrix(	const T white_x,cons
 	return chromaticities * scale;
 }
 
-constexpr Math::Mat4x4f getRGB2XYZConversionMatrix(ColorPrimaries colorPrim){
+constexpr Math::Mat4x4f getRGB2XYZConversionMatrix(ColorPrimaries colorPrim) noexcept {
 	switch(colorPrim){
 	case ColorPrimaries::BT601_625: return constructRGB2XYZConversionMatrix(
 		//https://en.wikipedia.org/wiki/Rec._601
@@ -115,7 +115,7 @@ constexpr Math::Mat4x4f getRGB2XYZConversionMatrix(ColorPrimaries colorPrim){
 
 
 
-constexpr std::string_view toString(ColorPrimaries colorPrim){
+constexpr std::string_view toString(ColorPrimaries colorPrim) noexcept {
 	switch(colorPrim){
 
 	ZUAZO_ENUM2STR_CASE( ColorPrimaries, BT601_625 )
@@ -137,11 +137,11 @@ inline std::ostream& operator<<(std::ostream& os, ColorPrimaries colorPrim) {
 
 namespace Utils {
 
-constexpr ColorPrimaries lowest(const Any<ColorPrimaries>&) {
+constexpr ColorPrimaries lowest(const Any<ColorPrimaries>&) noexcept {
 	return ColorPrimaries::NONE + static_cast<ColorPrimaries>(1);
 }
 
-constexpr ColorPrimaries highest(const Any<ColorPrimaries>&) {
+constexpr ColorPrimaries highest(const Any<ColorPrimaries>&) noexcept {
 	return ColorPrimaries::COUNT - static_cast<ColorPrimaries>(1);
 }
 

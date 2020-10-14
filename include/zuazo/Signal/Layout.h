@@ -26,8 +26,8 @@ public:
 	Layout&													operator=(const Layout& other) = default;
 	Layout&													operator=(Layout&& other) = default;
 
-	void                    								setName(std::string name);
-	const std::string&      								getName() const;
+	void                    								setName(std::string name) noexcept;
+	const std::string&      								getName() const noexcept;
 
 	template<typename T>
 	std::vector<std::reference_wrapper<PadProxy<T>>>		getPads();
@@ -40,9 +40,9 @@ public:
 	const PadProxy<T>&										getPad(std::string_view name) const;
 
 	template<typename T>
-	static PadProxy<T>&										makeProxy(T& pad);
+	static PadProxy<T>&										makeProxy(T& pad) noexcept;
 	template<typename T>
-	static const PadProxy<T>&								makeProxy(const T& pad);
+	static const PadProxy<T>&								makeProxy(const T& pad) noexcept;
 
 protected:
 	void													registerPad(PadRef pad);
@@ -50,7 +50,7 @@ protected:
 	void													registerPad(PadProxy<T>& pad);
 	template<typename InputIt>
 	void													registerPad(InputIt begin, InputIt end);
-	void													removePad(PadRef pad);
+	void													removePad(PadRef pad) noexcept;
 
 private:
 	std::string												m_name;

@@ -32,7 +32,7 @@ enum class ColorRange {
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorRange)
 ZUAZO_ENUM_COMP_OPERATORS(ColorRange)	
 
-constexpr std::string_view toString(ColorRange colorRange);
+constexpr std::string_view toString(ColorRange colorRange) noexcept;
 std::ostream& operator<<(std::ostream& os, ColorRange colorRange);
 
 namespace Utils {
@@ -40,8 +40,8 @@ namespace Utils {
 template<typename T>
 class Any;
 
-constexpr ColorRange lowest(const Any<ColorRange>& any);
-constexpr ColorRange highest(const Any<ColorRange>& any);
+constexpr ColorRange lowest(const Any<ColorRange>& any) noexcept;
+constexpr ColorRange highest(const Any<ColorRange>& any) noexcept;
 
 }
 

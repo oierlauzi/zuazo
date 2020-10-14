@@ -38,8 +38,6 @@ public:
 
 
 private:
-	using Index = 
-
 	std::vector<T>			m_queue;
 	std::atomic<size_t>		m_read;
 	std::atomic<size_t>		m_write;

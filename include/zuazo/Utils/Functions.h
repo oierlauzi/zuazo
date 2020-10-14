@@ -8,10 +8,10 @@
 namespace Zuazo::Utils {
 	
 template<typename... T>
-constexpr void ignore(const T&...);
+constexpr void ignore(const T&...) noexcept;
 
 template<typename T>
-constexpr T bit(T pos);
+constexpr T bit(T pos) noexcept;
 
 
 template<typename Func, typename... Args>

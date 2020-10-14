@@ -56,7 +56,7 @@ inline std::string toString(double x) {
 
 
 
-inline std::string_view toString(const std::type_info& tinfo) {
+inline std::string_view toString(const std::type_info& tinfo) noexcept {
 	return tinfo.name();
 }
 
@@ -64,7 +64,7 @@ inline std::ostream& operator<<(std::ostream& os, const std::type_info& tinfo) {
 	return os << toString(tinfo);
 }
 
-inline std::string_view toString(std::type_index tid) {
+inline std::string_view toString(std::type_index tid) noexcept {
 	return tid.name();
 }
 

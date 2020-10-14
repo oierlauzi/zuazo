@@ -20,7 +20,7 @@ inline Pimpl<T, Alloc>::Pimpl(Allocator alloc, Args&&... args)
 }
 
 template<typename T, typename Alloc>
-inline Pimpl<T, Alloc>::Pimpl(Pimpl&& other)
+inline Pimpl<T, Alloc>::Pimpl(Pimpl&& other) noexcept
 	: m_data(std::move(other.m_data))
 {
 	other.getPointer() = nullptr;
@@ -35,7 +35,7 @@ inline Pimpl<T, Alloc>::~Pimpl() {
 }
 
 template<typename T, typename Alloc>
-inline Pimpl<T, Alloc>& Pimpl<T, Alloc>::operator=(Pimpl&& other) {
+inline Pimpl<T, Alloc>& Pimpl<T, Alloc>::operator=(Pimpl&& other) noexcept {
 	Pimpl(std::move(other)).swap(*this);
 	return *this;
 }

@@ -30,9 +30,10 @@ enum class ColorSubsampling {
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorSubsampling)
 ZUAZO_ENUM_COMP_OPERATORS(ColorSubsampling)	
 
-constexpr Resolution getSubsampledResolution(ColorSubsampling subs, Resolution res);
+constexpr Math::Vec2i getSubsamplingFactor(ColorSubsampling subs) noexcept;
+constexpr Resolution getSubsampledResolution(ColorSubsampling subs, Resolution res) noexcept;
 
-constexpr std::string_view toString(ColorSubsampling colorSubsampling);
+constexpr std::string_view toString(ColorSubsampling colorSubsampling) noexcept;
 std::ostream& operator<<(std::ostream& os, ColorSubsampling colorSubsampling);
 
 namespace Utils {
@@ -40,8 +41,8 @@ namespace Utils {
 template<typename T>
 class Any;
 
-constexpr ColorSubsampling lowest(const Any<ColorSubsampling>& any);
-constexpr ColorSubsampling highest(const Any<ColorSubsampling>& any);
+constexpr ColorSubsampling lowest(const Any<ColorSubsampling>& any) noexcept;
+constexpr ColorSubsampling highest(const Any<ColorSubsampling>& any) noexcept;
 
 }
 

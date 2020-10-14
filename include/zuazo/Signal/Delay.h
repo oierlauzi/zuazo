@@ -22,8 +22,8 @@ public:
 
 	Delay&							operator=(const Delay& other) = delete;
 
-	void							setDelay(Duration delay);
-	Duration						getDelay() const;
+	void							setDelay(Duration delay) noexcept;
+	Duration						getDelay() const noexcept;
 
 	void							update(TimePoint now);
 

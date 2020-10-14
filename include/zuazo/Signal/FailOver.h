@@ -19,8 +19,8 @@ public:
 
 	FailOver&								operator=(const FailOver& other) = delete;
 
-	PadProxy<Input<T>>&						getBackupInput();
-	const PadProxy<Input<T>>&				getBackupInput() const;
+	PadProxy<Input<T>>&						getBackupInput() noexcept;
+	const PadProxy<Input<T>>&				getBackupInput() const noexcept;
 
 	static constexpr std::string_view		BACKUP_INPUT_NAME = "backup";
 
@@ -29,7 +29,7 @@ private:
 	Input<T>								m_input;
 	Output<T>								m_output;
 
-	static Output<T>::PullCallback			makePullCallback(Input<T>& backupInput, Input<T>& input);
+	static typename Output<T>::PullCallback	makePullCallback(Input<T>& backupInput, Input<T>& input);
 };
 	
 }

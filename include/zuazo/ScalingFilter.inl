@@ -2,7 +2,7 @@
 
 namespace Zuazo {
 
-constexpr std::string_view toString(ScalingFilter filter){
+constexpr std::string_view toString(ScalingFilter filter) noexcept {
 	switch(filter){
 
 	ZUAZO_ENUM2STR_CASE( ScalingFilter, NEAREST )
@@ -18,11 +18,11 @@ inline std::ostream& operator<<(std::ostream& os, ScalingFilter filter) {
 
 namespace Utils {
 
-constexpr ScalingFilter lowest(const Any<ScalingFilter>&) {
+constexpr ScalingFilter lowest(const Any<ScalingFilter>&) noexcept {
 	return ScalingFilter::NONE + static_cast<ScalingFilter>(1);
 }
 
-constexpr ScalingFilter highest(const Any<ScalingFilter>&) {
+constexpr ScalingFilter highest(const Any<ScalingFilter>&) noexcept {
 	return ScalingFilter::COUNT - static_cast<ScalingFilter>(1);
 }
 

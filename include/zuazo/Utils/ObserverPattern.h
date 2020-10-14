@@ -10,14 +10,14 @@ class Subject;
 class Observer {
 	friend Subject;
 public:
-	Observer();
+	Observer() noexcept;
 	Observer(const Observer& other);
 	~Observer();
 
 	Observer&			operator=(const Observer& other);
 
 	void				setSubject(Subject* subject);
-	Subject*			getSubject() const;
+	Subject*			getSubject() const noexcept;
 
 private:
 	Subject*			m_subject;
@@ -38,7 +38,7 @@ public:
 
 	Subject&			operator=(Subject&& other);
 
-	const Observers&	getObservers() const;
+	const Observers&	getObservers() const noexcept;
 
 private:
 	Observers			m_observers;

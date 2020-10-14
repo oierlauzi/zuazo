@@ -15,12 +15,12 @@ inline FailOver<T>::FailOver(std::string name)
 
 
 template<typename T>
-inline Layout::PadProxy<Input<T>>& FailOver<T>::getBackupInput() {
+inline Layout::PadProxy<Input<T>>& FailOver<T>::getBackupInput() noexcept {
 	return m_backupInput;
 }
 
 template<typename T>
-inline const Layout::PadProxy<Input<T>>& FailOver<T>::getBackupInput() const {
+inline const Layout::PadProxy<Input<T>>& FailOver<T>::getBackupInput() const noexcept {
 	return m_backupInput;
 }
 

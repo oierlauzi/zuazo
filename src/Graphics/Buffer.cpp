@@ -15,11 +15,11 @@ Buffer::Buffer(	const Vulkan& vulkan,
 
 
 
-vk::Buffer Buffer::getBuffer() const{
+vk::Buffer Buffer::getBuffer() const noexcept {
 	return *m_buffer;
 }
 
-vk::DeviceMemory Buffer::getDeviceMemory() const {
+vk::DeviceMemory Buffer::getDeviceMemory() const noexcept {
 	return *m_memory;
 }
 

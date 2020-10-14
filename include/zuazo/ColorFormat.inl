@@ -2,7 +2,7 @@
 
 namespace Zuazo {
 
-constexpr size_t getPlaneCount(ColorFormat format){
+constexpr size_t getPlaneCount(ColorFormat format) noexcept {
 	switch(format){
 		case ColorFormat::G8_B8_R8_A8:
 		case ColorFormat::G10X6_B10X6_R10X6_A10X6_16:
@@ -38,7 +38,7 @@ constexpr size_t getPlaneCount(ColorFormat format){
 
 
 
-constexpr std::string_view toString(ColorFormat format){
+constexpr std::string_view toString(ColorFormat format) noexcept {
 	switch(format){
 
 	ZUAZO_ENUM2STR_CASE( ColorFormat, Y4X4_8 )
@@ -249,11 +249,11 @@ inline std::ostream& operator<<(std::ostream& os, ColorFormat format) {
 
 namespace Utils {
 
-constexpr ColorFormat lowest(const Any<ColorFormat>&) {
+constexpr ColorFormat lowest(const Any<ColorFormat>&) noexcept {
 	return ColorFormat::NONE + static_cast<ColorFormat>(1);
 }
 
-constexpr ColorFormat highest(const Any<ColorFormat>&) {
+constexpr ColorFormat highest(const Any<ColorFormat>&) noexcept {
 	return ColorFormat::COUNT - static_cast<ColorFormat>(1);
 }
 

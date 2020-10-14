@@ -12,7 +12,7 @@ template <typename T>
 inline const typename Output<T>::Element Output<T>::NO_SIGNAL = T();
 
 template <typename T>
-inline Output<T>::Output(std::string name, PullCallback pullCbk)
+inline Output<T>::Output(std::string name, PullCallback pullCbk) noexcept
 	: PadBase(std::move(name))
 	, m_pullCallback(std::move(pullCbk))
 {
@@ -41,29 +41,29 @@ inline typename Output<T>::Consumers Output<T>::getConsumers() const {
 
 
 template <typename T>
-inline void Output<T>::setPullCallback(PullCallback cbk) {
+inline void Output<T>::setPullCallback(PullCallback cbk) noexcept {
 	m_pullCallback = std::move(cbk);
 }
 
 template <typename T>
-inline const typename Output<T>::PullCallback& Output<T>::getPullCallback() const {
+inline const typename Output<T>::PullCallback& Output<T>::getPullCallback() const noexcept {
 	return m_pullCallback;
 }
 
 
 
 template <typename T>
-inline void Output<T>::reset() {
+inline void Output<T>::reset() noexcept {
 	push(Element());
 }
 
 template <typename T>
-void Output<T>::push(Element element) {
+void Output<T>::push(Element element) noexcept {
 	m_lastElement = std::move(element);
 }
 
 template <typename T>
-inline const typename Output<T>::Element& Output<T>::pull() {
+inline const typename Output<T>::Element& Output<T>::pull() noexcept {
 	if(m_pullCallback) {
 		m_pullCallback(*this);
 	}
@@ -72,7 +72,7 @@ inline const typename Output<T>::Element& Output<T>::pull() {
 }
 
 template <typename T>
-inline const typename Output<T>::Element& Output<T>::getLastElement() const {
+inline const typename Output<T>::Element& Output<T>::getLastElement() const noexcept {
 	return m_lastElement;
 }
 

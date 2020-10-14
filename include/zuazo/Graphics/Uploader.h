@@ -14,17 +14,17 @@ public:
 	Uploader(	const Vulkan& vulkan, 
 				const Frame::Descriptor& conf );
 	Uploader(const Uploader& other) = delete;
-	Uploader(Uploader&& other);
+	Uploader(Uploader&& other) noexcept;
 	~Uploader();
 
 	Uploader& 										operator=(const Uploader& other) = delete;
-	Uploader& 										operator=(Uploader&& other);
+	Uploader& 										operator=(Uploader&& other) noexcept;
 
-	const Vulkan&									getVulkan() const;
+	const Vulkan&									getVulkan() const noexcept;
 
-	void											setMaxSpareCount(size_t spares);
-	size_t											getMaxSpareCount() const;
-	size_t											getSpareCount() const;
+	void											setMaxSpareCount(size_t spares) noexcept;
+	size_t											getMaxSpareCount() const noexcept;
+	size_t											getSpareCount() const noexcept;
 
 	std::shared_ptr<StagedFrame>					acquireFrame() const;
 

@@ -293,9 +293,9 @@ enum class ColorFormat {
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorFormat)
 ZUAZO_ENUM_COMP_OPERATORS(ColorFormat)	
 
-constexpr size_t getPlaneCount(ColorFormat format);
+constexpr size_t getPlaneCount(ColorFormat format) noexcept;
 
-constexpr std::string_view toString(ColorFormat format);
+constexpr std::string_view toString(ColorFormat format) noexcept;
 std::ostream& operator<<(std::ostream& os, ColorFormat format);
 
 namespace Utils {
@@ -303,8 +303,8 @@ namespace Utils {
 template<typename T>
 class Any;
 
-constexpr ColorFormat lowest(const Any<ColorFormat>& any);
-constexpr ColorFormat highest(const Any<ColorFormat>& any);
+constexpr ColorFormat lowest(const Any<ColorFormat>& any) noexcept;
+constexpr ColorFormat highest(const Any<ColorFormat>& any) noexcept;
 
 }
 

@@ -23,24 +23,24 @@ public:
 	InputColorTransfer();
 	explicit InputColorTransfer(const Frame::Descriptor& desc);
 	InputColorTransfer(const InputColorTransfer& other) = delete;
-	InputColorTransfer(InputColorTransfer&& other);
+	InputColorTransfer(InputColorTransfer&& other) noexcept;
 	~InputColorTransfer();
 
 	InputColorTransfer&					operator=(const InputColorTransfer& other) = delete;
-	InputColorTransfer&					operator=(InputColorTransfer&& other);
+	InputColorTransfer&					operator=(InputColorTransfer&& other) noexcept;
 
-	bool								operator==(const InputColorTransfer& other) const;
-	bool								operator!=(const InputColorTransfer& other) const;
+	bool								operator==(const InputColorTransfer& other) const noexcept;
+	bool								operator!=(const InputColorTransfer& other) const noexcept;
 
 	void								optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
-													Utils::BufferView<const vk::Format> supportedFormats );
+													Utils::BufferView<const vk::Format> supportedFormats ) noexcept;
 
-	const std::byte*					data() const;
+	const std::byte*					data() const noexcept;
 
-	static uint32_t 					getSamplerCount();
-	static uint32_t 					getSamplerBinding();
-	static uint32_t 					getDataBinding();
-	static size_t						size();
+	static uint32_t 					getSamplerCount() noexcept;
+	static uint32_t 					getSamplerBinding() noexcept;
+	static uint32_t 					getDataBinding() noexcept;
+	static size_t						size() noexcept;
 
 private:
 	struct Impl;
@@ -55,20 +55,20 @@ public:
 	explicit OutputColorTransfer(const Frame::Descriptor& desc);
 	explicit OutputColorTransfer(const InputColorTransfer& inputTransfer);
 	OutputColorTransfer(const OutputColorTransfer& other) = delete;
-	OutputColorTransfer(OutputColorTransfer&& other);
+	OutputColorTransfer(OutputColorTransfer&& other) noexcept;
 	~OutputColorTransfer();
 
 	OutputColorTransfer&				operator=(const OutputColorTransfer& other) = delete;
-	OutputColorTransfer&				operator=(OutputColorTransfer&& other);
+	OutputColorTransfer&				operator=(OutputColorTransfer&& other) noexcept;
 
-	bool								operator==(const OutputColorTransfer& other) const;
-	bool								operator!=(const OutputColorTransfer& other) const;
+	bool								operator==(const OutputColorTransfer& other) const noexcept;
+	bool								operator!=(const OutputColorTransfer& other) const noexcept;
 
 	void								optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
-													Utils::BufferView<const vk::Format> supportedFormats );
+													Utils::BufferView<const vk::Format> supportedFormats ) noexcept;
 
-	const std::byte*					data() const;
-	static size_t						size();
+	const std::byte*					data() const noexcept;
+	static size_t						size() noexcept;
 
 private:
 	struct Impl;

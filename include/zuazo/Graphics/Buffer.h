@@ -14,14 +14,14 @@ public:
 			vk::MemoryPropertyFlags properties,
 			size_t size );
 	Buffer(const Buffer& other) = delete;
-	Buffer(Buffer&& other) = default;
+	Buffer(Buffer&& other) noexcept = default;
 	virtual ~Buffer() = default;
 
 	Buffer& 						operator=(const Buffer& other) = delete;
 	Buffer& 						operator=(Buffer&& other) = default;
 
-	vk::Buffer						getBuffer() const;
-	vk::DeviceMemory				getDeviceMemory() const;
+	vk::Buffer						getBuffer() const noexcept;
+	vk::DeviceMemory				getDeviceMemory() const noexcept;
 
 private:
 	vk::UniqueBuffer				m_buffer;

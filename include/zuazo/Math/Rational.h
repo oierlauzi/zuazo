@@ -71,7 +71,7 @@ public:
 	 * \brief
 	 * Default constructor. Assigns the number 0.
 	 */
-	constexpr Rational();
+	constexpr Rational() noexcept;
 
 	/**
 	 * \brief
@@ -87,7 +87,7 @@ public:
 	 * \param[in] den
 	 * The denominator part of the fraction
 	 */
-	constexpr Rational(Num num, Den den);
+	constexpr Rational(Num num, Den den) noexcept;
 
 	/**
 	 * \brief
@@ -96,7 +96,7 @@ public:
 	 * \param[in] number
 	 * The integer which will get assigned to the rational number
 	 */
-	constexpr Rational(Num number);
+	constexpr Rational(Num number) noexcept;
 
 	/**
 	 * \brief
@@ -109,7 +109,7 @@ public:
 	 * \param[in] number
 	 * The real number which will get assigned to the rational number
 	 */
-	explicit constexpr Rational(Real number);
+	explicit constexpr Rational(Real number) noexcept;
 
 	/**
 	 * \brief
@@ -120,7 +120,7 @@ public:
 	 */
 
 	template<intmax_t num, intmax_t den>
-	constexpr Rational(std::ratio<num, den>);
+	constexpr Rational(std::ratio<num, den>) noexcept;
 
 	/**
 	 * \brief
@@ -129,7 +129,7 @@ public:
 	 * \param[in] rat
 	 * The rational to be copied
 	 */
-	constexpr Rational(const Rational& rat)=default;
+	constexpr Rational(const Rational& rat) noexcept = default;
 
 	/**
 	 * \brief
@@ -139,13 +139,13 @@ public:
 	 * The rational to be copied
 	 */
 	template<typename num_t2, typename den_t2>
-	constexpr Rational(const Rational<num_t2, den_t2>& rat);
+	constexpr Rational(const Rational<num_t2, den_t2>& rat) noexcept;
 
 	/**
 	 * \brief
 	 * Destructor
 	 */
-	~Rational()=default;
+	~Rational() = default;
 
 	/**
 	 * \brief
@@ -153,7 +153,7 @@ public:
 	 * \param[in] other
 	 * The rational to be copied
 	 */
-	constexpr Rational& operator=(const Rational& other) = default;
+	constexpr Rational& operator=(const Rational& other) noexcept = default;
 
 	//////////////////////////////////////////////
 	//				PUBLIC METHODS				//
@@ -166,7 +166,7 @@ public:
 	 * \returns
 	 * The numerator part of the rational number
 	 */
-	constexpr Num getNumerator() const;
+	constexpr Num getNumerator() const noexcept;
 
 	/**
 	 * \brief
@@ -175,26 +175,26 @@ public:
 	 * \returns
 	 * The denominator part of the rational number
 	 */
-	constexpr Den getDenominator() const;
+	constexpr Den getDenominator() const noexcept;
 
 	/**
 	 * \brief
 	 * Returns wether or not it is an integer number representation
 	 */
-	constexpr bool isInteger() const;
+	constexpr bool isInteger() const noexcept;
 
 
 	/**
 	 * \brief
 	 * Returns the absolute (unsigned) value
 	 */
-	constexpr Rational abs() const;
+	constexpr Rational abs() const noexcept;
 
 	/**
 	 * \brief
 	 * Returns the inverse value (Numerator <-> Denominator)
 	 */
-	constexpr Rational inv() const;
+	constexpr Rational inv() const noexcept;
 
 	/**
 	 * \brief
@@ -203,7 +203,7 @@ public:
 	 * \see
 	 * https://en.cppreference.com/w/cpp/numeric/math/floor 
 	 */
-	constexpr Rational floor() const;
+	constexpr Rational floor() const noexcept;
 
 	/**
 	 * \brief
@@ -213,7 +213,7 @@ public:
 	 * \see
 	 * https://en.cppreference.com/w/cpp/numeric/math/trunc 
 	 */
-	constexpr Rational trunc() const;
+	constexpr Rational trunc() const noexcept;
 
 	/**
 	 * \brief
@@ -222,7 +222,7 @@ public:
 	 * \see
 	 * https://en.cppreference.com/w/cpp/numeric/math/ceil 
 	 */
-	constexpr Rational ceil() const;
+	constexpr Rational ceil() const noexcept;
 
 	/**
 	 * \brief
@@ -231,60 +231,60 @@ public:
 	 * \see
 	 * https://en.cppreference.com/w/cpp/numeric/math/round
 	 */
-	constexpr Rational round() const;
+	constexpr Rational round() const noexcept;
 
 	/**
 	 * \brief
 	 * Returns the fractional part
 	 */
-	constexpr Rational frac() const;
+	constexpr Rational frac() const noexcept;
 
 	//////////////////////////////////////////////
 	//				CAST OPERATORS				//
 	//////////////////////////////////////////////
 
-	constexpr operator bool() const;
-	explicit constexpr operator Integer() const;
-	explicit constexpr operator Real() const;
+	constexpr operator bool() const noexcept;
+	explicit constexpr operator Integer() const noexcept;
+	explicit constexpr operator Real() const noexcept;
 
 	//////////////////////////////////////////////
 	//			ARITHMETIC OPERATORS			//
 	//////////////////////////////////////////////
 
-	constexpr Rational operator-();
-	constexpr Rational& operator+=(const Rational& right);
-	constexpr Rational& operator-=(const Rational& right);
-	constexpr Rational& operator*=(const Rational& right);
-	constexpr Rational& operator/=(const Rational& right);
-	constexpr Rational& operator%=(const Rational& right);
+	constexpr Rational operator-() noexcept;
+	constexpr Rational& operator+=(const Rational& right) noexcept;
+	constexpr Rational& operator-=(const Rational& right) noexcept;
+	constexpr Rational& operator*=(const Rational& right) noexcept;
+	constexpr Rational& operator/=(const Rational& right) noexcept;
+	constexpr Rational& operator%=(const Rational& right) noexcept;
 
 	template<typename num_t2, typename den_t2>
-	constexpr CommonType<Rational<num_t2, den_t2>> operator+(const Rational<num_t2, den_t2>& right) const;
+	constexpr CommonType<Rational<num_t2, den_t2>> operator+(const Rational<num_t2, den_t2>& right) const noexcept;
 	template<typename num_t2, typename den_t2>
-	constexpr CommonType<Rational<num_t2, den_t2>> operator-(const Rational<num_t2, den_t2>& right) const;
+	constexpr CommonType<Rational<num_t2, den_t2>> operator-(const Rational<num_t2, den_t2>& right) const noexcept;
 	template<typename num_t2, typename den_t2>
-	constexpr CommonType<Rational<num_t2, den_t2>> operator*(const Rational<num_t2, den_t2>& right) const;
+	constexpr CommonType<Rational<num_t2, den_t2>> operator*(const Rational<num_t2, den_t2>& right) const noexcept;
 	template<typename num_t2, typename den_t2>
-	constexpr CommonType<Rational<num_t2, den_t2>> operator/(const Rational<num_t2, den_t2>& right) const;
+	constexpr CommonType<Rational<num_t2, den_t2>> operator/(const Rational<num_t2, den_t2>& right) const noexcept;
 	template<typename num_t2, typename den_t2>
-	constexpr CommonType<Rational<num_t2, den_t2>> operator%(const Rational<num_t2, den_t2>& right) const;
+	constexpr CommonType<Rational<num_t2, den_t2>> operator%(const Rational<num_t2, den_t2>& right) const noexcept;
 
 	//////////////////////////////////////////////
 	//				COMPARE OPERATORS			//
 	//////////////////////////////////////////////
 
 	template<typename num_t2, typename den_t2>
-	constexpr int operator==(const Rational<num_t2, den_t2>& right) const;
+	constexpr int operator==(const Rational<num_t2, den_t2>& right) const noexcept;
 	template<typename num_t2, typename den_t2>
-	constexpr int operator!=(const Rational<num_t2, den_t2>& right) const;
+	constexpr int operator!=(const Rational<num_t2, den_t2>& right) const noexcept;
 	template<typename num_t2, typename den_t2>
-	constexpr int operator<(const Rational<num_t2, den_t2>& right) const;
+	constexpr int operator<(const Rational<num_t2, den_t2>& right) const noexcept;
 	template<typename num_t2, typename den_t2>
-	constexpr int operator<=(const Rational<num_t2, den_t2>& right) const;
+	constexpr int operator<=(const Rational<num_t2, den_t2>& right) const noexcept;
 	template<typename num_t2, typename den_t2>
-	constexpr int operator>(const Rational<num_t2, den_t2>& right) const;
+	constexpr int operator>(const Rational<num_t2, den_t2>& right) const noexcept;
 	template<typename num_t2, typename den_t2>
-	constexpr int operator>=(const Rational<num_t2, den_t2>& right) const;
+	constexpr int operator>=(const Rational<num_t2, den_t2>& right) const noexcept;
 	
 private:
 	Num m_num;
@@ -292,34 +292,34 @@ private:
 };
 
 template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> mod(const Rational<num_t, den_t>& num, const Rational<num_t, den_t>& den);
+constexpr Rational<den_t, num_t> mod(const Rational<num_t, den_t>& num, const Rational<num_t, den_t>& den) noexcept;
 
 template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> abs(const Rational<num_t, den_t>& r);
+constexpr Rational<den_t, num_t> abs(const Rational<num_t, den_t>& r) noexcept;
 
 template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> inv(const Rational<num_t, den_t>& r);
+constexpr Rational<den_t, num_t> inv(const Rational<num_t, den_t>& r) noexcept;
 
 template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> floor(const Rational<num_t, den_t>& x);
+constexpr Rational<den_t, num_t> floor(const Rational<num_t, den_t>& x) noexcept;
 
 template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> trunc(const Rational<num_t, den_t>& x);
+constexpr Rational<den_t, num_t> trunc(const Rational<num_t, den_t>& x) noexcept;
 
 template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> ceil(const Rational<num_t, den_t>&x);
+constexpr Rational<den_t, num_t> ceil(const Rational<num_t, den_t>&x) noexcept;
 
 template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> round(const Rational<num_t, den_t>& x);
+constexpr Rational<den_t, num_t> round(const Rational<num_t, den_t>& x) noexcept;
 
 template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> frac(const Rational<num_t, den_t>& x);
+constexpr Rational<den_t, num_t> frac(const Rational<num_t, den_t>& x) noexcept;
 
 template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> gcd(const Rational<den_t, num_t>& a, const Rational<den_t, num_t>& b);
+constexpr Rational<den_t, num_t> gcd(const Rational<den_t, num_t>& a, const Rational<den_t, num_t>& b) noexcept;
 
 template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> lcm(const Rational<den_t, num_t>& a, const Rational<den_t, num_t>& b);
+constexpr Rational<den_t, num_t> lcm(const Rational<den_t, num_t>& a, const Rational<den_t, num_t>& b) noexcept;
 
 
 
@@ -336,9 +336,9 @@ template<typename T>
 class Any;
 
 template<typename num_t, typename den_t>
-constexpr Math::Rational<num_t, den_t> lowest(const Any<Math::Rational<num_t, den_t>>& any);
+constexpr Math::Rational<num_t, den_t> lowest(const Any<Math::Rational<num_t, den_t>>& any) noexcept;
 template<typename num_t, typename den_t>
-constexpr Math::Rational<num_t, den_t> highest(const Any<Math::Rational<num_t, den_t>>& any);
+constexpr Math::Rational<num_t, den_t> highest(const Any<Math::Rational<num_t, den_t>>& any) noexcept;
 
 }
 

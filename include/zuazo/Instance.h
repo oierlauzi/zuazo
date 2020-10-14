@@ -64,11 +64,11 @@ public:
 	Instance& operator=(const Instance& other) = delete;
 	Instance& operator=(Instance&& other) = delete;
 
-	const ApplicationInfo&		getApplicationInfo() const;
-	const Graphics::Vulkan&		getVulkan() const;
+	const ApplicationInfo&		getApplicationInfo() const noexcept;
+	const Graphics::Vulkan&		getVulkan() const noexcept;
 
-	const FormatSupport& 		getFormatSupport() const;
-	const ResolutionSupport&	getResolutionSupport() const;
+	const FormatSupport& 		getFormatSupport() const noexcept;
+	const ResolutionSupport&	getResolutionSupport() const noexcept;
 
 	void						addRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior);
 	void						removeRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk);
@@ -76,16 +76,16 @@ public:
 	void						addPeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior, Duration period);
 	void						removePeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk);
 
-	TimePoint					getTime() const;
-	TimePoint					getEpoch() const;
-	Duration					getDeltaT() const;
+	TimePoint					getTime() const noexcept;
+	TimePoint					getEpoch() const noexcept;
+	Duration					getDeltaT() const noexcept;
 
-	void						lock();
-	bool						try_lock();
-	void						unlock();
+	void						lock() noexcept;
+	bool						try_lock() noexcept;
+	void						unlock() noexcept;
 
 	static uint32_t				defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp, 
-														vk::PhysicalDevice device );
+														vk::PhysicalDevice device ) noexcept;
 
 private:
 	struct Impl;
@@ -100,16 +100,16 @@ class Instance::Module {
 public:
 	using VulkanExtensions = std::vector<vk::ExtensionProperties>;
 
-	Module(std::string name, Version version);
+	Module(std::string name, Version version) noexcept;
 	Module(const Module& other) = default;
-	Module(Module&& other) = default;
+	Module(Module&& other) noexcept = default;
 	virtual ~Module() = default;
 
 	Module& operator=(const Module& other) = default;
-	Module& operator=(Module&& other) = default;
+	Module& operator=(Module&& other) noexcept = default;
 
-	const std::string&			getName() const;
-	Version						getVersion() const;
+	const std::string&			getName() const noexcept;
+	Version						getVersion() const noexcept;
 
 private:
 	std::string 				m_name;
@@ -139,20 +139,20 @@ public:
 								Verbosity verbosity = ZUAZO_IS_DEBUG ? Verbosity::GEQ_INFO : Verbosity::SILENT,
 								Modules modules = {},
 								InstanceLogFunc	instanceLogFunc = defaultInstanceLogFunc,
-								ElementLogFunc elementLogFunc = defaultElementLogFunc );
+								ElementLogFunc elementLogFunc = defaultElementLogFunc ) noexcept;
 	ApplicationInfo(const ApplicationInfo& other) = default;
-	ApplicationInfo(ApplicationInfo&& other) = default;
+	ApplicationInfo(ApplicationInfo&& other) noexcept = default;
 	~ApplicationInfo() = default;
 
 	ApplicationInfo& operator=(const ApplicationInfo& other) = default;
-	ApplicationInfo& operator=(ApplicationInfo&& other) = default;
+	ApplicationInfo& operator=(ApplicationInfo&& other) noexcept = default;
 
-	const std::string&			getName() const;
-	Version						getVersion() const;
-	Verbosity					getVerbosity() const;
-	const Modules&				getModules() const;
-	const InstanceLogFunc&		getInstanceLogFunc() const;
-	const ElementLogFunc&		getElementLogFunc() const;
+	const std::string&			getName() const noexcept;
+	Version						getVersion() const noexcept;
+	Verbosity					getVerbosity() const noexcept;
+	const Modules&				getModules() const noexcept;
+	const InstanceLogFunc&		getInstanceLogFunc() const noexcept;
+	const ElementLogFunc&		getElementLogFunc() const noexcept;
 
 
 	static void 				defaultInstanceLogFunc(	const Instance& inst, 

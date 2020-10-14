@@ -2,7 +2,7 @@
 
 namespace Zuazo {
 
-constexpr bool isYCbCr(ColorModel colorModel) {
+constexpr bool isYCbCr(ColorModel colorModel) noexcept {
 	switch(colorModel){
 	case ColorModel::BT601:
 	case ColorModel::BT709: 
@@ -17,7 +17,7 @@ constexpr bool isYCbCr(ColorModel colorModel) {
 template<typename T>
 constexpr Math::Mat4x4<T> constructRGB2YCbCrConversionMatrix(	const T y_r,  const T y_g,  const T y_b,
 																const T cb_r, const T cb_g, const T cb_b,
-																const T cr_r, const T cr_g, const T cr_b )
+																const T cr_r, const T cr_g, const T cr_b ) noexcept
 {
 	//Transpose the matrix as it is specified in row major order whilst glm uses colum major ordering
 	//		R		G		B		A
@@ -30,7 +30,7 @@ constexpr Math::Mat4x4<T> constructRGB2YCbCrConversionMatrix(	const T y_r,  cons
 }
 
 template<typename T>
-constexpr Math::Mat4x4<T> constructRGB2YCbCrConversionMatrix(const T k_r,  const T k_b) {
+constexpr Math::Mat4x4<T> constructRGB2YCbCrConversionMatrix(const T k_r,  const T k_b) noexcept {
 	const T k_g = T(1) - k_r - k_b; //As k_r + k_g + k_b = 1
 
 	return constructRGB2YCbCrConversionMatrix(
@@ -40,7 +40,7 @@ constexpr Math::Mat4x4<T> constructRGB2YCbCrConversionMatrix(const T k_r,  const
 	);
 }
 
-constexpr Math::Mat4x4f getRGB2YCbCrConversionMatrix(ColorModel colorModel){
+constexpr Math::Mat4x4f getRGB2YCbCrConversionMatrix(ColorModel colorModel) noexcept {
 	switch(colorModel){
 	
 	//From https://en.wikipedia.org/wiki/YCbCr
@@ -55,7 +55,7 @@ constexpr Math::Mat4x4f getRGB2YCbCrConversionMatrix(ColorModel colorModel){
 
 
 
-constexpr std::string_view toString(ColorModel colorModel){
+constexpr std::string_view toString(ColorModel colorModel) noexcept {
 	switch(colorModel){
 
 	ZUAZO_ENUM2STR_CASE( ColorModel, RGB )
@@ -75,11 +75,11 @@ inline std::ostream& operator<<(std::ostream& os, ColorModel model) {
 
 namespace Utils {
 
-constexpr ColorModel lowest(const Any<ColorModel>&) {
+constexpr ColorModel lowest(const Any<ColorModel>&) noexcept {
 	return ColorModel::NONE + static_cast<ColorModel>(1);
 }
 
-constexpr ColorModel highest(const Any<ColorModel>&) {
+constexpr ColorModel highest(const Any<ColorModel>&) noexcept {
 	return ColorModel::COUNT - static_cast<ColorModel>(1);
 }
 

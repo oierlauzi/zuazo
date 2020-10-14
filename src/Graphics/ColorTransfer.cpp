@@ -8,7 +8,7 @@ namespace Zuazo::Graphics {
 /*
  * Conversions
  */
-constexpr int32_t getColorTransferFunction(ColorTransferFunction transferFunction) {
+constexpr int32_t getColorTransferFunction(ColorTransferFunction transferFunction) noexcept {
 	switch(transferFunction){		
 	case ColorTransferFunction::BT601:
 	case ColorTransferFunction::BT709:
@@ -26,7 +26,7 @@ constexpr int32_t getColorTransferFunction(ColorTransferFunction transferFunctio
 	}
 }
 
-constexpr int32_t getColorRange(ColorRange range) {
+constexpr int32_t getColorRange(ColorRange range) noexcept {
 	switch(range){
 	case ColorRange::FULL_YCBCR: 		return ct_COLOR_RANGE_FULL_YCBCR;
 	case ColorRange::ITU_NARROW_RGB: 	return ct_COLOR_RANGE_ITU_NARROW_RGB;
@@ -35,7 +35,7 @@ constexpr int32_t getColorRange(ColorRange range) {
 	}
 }
 
-constexpr int32_t getPlaneFormat(ColorFormat format) {
+constexpr int32_t getPlaneFormat(ColorFormat format) noexcept {
 	const auto planeCount = getPlaneCount(format);
 
 	switch(planeCount){
@@ -49,7 +49,7 @@ constexpr int32_t getPlaneFormat(ColorFormat format) {
 static int32_t optimizeColorTransferFunction(	int32_t colorRange,
 												int32_t colorTransferFunction,
 												Utils::BufferView<Frame::PlaneDescriptor> planes,
-												Utils::BufferView<const vk::Format> supportedFormats )
+												Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 {
 	//For binary search:
 	assert(std::is_sorted(supportedFormats.cbegin(), supportedFormats.cend()));
@@ -95,7 +95,7 @@ static int32_t optimizeColorTransferFunction(	int32_t colorRange,
 	return colorTransferFunction;
 }
 
-static ct_write_data convert2Output(const ct_read_data& read) {
+static ct_write_data convert2Output(const ct_read_data& read) noexcept {
 	return ct_write_data {
 		glm::inverse(read.mtxRGB2XYZ),
 		glm::inverse(read.mtxYCbCr2RGB),
@@ -112,8 +112,8 @@ static ct_write_data convert2Output(const ct_read_data& read) {
 struct InputColorTransfer::Impl {
 	ct_read_data transferData;
 
-	Impl() = default;
-	Impl(const Frame::Descriptor& desc)
+	Impl() noexcept = default;
+	Impl(const Frame::Descriptor& desc) noexcept
 		: transferData {
 			getRGB2XYZConversionMatrix(desc.colorPrimaries),
 			glm::inverse(getRGB2YCbCrConversionMatrix(desc.colorModel)),
@@ -124,12 +124,12 @@ struct InputColorTransfer::Impl {
 	{
 	}
 
-	bool equals(const Impl& other) const {
+	bool equals(const Impl& other) const noexcept {
 		return std::memcmp(data(), other.data(), size()) == 0;
 	}
 
 	void optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
-					Utils::BufferView<const vk::Format> supportedFormats ) 
+					Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 	{
 		transferData.colorTransferFunction = optimizeColorTransferFunction(
 			transferData.colorRange,
@@ -139,7 +139,7 @@ struct InputColorTransfer::Impl {
 		);
 	}
 
-	const std::byte* data() const {
+	const std::byte* data() const noexcept {
 		return reinterpret_cast<const std::byte*>(&transferData);
 	}
 
@@ -160,18 +160,18 @@ InputColorTransfer::InputColorTransfer(const Frame::Descriptor& desc)
 {
 }
 
-InputColorTransfer::InputColorTransfer(InputColorTransfer&& other) = default;
+InputColorTransfer::InputColorTransfer(InputColorTransfer&& other) noexcept = default;
 
 InputColorTransfer::~InputColorTransfer() = default;
 
 
-InputColorTransfer& InputColorTransfer::operator=(InputColorTransfer&& other) = default;
+InputColorTransfer& InputColorTransfer::operator=(InputColorTransfer&& other) noexcept = default;
 
-bool InputColorTransfer::operator==(const InputColorTransfer& other) const {
+bool InputColorTransfer::operator==(const InputColorTransfer& other) const noexcept {
 	return m_impl->equals(*other.m_impl);
 }
 
-bool InputColorTransfer::operator!=(const InputColorTransfer& other) const {
+bool InputColorTransfer::operator!=(const InputColorTransfer& other) const noexcept {
 	return !operator==(other);
 }
 
@@ -179,31 +179,31 @@ bool InputColorTransfer::operator!=(const InputColorTransfer& other) const {
 
 
 void InputColorTransfer::optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
-								Utils::BufferView<const vk::Format> supportedFormats ) 
+									Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 {
 	m_impl->optimize(planes, supportedFormats);
 }
 
 
-const std::byte* InputColorTransfer::data() const {
+const std::byte* InputColorTransfer::data() const noexcept {
 	return m_impl->data();
 }
 
 
 
-uint32_t InputColorTransfer::getSamplerCount() {
+uint32_t InputColorTransfer::getSamplerCount() noexcept {
 	return ct_SAMPLER_COUNT;
 }
 
-uint32_t InputColorTransfer::getSamplerBinding() {
+uint32_t InputColorTransfer::getSamplerBinding() noexcept {
 	return ct_SAMPLER_BINDING;
 }
 
-uint32_t InputColorTransfer::getDataBinding() {
+uint32_t InputColorTransfer::getDataBinding() noexcept {
 	return ct_DATA_BINDING;
 }
 
-size_t InputColorTransfer::size() {
+size_t InputColorTransfer::size() noexcept {
 	return sizeof(ct_read_data);
 }
 
@@ -215,8 +215,8 @@ size_t InputColorTransfer::size() {
 struct OutputColorTransfer::Impl {
 	ct_write_data transferData;
 
-	Impl() = default;
-	Impl(const Frame::Descriptor& desc)
+	Impl() noexcept = default;
+	Impl(const Frame::Descriptor& desc) noexcept
 		: transferData {
 			glm::inverse(getRGB2XYZConversionMatrix(desc.colorPrimaries)),
 			getRGB2YCbCrConversionMatrix(desc.colorModel),
@@ -227,7 +227,7 @@ struct OutputColorTransfer::Impl {
 	{
 	}
 
-	Impl(const InputColorTransfer::Impl& input)
+	Impl(const InputColorTransfer::Impl& input) noexcept
 		: transferData(convert2Output(input.transferData))
 	{
 	}
@@ -238,7 +238,7 @@ struct OutputColorTransfer::Impl {
 	}
 
 	void optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
-					Utils::BufferView<const vk::Format> supportedFormats ) 
+					Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 	{
 		transferData.colorTransferFunction = optimizeColorTransferFunction(
 			transferData.colorRange,
@@ -248,7 +248,7 @@ struct OutputColorTransfer::Impl {
 		);
 	}
 
-	const std::byte* data() const {
+	const std::byte* data() const noexcept {
 		return reinterpret_cast<const std::byte*>(&transferData);
 	}
 };
@@ -273,18 +273,18 @@ OutputColorTransfer::OutputColorTransfer(const InputColorTransfer& inputTransfer
 {
 }
 
-OutputColorTransfer::OutputColorTransfer(OutputColorTransfer&& other) = default;
+OutputColorTransfer::OutputColorTransfer(OutputColorTransfer&& other) noexcept = default;
 
 OutputColorTransfer::~OutputColorTransfer() = default;
 
 
-OutputColorTransfer& OutputColorTransfer::operator=(OutputColorTransfer&& other) = default;
+OutputColorTransfer& OutputColorTransfer::operator=(OutputColorTransfer&& other) noexcept = default;
 
-bool OutputColorTransfer::operator==(const OutputColorTransfer& other) const {
+bool OutputColorTransfer::operator==(const OutputColorTransfer& other) const noexcept {
 	return m_impl->equals(*other.m_impl);
 }
 
-bool OutputColorTransfer::operator!=(const OutputColorTransfer& other) const {
+bool OutputColorTransfer::operator!=(const OutputColorTransfer& other) const noexcept {
 	return !operator==(other);
 }
 
@@ -292,17 +292,17 @@ bool OutputColorTransfer::operator!=(const OutputColorTransfer& other) const {
 
 
 void OutputColorTransfer::optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
-									Utils::BufferView<const vk::Format> supportedFormats ) 
+									Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 {
 	m_impl->optimize(planes, supportedFormats);
 }
 
 
-const std::byte* OutputColorTransfer::data() const {
+const std::byte* OutputColorTransfer::data() const noexcept {
 	return m_impl->data();
 }
 
-size_t OutputColorTransfer::size() {
+size_t OutputColorTransfer::size() noexcept {
 	return sizeof(ct_read_data);
 }
 

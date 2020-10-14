@@ -20,11 +20,11 @@ public:
     template<typename... Args> 
 	explicit Pimpl(Allocator alloc, Args&&... args);
 	Pimpl(const Pimpl& other) = delete;
-	Pimpl(Pimpl&& other);
+	Pimpl(Pimpl&& other) noexcept;
     ~Pimpl();
 
 	Pimpl&				operator=(const Pimpl& other) = delete;
-	Pimpl&				operator=(Pimpl&& other);
+	Pimpl&				operator=(Pimpl&& other) noexcept;
 
     pointer				operator->();
 	const_pointer		operator->() const;
