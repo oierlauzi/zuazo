@@ -53,21 +53,18 @@ void StagedBuffer::flushData(	const Vulkan& vulkan,
 {
 	assert(!m_waitFence);
 
-	//Size must be a multiple of nonCoherentAtomSize or reach the end of the buffer
-	const auto nonCoherentAtomSize = vulkan.getPhysicalDeviceProperties().limits.nonCoherentAtomSize;
-	const auto flushSize = 	(size == VK_WHOLE_SIZE)
-							? VK_WHOLE_SIZE 
-							: Math::min(Utils::align(size, nonCoherentAtomSize), m_data.size() - offset);
+	//The maximum size allowed for it
+	const auto maxSize = m_data.size() - offset;
 
 	//Flush the memory
 	const vk::MappedMemoryRange range(
 		m_stagingBuffer.getDeviceMemory(),
-		offset, flushSize
+		offset, getFlushSize(vulkan, size, maxSize)
 	);
 	vulkan.flushMappedMemory(range);
 
 	//vkCopyBuffer does not support VK_WHOLE_SIZE, so use the real value
-	const auto copySize = (size == VK_WHOLE_SIZE) ? m_data.size() - offset : size;
+	const auto copySize = (size == VK_WHOLE_SIZE) ? maxSize : size;
 
 	//Ensure that the adecuate command buffer exists
 	const auto key = Key(offset, copySize, queue, access, stage);
@@ -290,6 +287,24 @@ vk::UniqueCommandPool StagedBuffer::createCommandPool(const Vulkan& vulkan) {
 	);
 
 	return vulkan.createCommandPool(createInfo);
+}
+
+size_t StagedBuffer::getFlushSize(const Vulkan& vulkan, size_t size, size_t maxSize) noexcept {
+	size_t result;
+
+	if(size == VK_WHOLE_SIZE) {
+		result = VK_WHOLE_SIZE; //Do not modify
+	} else {
+		//Size must be a multiple of nonCoherentAtomSize or reach the end of the buffer
+		const auto nonCoherentAtomSize = vulkan.getPhysicalDeviceProperties().limits.nonCoherentAtomSize;
+		result = Utils::align(size, nonCoherentAtomSize);
+
+		if(result >= maxSize) {
+			result = VK_WHOLE_SIZE; //Size exceeds the maximum
+		}
+	}
+
+	return result;
 }
 
 }

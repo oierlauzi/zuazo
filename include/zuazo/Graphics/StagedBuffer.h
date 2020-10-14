@@ -73,6 +73,8 @@ private:
 															const Buffer& stagingBuffer );
 	static vk::UniqueCommandPool		createCommandPool(const Vulkan& vulkan);
 
+	static size_t						getFlushSize(const Vulkan& vulkan, size_t size, size_t maxSize) noexcept;
+
 };
 
 }
