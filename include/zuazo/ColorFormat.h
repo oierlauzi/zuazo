@@ -301,10 +301,13 @@ std::ostream& operator<<(std::ostream& os, ColorFormat format);
 namespace Utils {
 
 template<typename T>
-class Any;
+struct EnumTraits;
 
-constexpr ColorFormat lowest(const Any<ColorFormat>& any) noexcept;
-constexpr ColorFormat highest(const Any<ColorFormat>& any) noexcept;
+template<>
+struct EnumTraits<ColorFormat> {
+	static constexpr ColorFormat first() noexcept;
+	static constexpr ColorFormat last() noexcept;
+};
 
 }
 

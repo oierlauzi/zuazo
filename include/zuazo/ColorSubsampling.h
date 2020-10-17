@@ -39,10 +39,13 @@ std::ostream& operator<<(std::ostream& os, ColorSubsampling colorSubsampling);
 namespace Utils {
 
 template<typename T>
-class Any;
+struct EnumTraits;
 
-constexpr ColorSubsampling lowest(const Any<ColorSubsampling>& any) noexcept;
-constexpr ColorSubsampling highest(const Any<ColorSubsampling>& any) noexcept;
+template<>
+struct EnumTraits<ColorSubsampling> {
+	static constexpr ColorSubsampling first() noexcept;
+	static constexpr ColorSubsampling last() noexcept;
+};
 
 }
 

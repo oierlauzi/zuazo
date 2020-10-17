@@ -26,12 +26,10 @@ constexpr int32_t getColorTransferFunction(ColorTransferFunction transferFunctio
 	}
 }
 
-constexpr int32_t getColorRange(ColorRange range) noexcept {
+constexpr int32_t getColorRange(ColorRange range, ColorModel model) noexcept {
 	switch(range){
-	case ColorRange::FULL_YCBCR: 		return ct_COLOR_RANGE_FULL_YCBCR;
-	case ColorRange::ITU_NARROW_RGB: 	return ct_COLOR_RANGE_ITU_NARROW_RGB;
-	case ColorRange::ITU_NARROW_YCBCR: 	return ct_COLOR_RANGE_ITU_NARROW_YCBCR;
-	default: /*ColorRange::FULL_RGB*/	return ct_COLOR_RANGE_FULL_RGB;
+	case ColorRange::ITU_NARROW: 		return isYCbCr(model) ? ct_COLOR_RANGE_ITU_NARROW_YCBCR : ct_COLOR_RANGE_ITU_NARROW_RGB;
+	default: /*ColorRange::FULL_RGB*/	return isYCbCr(model) ? ct_COLOR_RANGE_FULL_YCBCR : ct_COLOR_RANGE_FULL_RGB;
 	}
 }
 
@@ -118,7 +116,7 @@ struct InputColorTransfer::Impl {
 			getRGB2XYZConversionMatrix(desc.colorPrimaries),
 			glm::inverse(getRGB2YCbCrConversionMatrix(desc.colorModel)),
 			getColorTransferFunction(desc.colorTransferFunction),
-			getColorRange(desc.colorRange),
+			getColorRange(desc.colorRange, desc.colorModel),
 			getPlaneFormat(desc.colorFormat)
 		}
 	{
@@ -221,7 +219,7 @@ struct OutputColorTransfer::Impl {
 			glm::inverse(getRGB2XYZConversionMatrix(desc.colorPrimaries)),
 			getRGB2YCbCrConversionMatrix(desc.colorModel),
 			getColorTransferFunction(desc.colorTransferFunction),
-			getColorRange(desc.colorRange),
+			getColorRange(desc.colorRange, desc.colorModel),
 			getPlaneFormat(desc.colorFormat)
 		}
 	{

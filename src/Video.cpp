@@ -72,7 +72,7 @@ int VideoMode::operator>=(const VideoMode& other) const {
 VideoMode::operator bool() const {
 	return std::apply(
 		[] (const auto&... x) -> bool {
-			return (Utils::hasValue(x) && ...);
+			return (x.hasValue() && ...);
 		},
 		m_data
 	);
@@ -87,7 +87,7 @@ const Utils::Limit<Rate>& VideoMode::getFrameRate() const {
 }
 
 Rate VideoMode::getFrameRateValue() const {
-	return Utils::value(getFrameRate());
+	return getFrameRate().value();
 }
 
 
@@ -100,7 +100,7 @@ const Utils::Limit<Resolution>& VideoMode::getResolution() const {
 }
 
 Resolution VideoMode::getResolutionValue() const {
-	return Utils::value(getResolution());
+	return getResolution().value();
 }
 
 
@@ -113,7 +113,7 @@ const Utils::Limit<AspectRatio>& VideoMode::getPixelAspectRatio() const {
 }
 
 AspectRatio VideoMode::getPixelAspectRatioValue() const {
-	return Utils::value(getPixelAspectRatio());
+	return getPixelAspectRatio().value();
 }
 
 
@@ -126,7 +126,7 @@ const Utils::Limit<ColorPrimaries>& VideoMode::getColorPrimaries() const {
 }
 
 ColorPrimaries VideoMode::getColorPrimariesValue() const {
-	return Utils::value(getColorPrimaries());
+	return getColorPrimaries().value();
 }
 
 
@@ -139,7 +139,7 @@ const Utils::Limit<ColorModel>& VideoMode::getColorModel() const {
 }
 
 ColorModel VideoMode::getColorModelValue() const {
-	return Utils::value(getColorModel());
+	return getColorModel().value();
 }
 
 
@@ -152,7 +152,7 @@ const Utils::Limit<ColorTransferFunction>& VideoMode::getColorTransferFunction()
 }
 
 ColorTransferFunction VideoMode::getColorTransferFunctionValue() const {
-	return Utils::value(getColorTransferFunction());
+	return getColorTransferFunction().value();
 }
 
 
@@ -165,7 +165,7 @@ const Utils::Limit<ColorSubsampling>& VideoMode::getColorSubsampling() const {
 }
 
 ColorSubsampling VideoMode::getColorSubsamplingValue() const {
-	return Utils::value(getColorSubsampling());
+	return getColorSubsampling().value();
 }
 
 
@@ -178,7 +178,7 @@ const Utils::Limit<ColorRange>& VideoMode::getColorRange() const {
 }
 
 ColorRange VideoMode::getColorRangeValue() const {
-	return Utils::value(getColorRange());
+	return getColorRange().value();
 }
 
 
@@ -191,64 +191,64 @@ const Utils::Limit<ColorFormat>& VideoMode::getColorFormat() const {
 }
 
 ColorFormat VideoMode::getColorFormatValue() const {
-	return Utils::value(getColorFormat());
+	return getColorFormat().value();
 }
 
 
 VideoMode VideoMode::intersect(const VideoMode& other) const {
 	return VideoMode(
-		Utils::intersection(getFrameRate(), other.getFrameRate()),
-		Utils::intersection(getResolution(), other.getResolution()),
-		Utils::intersection(getPixelAspectRatio(), other.getPixelAspectRatio()),
-		Utils::intersection(getColorPrimaries(), other.getColorPrimaries()),
-		Utils::intersection(getColorModel(), other.getColorModel()),
-		Utils::intersection(getColorTransferFunction(), other.getColorTransferFunction()),
-		Utils::intersection(getColorSubsampling(), other.getColorSubsampling()),
-		Utils::intersection(getColorRange(), other.getColorRange()),
-		Utils::intersection(getColorFormat(), other.getColorFormat())
+		getFrameRate().intersect(other.getFrameRate()),
+		getResolution().intersect(other.getResolution()),
+		getPixelAspectRatio().intersect(other.getPixelAspectRatio()),
+		getColorPrimaries().intersect(other.getColorPrimaries()),
+		getColorModel().intersect(other.getColorModel()),
+		getColorTransferFunction().intersect(other.getColorTransferFunction()),
+		getColorSubsampling().intersect(other.getColorSubsampling()),
+		getColorRange().intersect(other.getColorRange()),
+		getColorFormat().intersect(other.getColorFormat())
 	);
 }
 
 
 VideoMode VideoMode::lowest() const {
 	return VideoMode(
-		Utils::MustBe(Utils::lowest(getFrameRate())),
-		Utils::MustBe(Utils::lowest(getResolution())),
-		Utils::MustBe(Utils::lowest(getPixelAspectRatio())),
-		Utils::MustBe(Utils::lowest(getColorPrimaries())),
-		Utils::MustBe(Utils::lowest(getColorModel())),
-		Utils::MustBe(Utils::lowest(getColorTransferFunction())),
-		Utils::MustBe(Utils::lowest(getColorSubsampling())),
-		Utils::MustBe(Utils::lowest(getColorRange())),
-		Utils::MustBe(Utils::lowest(getColorFormat()))
+		Utils::MustBe(getFrameRate().lowest()),
+		Utils::MustBe(getResolution().lowest()),
+		Utils::MustBe(getPixelAspectRatio().lowest()),
+		Utils::MustBe(getColorPrimaries().lowest()),
+		Utils::MustBe(getColorModel().lowest()),
+		Utils::MustBe(getColorTransferFunction().lowest()),
+		Utils::MustBe(getColorSubsampling().lowest()),
+		Utils::MustBe(getColorRange().lowest()),
+		Utils::MustBe(getColorFormat().lowest())
 	);
 }
 
 VideoMode VideoMode::highest() const {
 	return VideoMode(
-		Utils::MustBe(Utils::highest(getFrameRate())),
-		Utils::MustBe(Utils::highest(getResolution())),
-		Utils::MustBe(Utils::highest(getPixelAspectRatio())),
-		Utils::MustBe(Utils::highest(getColorPrimaries())),
-		Utils::MustBe(Utils::highest(getColorModel())),
-		Utils::MustBe(Utils::highest(getColorTransferFunction())),
-		Utils::MustBe(Utils::highest(getColorSubsampling())),
-		Utils::MustBe(Utils::highest(getColorRange())),
-		Utils::MustBe(Utils::highest(getColorFormat()))
+		Utils::MustBe(getFrameRate().highest()),
+		Utils::MustBe(getResolution().highest()),
+		Utils::MustBe(getPixelAspectRatio().highest()),
+		Utils::MustBe(getColorPrimaries().highest()),
+		Utils::MustBe(getColorModel().highest()),
+		Utils::MustBe(getColorTransferFunction().highest()),
+		Utils::MustBe(getColorSubsampling().highest()),
+		Utils::MustBe(getColorRange().highest()),
+		Utils::MustBe(getColorFormat().highest())
 	);
 }
 
-VideoMode VideoMode::values() const {
+VideoMode VideoMode::value() const {
 	return VideoMode(
-		Utils::MustBe(Utils::value(getFrameRate())),
-		Utils::MustBe(Utils::value(getResolution())),
-		Utils::MustBe(Utils::value(getPixelAspectRatio())),
-		Utils::MustBe(Utils::value(getColorPrimaries())),
-		Utils::MustBe(Utils::value(getColorModel())),
-		Utils::MustBe(Utils::value(getColorTransferFunction())),
-		Utils::MustBe(Utils::value(getColorSubsampling())),
-		Utils::MustBe(Utils::value(getColorRange())),
-		Utils::MustBe(Utils::value(getColorFormat()))
+		Utils::MustBe(getFrameRate().value()),
+		Utils::MustBe(getResolution().value()),
+		Utils::MustBe(getPixelAspectRatio().value()),
+		Utils::MustBe(getColorPrimaries().value()),
+		Utils::MustBe(getColorModel().value()),
+		Utils::MustBe(getColorTransferFunction().value()),
+		Utils::MustBe(getColorSubsampling().value()),
+		Utils::MustBe(getColorRange().value()),
+		Utils::MustBe(getColorFormat().value())
 	);
 }
 
@@ -380,7 +380,7 @@ private:
 	VideoMode selectVideoMode() const noexcept {
 		for(const auto& compatibility : videoModeCompatibility) {
 			const auto interscetion = compatibility.intersect(videoModeLimits);
-			if(interscetion) return interscetion.values();
+			if(interscetion) return interscetion.value();
 		}
 
 		//If there is no compatibility, fail silently.
@@ -593,15 +593,15 @@ std::ostream& operator<<(std::ostream& os, const VideoMode& videoMode) {
 	return Zuazo::operator<<(
 		os, 
 		std::forward_as_tuple(
-			std::make_pair("frameRate", 			std::get<VideoMode::m_frameRate>(videoMode.m_data)),
-			std::make_pair("resolution", 			std::get<VideoMode::m_resolution>(videoMode.m_data)),
-			std::make_pair("pixelAspectRatio", 		std::get<VideoMode::m_pixelAspectRatio>(videoMode.m_data)),
-			std::make_pair("colorPrimaries", 		std::get<VideoMode::m_colorPrimaries>(videoMode.m_data)),
-			std::make_pair("colorModel", 			std::get<VideoMode::m_colorModel>(videoMode.m_data)),
-			std::make_pair("colorTransferFunction", std::get<VideoMode::m_colorTransferFunction>(videoMode.m_data)),
-			std::make_pair("colorSubsampling", 		std::get<VideoMode::m_colorSubsampling>(videoMode.m_data)),
-			std::make_pair("colorRange", 			std::get<VideoMode::m_colorRange>(videoMode.m_data)),
-			std::make_pair("colorFormat", 			std::get<VideoMode::m_colorFormat>(videoMode.m_data))
+			std::make_pair("frameRate", 			videoMode.getFrameRate()),
+			std::make_pair("resolution", 			videoMode.getResolution()),
+			std::make_pair("pixelAspectRatio", 		videoMode.getPixelAspectRatio()),
+			std::make_pair("colorPrimaries", 		videoMode.getColorPrimaries()),
+			std::make_pair("colorModel", 			videoMode.getColorModel()),
+			std::make_pair("colorTransferFunction", videoMode.getColorTransferFunction()),
+			std::make_pair("colorSubsampling", 		videoMode.getColorSubsampling()),
+			std::make_pair("colorRange", 			videoMode.getColorRange()),
+			std::make_pair("colorFormat", 			videoMode.getColorFormat())
 		)
 	);
 }

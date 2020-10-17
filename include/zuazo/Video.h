@@ -27,7 +27,6 @@ namespace Zuazo {
 using Video = std::shared_ptr<const Graphics::Frame>;
 
 class VideoMode {
-	friend std::ostream& operator<<(std::ostream& os, const VideoMode& videoMode);
 public:
 	VideoMode(	Utils::Limit<Rate> frameRate = {},
 				Utils::Limit<Resolution> resolution = {},
@@ -94,7 +93,7 @@ public:
 
 	VideoMode									lowest() const;
 	VideoMode									highest() const;
-	VideoMode									values() const;
+	VideoMode									value() const;
 
 	Graphics::Frame::Descriptor					getFrameDescriptor() const;
 
@@ -201,6 +200,109 @@ private:
 };
 
 std::ostream& operator<<(std::ostream& os, const VideoMode& videoMode);
+
+VideoMode makeVideoMode(Rate rate);
+VideoMode makeVideoMode(Resolution res, AspectRatio par);
+VideoMode makeVideoMode(ColorPrimaries prim, ColorModel model, ColorTransferFunction trf);
+VideoMode makeVideoMode(ColorSubsampling subs, ColorRange range, ColorFormat format);
+
+namespace FrameRates {
+
+extern const VideoMode P24;
+extern const VideoMode P48;
+extern const VideoMode P96;
+extern const VideoMode P192;
+
+
+extern const VideoMode P25;
+extern const VideoMode P50;
+extern const VideoMode P100;
+extern const VideoMode P200;
+
+extern const VideoMode P29_97;
+extern const VideoMode P59_94;
+extern const VideoMode P119_88;
+extern const VideoMode P239_76;
+
+extern const VideoMode P30;
+extern const VideoMode P60;
+extern const VideoMode P120;
+extern const VideoMode P240;
+
+}
+
+namespace Resolutions {
+
+//Broadcast-standard
+extern const VideoMode PAL;
+extern const VideoMode NTSC;
+
+extern const VideoMode HD;
+extern const VideoMode FHD;
+extern const VideoMode QHD;
+extern const VideoMode UHD;
+extern const VideoMode UHD_2;
+
+//DCI (Digital cinema Initiatives)
+extern const VideoMode DCI_2K;
+extern const VideoMode DCI_4K;
+extern const VideoMode DCI_8K;
+
+//VGA (Video graphics array)
+extern const VideoMode QQVGA;
+extern const VideoMode HQVGA;
+extern const VideoMode QVGA;
+extern const VideoMode WQVGA;
+extern const VideoMode HVGA;
+extern const VideoMode VGA;
+extern const VideoMode WVGA;
+extern const VideoMode FWVGA;
+extern const VideoMode SVGA;
+extern const VideoMode WSVGA;
+extern const VideoMode DVGA;
+
+//XGA (Extended graphics array)
+extern const VideoMode XGA;
+extern const VideoMode WXGA;
+extern const VideoMode FWXGA;
+extern const VideoMode SXGA;
+extern const VideoMode WSXGA;
+extern const VideoMode UXGA;
+extern const VideoMode WUXGA; 
+
+//QXGA (Quad Extended Graphics Array)
+extern const VideoMode QWXGA;
+extern const VideoMode QXGA;
+extern const VideoMode WQXGA;
+extern const VideoMode QSXGA;
+extern const VideoMode WQSXGA;
+extern const VideoMode QUXGA;
+extern const VideoMode WQUXGA;
+
+}
+
+namespace ColorSpaces {
+
+//ITU-R
+extern const VideoMode BT601_625;
+extern const VideoMode BT601_525;
+extern const VideoMode BT709;
+extern const VideoMode BT2020;
+
+//Others
+extern const VideoMode SRGB;
+extern const VideoMode DISPLAY_P3;
+
+}
+
+namespace PixelFormats {
+
+//Render optimal
+extern const VideoMode RENDER_OPTIMAL_8;
+extern const VideoMode RENDER_OPTIMAL_16;
+extern const VideoMode RENDER_OPTIMAL_16F;
+
+}
 
 namespace Signal {
 

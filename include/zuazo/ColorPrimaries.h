@@ -47,10 +47,13 @@ std::ostream& operator<<(std::ostream& os, ColorPrimaries colorPrim);
 namespace Utils {
 
 template<typename T>
-class Any;
+struct EnumTraits;
 
-constexpr ColorPrimaries lowest(const Any<ColorPrimaries>& any) noexcept;
-constexpr ColorPrimaries highest(const Any<ColorPrimaries>& any) noexcept;
+template<>
+struct EnumTraits<ColorPrimaries> {
+	static constexpr ColorPrimaries first() noexcept;
+	static constexpr ColorPrimaries last() noexcept;
+};
 
 }
 

@@ -286,6 +286,9 @@ public:
 	template<typename num_t2, typename den_t2>
 	constexpr int operator>=(const Rational<num_t2, den_t2>& right) const noexcept;
 	
+	static constexpr Rational min();
+	static constexpr Rational max();
+
 private:
 	Num m_num;
 	Den m_den;
@@ -325,22 +328,6 @@ constexpr Rational<den_t, num_t> lcm(const Rational<den_t, num_t>& a, const Rati
 
 template<typename num_t, typename den_t>
 std::ostream& operator<<(std::ostream& os, const Rational<num_t, den_t>& rat);
-
-}
-
-namespace Zuazo {
-
-namespace Utils {
-
-template<typename T>
-class Any;
-
-template<typename num_t, typename den_t>
-constexpr Math::Rational<num_t, den_t> lowest(const Any<Math::Rational<num_t, den_t>>& any) noexcept;
-template<typename num_t, typename den_t>
-constexpr Math::Rational<num_t, den_t> highest(const Any<Math::Rational<num_t, den_t>>& any) noexcept;
-
-}
 
 }
 

@@ -18,11 +18,11 @@ inline std::ostream& operator<<(std::ostream& os, ScalingFilter filter) {
 
 namespace Utils {
 
-constexpr ScalingFilter lowest(const Any<ScalingFilter>&) noexcept {
+constexpr ScalingFilter EnumTraits<ScalingFilter>::first() noexcept {
 	return ScalingFilter::NONE + static_cast<ScalingFilter>(1);
 }
 
-constexpr ScalingFilter highest(const Any<ScalingFilter>&) noexcept {
+constexpr ScalingFilter EnumTraits<ScalingFilter>::last() noexcept {
 	return ScalingFilter::COUNT - static_cast<ScalingFilter>(1);
 }
 

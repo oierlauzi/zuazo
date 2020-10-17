@@ -30,10 +30,13 @@ std::ostream& operator<<(std::ostream& os, ScalingMode scalingMode);
 namespace Utils {
 
 template<typename T>
-class Any;
+struct EnumTraits;
 
-constexpr ScalingMode lowest(const Any<ScalingMode>& any) noexcept;
-constexpr ScalingMode highest(const Any<ScalingMode>& any) noexcept;
+template<>
+struct EnumTraits<ScalingMode> {
+	static constexpr ScalingMode first() noexcept;
+	static constexpr ScalingMode last() noexcept;
+};
 
 }
 

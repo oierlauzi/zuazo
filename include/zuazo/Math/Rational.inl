@@ -332,6 +332,18 @@ constexpr int Rational<num_t, den_t>::operator>=(const Rational<num_t2, den_t2>&
 
 
 template<typename num_t, typename den_t>
+constexpr Rational<num_t, den_t> Rational<num_t, den_t>::min() {
+	return Rational<num_t, den_t>(-1, 0);
+}
+
+template<typename num_t, typename den_t>
+constexpr Rational<num_t, den_t> Rational<num_t, den_t>::max() {
+	return Rational<num_t, den_t>(1, 0);
+}
+
+
+
+template<typename num_t, typename den_t>
 constexpr Rational<den_t, num_t> mod(const Rational<num_t, den_t>& num, const Rational<num_t, den_t>& den) noexcept {
 	return num % den;
 }
@@ -395,24 +407,6 @@ inline std::ostream& operator<<(std::ostream& os, const Rational<num_t, den_t>& 
 	os << rat.getNumerator() << "/" << rat.getDenominator();
 
 	return os;
-}
-
-}
-
-namespace Zuazo {
-
-namespace Utils {
-
-template<typename num_t, typename den_t>
-constexpr Math::Rational<num_t, den_t> lowest(const Any<Math::Rational<num_t, den_t>>&) noexcept {
-	return Math::Rational<num_t, den_t>(-1, 0);
-}
-
-template<typename num_t, typename den_t>
-constexpr Math::Rational<num_t, den_t> highest(const Any<Math::Rational<num_t, den_t>>&) noexcept {
-	return Math::Rational<num_t, den_t>(1, 0);
-}
-
 }
 
 }

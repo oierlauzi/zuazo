@@ -34,10 +34,13 @@ std::ostream& operator<<(std::ostream& os, BlendingMode format);
 namespace Utils {
 
 template<typename T>
-class Any;
+struct EnumTraits;
 
-constexpr BlendingMode lowest(const Any<BlendingMode>& any) noexcept;
-constexpr BlendingMode highest(const Any<BlendingMode>& any) noexcept;
+template<>
+struct EnumTraits<BlendingMode> {
+	static constexpr BlendingMode first() noexcept;
+	static constexpr BlendingMode last() noexcept;
+};
 
 }
 

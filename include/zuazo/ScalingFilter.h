@@ -22,11 +22,13 @@ std::ostream& operator<<(std::ostream& os, ScalingFilter res);
 namespace Utils {
 
 template<typename T>
-class Any;
+struct EnumTraits;
 
-constexpr ScalingFilter lowest(const Any<ScalingFilter>& any) noexcept;
-constexpr ScalingFilter highest(const Any<ScalingFilter>& any) noexcept;
-
+template<>
+struct EnumTraits<ScalingFilter> {
+	static constexpr ScalingFilter first() noexcept;
+	static constexpr ScalingFilter last() noexcept;
+};
 }
 
 }

@@ -48,11 +48,11 @@ inline std::ostream& operator<<(std::ostream& os, ScalingMode scalingMode) {
 
 namespace Utils {
 
-constexpr ScalingMode lowest(const Any<ScalingMode>&) noexcept {
+constexpr ScalingMode EnumTraits<ScalingMode>::first() noexcept {
 	return ScalingMode::NONE + static_cast<ScalingMode>(1);
 }
 
-constexpr ScalingMode highest(const Any<ScalingMode>&) noexcept {
+constexpr ScalingMode EnumTraits<ScalingMode>::last() noexcept {
 	return ScalingMode::COUNT - static_cast<ScalingMode>(1);
 }
 

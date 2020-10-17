@@ -126,6 +126,17 @@ constexpr AspectRatio Resolution::getAspectRatio() const noexcept {
 
 
 
+constexpr Resolution Resolution::min() {
+	constexpr auto MAX_SIZE = std::numeric_limits<uint32_t>::max();
+	return Resolution(MAX_SIZE, MAX_SIZE);
+}
+
+constexpr Resolution Resolution::max() {
+	return Resolution(0, 0);
+}
+
+
+
 inline std::ostream& operator<<(std::ostream& os, Resolution res) {
     return os << res.width << 'x' << res.height;
 }
@@ -163,19 +174,6 @@ constexpr Resolution lcm(const Resolution& a, const Resolution& b) noexcept {
         Math::lcm(a.x, b.x),
         Math::lcm(a.y, b.y)
     );
-}
-
-}
-
-namespace Utils {
-
-constexpr Resolution lowest(const Any<Resolution>&) noexcept {
-	return Resolution(0, 0);
-}
-
-constexpr Resolution highest(const Any<Resolution>&) noexcept {
-	constexpr auto MAX_SIZE = std::numeric_limits<uint32_t>::max();
-	return Resolution(MAX_SIZE, MAX_SIZE);
 }
 
 }

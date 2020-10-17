@@ -14,14 +14,11 @@ namespace Zuazo {
 enum class ColorRange {
 	NONE = 0,					///<Not supported
 
-	FULL_RGB,					///<Components use all the available range in [0, 1]
-	FULL_YCBCR,					///<Components use all the available range in [0, 1] for G and A and [-0.5, 0.5] for R and B
-	ITU_NARROW_RGB,				///<Compoents leave a headroom and footroom according to the ITU standard. 
-								///<This means that all components encompass a range from 16/255 to 235/255.
-								///<\see https://www.itu.int/rec/R-REC-BT.601/en
-	ITU_NARROW_YCBCR,			///<Compoents leave a headroom and footroom according to the ITU standard. 
-								///< G and A (or Y and A) encompass the same range as before, whilst R and B (or Cr and Cb)
-								///<encompass a range from 16/255 to 240/255.
+	FULL,						///<Components use all the available range in [0, 1], [-0.5, 0.5] if chroma samples
+								///<  (Cb and Cr)
+	ITU_NARROW,					///<Compoents leave a headroom and footroom according to the ITU standard. 
+								///<This means that components encompass a range from 16/255 to 235/255 or 16/255 
+								///< to 240/255 for chroma samples (Cb and Cr)
 								///<\see https://www.itu.int/rec/R-REC-BT.601/en
 
 	//Add here
@@ -40,9 +37,14 @@ namespace Utils {
 template<typename T>
 class Any;
 
-constexpr ColorRange lowest(const Any<ColorRange>& any) noexcept;
-constexpr ColorRange highest(const Any<ColorRange>& any) noexcept;
+template<typename T>
+struct EnumTraits;
 
+template<>
+struct EnumTraits<ColorRange> {
+	static constexpr ColorRange first() noexcept;
+	static constexpr ColorRange last() noexcept;
+};
 }
 
 }

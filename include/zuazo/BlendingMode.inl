@@ -25,11 +25,11 @@ inline std::ostream& operator<<(std::ostream& os, BlendingMode format) {
 
 namespace Utils {
 
-constexpr BlendingMode lowest(const Any<BlendingMode>&) noexcept {
+constexpr BlendingMode EnumTraits<BlendingMode>::first() noexcept {
 	return BlendingMode::NONE + static_cast<BlendingMode>(1);
 }
 
-constexpr BlendingMode highest(const Any<BlendingMode>&) noexcept {
+constexpr BlendingMode EnumTraits<BlendingMode>::last() noexcept {
 	return BlendingMode::COUNT - static_cast<BlendingMode>(1);
 }
 

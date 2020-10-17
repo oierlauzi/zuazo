@@ -42,10 +42,13 @@ std::ostream& operator<<(std::ostream& os, ColorTransferFunction colorTransferFu
 namespace Utils {
 
 template<typename T>
-class Any;
+struct EnumTraits;
 
-constexpr ColorTransferFunction lowest(const Any<ColorTransferFunction>& any) noexcept;
-constexpr ColorTransferFunction highest(const Any<ColorTransferFunction>& any) noexcept;
+template<>
+struct EnumTraits<ColorTransferFunction> {
+	static constexpr ColorTransferFunction first() noexcept;
+	static constexpr ColorTransferFunction last() noexcept;
+};
 
 }
 

@@ -249,11 +249,11 @@ inline std::ostream& operator<<(std::ostream& os, ColorFormat format) {
 
 namespace Utils {
 
-constexpr ColorFormat lowest(const Any<ColorFormat>&) noexcept {
+constexpr ColorFormat EnumTraits<ColorFormat>::first() noexcept {
 	return ColorFormat::NONE + static_cast<ColorFormat>(1);
 }
 
-constexpr ColorFormat highest(const Any<ColorFormat>&) noexcept {
+constexpr ColorFormat EnumTraits<ColorFormat>::last() noexcept {
 	return ColorFormat::COUNT - static_cast<ColorFormat>(1);
 }
 

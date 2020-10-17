@@ -55,6 +55,9 @@ struct Resolution{
     constexpr operator bool() const noexcept;
 
 	constexpr AspectRatio getAspectRatio() const noexcept;
+
+    static constexpr Resolution min();
+    static constexpr Resolution max();
 };
 
 std::ostream& operator<<(std::ostream& os, Resolution res);
@@ -66,16 +69,6 @@ constexpr Resolution max(const Resolution& a, const Resolution& b) noexcept;
 constexpr Resolution mod(const Resolution& num, const Resolution& den) noexcept;
 constexpr Resolution gcd(const Resolution& a, const Resolution& b) noexcept;
 constexpr Resolution lcm(const Resolution& a, const Resolution& b) noexcept;
-
-}
-
-namespace Utils {
-
-template<typename T>
-class Any;
-
-constexpr Resolution lowest(const Any<Resolution>& any) noexcept;
-constexpr Resolution highest(const Any<Resolution>& any) noexcept;
 
 }
 

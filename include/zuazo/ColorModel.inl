@@ -75,11 +75,11 @@ inline std::ostream& operator<<(std::ostream& os, ColorModel model) {
 
 namespace Utils {
 
-constexpr ColorModel lowest(const Any<ColorModel>&) noexcept {
+constexpr ColorModel EnumTraits<ColorModel>::first() noexcept {
 	return ColorModel::NONE + static_cast<ColorModel>(1);
 }
 
-constexpr ColorModel highest(const Any<ColorModel>&) noexcept {
+constexpr ColorModel EnumTraits<ColorModel>::last() noexcept {
 	return ColorModel::COUNT - static_cast<ColorModel>(1);
 }
 
