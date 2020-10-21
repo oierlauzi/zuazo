@@ -379,8 +379,8 @@ private:
 
 	VideoMode selectVideoMode() const noexcept {
 		for(const auto& compatibility : videoModeCompatibility) {
-			const auto interscetion = compatibility.intersect(videoModeLimits);
-			if(interscetion) return interscetion.value();
+			const auto intersection = compatibility.intersect(videoModeLimits);
+			if(intersection) return intersection.value();
 		}
 
 		//If there is no compatibility, fail silently.

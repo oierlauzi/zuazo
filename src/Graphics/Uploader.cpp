@@ -8,6 +8,7 @@
 
 #include <utility>
 #include <memory>
+#include <iostream>
 
 namespace Zuazo::Graphics {
 
@@ -49,9 +50,9 @@ struct Uploader::Impl {
 	std::reference_wrapper<const Vulkan>			vulkan;
 	std::shared_ptr<Frame::Descriptor>				frameDescriptor;
 	InputColorTransfer								colorTransfer;
-	std::shared_ptr<StagedBuffer>					colorTransferBuffer;
 	std::vector<Frame::PlaneDescriptor>				planeDescriptors;
 
+	std::shared_ptr<StagedBuffer>					colorTransferBuffer;
 	std::shared_ptr<vk::UniqueCommandPool>			commandPool;
 
 	mutable Utils::Pool<StagedFrame, Allocator>		framePool;
@@ -62,8 +63,8 @@ struct Uploader::Impl {
 		: vulkan(vulkan)
 		, frameDescriptor(Utils::makeShared<Frame::Descriptor>(conf))
 		, colorTransfer(*frameDescriptor)
-		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, colorTransfer))
 		, planeDescriptors(createPlaneDescriptors(vulkan, conf, colorTransfer))
+		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, colorTransfer))
 		, commandPool(createCommandPool(vulkan))
 		, framePool(1, Allocator(*this))
 	{
@@ -94,7 +95,7 @@ struct Uploader::Impl {
 
 	std::shared_ptr<StagedFrame> acquireFrame() const {
 		auto frame = framePool.acquire();
-		frame->waitDependecies();
+		frame->waitDependencies();
 		return frame;
 	}
 

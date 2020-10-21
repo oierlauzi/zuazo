@@ -48,7 +48,7 @@ struct ZuazoBase::Impl {
 	}
 
 	~Impl() {
-		//Just in case upper class has not desuscribed from updates
+		//Just in case upper class has not unsubscribed from updates
 		disableRegularUpdate();
 		disablePeriodicUpdate();
 	}

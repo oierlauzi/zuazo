@@ -24,7 +24,7 @@ TargetFrame::TargetFrame(	const Vulkan& vulkan,
 }
 
 TargetFrame::~TargetFrame() {
-	waitDependecies();
+	waitDependencies();
 }
 
 
@@ -36,7 +36,7 @@ vk::Framebuffer TargetFrame::getFramebuffer() const noexcept {
 void TargetFrame::beginRenderPass(	vk::CommandBuffer cmd, 
 									vk::Rect2D renderArea,
 									Utils::BufferView<const vk::ClearValue> clearValues,
-									vk::SubpassContents contents ) const 
+									vk::SubpassContents contents ) const noexcept 
 {
 	const vk::RenderPassBeginInfo beginInfo(
 		**m_renderPass,
@@ -48,14 +48,14 @@ void TargetFrame::beginRenderPass(	vk::CommandBuffer cmd,
 	getVulkan().beginRenderPass(cmd, beginInfo, contents);
 }
 
-void TargetFrame::endRenderPass(vk::CommandBuffer cmd) const {
+void TargetFrame::endRenderPass(vk::CommandBuffer cmd) const noexcept {
 	getVulkan().endRenderPass(cmd);
 }
 
 
 
 void TargetFrame::draw(std::shared_ptr<const CommandBuffer> cmd) {
-	waitDependecies(); //Wait until rendering finishes
+	waitDependencies(); //Wait until rendering finishes
 	m_commandBuffer = std::move(cmd);
 
 	assert(m_commandBuffer);

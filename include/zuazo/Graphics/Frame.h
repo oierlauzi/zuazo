@@ -68,7 +68,7 @@ public:
 													vk::Filter filter ) const noexcept;
 
 	void									addDependecy(vk::Fence fence) noexcept;
-	void									waitDependecies(uint64_t timeo = Vulkan::NO_TIMEOUT) const noexcept;
+	void									waitDependencies(uint64_t timeo = Vulkan::NO_TIMEOUT) const noexcept;
 
 	const Vulkan&							getVulkan() const noexcept;
 	const Descriptor&						getDescriptor() const noexcept;

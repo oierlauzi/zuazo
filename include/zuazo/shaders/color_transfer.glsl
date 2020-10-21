@@ -150,8 +150,9 @@ float ct_OETF_log(in float gain, in float b, in float value){
 }
 
 
-float ct_hybrid_linear_gamma_offset(in float thresh, in float gain1, in float gain2, in float gamma) {
-	return ct_OETF_linear(gain1, thresh) - ct_OETF_gamma(gain2, gamma, thresh); //Usualy (1 - gain2)
+float ct_hybrid_linear_gamma_offset(in float gain2) {
+	//return ct_OETF_linear(gain1, thresh) - ct_OETF_gamma(gain2, gamma, thresh); //Usualy (1 - gain2)
+	return 1.0f - gain2;
 }
 
 //Note: gains are expresed OETF-wise
@@ -163,7 +164,7 @@ float ct_EOTF_hybrid_linear_gamma(in float thresh, in float gain1, in float gain
 	} else if(value <= ct_OETF_linear(gain1, thresh)){
 		return ct_EOTF_linear(gain1, value);
 	} else {
-		return ct_EOTF_gamma(gain2, gamma, value - ct_hybrid_linear_gamma_offset(thresh, gain1, gain2, gamma));
+		return ct_EOTF_gamma(gain2, gamma, value - ct_hybrid_linear_gamma_offset(gain2));
 	}
 }
 
@@ -173,7 +174,7 @@ float ct_OETF_hybrid_linear_gamma(in float thresh, in float gain1, in float gain
 	} else if(value <= thresh){
 		return ct_OETF_linear(gain1, value);
 	} else {
-		return ct_OETF_gamma(gain2, gamma, value) + ct_hybrid_linear_gamma_offset(thresh, gain1, gain2, gamma);
+		return ct_OETF_gamma(gain2, gamma, value) + ct_hybrid_linear_gamma_offset(gain2);
 	}
 }
 
@@ -183,21 +184,21 @@ float ct_EOTF_hybrid_linear_gamma_EG(in float thresh, in float gain1, in float g
 	const float b = ct_OETF_linear(gain1, thresh);
 
 	if(value < -b) {
-		return ct_EOTF_gamma(-gain2, gamma, -value - ct_hybrid_linear_gamma_offset(thresh, gain1, gain2, gamma));
+		return ct_EOTF_gamma(-gain2, gamma, -value + ct_hybrid_linear_gamma_offset(gain2));
 	} else if(value <= b){
 		return ct_EOTF_linear(gain1, value);
 	} else {
-		return ct_EOTF_gamma(gain2, gamma, value - ct_hybrid_linear_gamma_offset(thresh, gain1, gain2, gamma));
+		return ct_EOTF_gamma(gain2, gamma, value - ct_hybrid_linear_gamma_offset(gain2));
 	}
 }
 
 float ct_OETF_hybrid_linear_gamma_EG(in float thresh, in float gain1, in float gain2, in float gamma, in float value){
 	if(value < -thresh) {
-		return ct_OETF_gamma(-gain2, gamma, -value) + ct_hybrid_linear_gamma_offset(thresh, gain1, gain2, gamma);
+		return ct_OETF_gamma(-gain2, gamma, -value) - ct_hybrid_linear_gamma_offset(gain2);
 	} else if(value <= thresh){
 		return ct_OETF_linear(gain1, value);
 	} else {
-		return ct_OETF_gamma(gain2, gamma, value) + ct_hybrid_linear_gamma_offset(thresh, gain1, gain2, gamma);
+		return ct_OETF_gamma(gain2, gamma, value) + ct_hybrid_linear_gamma_offset(gain2);
 	}
 }
 
@@ -499,33 +500,41 @@ vec4 ct_OETF_ARIB_STD_B67(in vec4 color){
 
 
 vec4 ct_EOTF(in int encoding, in vec4 color){
+	vec4 result;
+
 	switch(encoding){
-	case ct_COLOR_TRANSFER_FUNCTION_BT601_709_2020:	return ct_EOTF_bt601_709_2020(color);
-	case ct_COLOR_TRANSFER_FUNCTION_GAMMA22:		return ct_EOTF_gamma22(color);
-	case ct_COLOR_TRANSFER_FUNCTION_GAMMA26:		return ct_EOTF_gamma26(color);
-	case ct_COLOR_TRANSFER_FUNCTION_GAMMA28:		return ct_EOTF_gamma28(color);
-	case ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_1:	return ct_EOTF_IEC61966_2_1(color);
-	case ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_4:	return ct_EOTF_IEC61966_2_4(color);
-	case ct_COLOR_TRANSFER_FUNCTION_SMPTE240M:		return ct_EOTF_SMPTE240M(color);
-	case ct_COLOR_TRANSFER_FUNCTION_SMPTE2084:		return ct_EOTF_SMPTE2084(color);
-	case ct_COLOR_TRANSFER_FUNCTION_ARIB_STD_B67:	return ct_EOTF_ARIB_STD_B67(color);
-	default: /*ct_COLOR_TRANSFER_FUNCTION_LINEAR*/	return color;
+	case ct_COLOR_TRANSFER_FUNCTION_BT601_709_2020:	result = ct_EOTF_bt601_709_2020(color);	break;
+	case ct_COLOR_TRANSFER_FUNCTION_GAMMA22:		result = ct_EOTF_gamma22(color);		break;
+	case ct_COLOR_TRANSFER_FUNCTION_GAMMA26:		result = ct_EOTF_gamma26(color);		break;
+	case ct_COLOR_TRANSFER_FUNCTION_GAMMA28:		result = ct_EOTF_gamma28(color);		break;
+	case ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_1:	result = ct_EOTF_IEC61966_2_1(color);	break;
+	case ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_4:	result = ct_EOTF_IEC61966_2_4(color);	break;
+	case ct_COLOR_TRANSFER_FUNCTION_SMPTE240M:		result = ct_EOTF_SMPTE240M(color);		break;
+	case ct_COLOR_TRANSFER_FUNCTION_SMPTE2084:		result = ct_EOTF_SMPTE2084(color);		break;
+	case ct_COLOR_TRANSFER_FUNCTION_ARIB_STD_B67:	result = ct_EOTF_ARIB_STD_B67(color);	break;
+	default: /*ct_COLOR_TRANSFER_FUNCTION_LINEAR*/	result = color;							break;
 	}
+
+	return result;
 }
 
 vec4 ct_OETF(in int encoding, in vec4 color){
+	vec4 result;
+
 	switch(encoding){
-	case ct_COLOR_TRANSFER_FUNCTION_BT601_709_2020:	return ct_OETF_bt601_709_2020(color);
-	case ct_COLOR_TRANSFER_FUNCTION_GAMMA22:		return ct_OETF_gamma22(color);
-	case ct_COLOR_TRANSFER_FUNCTION_GAMMA26:		return ct_OETF_gamma26(color);
-	case ct_COLOR_TRANSFER_FUNCTION_GAMMA28:		return ct_OETF_gamma28(color);
-	case ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_1:	return ct_OETF_IEC61966_2_1(color);
-	case ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_4:	return ct_OETF_IEC61966_2_4(color);
-	case ct_COLOR_TRANSFER_FUNCTION_SMPTE240M:		return ct_OETF_SMPTE240M(color);
-	case ct_COLOR_TRANSFER_FUNCTION_SMPTE2084:		return ct_OETF_SMPTE2084(color);
-	case ct_COLOR_TRANSFER_FUNCTION_ARIB_STD_B67:	return ct_OETF_ARIB_STD_B67(color);
-	default: /*ct_COLOR_TRANSFER_FUNCTION_LINEAR*/	return color;
+	case ct_COLOR_TRANSFER_FUNCTION_BT601_709_2020:	result = ct_OETF_bt601_709_2020(color);	break;
+	case ct_COLOR_TRANSFER_FUNCTION_GAMMA22:		result = ct_OETF_gamma22(color);		break;
+	case ct_COLOR_TRANSFER_FUNCTION_GAMMA26:		result = ct_OETF_gamma26(color);		break;
+	case ct_COLOR_TRANSFER_FUNCTION_GAMMA28:		result = ct_OETF_gamma28(color);		break;
+	case ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_1:	result = ct_OETF_IEC61966_2_1(color);	break;
+	case ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_4:	result = ct_OETF_IEC61966_2_4(color);	break;
+	case ct_COLOR_TRANSFER_FUNCTION_SMPTE240M:		result = ct_OETF_SMPTE240M(color);		break;
+	case ct_COLOR_TRANSFER_FUNCTION_SMPTE2084:		result = ct_OETF_SMPTE2084(color);		break;
+	case ct_COLOR_TRANSFER_FUNCTION_ARIB_STD_B67:	result = ct_OETF_ARIB_STD_B67(color);	break;
+	default: /*ct_COLOR_TRANSFER_FUNCTION_LINEAR*/	result = color;							break;
 	}
+
+	return result;
 }
 
 

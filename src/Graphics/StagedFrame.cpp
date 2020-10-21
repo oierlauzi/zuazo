@@ -23,7 +23,7 @@ StagedFrame::StagedFrame(	const Vulkan& vulkan,
 }
 
 StagedFrame::~StagedFrame() {
-	waitDependecies();
+	waitDependencies();
 }
 
 const Frame::PixelData& StagedFrame::getPixelData() noexcept {
@@ -31,7 +31,7 @@ const Frame::PixelData& StagedFrame::getPixelData() noexcept {
 }
 
 void StagedFrame::flush() {
-	waitDependecies();
+	waitDependencies();
 
 	//Flush the mapped memory
 	const vk::MappedMemoryRange range(

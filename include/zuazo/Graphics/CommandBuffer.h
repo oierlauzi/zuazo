@@ -10,7 +10,7 @@ namespace Zuazo::Graphics {
 
 class CommandBuffer {
 public:
-	using Dependencies = std::vector<std::shared_ptr<void>>;
+	using Dependency = std::shared_ptr<void>;
 
 	CommandBuffer(	const Vulkan& vulkan,
 					vk::CommandBufferLevel level,
@@ -25,9 +25,8 @@ public:
 	const Vulkan&									getVulkan() const noexcept;
 	vk::CommandBuffer								getCommandBuffer() const noexcept;
 
-	void											setDependencies(Dependencies dep) noexcept;
-	Dependencies									releaseDependencies() noexcept;
-	const Dependencies&								getDependencies() const noexcept;
+	void											setDependencies(Utils::BufferView<const Dependency> dep);
+	Utils::BufferView<const Dependency>				getDependencies() const noexcept;
 
 	void											begin(const vk::CommandBufferBeginInfo& beginInfo) noexcept;
 	void											end() noexcept;
@@ -140,7 +139,7 @@ private:
 	std::shared_ptr<const vk::UniqueCommandPool>	m_commandPool;
 	vk::UniqueCommandBuffer							m_commandBuffer;
 
-	Dependencies									m_dependencies;
+	std::vector<Dependency>							m_dependencies;
 
 	static vk::UniqueCommandBuffer					createCommandBuffer(const Vulkan& vulkan,
 																		vk::CommandBufferLevel level,

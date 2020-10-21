@@ -34,7 +34,7 @@ struct Frame::Impl {
 			vk::ImageUsageFlags usage )
 		: vulkan(vulkan)
 		, descriptor(std::move(desc))
-		, size(calcualteSize(*descriptor))
+		, size(calculateSize(*descriptor))
 		, colorTransferBuffer(std::move(colorTransfer))
 		, images(createImages(vulkan, usage, planes))
 		, memory(allocateMemory(vulkan, images))
@@ -50,7 +50,7 @@ struct Frame::Impl {
 	}
 
 	~Impl() {
-		waitDependecies(Vulkan::NO_TIMEOUT);
+		waitDependencies(Vulkan::NO_TIMEOUT);
 	}
 
 
@@ -77,7 +77,7 @@ struct Frame::Impl {
 		dependencies.push_back(fence);
 	}
 
-	void waitDependecies(uint64_t timeo) const noexcept {
+	void waitDependencies(uint64_t timeo) const noexcept {
 		if(dependencies.size()) {
 			vulkan.waitForFences(dependencies, true, timeo);
 			dependencies.clear();
@@ -162,7 +162,7 @@ private:
 		}
 	}
 
-	static Math::Vec2f calcualteSize(const Descriptor& desc) noexcept {
+	static Math::Vec2f calculateSize(const Descriptor& desc) noexcept {
 		Resolution res = desc.resolution;
 		AspectRatio par = desc.pixelAspectRatio;
 		return Geometry::calculateSize(res, par);
@@ -332,8 +332,8 @@ void Frame::addDependecy(vk::Fence fence) noexcept {
 	m_impl->addDependecy(fence);
 }
 
-void Frame::waitDependecies(uint64_t timeo) const noexcept {
-	m_impl->waitDependecies(timeo);
+void Frame::waitDependencies(uint64_t timeo) const noexcept {
+	m_impl->waitDependencies(timeo);
 }
 
 

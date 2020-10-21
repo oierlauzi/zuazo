@@ -25,16 +25,13 @@ vk::CommandBuffer CommandBuffer::getCommandBuffer() const noexcept {
 
 
 
-void CommandBuffer::setDependencies(Dependencies dep) noexcept {
-	m_dependencies = std::move(dep);
+void CommandBuffer::setDependencies(Utils::BufferView<const Dependency> dep) {
+	m_dependencies.clear();
+	m_dependencies.insert(m_dependencies.cend(), dep.cbegin(), dep.cend());
 }
 
-CommandBuffer::Dependencies CommandBuffer::releaseDependencies() noexcept {
-	return std::move(m_dependencies);
-}
-
-const CommandBuffer::Dependencies& CommandBuffer::getDependencies() const noexcept {
-	return m_dependencies;
+Utils::BufferView<const CommandBuffer::Dependency> CommandBuffer::getDependencies() const noexcept {
+	return Utils::BufferView<const Dependency>(m_dependencies.data(), m_dependencies.data() + m_dependencies.size());
 }
 
 

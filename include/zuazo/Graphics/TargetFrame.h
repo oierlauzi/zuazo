@@ -30,8 +30,8 @@ public:
 	void										beginRenderPass(	vk::CommandBuffer cmd, 
 																	vk::Rect2D renderArea,
 																	Utils::BufferView<const vk::ClearValue> clearValues,
-																	vk::SubpassContents contents ) const;
-	void										endRenderPass(vk::CommandBuffer cmd) const;
+																	vk::SubpassContents contents ) const noexcept;
+	void										endRenderPass(vk::CommandBuffer cmd) const noexcept;
 	void										draw(std::shared_ptr<const CommandBuffer> cmd);
 
 private:
