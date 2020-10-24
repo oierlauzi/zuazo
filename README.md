@@ -1,14 +1,12 @@
 # Zuazo (WIP)
 
-This readme hasn't been updated since 05/2019, so a lot of the information written is obsolete. Currently Zuazo is going under an API redesign, and the features described below are not avalible, so don't try to using it for anything.
-
 ## Description
 
-Zuazo is library for manipulating real-time video. It's designed to take advantege of the GPU by offloading most of the work to OpenGL. It features a simple but powerful signal routing, compatibility with several video sources such as a video file, Video for Linux 2 (V4L2) devices, such as web-cameras, still images, ImageMagick surfaces, SVG files... Currently it can combine several video sources by using the Compositor class, but it is still WIP. It has been written in C++17, including the API, so it is *NOT* compatible with older versions of C++.
+Zuazo is library for manipulating real-time video. It's designed to take advantege of the GPU by offloading most of the work to Vulkan. It features a simple but powerful signal routing, easy to use timing and a RAII intensive interface. Core funtionality can be expanded using modules, which are available on my GitHub page.
 
 ## Requirements
 
-- OpenGL ES 3.0 compatible video card
+- Vulkan 1.0 compatible video card
 
 - Debian based OS
 
@@ -26,7 +24,7 @@ If you want to generate a doxygen document in HTML for Zuazo install doxygen and
 
 Install 3rd party dependencies
 
-``sudo apt-get install libavutil-dev libavcodec-dev libavformat-dev libswscale-dev libglfw3-dev libmagick++-6.q16-dev libglm-dev ``
+``sudo apt-get install vulkan-tools glslang-tools libvulkan-dev vulkan-validationlayers-dev libglm-dev ``
 
 Download the repository from GitHub
  
@@ -34,9 +32,13 @@ Download the repository from GitHub
 
 Build it
 
- ``cd zuazo``
+``cd zuazo``
+ 
+``mkdir build``
 
-``cmake CMakeLists.txt``
+``cmake CMakeLists.txt -B build/``
+
+``cd build``
 
 ``make ``
 
@@ -60,5 +62,5 @@ In the examples folder you can find the source code for several applications tha
 
 To link your application against zuazo, you need to add the following arguments to the linker
 
-``-lzuazo -lavutil -lavformat -lavcodec -lswscale -lglfw -lMagick++-6.Q16 -lMagickWand-6.Q16 -lMagickCore-6.Q16``
+``-lzuazo``
 
