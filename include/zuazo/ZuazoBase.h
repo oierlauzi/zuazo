@@ -2,6 +2,7 @@
 
 #include "Instance.h"
 #include "Utils/Pimpl.h"
+#include "Utils/BufferView.h"
 #include "Signal/Layout.h"
 
 #include <functional>
@@ -19,7 +20,7 @@ public:
 
 	ZuazoBase(	Instance& instance, 
 				std::string name,
-				std::initializer_list<PadRef> pads = {},
+				Utils::BufferView<const PadRef> pads = {},
 				MoveCallback moveCbk = {},
 				OpenCallback openCbk = {},
 				CloseCallback closeCbk = {},

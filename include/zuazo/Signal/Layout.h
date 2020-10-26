@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../Utils/CopiedPtr.h"
-
 #include <string>
 #include <string_view>
 #include <vector>
@@ -18,7 +16,9 @@ public:
 
 	using PadRef = std::reference_wrapper<PadBase>;
 	
-	explicit Layout(std::string name, std::initializer_list<PadRef> pads = {});
+	explicit Layout(std::string name);
+	template<typename InputIt>
+	Layout(std::string name, InputIt beginPads, InputIt endPads);
 	Layout(const Layout& other) = default;
 	Layout(Layout&& other) = default;
 	virtual ~Layout() = default;

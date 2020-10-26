@@ -545,10 +545,10 @@ void Frame::Geometry::updateBuffer() {
 	texSize = Math::min(texSize, Math::Vec2f(1.0f));
 
 	constexpr std::array vertexPositions {
-		Math::Vec2f(-1.0f, -1.0f),
-		Math::Vec2f(-1.0f, +1.0f),
-		Math::Vec2f(+1.0f, -1.0f),
-		Math::Vec2f(+1.0f, +1.0f),
+		Math::Vec2f(-0.5f, -0.5f),
+		Math::Vec2f(-0.5f, +0.5f),
+		Math::Vec2f(+0.5f, -0.5f),
+		Math::Vec2f(+0.5f, +0.5f),
 	};
 
 	static_assert(vertexPositions.size() == VERTEX_COUNT, "Vertex count does not match");
@@ -558,7 +558,7 @@ void Frame::Geometry::updateBuffer() {
 		auto& texCoord = *(reinterpret_cast<Math::Vec2f*>(m_data + (i * m_stride) + m_texCoordOffset));
 
 		position = recSize * vertexPositions[i];
-		texCoord = texSize * vertexPositions[i] / 2.0f + Math::Vec2f(0.5f);
+		texCoord = texSize * vertexPositions[i] + Math::Vec2f(0.5f);
 	}
 }
 

@@ -151,27 +151,15 @@ constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COU
 	case ColorFormat::G8R8B8A8:			return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", "GRBA") } };
 	case ColorFormat::G8B8R8A8:			return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", "GBRA") } };
 
-	#if ZUAZO_IS_BIG_ENDIAN
-	case ColorFormat::X8R8G8B8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", "XRGB") } };
-	case ColorFormat::X8B8G8R8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", "XBGR") } };
-	case ColorFormat::R8G8B8X8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", "RGBX") } };
-	case ColorFormat::B8G8R8X8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", "BGRX") } };
+	case ColorFormat::X8R8G8B8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", Utils::bele("XRGB", "BGRX")) } };
+	case ColorFormat::X8B8G8R8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", Utils::bele("XBGR", "RGBX")) } };
+	case ColorFormat::R8G8B8X8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", Utils::bele("RGBX", "XBGR")) } };
+	case ColorFormat::B8G8R8X8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", Utils::bele("BGRX", "XRGB")) } };
 
-	case ColorFormat::A8R8G8B8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", "ARGB") } };
-	case ColorFormat::A8B8G8R8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", "ABGR") } };
-	case ColorFormat::R8G8B8A8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", "RGBA")  } };
-	case ColorFormat::B8G8R8A8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", "BGRA") } };
-	#elif ZUAZO_IS_LITTLE_ENDIAN
-	case ColorFormat::X8R8G8B8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", "BGRX") } };
-	case ColorFormat::X8B8G8R8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", "RGBX") } };
-	case ColorFormat::R8G8B8X8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", "XBGR") } };
-	case ColorFormat::B8G8R8X8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", "XRGB") } };
-
-	case ColorFormat::A8R8G8B8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", "BGRA") } };
-	case ColorFormat::A8B8G8R8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", "RGBA")  } };
-	case ColorFormat::R8G8B8A8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", "ABGR") } };
-	case ColorFormat::B8G8R8A8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", "ARGB") } };
-	#endif
+	case ColorFormat::A8R8G8B8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", Utils::bele("ARGB", "BGRA")) } };
+	case ColorFormat::A8B8G8R8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", Utils::bele("ABGR", "RGBA")) } };
+	case ColorFormat::R8G8B8A8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", Utils::bele("RGBA", "ABGR")) } };
+	case ColorFormat::B8G8R8A8_32:		return { std::tuple{ vk::Format::eR8G8B8A8Unorm, swizzle("RGBA", Utils::bele("BGRA", "ARGB")) } };
 
 	case ColorFormat::R8G8B8G8:			return { std::tuple{ vk::Format::eB8G8R8G8422Unorm, swizzle("RGBA", "BGRA") } };
 	case ColorFormat::B8G8R8G8:			return { std::tuple{ vk::Format::eB8G8R8G8422Unorm, swizzle("RGBA", "RGBA")  } };

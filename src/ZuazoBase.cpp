@@ -186,12 +186,12 @@ struct ZuazoBase::Impl {
 
 ZuazoBase::ZuazoBase(	Instance& instance, 
 						std::string name,
-						std::initializer_list<PadRef> pads,
+						Utils::BufferView<const PadRef> pads,
 						MoveCallback moveCbk,
 						OpenCallback openCbk,
 						CloseCallback closeCbk,
 						UpdateCallback updateCbk )
-	: Signal::Layout(std::move(name), pads)
+	: Signal::Layout(std::move(name), pads.begin(), pads.end())
 	, m_impl({}, instance, std::move(moveCbk), std::move(openCbk), std::move(closeCbk), std::move(updateCbk))
 {
 	ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Constructed");

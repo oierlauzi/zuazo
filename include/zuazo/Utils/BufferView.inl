@@ -6,23 +6,23 @@ namespace Zuazo::Utils {
 
 template <typename T>
 constexpr BufferView<T>::BufferView() noexcept
-	: m_data(nullptr)
-	, m_size(0)
+	: m_begin(nullptr)
+	, m_end(nullptr)
 {
 }
 
 template <typename T>
 template <typename Q, typename, typename, typename>
-constexpr BufferView<T>::BufferView(Q* data, size_t size) noexcept
-	: m_data(static_cast<T*>(data))
-	, m_size(size)
+constexpr BufferView<T>::BufferView(Q* begin, Q* end) noexcept
+	: m_begin(begin)
+	, m_end(end)
 {
 }
 
 template <typename T>
 template <typename Q>
-constexpr BufferView<T>::BufferView(Q* begin, Q* end) noexcept
-	: BufferView(begin, std::distance(begin, end))
+constexpr BufferView<T>::BufferView(Q* data, size_t size) noexcept
+	: BufferView(data, data + size)
 {
 }
 
@@ -40,8 +40,7 @@ constexpr BufferView<T>::BufferView(Q (&arr)[N]) noexcept
 }
 
 template <typename T>
-template <typename Q>
-constexpr BufferView<T>::BufferView(std::initializer_list<Q> list) noexcept
+constexpr BufferView<T>::BufferView(std::initializer_list<T> list) noexcept
 	: BufferView(list.begin(), list.end())
 {
 }
@@ -91,59 +90,66 @@ constexpr BufferView<T>::BufferView(std::valarray<Q>& vec) noexcept
 template <typename T>
 template <typename Q>
 constexpr BufferView<T>::BufferView(const BufferView<Q>& other) noexcept
-	: BufferView(other.data(), other.size())
+	: BufferView(other.begin(), other.end())
 {
 }
 
 template <typename T>
 constexpr BufferView<T>::operator bool() const noexcept {
-	return m_size > 0;
+	return !empty();
 }
 
 template <typename T>
 constexpr T* BufferView<T>::data() const noexcept {
-	return m_data;
+	return begin();
 }
 
 template <typename T>
 constexpr size_t BufferView<T>::size() const noexcept {
-	return m_size;
+	return std::distance(cbegin(), cend());
 }
 
 template <typename T>
 constexpr T* BufferView<T>::begin() const noexcept {
-	return data();
+	return m_begin;
 }
 
 template <typename T>
-constexpr T* BufferView<T>::cbegin() const noexcept {
+constexpr const T* BufferView<T>::cbegin() const noexcept {
 	return begin();
 }
 
 template <typename T>
 constexpr T* BufferView<T>::end() const noexcept {
-	return data() + size();
+	return m_end;
 }
 
 template <typename T>
-constexpr T* BufferView<T>::cend() const noexcept {
+constexpr const T* BufferView<T>::cend() const noexcept {
 	return end();
 }
 
 template <typename T>
 constexpr T& BufferView<T>::operator[](size_t i) const noexcept {
-	assert(i < m_size);
-	return m_data[i];
+	assert(i < size());
+	return data()[i];
 }
 
 template <typename T>
 constexpr T& BufferView<T>::front() const noexcept {
-	return (*this)[0];
+	assert(!empty());
+	return *(begin());
 }
 
 template <typename T>
 constexpr T& BufferView<T>::back() const noexcept {
-	return (*this)[m_size - 1];
+	assert(!empty());
+	return *(end() - 1);
+}
+
+template <typename T>
+constexpr bool BufferView<T>::empty() const noexcept {
+	return size() == 0;
 }
 
 }

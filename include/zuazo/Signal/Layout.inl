@@ -14,9 +14,15 @@ namespace Zuazo::Signal {
  * Layout
  */
 
-inline Layout::Layout(std::string name, std::initializer_list<PadRef> pads)
+inline Layout::Layout(std::string name)
 	: m_name(std::move(name))
-	, m_pads(std::move(pads))
+{
+}
+
+template<typename InputIt>
+inline Layout::Layout(std::string name, InputIt beginPads, InputIt endPads)
+	: m_name(std::move(name))
+	, m_pads(beginPads, endPads)
 {
 }
 

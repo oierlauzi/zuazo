@@ -17,18 +17,17 @@ public:
 				typename = typename std::enable_if< !std::is_same<T, void>::value>::type,
 				typename = typename std::enable_if< !std::is_same<Q, void>::value>::type,
 				typename = typename std::enable_if< std::is_convertible<Q(*)[], T(*)[]>::value>::type >
-	constexpr BufferView(Q* data, size_t size) noexcept;
+	constexpr BufferView(Q* begin, Q* end) noexcept;
 
 	template <typename Q>
-	constexpr BufferView(Q* begin, Q* end) noexcept;
+	constexpr BufferView(Q* data, size_t size) noexcept;
 	
 	constexpr BufferView(T& element) noexcept;
 
 	template <typename Q, size_t N>
 	constexpr BufferView(Q (&arr)[N]) noexcept;
 
-	template <typename Q>
-	constexpr BufferView(std::initializer_list<Q> list) noexcept;
+	constexpr BufferView(std::initializer_list<T> list) noexcept;
 
 	template <typename Q, size_t N>
 	constexpr BufferView(const std::array<Q, N>& arr) noexcept;
@@ -64,17 +63,19 @@ public:
 	constexpr size_t		size() const noexcept;
 
 	constexpr T*			begin() const noexcept;
-	constexpr T*			cbegin() const noexcept;
+	constexpr const T*		cbegin() const noexcept;
 	constexpr T*			end() const noexcept;
-	constexpr T*			cend() const noexcept;
+	constexpr const T*		cend() const noexcept;
 
 	constexpr T&			operator[](size_t i) const noexcept;
 	constexpr T&			front() const noexcept;
 	constexpr T&			back() const noexcept;
+	constexpr bool			empty() const noexcept;
 
 private:
-	T* 						m_data;
-	size_t 					m_size;
+	T* 						m_begin;
+	T*						m_end;
+
 };
 
 }
