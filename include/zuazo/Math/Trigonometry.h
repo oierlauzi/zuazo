@@ -46,9 +46,6 @@ double atan(double x) noexcept;
 float atan(float y, float x) noexcept;
 double atan(double y, double x) noexcept;
 
-float atan(float x) noexcept;
-double atan(double x) noexcept;
-
 float atanh(float x) noexcept;
 double atanh(double x) noexcept;
 

@@ -125,15 +125,6 @@ inline double atan(double y, double x) noexcept {
 }
 
 
-inline float atan(float x) noexcept {
-	return std::atan(x);
-}
-
-inline double atan(double x) noexcept {
-	return std::atan(x);
-}
-
-
 inline float atanh(float x) noexcept {
 	return std::atanh(x);
 }
