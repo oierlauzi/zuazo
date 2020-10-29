@@ -1,6 +1,7 @@
 #include "Resolution.h"
 
-#include "Math/Functions.h"
+#include "Math/Comparisons.h"
+#include "Math/Factor.h"
 
 #include <limits>
 

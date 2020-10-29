@@ -1,7 +1,8 @@
 #include <zuazo/ClipBase.h>
 
 #include <zuazo/Utils/Functions.h>
-#include <zuazo/Math/Functions.h>
+#include <zuazo/Math/Comparisons.h>
+#include <zuazo/Math/Periodic.h>
 
 #include <cassert>
 

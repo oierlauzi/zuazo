@@ -237,7 +237,7 @@ public:
 	 * \brief
 	 * Returns the fractional part
 	 */
-	constexpr Rational frac() const noexcept;
+	constexpr Rational fract() const noexcept;
 
 	//////////////////////////////////////////////
 	//				CAST OPERATORS				//
@@ -294,14 +294,20 @@ private:
 	Den m_den;
 };
 
-template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> mod(const Rational<num_t, den_t>& num, const Rational<num_t, den_t>& den) noexcept;
 
 template<typename num_t, typename den_t>
 constexpr Rational<den_t, num_t> abs(const Rational<num_t, den_t>& r) noexcept;
 
+
 template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> inv(const Rational<num_t, den_t>& r) noexcept;
+constexpr Rational<den_t, num_t> mod(const Rational<num_t, den_t>& num, const Rational<num_t, den_t>& den) noexcept;
+
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> gcd(const Rational<den_t, num_t>& a, const Rational<den_t, num_t>& b) noexcept;
+
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> lcm(const Rational<den_t, num_t>& a, const Rational<den_t, num_t>& b) noexcept;
+
 
 template<typename num_t, typename den_t>
 constexpr Rational<den_t, num_t> floor(const Rational<num_t, den_t>& x) noexcept;
@@ -316,14 +322,7 @@ template<typename num_t, typename den_t>
 constexpr Rational<den_t, num_t> round(const Rational<num_t, den_t>& x) noexcept;
 
 template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> frac(const Rational<num_t, den_t>& x) noexcept;
-
-template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> gcd(const Rational<den_t, num_t>& a, const Rational<den_t, num_t>& b) noexcept;
-
-template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> lcm(const Rational<den_t, num_t>& a, const Rational<den_t, num_t>& b) noexcept;
-
+constexpr Rational<den_t, num_t> fract(const Rational<num_t, den_t>& x) noexcept;
 
 
 template<typename num_t, typename den_t>

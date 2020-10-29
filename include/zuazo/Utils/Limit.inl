@@ -1,6 +1,8 @@
 #include "Limit.h"
 
-#include "../Math/Functions.h"
+#include "../Math/Absolute.h"
+#include "../Math/Comparisons.h"
+#include "../Math/Factor.h"
 #include "../Exception.h"
 #include "../StringConversions.h"
 

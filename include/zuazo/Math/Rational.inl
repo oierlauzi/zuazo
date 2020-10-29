@@ -1,6 +1,7 @@
 #include "Rational.h"
 
-#include "Functions.h"
+#include "Absolute.h"
+#include "Factor.h"
 
 namespace Zuazo::Math {
 
@@ -166,7 +167,7 @@ constexpr Rational<num_t, den_t> Rational<num_t, den_t>::round() const noexcept 
 }
 
 template<typename num_t, typename den_t>
-constexpr Rational<num_t, den_t> Rational<num_t, den_t>::frac() const noexcept {
+constexpr Rational<num_t, den_t> Rational<num_t, den_t>::fract() const noexcept {
 	return Rational<num_t, den_t>(
 		Math::mod(m_num, m_den),
 		m_den
@@ -349,15 +350,29 @@ constexpr Rational<den_t, num_t> mod(const Rational<num_t, den_t>& num, const Ra
 }
 
 template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> gcd(const Rational<den_t, num_t>& a, const Rational<den_t, num_t>& b) noexcept {
+	return Rational<den_t, num_t>(
+		Math::gcd(a.getNumerator(), b.getNumerator()),
+		Math::lcm(a.getDenominator(), b.getDenominator())
+	);
+}
+
+template<typename num_t, typename den_t>
+constexpr Rational<den_t, num_t> lcm(const Rational<den_t, num_t>& a, const Rational<den_t, num_t>& b) noexcept {
+	return Rational<den_t, num_t>(
+		Math::lcm(a.getNumerator(), b.getNumerator()),
+		Math::gcd(a.getDenominator(), b.getDenominator())
+	);
+}
+
+
+
+template<typename num_t, typename den_t>
 constexpr Rational<den_t, num_t> abs(const Rational<num_t, den_t>& r) noexcept {
 	return r.abs();
 }
 
 
-template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> inv(const Rational<num_t, den_t>& r) noexcept {
-	return r.inv();
-}
 
 template<typename num_t, typename den_t>
 constexpr Rational<den_t, num_t> floor(const Rational<num_t, den_t>& x) noexcept {
@@ -380,24 +395,8 @@ constexpr Rational<den_t, num_t> round(const Rational<num_t, den_t>& x) noexcept
 }
 
 template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> frac(const Rational<num_t, den_t>& x) noexcept {
-	return x.frac();
-}
-
-template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> gcd(const Rational<den_t, num_t>& a, const Rational<den_t, num_t>& b) noexcept {
-	return Rational<den_t, num_t>(
-		Math::gcd(a.getNumerator(), b.getNumerator()),
-		Math::lcm(a.getDenominator(), b.getDenominator())
-	);
-}
-
-template<typename num_t, typename den_t>
-constexpr Rational<den_t, num_t> lcm(const Rational<den_t, num_t>& a, const Rational<den_t, num_t>& b) noexcept {
-	return Rational<den_t, num_t>(
-		Math::lcm(a.getNumerator(), b.getNumerator()),
-		Math::gcd(a.getDenominator(), b.getDenominator())
-	);
+constexpr Rational<den_t, num_t> fract(const Rational<num_t, den_t>& x) noexcept {
+	return x.fract();
 }
 
 

@@ -1,6 +1,6 @@
 #include "ScalingMode.h"
 
-#include "Math/Functions.h"
+#include "Math/Comparisons.h"
 
 namespace Zuazo {
 
