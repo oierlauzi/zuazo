@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Vector.h"
+#include "Quaternion.h"
 #include "Matrix.h"
 
 namespace Zuazo::Math {
@@ -44,7 +45,11 @@ template<typename T>
 Mat4x4<T> scale(const Mat4x4<T>& mat, const Vec3<T>& scale);
 
 template<typename T>
+Mat4x4<T> rotate(const Mat4x4<T>& mat, const Quaternion<T>& quat);
+
+template<typename T>
 Mat4x4<T> rotate(const Mat4x4<T>& mat, T angle, const Vec3<T>& axis);
+
 
 }
 

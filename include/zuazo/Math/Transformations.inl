@@ -76,6 +76,11 @@ inline Mat4x4<T> scale(const Mat4x4<T>& mat, const Vec3<T>& scale) {
 }
 
 template<typename T>
+inline Mat4x4<T> rotate(const Mat4x4<T>& mat, const Quaternion<T>& quat) {
+	return toMatrix(quat) * mat;
+}
+
+template<typename T>
 inline Mat4x4<T> rotate(const Mat4x4<T>& mat, T angle, const Vec3<T>& axis) {
 	return glm::rotate(mat, angle, axis);
 }
