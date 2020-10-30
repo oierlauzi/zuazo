@@ -58,12 +58,19 @@ inline Mat4x4<T> ortho(	T left, 	T right,
 
 
 template<typename T>
+inline Quaternion<T> lookAt(const Vec3<T>& direction, const Vec3<T>& up) {
+	return glm::quatLookAt(direction, up);
+}
+
+template<typename T>
 inline Mat4x4<T> lookAt(const Vec3<T>& eye,
 						const Vec3<T>& center,
 						const Vec3<T>& up )
 {
 	glm::lookAt(eye, center, up);
 }
+
+
 
 template<typename T>
 inline Mat4x4<T> translate(const Mat4x4<T>& mat, const Vec3<T>& delta) {

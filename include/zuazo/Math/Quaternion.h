@@ -29,10 +29,6 @@ T getPitch(const Quaternion<T>& q);
 template<typename T>
 T getRoll(const Quaternion<T>& q);
 
-
-template<typename T>
-Quaternion<T> lookAt(const Vec3<T>& direction, const Vec3<T>& up);
-
 }
 
 #include "Quaternion.inl"

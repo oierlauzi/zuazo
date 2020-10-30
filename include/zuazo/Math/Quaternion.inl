@@ -27,10 +27,4 @@ inline T getRoll(const Quaternion<T>& q) {
 	return glm::roll(q);
 }
 
-
-template<typename T>
-inline Quaternion<T> lookAt(const Vec3<T>& direction, const Vec3<T>& up) {
-	return glm::quatLookAt(direction, up);
-}
-
 }
