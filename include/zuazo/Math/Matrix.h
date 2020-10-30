@@ -5,7 +5,7 @@
 namespace Zuazo::Math {
 
 template <typename T, int N, int M>
-using Mat = glm::mat<N, M, T>;
+using Mat = glm::mat<N, M, T, glm::qualifier::defaultp>;
 
 template <typename T>
 using Mat2x2 = Mat<T, 2, 2>;
