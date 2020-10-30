@@ -10,24 +10,24 @@ namespace Zuazo::Math {
 template <typename T>
 using Quaternion = glm::qua<T, glm::qualifier::defaultp>;
 
-using Quaternionf = Quaternion<float>;
-using Quaterniond = Quaternion<double>;
+using Quaternionf = Quaternion<glm::f32>;
+using Quaterniond = Quaternion<glm::f64>;
 
 
 template<typename T>
-Mat4x4<T> toMatrix(const Quaternion<T>& q);
+Mat4x4<T> toMatrix(const Quaternion<T>& q) noexcept;
 
 template<typename T>
-Vec3<T> getEulerAngles(const Quaternion<T>& q);
+Vec3<T> getEulerAngles(const Quaternion<T>& q) noexcept;
 
 template<typename T>
-T getYaw(const Quaternion<T>& q);
+T getYaw(const Quaternion<T>& q) noexcept;
 
 template<typename T>
-T getPitch(const Quaternion<T>& q);
+T getPitch(const Quaternion<T>& q) noexcept;
 
 template<typename T>
-T getRoll(const Quaternion<T>& q);
+T getRoll(const Quaternion<T>& q) noexcept;
 
 }
 
