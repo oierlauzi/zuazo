@@ -11,6 +11,7 @@
 #include "../ColorTransferFunction.h"
 #include "../ColorModel.h"
 #include "../ColorPrimaries.h"
+#include "../DepthStencilFormat.h"
 #include "../ScalingFilter.h"
 #include "../BlendingMode.h"
 #include "../Utils/BufferView.h"
@@ -36,8 +37,8 @@ constexpr Resolution fromVulkan(vk::Extent2D res) noexcept;
 constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COUNT> toVulkan(ColorFormat fmt) noexcept;
 constexpr std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format fmt) noexcept;
 
-std::vector<ColorFormat> getFramebufferFormats(Utils::BufferView<const vk::Format> supported);
-std::vector<ColorFormat> getSamplerFormats(Utils::BufferView<const vk::Format> supported);
+constexpr vk::Format toVulkan(DepthStencilFormat fmt) noexcept;
+constexpr DepthStencilFormat fromVulkanDepthStencil(vk::Format fmt) noexcept;
 
 constexpr std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std::tuple<vk::Format, vk::ComponentMapping>& fmt) noexcept;
 std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std::tuple<vk::Format, vk::ComponentMapping>& fmt,
@@ -58,9 +59,6 @@ constexpr vk::Format fromSrgb(vk::Format format) noexcept;
 
 constexpr bool hasDepth(vk::Format format) noexcept;
 constexpr bool hasStencil(vk::Format format) noexcept;
-
-constexpr bool hasSamplerSupport(vk::FormatProperties features) noexcept;
-constexpr bool hasFramebufferSupport(vk::FormatProperties features) noexcept;
 
 constexpr vk::Filter toVulkan(ScalingFilter filt) noexcept;
 constexpr ScalingFilter fromVulkan(vk::Filter filt) noexcept;

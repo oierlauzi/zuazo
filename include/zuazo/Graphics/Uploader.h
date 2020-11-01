@@ -12,7 +12,7 @@ namespace Zuazo::Graphics {
 class Uploader {
 public:
 	Uploader(	const Vulkan& vulkan, 
-				const Frame::Descriptor& conf );
+				const Frame::Descriptor& desc );
 	Uploader(const Uploader& other) = delete;
 	Uploader(Uploader&& other) noexcept;
 	~Uploader();
@@ -27,6 +27,8 @@ public:
 	size_t											getSpareCount() const noexcept;
 
 	std::shared_ptr<StagedFrame>					acquireFrame() const;
+
+	static const std::vector<vk::Format>&			getSupportedFormats(const Vulkan& vulkan);
 
 private:
 	struct Impl;

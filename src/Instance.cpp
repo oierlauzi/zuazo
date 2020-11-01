@@ -6,6 +6,7 @@
 #include <zuazo/Zuazo.h>
 #include <zuazo/ZuazoBase.h>
 #include <zuazo/Graphics/VulkanConversions.h>
+#include <zuazo/Utils/Bit.h>
 
 #include <mutex>
 #include <iostream>
@@ -25,8 +26,8 @@ struct Instance::Impl {
 	Timing::Scheduler			scheduler;
 	Timing::MainLoop			loop;
 
-	FormatSupport				formatSupport;
-	ResolutionSupport			resolutionSupport;
+	Utils::Limit<ColorFormat>	formatSupport;
+	Utils::Limit<Resolution>	resolutionSupport;
 
 	std::shared_ptr<ScheduledCallback> presentImages;
 
@@ -78,11 +79,11 @@ struct Instance::Impl {
 		return vulkan;
 	}
 
-	const FormatSupport& getFormatSupport() const noexcept {
+	const Utils::Limit<ColorFormat>& getFormatSupport() const noexcept {
 		return formatSupport;
 	}
 
-	const ResolutionSupport& getResolutionSupport() const noexcept {
+	const Utils::Limit<Resolution>& getResolutionSupport() const noexcept {
 		return resolutionSupport;
 	}
 
@@ -150,19 +151,15 @@ struct Instance::Impl {
 		message << "\t- Selected GPU: " << deviceProperties.deviceName << "\n";
 
 		//Show supported formats
-		message << "\t- Supported input pixel formats:\n";
-		for(const auto& fmt : formatSupport.inputFormats ){
-			message << "\t\t- " << fmt << "\n";
-		}
-
-		message << "\t- Supported output pixel formats:\n";
-		for(const auto& fmt : formatSupport.outputFormats ){
+		message << "\t- Supported color formats:\n";
+		for(const auto& fmt : formatSupport.getDiscrete()){
 			message << "\t\t- " << fmt << "\n";
 		}
 
 		//Show resolution limits
-		message << "\t- Maximum input resolution: " << resolutionSupport.maxInputResolution << "\n";
-		message << "\t- Maximum output resolution: " << resolutionSupport.maxOutputResolution << "\n";
+		message << "\t- Supported resolutions: " << "\n";
+		message << "\t\t-min: " << resolutionSupport.getRange().getMin() << "\n";
+		message << "\t\t-max: " << resolutionSupport.getRange().getMax() << "\n";
 
 		return message.str();
 	}
@@ -255,22 +252,50 @@ private:
 		}
 	}
 
-	static FormatSupport queryFormatSupport(const Graphics::Vulkan& vulkan) {
-		const auto& supported = vulkan.getFormatSupport();
+	static Utils::Limit<ColorFormat> queryFormatSupport(const Graphics::Vulkan& vulkan) {
+		Utils::Discrete<ColorFormat> result;
 
-		return { 
-			Graphics::getSamplerFormats(supported.sampler), 
-			Graphics::getFramebufferFormats(supported.framebuffer)
-		};
+		//List the formats
+		constexpr vk::FormatFeatureFlags DESIRED_FLAGS =
+			vk::FormatFeatureFlagBits::eSampledImage ;
+		const auto& supportedFormats = vulkan.listSupportedFormatsOptimal(DESIRED_FLAGS);
+		assert(std::is_sorted(supportedFormats.cbegin(), supportedFormats.cend())); //For binary_search
+
+		for(ColorFormat i = Utils::EnumTraits<ColorFormat>::first(); i <= Utils::EnumTraits<ColorFormat>::last(); ++i) {
+			//Convert it into a vulkan format
+			const auto conversion = Graphics::toVulkan(i);
+
+			//Find the end of the range
+			const auto endIte = std::find_if(
+				conversion.cbegin(), conversion.cend(),
+				[] (const std::tuple<vk::Format, vk::ComponentMapping>& conv) -> bool {
+					return std::get<0>(conv) == vk::Format::eUndefined;
+				}
+			);
+
+			//Check if it is supported
+			const auto supported = std::all_of(
+				conversion.cbegin(), endIte,
+				[&supportedFormats] (const std::tuple<vk::Format, vk::ComponentMapping>& conv) -> bool {
+					return std::binary_search(supportedFormats.cbegin(), supportedFormats.cend(), std::get<0>(conv));
+				}
+			);
+
+			if(supported) {
+				result.push_back(i);
+			}
+		}
+
+		assert(std::is_sorted(result.cbegin(), result.cend()));
+		return result;
 	}
 
-	static ResolutionSupport queryResolutionSupport(const Graphics::Vulkan& vulkan) {
+	static Utils::Limit<Resolution> queryResolutionSupport(const Graphics::Vulkan& vulkan) {
 		const auto& limits = vulkan.getPhysicalDeviceProperties().limits;
-
-		return ResolutionSupport {
-			Resolution(limits.maxImageDimension2D, limits.maxImageDimension2D),
-			Resolution(limits.maxFramebufferWidth, limits.maxFramebufferHeight)
-		};
+		return Utils::Range<Resolution>(
+			Resolution(1, 1),
+			Resolution(limits.maxImageDimension2D, limits.maxImageDimension2D)
+		);
 	}
 
 	static std::shared_ptr<ScheduledCallback> createPresentCallback(const Graphics::Vulkan& vulkan) {
@@ -299,11 +324,11 @@ const Graphics::Vulkan& Instance::getVulkan() const noexcept {
 	return m_impl->getVulkan();
 }
 
-const Instance::FormatSupport& Instance::getFormatSupport() const noexcept {
+const Utils::Limit<ColorFormat>& Instance::getFormatSupport() const noexcept {
 	return m_impl->getFormatSupport();
 }
 
-const Instance::ResolutionSupport& Instance::getResolutionSupport() const noexcept {
+const Utils::Limit<Resolution>& Instance::getResolutionSupport() const noexcept {
 	return m_impl->getResolutionSupport();
 }
 
@@ -366,8 +391,6 @@ uint32_t Instance::defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp
 	//Scores
 	constexpr uint32_t MINIMUM_SCORE = 1;
 	constexpr uint32_t DISCRETE_GPU_SCORE = 128;
-	constexpr uint32_t SAMPLER_FORMAT_SCORE = 4;
-	constexpr uint32_t FRAMEBUFFER_FORMAT_SCORE = 8;
 	constexpr uint32_t TEXTURE_RESOLUTION_REDUCTION = 1024;
 	constexpr uint32_t FRAMEBUFFER_RESOLUTION_REDUCTION = 1024;
 	constexpr uint32_t SIMULTANEOUS_ALLOCATION_REDUCTION = 64;
@@ -394,13 +417,7 @@ uint32_t Instance::defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp
 			const auto format = static_cast<vk::Format>(i);
 			const auto formatProperties = device.getFormatProperties(format, disp);
 
-			if(Graphics::hasSamplerSupport(formatProperties)) {
-				score += SAMPLER_FORMAT_SCORE;
-			}
-
-			if(Graphics::hasFramebufferSupport(formatProperties)) {
-				score += FRAMEBUFFER_FORMAT_SCORE;
-			}
+			score += Utils::flagCount(formatProperties.linearTilingFeatures);
 		}
 	}
 

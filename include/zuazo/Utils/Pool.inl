@@ -135,6 +135,20 @@ Pool<T, Alloc>::acquire() {
 
 
 template <typename T, typename Alloc>
+inline void Pool<T, Alloc>::shrink(size_t size) noexcept {
+	while(m_spares.size() > size) {
+		m_spares.pop();
+	}
+}
+
+template <typename T, typename Alloc>
+inline void Pool<T, Alloc>::clear() noexcept {
+	shrink(0);
+}
+
+
+
+template <typename T, typename Alloc>
 inline typename Pool<T, Alloc>::Recycler Pool<T, Alloc>::makeRecycler() const noexcept {
 	assert(m_sharedData);
 	return Recycler(m_sharedData);

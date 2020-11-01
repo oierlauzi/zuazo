@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Utils/Functions.h"
+#include "Utils/Bit.h"
 
 #include <string_view>
 

@@ -36,11 +36,12 @@ struct Vulkan::Impl {
 	vk::UniqueInstance								instance;
 	vk::UniqueDebugUtilsMessengerEXT				messenger;
 	vk::PhysicalDevice								physicalDevice;
-	vk::PhysicalDeviceProperties					physicalDeviceProperties;
 	std::array<uint32_t, QUEUE_NUM>					queueIndices;
 	vk::UniqueDevice								device;
 	std::array<vk::Queue, QUEUE_NUM>				queues;
 	vk::UniquePipelineCache							pipelineCache;
+	
+	vk::PhysicalDeviceProperties					physicalDeviceProperties;
 	FormatSupport									formatSupport;
 
 	/*
@@ -49,6 +50,9 @@ struct Vulkan::Impl {
 
 	template<typename T>
 	using HashMap = std::unordered_map<size_t, T>;
+
+	mutable HashMap<std::vector<vk::Format>>		optimalFormatProperties;
+	mutable HashMap<std::vector<vk::Format>>		linearFormatProperties;
 
 	mutable HashMap<vk::UniqueRenderPass>			renderPasses;
 	mutable HashMap<vk::UniqueShaderModule>			shaders;
@@ -82,10 +86,10 @@ struct Vulkan::Impl {
 		, instance(createInstance(dispatcher, appName.c_str(), toVulkan(appVersion), std::move(requiredInstanceExtensions)))
 		, messenger(createMessenger(dispatcher, *instance, verbosity, this))
 		, physicalDevice(getBestPhysicalDevice(dispatcher, *instance, requiredDeviceExtensions, presentationSupportCbk, scoreFunc))
-		, physicalDeviceProperties(getPhysicalDeviceProperties(dispatcher, physicalDevice))
 		, queueIndices(getQueueIndices(dispatcher, *instance, physicalDevice, presentationSupportCbk))
 		, device(createDevice(dispatcher, physicalDevice, queueIndices, std::move(requiredDeviceExtensions)))
 		, queues(getQueues(dispatcher, *device, queueIndices))
+		, physicalDeviceProperties(getPhysicalDeviceProperties(dispatcher, physicalDevice))
 		, formatSupport(getFormatSupport(dispatcher, physicalDevice))
 	{
 	}
@@ -106,10 +110,6 @@ struct Vulkan::Impl {
 
 	vk::PhysicalDevice getPhysicalDevice() const noexcept {
 		return physicalDevice;
-	}
-
-	const vk::PhysicalDeviceProperties&	getPhysicalDeviceProperties() const noexcept {
-		return physicalDeviceProperties;
 	}
 
 	vk::Device getDevice() const noexcept {
@@ -152,9 +152,73 @@ struct Vulkan::Impl {
 		return *pipelineCache;
 	}
 
+
+
+	const vk::PhysicalDeviceProperties&	getPhysicalDeviceProperties() const noexcept {
+		return physicalDeviceProperties;
+	}
+
 	const FormatSupport& getFormatSupport() const noexcept {
 		return formatSupport;
 	}
+
+	const std::vector<vk::Format>& listSupportedFormatsOptimal(vk::FormatFeatureFlags flags) const {
+		const auto id = static_cast<vk::FormatFeatureFlags::MaskType>(flags);
+		auto ite = optimalFormatProperties.find(id);
+
+		if(ite == optimalFormatProperties.cend()) {
+			//This flags where not tested before
+			std::vector<vk::Format> result;
+
+			for(const auto& feature : getFormatSupport()) {
+				//Test if all the flags are set to '1'
+				if((feature.second.optimalTilingFeatures & flags) == flags) {
+					result.push_back(feature.first);
+				}
+			}
+
+			//Sort in order to use binary search if needed
+			std::sort(result.begin(), result.end());
+			std::tie(ite, std::ignore) = optimalFormatProperties.emplace(
+				id,
+				std::move(result)
+			);
+		}
+
+		assert(ite != optimalFormatProperties.cend());
+		assert(std::is_sorted(ite->second.cbegin(), ite->second.cend()));
+		return ite->second;
+	}
+
+	const std::vector<vk::Format>& listSupportedFormatsLinear(vk::FormatFeatureFlags flags) const {
+		const auto id = static_cast<vk::FormatFeatureFlags::MaskType>(flags);
+		auto ite = linearFormatProperties.find(id);
+
+		if(ite == linearFormatProperties.cend()) {
+			//This flags where not tested before
+			std::vector<vk::Format> result;
+
+			for(const auto& feature : getFormatSupport()) {
+				//Test if all the flags are set to '1'
+				if((feature.second.linearTilingFeatures & flags) == flags) {
+					result.push_back(feature.first);
+				}
+			}
+
+			//Sort in order to use binary search if needed
+			std::sort(result.begin(), result.end());
+			std::tie(ite, std::ignore) = linearFormatProperties.emplace(
+				id,
+				std::move(result)
+			);
+		}
+
+		assert(ite != linearFormatProperties.cend());
+		assert(std::is_sorted(ite->second.cbegin(), ite->second.cend()));
+		return ite->second;
+	}
+
+
 
 	vk::FormatProperties getFormatFeatures(vk::Format format) const{
 		return physicalDevice.getFormatProperties(format, dispatcher);
@@ -1093,15 +1157,7 @@ private:
 
 		for(const auto& range : FORMAT_RANGES){
 			for(auto format = range.getMin(); format <= range.getMax(); reinterpret_cast<int&>(format)++){
-				const auto properties = physicalDevice.getFormatProperties(format, disp);
-
-				if(hasSamplerSupport(properties)){
-					result.sampler.emplace_back(format);
-				}
-
-				if(hasFramebufferSupport(properties)){
-					result.framebuffer.emplace_back(format);
-				}
+				result.emplace(format, physicalDevice.getFormatProperties(format, disp));
 			}
 		}
 
@@ -1434,10 +1490,6 @@ vk::PhysicalDevice Vulkan::getPhysicalDevice() const noexcept {
 	return m_impl->getPhysicalDevice();
 }
 
-const vk::PhysicalDeviceProperties&	Vulkan::getPhysicalDeviceProperties() const noexcept { 
-	return m_impl->getPhysicalDeviceProperties();
-}
-
 vk::Device Vulkan::getDevice() const noexcept {
 	return m_impl->getDevice();
 }
@@ -1478,13 +1530,25 @@ vk::PipelineCache Vulkan::getPipelineCache() const noexcept {
 	return m_impl->getPipelineCache();
 }
 
+
+
+const vk::PhysicalDeviceProperties&	Vulkan::getPhysicalDeviceProperties() const noexcept { 
+	return m_impl->getPhysicalDeviceProperties();
+}
+
 const Vulkan::FormatSupport& Vulkan::getFormatSupport() const noexcept {
 	return m_impl->getFormatSupport();
 }
 
-vk::FormatProperties Vulkan::getFormatFeatures(vk::Format format) const {
-	return m_impl->getFormatFeatures(format);
+const std::vector<vk::Format>& Vulkan::listSupportedFormatsOptimal(vk::FormatFeatureFlags flags) const {
+	return m_impl->listSupportedFormatsOptimal(flags);
 }
+
+const std::vector<vk::Format>& Vulkan::listSupportedFormatsLinear(vk::FormatFeatureFlags flags) const {
+	return m_impl->listSupportedFormatsLinear(flags);
+}
+
+
 
 vk::UniqueSwapchainKHR Vulkan::createSwapchain(const vk::SwapchainCreateInfoKHR& createInfo) const{
 	return m_impl->createSwapchain(createInfo);

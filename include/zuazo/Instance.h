@@ -8,6 +8,7 @@
 #include "Graphics/Vulkan.h"
 #include "Chrono.h"
 #include "Utils/Pimpl.h"
+#include "Utils/Limit.h"
 
 #include <functional>
 #include <vector>
@@ -26,16 +27,6 @@ public:
 
 	class Module;
 	class ApplicationInfo;
-	
-	struct FormatSupport {
-		std::vector<ColorFormat> inputFormats;
-		std::vector<ColorFormat> outputFormats;
-	};
-
-	struct ResolutionSupport {
-		Resolution maxInputResolution;
-		Resolution maxOutputResolution;
-	};
 
 	/**
 	 * Priority defines in which order Events will be updated, high priority meaning that
@@ -61,35 +52,35 @@ public:
 	Instance(Instance&& other) = delete;
 	~Instance();
 
-	Instance& operator=(const Instance& other) = delete;
-	Instance& operator=(Instance&& other) = delete;
+	Instance& 							operator=(const Instance& other) = delete;
+	Instance& 							operator=(Instance&& other) = delete;
 
-	const ApplicationInfo&		getApplicationInfo() const noexcept;
-	const Graphics::Vulkan&		getVulkan() const noexcept;
+	const ApplicationInfo&				getApplicationInfo() const noexcept;
+	const Graphics::Vulkan&				getVulkan() const noexcept;
 
-	const FormatSupport& 		getFormatSupport() const noexcept;
-	const ResolutionSupport&	getResolutionSupport() const noexcept;
+	const Utils::Limit<ColorFormat>& 	getFormatSupport() const noexcept;
+	const Utils::Limit<Resolution>&		getResolutionSupport() const noexcept;
 
-	void						addRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior);
-	void						removeRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk);
+	void								addRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior);
+	void								removeRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk);
 
-	void						addPeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior, Duration period);
-	void						removePeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk);
+	void								addPeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior, Duration period);
+	void								removePeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk);
 
-	TimePoint					getTime() const noexcept;
-	TimePoint					getEpoch() const noexcept;
-	Duration					getDeltaT() const noexcept;
+	TimePoint							getTime() const noexcept;
+	TimePoint							getEpoch() const noexcept;
+	Duration							getDeltaT() const noexcept;
 
-	void						lock() noexcept;
-	bool						try_lock() noexcept;
-	void						unlock() noexcept;
+	void								lock() noexcept;
+	bool								try_lock() noexcept;
+	void								unlock() noexcept;
 
-	static uint32_t				defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp, 
-														vk::PhysicalDevice device ) noexcept;
+	static uint32_t						defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp, 
+																vk::PhysicalDevice device ) noexcept;
 
 private:
 	struct Impl;
-	Utils::Pimpl<Impl>			m_impl;
+	Utils::Pimpl<Impl>					m_impl;
 
 };
 
@@ -108,22 +99,22 @@ public:
 	Module& operator=(const Module& other) = default;
 	Module& operator=(Module&& other) noexcept = default;
 
-	const std::string&			getName() const noexcept;
-	Version						getVersion() const noexcept;
+	const std::string&					getName() const noexcept;
+	Version								getVersion() const noexcept;
 
 private:
-	std::string 				m_name;
-	Version 					m_version;
+	std::string 						m_name;
+	Version 							m_version;
 
-	virtual void 				initialize(Instance& instance) const;
-	virtual void 				terminate(Instance& instance) const;
+	virtual void 						initialize(Instance& instance) const;
+	virtual void 						terminate(Instance& instance) const;
 
 	//Vulkan related
-	virtual VulkanExtensions	getRequiredVulkanInstanceExtensions() const;
-	virtual VulkanExtensions	getRequiredVulkanDeviceExtensions() const;
-	virtual bool				getPresentationSupport(	vk::Instance  instance, 
-														vk::PhysicalDevice device, 
-														uint32_t queueIndex ) const;
+	virtual VulkanExtensions			getRequiredVulkanInstanceExtensions() const;
+	virtual VulkanExtensions			getRequiredVulkanDeviceExtensions() const;
+	virtual bool						getPresentationSupport(	vk::Instance  instance, 
+																vk::PhysicalDevice device, 
+																uint32_t queueIndex ) const;
 };
 
 
@@ -144,32 +135,32 @@ public:
 	ApplicationInfo(ApplicationInfo&& other) noexcept = default;
 	~ApplicationInfo() = default;
 
-	ApplicationInfo& operator=(const ApplicationInfo& other) = default;
-	ApplicationInfo& operator=(ApplicationInfo&& other) noexcept = default;
+	ApplicationInfo& 					operator=(const ApplicationInfo& other) = default;
+	ApplicationInfo& 					operator=(ApplicationInfo&& other) noexcept = default;
 
-	const std::string&			getName() const noexcept;
-	Version						getVersion() const noexcept;
-	Verbosity					getVerbosity() const noexcept;
-	const Modules&				getModules() const noexcept;
-	const InstanceLogFunc&		getInstanceLogFunc() const noexcept;
-	const ElementLogFunc&		getElementLogFunc() const noexcept;
+	const std::string&					getName() const noexcept;
+	Version								getVersion() const noexcept;
+	Verbosity							getVerbosity() const noexcept;
+	const Modules&						getModules() const noexcept;
+	const InstanceLogFunc&				getInstanceLogFunc() const noexcept;
+	const ElementLogFunc&				getElementLogFunc() const noexcept;
 
 
-	static void 				defaultInstanceLogFunc(	const Instance& inst, 
-														Severity severity, 
-														std::string_view msg );
+	static void 						defaultInstanceLogFunc(	const Instance& inst, 
+																Severity severity, 
+																std::string_view msg );
 
-	static void 				defaultElementLogFunc(	const ZuazoBase& base, 
-														Severity severity, 
-														std::string_view msg );
+	static void 						defaultElementLogFunc(	const ZuazoBase& base, 
+																Severity severity, 
+																std::string_view msg );
 
 private:
-	std::string					m_name;
-	Version						m_version;
-	Verbosity					m_verbosity;
-	Modules						m_modules;
-	InstanceLogFunc				m_instanceLogFunc;
-	ElementLogFunc				m_elementLogFunc;
+	std::string							m_name;
+	Version								m_version;
+	Verbosity							m_verbosity;
+	Modules								m_modules;
+	InstanceLogFunc						m_instanceLogFunc;
+	ElementLogFunc						m_elementLogFunc;
 };
 
 

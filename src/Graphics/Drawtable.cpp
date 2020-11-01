@@ -107,6 +107,16 @@ struct Drawtable::Impl {
 		return OutputColorTransfer(colorTransfer);
 	}
 
+
+	static const std::vector<vk::Format>& getSupportedFormats(const Vulkan& vulkan) {
+		constexpr vk::FormatFeatureFlags DESIRED_FLAGS =
+			vk::FormatFeatureFlagBits::eSampledImage |
+			vk::FormatFeatureFlagBits::eColorAttachment |
+			vk::FormatFeatureFlagBits::eColorAttachmentBlend ;
+
+		return vulkan.listSupportedFormatsOptimal(DESIRED_FLAGS);
+	}
+
 private:
 	static std::vector<Frame::PlaneDescriptor> createPlaneDescriptors(	const Vulkan& vulkan, 
 																		const Frame::Descriptor& desc,
@@ -115,8 +125,8 @@ private:
 		std::vector<Frame::PlaneDescriptor> result = Frame::getPlaneDescriptors(desc);
 
 		//Try to optimize it
-		const auto& supportedFormats = vulkan.getFormatSupport().framebuffer;
-		assert(std::is_sorted(supportedFormats.cbegin(), supportedFormats.cend())); //For binary search
+		const auto supportedFormats = getSupportedFormats(vulkan);
+		assert(std::is_sorted(supportedFormats.cbegin(), supportedFormats.cend())); //In order to use binary search
 
 		for(auto& plane : result) {
 			std::tie(plane.format, plane.swizzle) = optimizeFormat(std::make_tuple(plane.format, plane.swizzle));
@@ -198,6 +208,11 @@ std::shared_ptr<TargetFrame> Drawtable::acquireFrame() const {
 
 OutputColorTransfer Drawtable::getOutputColorTransfer() const {
 	return m_impl->getOutputColorTransfer();
+}
+
+
+const std::vector<vk::Format>& Drawtable::getSupportedFormats(const Vulkan& vulkan) {
+	return Impl::getSupportedFormats(vulkan);
 }
 
 }

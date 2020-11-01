@@ -6,6 +6,7 @@
 #include "../Utils/Pimpl.h"
 
 #include <memory>
+#include <vector>
 
 
 namespace Zuazo::Graphics {
@@ -31,6 +32,8 @@ public:
 
 	std::shared_ptr<TargetFrame>					acquireFrame() const;
 	OutputColorTransfer								getOutputColorTransfer() const;
+
+	static const std::vector<vk::Format>& 			getSupportedFormats(const Vulkan& vulkan);
 
 private:
 	struct Impl;

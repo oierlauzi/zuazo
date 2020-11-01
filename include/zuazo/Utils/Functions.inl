@@ -16,11 +16,6 @@ constexpr void ignore(const T&...) noexcept {
 
 }
 
-template<typename T>
-constexpr T bit(T pos) noexcept {
-	return T(1) << pos;
-}
-
 
 template<typename Func, typename... Args>
 inline typename std::enable_if<!std::is_same<Func, typename std::invoke_result<Func, Args...>::type>::value, void>::type

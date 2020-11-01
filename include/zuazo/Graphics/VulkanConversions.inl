@@ -403,6 +403,36 @@ constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COU
 	}
 }
 
+
+
+constexpr vk::Format toVulkan(DepthStencilFormat fmt) noexcept {
+	switch(fmt) {
+	case DepthStencilFormat::D16:		return vk::Format::eD16Unorm;
+	case DepthStencilFormat::X8D24_32:	return vk::Format::eX8D24UnormPack32;
+	case DepthStencilFormat::D32f:		return vk::Format::eD32Sfloat;
+	case DepthStencilFormat::S8:		return vk::Format::eS8Uint;
+	case DepthStencilFormat::D16S8:		return vk::Format::eD16UnormS8Uint;
+	case DepthStencilFormat::D24S8:		return vk::Format::eD24UnormS8Uint;
+	case DepthStencilFormat::D32fS8:	return vk::Format::eD32SfloatS8Uint;
+	default:							return vk::Format::eUndefined;
+	}
+}
+
+constexpr DepthStencilFormat fromVulkanDepthStencil(vk::Format fmt) noexcept {
+	switch(fmt) {
+	case vk::Format::eD16Unorm:			return DepthStencilFormat::D16;
+	case vk::Format::eX8D24UnormPack32:	return DepthStencilFormat::X8D24_32;
+	case vk::Format::eD32Sfloat:		return DepthStencilFormat::D32f;
+	case vk::Format::eS8Uint:			return DepthStencilFormat::S8;
+	case vk::Format::eD16UnormS8Uint:	return DepthStencilFormat::D16S8;
+	case vk::Format::eD24UnormS8Uint:	return DepthStencilFormat::D24S8;
+	case vk::Format::eD32SfloatS8Uint:	return DepthStencilFormat::D32fS8;
+	default:							return DepthStencilFormat::NONE;
+	}
+}
+
+
+
 constexpr std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format fmt) noexcept {
 	switch(fmt){
 	//4 bit formats
@@ -462,67 +492,6 @@ constexpr std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format f
 	}
 }
 
-inline std::vector<ColorFormat> getFramebufferFormats(Utils::BufferView<const vk::Format> supported) {
-	std::vector<ColorFormat> result;
-
-	//To use binary search:
-	assert(std::is_sorted(supported.cbegin(), supported.cend()));
-
-	for(ColorFormat format = ColorFormat::NONE; format < ColorFormat::COUNT; format++) {
-		const auto conv = toVulkan(format);
-		const auto supportedPlanes = std::count_if(
-			conv.cbegin(), conv.cend(),
-			[&supported] (std::tuple<vk::Format, vk::ComponentMapping> plane) -> bool {
-				//Try to remove the swizzle
-				plane = optimizeFormat(plane);
-
-				//It must not contain any swizzle
-				if(std::get<vk::ComponentMapping>(plane) != vk::ComponentMapping()) return false;
-
-				//Format must be supported
-				if(!std::binary_search(supported.cbegin(), supported.cend(), std::get<vk::Format>(plane))) return false;
-
-				//All ok!
-				return true;
-			}
-		);
-
-		//Check if all planes are supported
-		if(getPlaneCount(format) == static_cast<size_t>(supportedPlanes) && supportedPlanes > 0) {
-			result.push_back(format);
-		}
-	}
-
-	return result;
-}
-
-inline std::vector<ColorFormat> getSamplerFormats(Utils::BufferView<const vk::Format> supported) {
-	std::vector<ColorFormat> result;
-
-	//To use binary search:
-	assert(std::is_sorted(supported.cbegin(), supported.cend()));
-
-	for(ColorFormat format = ColorFormat::NONE; format < ColorFormat::COUNT; format++) {
-		const auto conv = toVulkan(format);
-		const auto supportedPlanes = std::count_if(
-			conv.cbegin(), conv.cend(),
-			[&supported] (std::tuple<vk::Format, vk::ComponentMapping> plane) -> bool {
-				//Format must be supported
-				if(!std::binary_search(supported.cbegin(), supported.cend(), std::get<vk::Format>(plane))) return false;
-
-				//All ok!
-				return true;
-			}
-		);
-
-		//Check if all planes are supported
-		if(getPlaneCount(format) == static_cast<size_t>(supportedPlanes) && supportedPlanes > 0) {
-			result.push_back(format);
-		}
-	}
-
-	return result;
-}
 
 
 constexpr std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std::tuple<vk::Format, vk::ComponentMapping>& fmt) noexcept {
@@ -808,22 +777,6 @@ constexpr bool hasStencil(vk::Format format) noexcept {
 	default:
 		return false;
 	}
-}
-
-
-
-constexpr bool hasSamplerSupport(vk::FormatProperties features) noexcept {
-	constexpr auto FLAGS = 	vk::FormatFeatureFlagBits::eTransferDst |
-							vk::FormatFeatureFlagBits::eSampledImageFilterLinear;
-
-	return (features.optimalTilingFeatures & FLAGS) == FLAGS;
-}
-
-constexpr bool hasFramebufferSupport(vk::FormatProperties features) noexcept {
-	constexpr auto FLAGS = 	vk::FormatFeatureFlagBits::eTransferSrc |
-							vk::FormatFeatureFlagBits::eColorAttachmentBlend;
-
-	return (features.optimalTilingFeatures & FLAGS) == FLAGS;
 }
 
 

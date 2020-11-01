@@ -26,6 +26,9 @@ public:
 	size_t									getSpareCount() const noexcept;
 
 	std::unique_ptr<ElementType, Recycler>	acquire();
+	
+	void									shrink(size_t size) noexcept;
+	void									clear() noexcept;
 
 private:
 	class Deleter;

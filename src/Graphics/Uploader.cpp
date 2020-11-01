@@ -31,7 +31,7 @@ struct Uploader::Impl {
 		Allocator& operator=(const Allocator& other) = default;
 
 		void construct(StagedFrame* x) {
-			const Impl& uplo = m_uploader;
+			const auto& uplo = m_uploader.get();
 
 			new (x) StagedFrame(
 				uplo.vulkan,
@@ -59,11 +59,11 @@ struct Uploader::Impl {
 
 
 	Impl(	const Vulkan& vulkan, 
-			const Frame::Descriptor& conf )
+			const Frame::Descriptor& desc )
 		: vulkan(vulkan)
-		, frameDescriptor(Utils::makeShared<Frame::Descriptor>(conf))
+		, frameDescriptor(Utils::makeShared<Frame::Descriptor>(desc))
 		, colorTransfer(*frameDescriptor)
-		, planeDescriptors(createPlaneDescriptors(vulkan, conf, colorTransfer))
+		, planeDescriptors(createPlaneDescriptors(vulkan, desc, colorTransfer))
 		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, colorTransfer))
 		, commandPool(createCommandPool(vulkan))
 		, framePool(1, Allocator(*this))
@@ -99,6 +99,15 @@ struct Uploader::Impl {
 		return frame;
 	}
 
+
+	static const std::vector<vk::Format>& getSupportedFormats(const Vulkan& vulkan) {
+		constexpr vk::FormatFeatureFlags DESIRED_FLAGS =
+			vk::FormatFeatureFlagBits::eSampledImage |
+			vk::FormatFeatureFlagBits::eTransferDst ;
+
+		return vulkan.listSupportedFormatsOptimal(DESIRED_FLAGS);
+	}
+
 private:
 	static std::vector<Frame::PlaneDescriptor> createPlaneDescriptors(	const Vulkan& vulkan, 
 																		const Frame::Descriptor& desc,
@@ -107,7 +116,9 @@ private:
 		std::vector<Frame::PlaneDescriptor> result = Frame::getPlaneDescriptors(desc);
 
 		//Try to optimize it
-		const auto& supportedFormats = vulkan.getFormatSupport().sampler;
+		const auto supportedFormats = getSupportedFormats(vulkan);
+		assert(std::is_sorted(supportedFormats.cbegin(), supportedFormats.cend()));
+
 		colorTransfer.optimize(result, supportedFormats);
 		for(auto& plane : result) {
 			std::tie(plane.format, plane.swizzle) = optimizeFormat(std::make_tuple(plane.format, plane.swizzle));
@@ -134,8 +145,8 @@ private:
  */
 
 Uploader::Uploader(	const Vulkan& vulkan, 
-					const Frame::Descriptor& conf )
-	: m_impl({}, vulkan, conf)
+					const Frame::Descriptor& desc )
+	: m_impl({}, vulkan, desc)
 {
 }
 
@@ -167,6 +178,11 @@ size_t Uploader::getSpareCount() const noexcept {
 
 std::shared_ptr<StagedFrame> Uploader::acquireFrame() const {
 	return m_impl->acquireFrame();
+}
+
+
+const std::vector<vk::Format>& Uploader::getSupportedFormats(const Vulkan& vulkan) {
+	return Impl::getSupportedFormats(vulkan);
 }
 
 }

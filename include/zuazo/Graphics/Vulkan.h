@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <array>
+#include <unordered_map>
 #include <utility>
 #include <functional>
 
@@ -24,10 +25,7 @@ public:
 	using DeviceScoreFunc = std::function<uint32_t(const vk::DispatchLoaderDynamic&, vk::PhysicalDevice)>;
 	using PresentationSupportCallback = std::function<bool(vk::Instance, vk::PhysicalDevice, uint32_t)>;
 
-	struct FormatSupport {
-		std::vector<vk::Format>	sampler;
-		std::vector<vk::Format>	framebuffer;
-	};
+	using FormatSupport = std::unordered_map<vk::Format, vk::FormatProperties>;
 
 	struct AggregatedAllocation {
 		vk::UniqueDeviceMemory memory;
@@ -64,7 +62,6 @@ public:
 	const vk::DispatchLoaderDynamic&	getDispatcher() const noexcept;
 	vk::Instance						getInstance() const noexcept;
 	vk::PhysicalDevice					getPhysicalDevice() const noexcept;
-	const vk::PhysicalDeviceProperties&	getPhysicalDeviceProperties() const noexcept;
 	vk::Device							getDevice() const noexcept;
 	uint32_t							getGraphicsQueueIndex() const noexcept;
 	vk::Queue							getGraphicsQueue() const noexcept;
@@ -75,9 +72,11 @@ public:
 	uint32_t							getPresentationQueueIndex() const noexcept;
 	vk::Queue							getPresentationQueue() const noexcept;
 	vk::PipelineCache					getPipelineCache() const noexcept;
+
+	const vk::PhysicalDeviceProperties&	getPhysicalDeviceProperties() const noexcept;
 	const FormatSupport&				getFormatSupport() const noexcept;
-	
-	vk::FormatProperties				getFormatFeatures(vk::Format format) const;
+	const std::vector<vk::Format>&		listSupportedFormatsOptimal(vk::FormatFeatureFlags flags) const;
+	const std::vector<vk::Format>&		listSupportedFormatsLinear(vk::FormatFeatureFlags flags) const;
 
 	vk::UniqueSwapchainKHR				createSwapchain(const vk::SwapchainCreateInfoKHR& createInfo) const;
 	vk::UniqueImage						createImage(const vk::ImageCreateInfo& createInfo) const;
