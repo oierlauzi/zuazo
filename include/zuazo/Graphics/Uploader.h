@@ -28,7 +28,7 @@ public:
 
 	std::shared_ptr<StagedFrame>					acquireFrame() const;
 
-	static const std::vector<vk::Format>&			getSupportedFormats(const Vulkan& vulkan);
+	static std::vector<ColorFormat>					getSupportedFormats(const Vulkan& vulkan);
 
 private:
 	struct Impl;

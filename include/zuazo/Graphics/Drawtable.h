@@ -33,7 +33,8 @@ public:
 	std::shared_ptr<TargetFrame>					acquireFrame() const;
 	OutputColorTransfer								getOutputColorTransfer() const;
 
-	static const std::vector<vk::Format>& 			getSupportedFormats(const Vulkan& vulkan);
+	static std::vector<ColorFormat> 				getSupportedFormats(const Vulkan& vulkan);
+	static std::vector<DepthStencilFormat> 			getSupportedFormatsDepthStencil(const Vulkan& vulkan);
 
 private:
 	struct Impl;

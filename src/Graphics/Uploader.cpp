@@ -100,7 +100,44 @@ struct Uploader::Impl {
 	}
 
 
-	static const std::vector<vk::Format>& getSupportedFormats(const Vulkan& vulkan) {
+	static std::vector<ColorFormat> getSupportedFormats(const Vulkan& vulkan) {
+		std::vector<ColorFormat> result;
+
+		//Query support for Vulkan formats
+		const auto& vulkanFormatSupport = getVulkanFormatSupport(vulkan);
+		assert(std::is_sorted(vulkanFormatSupport.cbegin(), vulkanFormatSupport.cend())); //For binary search
+
+		//Test for each format
+		for(auto i = Utils::EnumTraits<ColorFormat>::first(); i <= Utils::EnumTraits<ColorFormat>::last(); ++i) {
+			//Convert it into a Vulkan format
+			const auto conversion = toVulkan(i);
+
+			//Find the end of the range
+			const auto endIte = std::find_if(
+				conversion.cbegin(), conversion.cend(),
+				[] (const std::tuple<vk::Format, vk::ComponentMapping>& conv) -> bool {
+					return std::get<0>(conv) == vk::Format::eUndefined;
+				}
+			);
+
+			//Check if it is supported
+			const auto supported = std::all_of(
+				conversion.cbegin(), endIte,
+				[&vulkanFormatSupport] (const std::tuple<vk::Format, vk::ComponentMapping>& conv) -> bool {
+					return std::binary_search(vulkanFormatSupport.cbegin(), vulkanFormatSupport.cend(), std::get<0>(conv));
+				}
+			);
+
+			if(supported) {
+				result.push_back(i);
+			}
+		}
+
+		return result;
+	}
+
+private:
+	static const std::vector<vk::Format>& getVulkanFormatSupport(const Vulkan& vulkan) {
 		constexpr vk::FormatFeatureFlags DESIRED_FLAGS =
 			vk::FormatFeatureFlagBits::eSampledImage |
 			vk::FormatFeatureFlagBits::eTransferDst ;
@@ -108,7 +145,6 @@ struct Uploader::Impl {
 		return vulkan.listSupportedFormatsOptimal(DESIRED_FLAGS);
 	}
 
-private:
 	static std::vector<Frame::PlaneDescriptor> createPlaneDescriptors(	const Vulkan& vulkan, 
 																		const Frame::Descriptor& desc,
 																		InputColorTransfer& colorTransfer )
@@ -116,7 +152,7 @@ private:
 		std::vector<Frame::PlaneDescriptor> result = Frame::getPlaneDescriptors(desc);
 
 		//Try to optimize it
-		const auto supportedFormats = getSupportedFormats(vulkan);
+		const auto supportedFormats = getVulkanFormatSupport(vulkan);
 		assert(std::is_sorted(supportedFormats.cbegin(), supportedFormats.cend()));
 
 		colorTransfer.optimize(result, supportedFormats);
@@ -181,7 +217,7 @@ std::shared_ptr<StagedFrame> Uploader::acquireFrame() const {
 }
 
 
-const std::vector<vk::Format>& Uploader::getSupportedFormats(const Vulkan& vulkan) {
+std::vector<ColorFormat> Uploader::getSupportedFormats(const Vulkan& vulkan) {
 	return Impl::getSupportedFormats(vulkan);
 }
 
