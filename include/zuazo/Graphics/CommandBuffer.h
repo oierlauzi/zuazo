@@ -10,7 +10,7 @@ namespace Zuazo::Graphics {
 
 class CommandBuffer {
 public:
-	using Dependency = std::shared_ptr<void>;
+	using Dependency = std::shared_ptr<const void>;
 
 	CommandBuffer(	const Vulkan& vulkan,
 					vk::CommandBufferLevel level,
