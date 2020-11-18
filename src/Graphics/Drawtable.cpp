@@ -109,8 +109,8 @@ struct Drawtable::Impl {
 	}
 
 
-	static std::vector<ColorFormat> getSupportedFormats(const Vulkan& vulkan) {
-		std::vector<ColorFormat> result;
+	static Utils::Discrete<ColorFormat> getSupportedFormats(const Vulkan& vulkan) {
+		Utils::Discrete<ColorFormat> result;
 
 		//Query support for Vulkan formats
 		const auto& vulkanFormatSupport = getVulkanFormatSupport(vulkan);
@@ -152,8 +152,8 @@ struct Drawtable::Impl {
 		return result;
 	}
 
-	static std::vector<DepthStencilFormat> getSupportedFormatsDepthStencil(const Vulkan& vulkan) {
-		std::vector<DepthStencilFormat> result;
+	static Utils::Discrete<DepthStencilFormat> getSupportedFormatsDepthStencil(const Vulkan& vulkan) {
+		Utils::Discrete<DepthStencilFormat> result;
 
 		//Query support for Vulkan formats
 		const auto& vulkanFormatSupport = getVulkanFormatSupportDepthStencil(vulkan);
@@ -415,11 +415,11 @@ OutputColorTransfer Drawtable::getOutputColorTransfer() const {
 }
 
 
-std::vector<ColorFormat> Drawtable::getSupportedFormats(const Vulkan& vulkan) {
+Utils::Discrete<ColorFormat> Drawtable::getSupportedFormats(const Vulkan& vulkan) {
 	return Impl::getSupportedFormats(vulkan);
 }
 
-std::vector<DepthStencilFormat> Drawtable::getSupportedFormatsDepthStencil(const Vulkan& vulkan) {
+Utils::Discrete<DepthStencilFormat> Drawtable::getSupportedFormatsDepthStencil(const Vulkan& vulkan) {
 	return Impl::getSupportedFormatsDepthStencil(vulkan);
 }
 

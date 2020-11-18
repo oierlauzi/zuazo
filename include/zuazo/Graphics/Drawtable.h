@@ -4,6 +4,7 @@
 #include "TargetFrame.h"
 #include "ColorTransfer.h"
 #include "../Utils/Pimpl.h"
+#include "../Utils/Limit.h"
 
 #include <memory>
 #include <vector>
@@ -32,8 +33,8 @@ public:
 	std::shared_ptr<TargetFrame>					acquireFrame() const;
 	OutputColorTransfer								getOutputColorTransfer() const;
 
-	static std::vector<ColorFormat> 				getSupportedFormats(const Vulkan& vulkan);
-	static std::vector<DepthStencilFormat> 			getSupportedFormatsDepthStencil(const Vulkan& vulkan);
+	static Utils::Discrete<ColorFormat> 			getSupportedFormats(const Vulkan& vulkan);
+	static Utils::Discrete<DepthStencilFormat> 		getSupportedFormatsDepthStencil(const Vulkan& vulkan);
 	static vk::RenderPass							getRenderPass(	const Vulkan& vulkan, 
 																	const Frame::Descriptor& frameDesc,
 																	DepthStencilFormat depthStencilFmt );

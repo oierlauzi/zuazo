@@ -100,8 +100,8 @@ struct Uploader::Impl {
 	}
 
 
-	static std::vector<ColorFormat> getSupportedFormats(const Vulkan& vulkan) {
-		std::vector<ColorFormat> result;
+	static Utils::Discrete<ColorFormat> getSupportedFormats(const Vulkan& vulkan) {
+		Utils::Discrete<ColorFormat> result;
 
 		//Query support for Vulkan formats
 		const auto& vulkanFormatSupport = getVulkanFormatSupport(vulkan);
@@ -217,7 +217,7 @@ std::shared_ptr<StagedFrame> Uploader::acquireFrame() const {
 }
 
 
-std::vector<ColorFormat> Uploader::getSupportedFormats(const Vulkan& vulkan) {
+Utils::Discrete<ColorFormat> Uploader::getSupportedFormats(const Vulkan& vulkan) {
 	return Impl::getSupportedFormats(vulkan);
 }
 

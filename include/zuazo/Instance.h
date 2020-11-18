@@ -58,8 +58,8 @@ public:
 	const ApplicationInfo&				getApplicationInfo() const noexcept;
 	const Graphics::Vulkan&				getVulkan() const noexcept;
 
-	const Utils::Limit<ColorFormat>& 	getFormatSupport() const noexcept;
-	const Utils::Limit<Resolution>&		getResolutionSupport() const noexcept;
+	const Utils::Discrete<ColorFormat>& getFormatSupport() const noexcept;
+	const Utils::Range<Resolution>&		getResolutionSupport() const noexcept;
 
 	void								addRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior);
 	void								removeRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk);

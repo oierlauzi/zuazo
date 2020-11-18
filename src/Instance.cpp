@@ -26,8 +26,8 @@ struct Instance::Impl {
 	Timing::Scheduler			scheduler;
 	Timing::MainLoop			loop;
 
-	Utils::Limit<ColorFormat>	formatSupport;
-	Utils::Limit<Resolution>	resolutionSupport;
+	Utils::Discrete<ColorFormat>	formatSupport;
+	Utils::Range<Resolution>		resolutionSupport;
 
 	std::shared_ptr<ScheduledCallback> presentImages;
 
@@ -79,11 +79,11 @@ struct Instance::Impl {
 		return vulkan;
 	}
 
-	const Utils::Limit<ColorFormat>& getFormatSupport() const noexcept {
+	const Utils::Discrete<ColorFormat>& getFormatSupport() const noexcept {
 		return formatSupport;
 	}
 
-	const Utils::Limit<Resolution>& getResolutionSupport() const noexcept {
+	const Utils::Range<Resolution>& getResolutionSupport() const noexcept {
 		return resolutionSupport;
 	}
 
@@ -152,14 +152,14 @@ struct Instance::Impl {
 
 		//Show supported formats
 		message << "\t- Supported color formats:\n";
-		for(const auto& fmt : formatSupport.getDiscrete()){
+		for(const auto& fmt : formatSupport){
 			message << "\t\t- " << fmt << "\n";
 		}
 
 		//Show resolution limits
 		message << "\t- Supported resolutions: " << "\n";
-		message << "\t\t-min: " << resolutionSupport.getRange().getMin() << "\n";
-		message << "\t\t-max: " << resolutionSupport.getRange().getMax() << "\n";
+		message << "\t\t-min: " << resolutionSupport.getMin() << "\n";
+		message << "\t\t-max: " << resolutionSupport.getMax() << "\n";
 
 		return message.str();
 	}
@@ -252,7 +252,7 @@ private:
 		}
 	}
 
-	static Utils::Limit<ColorFormat> queryFormatSupport(const Graphics::Vulkan& vulkan) {
+	static Utils::Discrete<ColorFormat> queryFormatSupport(const Graphics::Vulkan& vulkan) {
 		Utils::Discrete<ColorFormat> result;
 
 		//List the formats
@@ -290,7 +290,7 @@ private:
 		return result;
 	}
 
-	static Utils::Limit<Resolution> queryResolutionSupport(const Graphics::Vulkan& vulkan) {
+	static Utils::Range<Resolution> queryResolutionSupport(const Graphics::Vulkan& vulkan) {
 		const auto& limits = vulkan.getPhysicalDeviceProperties().limits;
 		return Utils::Range<Resolution>(
 			Resolution(1, 1),
@@ -324,11 +324,11 @@ const Graphics::Vulkan& Instance::getVulkan() const noexcept {
 	return m_impl->getVulkan();
 }
 
-const Utils::Limit<ColorFormat>& Instance::getFormatSupport() const noexcept {
+const Utils::Discrete<ColorFormat>& Instance::getFormatSupport() const noexcept {
 	return m_impl->getFormatSupport();
 }
 
-const Utils::Limit<Resolution>& Instance::getResolutionSupport() const noexcept {
+const Utils::Range<Resolution>& Instance::getResolutionSupport() const noexcept {
 	return m_impl->getResolutionSupport();
 }
 

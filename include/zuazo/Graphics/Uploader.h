@@ -3,6 +3,7 @@
 #include "Vulkan.h"
 #include "StagedFrame.h"
 #include "../Utils/Pimpl.h"
+#include "../Utils/Limit.h"
 
 #include <memory>
 
@@ -28,7 +29,7 @@ public:
 
 	std::shared_ptr<StagedFrame>					acquireFrame() const;
 
-	static std::vector<ColorFormat>					getSupportedFormats(const Vulkan& vulkan);
+	static Utils::Discrete<ColorFormat>				getSupportedFormats(const Vulkan& vulkan);
 
 private:
 	struct Impl;
