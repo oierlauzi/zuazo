@@ -18,7 +18,13 @@ template<typename T>
 Mat4x4<T> toMatrix(const Quaternion<T>& q) noexcept;
 
 template<typename T>
-Vec3<T> getEulerAngles(const Quaternion<T>& q) noexcept;
+Quaternion<T> fromEulerAngles(const Vec3<T>& angles) noexcept;
+
+template<typename T>
+Quaternion<T> fromEulerAngles(const T& yaw, const T& pitch, const T& roll) noexcept;
+
+template<typename T>
+Vec3<T> toEulerAngles(const Quaternion<T>& q) noexcept;
 
 template<typename T>
 T getYaw(const Quaternion<T>& q) noexcept;

@@ -4,6 +4,7 @@
 #include <zuazo/Graphics/Buffer.h>
 #include <zuazo/Graphics/VulkanConversions.h>
 #include <zuazo/Utils/Pool.h>
+#include <zuazo/Utils/StaticId.h>
 #include <zuazo/Exception.h>
 
 #include <utility>
@@ -39,8 +40,8 @@ struct Drawtable::Impl {
 				drw.frameDescriptor,
 				drw.colorTransferBuffer,
 				drw.planeDescriptors,
-				drw.renderPass,
-				drw.depthStencil
+				drw.depthStencil,
+				drw.renderPass
 			);
 		}
 
@@ -55,23 +56,23 @@ struct Drawtable::Impl {
 	std::shared_ptr<StagedBuffer>					colorTransferBuffer;
 	std::vector<Frame::PlaneDescriptor>				planeDescriptors;
 
-	std::shared_ptr<const vk::UniqueRenderPass> 	renderPass;
 	std::shared_ptr<DepthStencil>					depthStencil;
+
+	vk::RenderPass									renderPass;
 
 	mutable Utils::Pool<TargetFrame, Allocator>		framePool;
 
 
 	Impl(	const Vulkan& vulkan, 
-			const Frame::Descriptor& conf,
-			std::shared_ptr<const vk::UniqueRenderPass> renderPass,
-			vk::Format depthStencilFmt )
+			const Frame::Descriptor& frameDesc,
+			DepthStencilFormat depthStencilFmt )
 		: vulkan(vulkan)
-		, frameDescriptor(Utils::makeShared<Frame::Descriptor>(conf))
+		, frameDescriptor(Utils::makeShared<Frame::Descriptor>(frameDesc))
 		, colorTransfer(*frameDescriptor)
 		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, colorTransfer))
-		, planeDescriptors(createPlaneDescriptors(vulkan, conf, colorTransfer))
-		, renderPass(std::move(renderPass))
-		, depthStencil(createDepthStencil(vulkan, depthStencilFmt, planeDescriptors))
+		, planeDescriptors(createPlaneDescriptors(vulkan, frameDesc, colorTransfer))
+		, depthStencil(createDepthStencil(vulkan, toVulkan(depthStencilFmt), planeDescriptors))
+		, renderPass(getRenderPass(vulkan, frameDesc, depthStencilFmt))
 		, framePool(1, Allocator(*this))
 	{
 	}
@@ -151,7 +152,7 @@ struct Drawtable::Impl {
 		return result;
 	}
 
-		static std::vector<DepthStencilFormat> getSupportedFormatsDepthStencil(const Vulkan& vulkan) {
+	static std::vector<DepthStencilFormat> getSupportedFormatsDepthStencil(const Vulkan& vulkan) {
 		std::vector<DepthStencilFormat> result;
 
 		//Query support for Vulkan formats
@@ -174,6 +175,129 @@ struct Drawtable::Impl {
 			}
 		}
 
+		return result;
+	}
+
+	static vk::RenderPass getRenderPass(const Vulkan& vulkan, 
+										const Frame::Descriptor& frameDesc,
+										DepthStencilFormat depthStencilFmt )
+	{
+		//Get an id for this configuration
+		static std::unordered_map<size_t, const Utils::StaticId> ids;
+		const auto index =	static_cast<size_t>(frameDesc.colorFormat) +
+							static_cast<size_t>(frameDesc.colorTransferFunction)*static_cast<size_t>(ColorFormat::COUNT) +
+							static_cast<size_t>(depthStencilFmt)*static_cast<size_t>(ColorFormat::COUNT)*static_cast<size_t>(ColorTransferFunction::COUNT);
+		const size_t id = ids[index];
+
+		//Check if a renderpass with this id exists
+		vk::RenderPass result = vulkan.createRenderPass(id);
+		if(!result) {
+			//Get information about the image planes
+			InputColorTransfer inputColorTransfer(frameDesc);
+			const auto planeDescriptors = createPlaneDescriptors(vulkan, frameDesc, inputColorTransfer);
+			const auto depthStencilFormat = toVulkan(depthStencilFmt);
+
+			//Get the element count for the arrays
+			const size_t colorAttachmentCount = planeDescriptors.size();
+			const size_t depthStencilAttachmentCount = (depthStencilFormat == vk::Format::eUndefined) ? 0 : 1;
+			const size_t attachmentCount = colorAttachmentCount + depthStencilAttachmentCount;
+
+			//Create the attachments descriptors
+			std::vector<vk::AttachmentDescription> attachments;
+			attachments.reserve(attachmentCount);
+
+			for(const auto& plane : planeDescriptors) {
+				attachments.emplace_back(
+					vk::AttachmentDescriptionFlags(),				//Flags
+					plane.format,									//Attachemnt format
+					vk::SampleCountFlagBits::e1,					//Sample count
+					vk::AttachmentLoadOp::eClear,					//Color attachment load operation
+					vk::AttachmentStoreOp::eStore,					//Color attachemnt store operation
+					vk::AttachmentLoadOp::eDontCare,				//Stencil attachment load operation
+					vk::AttachmentStoreOp::eDontCare,				//Stencil attachment store operation
+					vk::ImageLayout::eUndefined,					//Initial layout
+					vk::ImageLayout::eShaderReadOnlyOptimal			//Final layout
+				);
+			}
+
+			if(depthStencilFormat != vk::Format::eUndefined) {
+				attachments.emplace_back(
+					vk::AttachmentDescriptionFlags(),				//Flags
+					depthStencilFormat,								//Attachemnt format
+					vk::SampleCountFlagBits::e1,					//Sample count
+					vk::AttachmentLoadOp::eClear,					//Depth attachment load operation
+					vk::AttachmentStoreOp::eDontCare,				//Depth attachemnt store operation
+					vk::AttachmentLoadOp::eClear,					//Stencil attachment load operation
+					vk::AttachmentStoreOp::eDontCare,				//Stencil attachment store operation
+					vk::ImageLayout::eUndefined,					//Initial layout
+					vk::ImageLayout::eDepthStencilAttachmentOptimal	//Final layout //TODO maybe undefined?
+				);
+			}
+			assert(attachments.size() == attachmentCount);
+
+			//Create the color attachment references for the subpass
+			std::vector<vk::AttachmentReference> colorAttachmentReferences;
+			colorAttachmentReferences.reserve(colorAttachmentCount);
+
+			for(size_t i = 0; i < colorAttachmentCount; ++i) {
+				colorAttachmentReferences.emplace_back(
+					i, 												//Attachments index
+					vk::ImageLayout::eColorAttachmentOptimal 		//Attachemnt layout
+				);
+			}
+			assert(colorAttachmentReferences.size() == colorAttachmentCount);
+
+			//Create the depth and stencil attachment reference
+			const vk::AttachmentReference depthStencilAttachmentReference(
+				colorAttachmentCount, 							//Attachments index
+				vk::ImageLayout::eDepthStencilAttachmentOptimal //Attachemnt layout
+			);
+
+			//Create the subpass descriptor
+			const std::array subpassDescriptors {
+				vk::SubpassDescription(
+					{},												//Flags
+					vk::PipelineBindPoint::eGraphics,				//Pipeline bind point
+					0, nullptr,										//Input attachments
+					colorAttachmentReferences.size(), colorAttachmentReferences.data(), //Color attachments
+					nullptr,										//Resolve attachment
+					colorAttachmentCount ? &depthStencilAttachmentReference : nullptr, //Depth-stencil attachment
+					0, nullptr										//Preserve attachments
+				)
+			};
+
+			//Create subpass dependencies
+			constexpr vk::PipelineStageFlags subpassDependencyStages =
+				vk::PipelineStageFlagBits::eColorAttachmentOutput 	|
+				vk::PipelineStageFlagBits::eEarlyFragmentTests 		;
+				
+			constexpr vk::AccessFlags subpassDependencyDstAccess =
+				vk::AccessFlagBits::eColorAttachmentWrite 			|
+				vk::AccessFlagBits::eDepthStencilAttachmentWrite 	;
+
+			constexpr std::array subpassDependencies {
+				vk::SubpassDependency(
+					VK_SUBPASS_EXTERNAL,							//Source subpass
+					0,												//Destination subpass
+					subpassDependencyStages,						//Source stage
+					subpassDependencyStages,						//Destination stage
+					{},												//Source access mask
+					subpassDependencyDstAccess 						//Destintation access mask
+				)
+			};
+
+			//Create the renderpass
+			const vk::RenderPassCreateInfo createInfo(
+				{},													//Flags
+				attachments.size(), attachments.data(),				//Attachments
+				subpassDescriptors.size(), subpassDescriptors.data(), //Subpasses
+				subpassDependencies.size(), subpassDependencies.data() //Subpass dependencies
+			);
+
+			result = vulkan.createRenderPass(id, createInfo);
+		}
+
+		assert(result);
 		return result;
 	}
 
@@ -250,10 +374,9 @@ private:
  */
 
 Drawtable::Drawtable(	const Vulkan& vulkan, 
-						const Frame::Descriptor& conf,
-						std::shared_ptr<const vk::UniqueRenderPass> renderPass,
-						vk::Format depthStencilFmt )
-	: m_impl({}, vulkan, conf, std::move(renderPass), depthStencilFmt)
+						const Frame::Descriptor& frameDesc,
+						DepthStencilFormat depthStencilFmt )
+	: m_impl({}, vulkan, frameDesc, depthStencilFmt)
 {
 }
 
@@ -300,5 +423,11 @@ std::vector<DepthStencilFormat> Drawtable::getSupportedFormatsDepthStencil(const
 	return Impl::getSupportedFormatsDepthStencil(vulkan);
 }
 
+vk::RenderPass Drawtable::getRenderPass(const Vulkan& vulkan, 
+										const Frame::Descriptor& frameDesc,
+										DepthStencilFormat depthStencilFmt )
+{
+	return Impl::getRenderPass(vulkan, frameDesc, depthStencilFmt);
+}
 
 }

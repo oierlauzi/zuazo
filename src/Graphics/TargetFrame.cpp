@@ -8,17 +8,17 @@ TargetFrame::TargetFrame(	const Vulkan& vulkan,
 							std::shared_ptr<const Descriptor> desc,
 							std::shared_ptr<const Buffer> colorTransfer,
 							Utils::BufferView<const Frame::PlaneDescriptor> planes,
-							std::shared_ptr<const vk::UniqueRenderPass> renderPass,
-							std::shared_ptr<const DepthStencil> depthStencil )
+							std::shared_ptr<const DepthStencil> depthStencil,
+							vk::RenderPass renderPass )
 	: Frame(
 		vulkan,
 		std::move(desc),
 		std::move(colorTransfer),
 		planes,
 		vk::ImageUsageFlagBits::eColorAttachment )
-	, m_renderPass(std::move(renderPass))
 	, m_depthStencil(std::move(depthStencil))
-	, m_framebuffer(createFramebuffer(vulkan, planes, m_renderPass, m_depthStencil, getImageViews()))
+	, m_renderPass(renderPass)
+	, m_framebuffer(createFramebuffer(vulkan, planes, m_depthStencil, m_renderPass, getImageViews()))
 	, m_renderComplete(vulkan.createFence(true))
 {
 }
@@ -39,7 +39,7 @@ void TargetFrame::beginRenderPass(	vk::CommandBuffer cmd,
 									vk::SubpassContents contents ) const noexcept 
 {
 	const vk::RenderPassBeginInfo beginInfo(
-		**m_renderPass,
+		m_renderPass,
 		*m_framebuffer,
 		renderArea,
 		clearValues.size(), clearValues.data()
@@ -86,12 +86,11 @@ void TargetFrame::draw(std::shared_ptr<const CommandBuffer> cmd) {
 
 vk::UniqueFramebuffer TargetFrame::createFramebuffer(	const Graphics::Vulkan& vulkan,
 														Utils::BufferView<const PlaneDescriptor> planes,
-														const std::shared_ptr<const vk::UniqueRenderPass>& renderPass,
 														const std::shared_ptr<const DepthStencil>& depthStencil,
+														vk::RenderPass renderPass,
 														const std::vector<vk::UniqueImageView>& imageViews )
 {
 	assert(renderPass);
-	assert(*renderPass);
 	assert(imageViews.size() == planes.size());
 	const auto attachmentCount = imageViews.size() + (depthStencil ? 1 : 0);
 
@@ -114,7 +113,7 @@ vk::UniqueFramebuffer TargetFrame::createFramebuffer(	const Graphics::Vulkan& vu
 
 	const vk::FramebufferCreateInfo createInfo(
 		{},
-		**renderPass,
+		renderPass,
 		attachments.size(),
 		attachments.data(),
 		planes[0].extent.width, planes[0].extent.height,

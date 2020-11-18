@@ -14,9 +14,8 @@ namespace Zuazo::Graphics {
 class Drawtable {
 public:
 	Drawtable(	const Vulkan& vulkan, 
-				const Frame::Descriptor& conf,
-				std::shared_ptr<const vk::UniqueRenderPass> renderPass,
-				vk::Format depthStencilFmt );
+				const Frame::Descriptor& frameDesc,
+				DepthStencilFormat depthStencilFmt );
 	Drawtable(const Drawtable& other) = delete;
 	Drawtable(Drawtable&& other) noexcept;
 	~Drawtable();
@@ -35,13 +34,13 @@ public:
 
 	static std::vector<ColorFormat> 				getSupportedFormats(const Vulkan& vulkan);
 	static std::vector<DepthStencilFormat> 			getSupportedFormatsDepthStencil(const Vulkan& vulkan);
-
+	static vk::RenderPass							getRenderPass(	const Vulkan& vulkan, 
+																	const Frame::Descriptor& frameDesc,
+																	DepthStencilFormat depthStencilFmt );
 private:
 	struct Impl;
 	Utils::Pimpl<Impl>								m_impl;
 
 };
-
-
 
 }

@@ -18,8 +18,8 @@ public:
 				std::shared_ptr<const Descriptor> desc,
 				std::shared_ptr<const Buffer> colorTransfer,
 				Utils::BufferView<const PlaneDescriptor> planes,
-				std::shared_ptr<const vk::UniqueRenderPass> renderPass,
-				std::shared_ptr<const DepthStencil> depthStencil );
+				std::shared_ptr<const DepthStencil> depthStencil,
+				vk::RenderPass renderPass );
 	TargetFrame(const TargetFrame& other) = delete;
 	TargetFrame(TargetFrame&& other) noexcept = default;
 	virtual ~TargetFrame(); 
@@ -35,8 +35,8 @@ public:
 	void										draw(std::shared_ptr<const CommandBuffer> cmd);
 
 private:
-	std::shared_ptr<const vk::UniqueRenderPass> m_renderPass;
 	std::shared_ptr<const DepthStencil> 		m_depthStencil;
+	vk::RenderPass 								m_renderPass;
 	vk::UniqueFramebuffer						m_framebuffer;
 	vk::UniqueFence								m_renderComplete;
 
@@ -45,8 +45,8 @@ private:
 
 	static vk::UniqueFramebuffer				createFramebuffer(	const Graphics::Vulkan& vulkan,
 																	Utils::BufferView<const PlaneDescriptor> planes,
-																	const std::shared_ptr<const vk::UniqueRenderPass>& renderPass,
 																	const std::shared_ptr<const DepthStencil>& depthStencil,
+																	vk::RenderPass renderPass,
 																	const std::vector<vk::UniqueImageView>& imageViews );
 
 };
