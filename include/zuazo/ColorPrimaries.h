@@ -33,13 +33,13 @@ ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorPrimaries)
 ZUAZO_ENUM_COMP_OPERATORS(ColorPrimaries)	
 
 template<typename T>
-constexpr Math::Mat4x4<T> constructRGB2XYZConversionMatrix(	const T white_x,const T white_y,
+constexpr Math::Mat3x3<T> constructRGB2XYZConversionMatrix(	const T white_x,const T white_y,
 															const T red_x,	const T red_y,
 															const T green_x,const T green_y,
 															const T blue_x, const T blue_y,
 															const T white_luminance = T(1) ) noexcept;
 
-constexpr Math::Mat4x4f getRGB2XYZConversionMatrix(ColorPrimaries colorPrim) noexcept;
+constexpr Math::Mat3x3f getRGB2XYZConversionMatrix(ColorPrimaries colorPrim) noexcept;
 
 constexpr std::string_view toString(ColorPrimaries colorPrim) noexcept;
 std::ostream& operator<<(std::ostream& os, ColorPrimaries colorPrim);

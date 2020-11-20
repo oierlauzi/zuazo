@@ -60,10 +60,11 @@ void ct_store(in int planeFormat, out vec4 plane0, out vec4 plane1, out vec4 pla
 vec4 ct_expand(in int range, in vec4 color){
 	vec4 result;
 
-	const float MIN_Y = 16.0f / 255.0f;
-	const float MAX_Y = 235.0f / 255.0f;
-	const float MIN_C = 16.0f / 255.0f;
-	const float MAX_C = 240.0f / 255.0f;
+	//Constants specified for a hypothetic 16bit system. Unaccurate for higher precisions
+	const float MIN_Y = 16.0f*256.0f / 65535.0f;
+	const float MAX_Y = 235.0f*256.0f / 65535.0f;
+	const float MIN_C = 16.0f*256.0f / 65535.0f;
+	const float MAX_C = 240.0f*256.0f / 65535.0f;
 
 	switch(range){
 	case ct_COLOR_RANGE_FULL_YCBCR:
@@ -88,10 +89,11 @@ vec4 ct_expand(in int range, in vec4 color){
 vec4 ct_contract(in int range, in vec4 color){
 	vec4 result;
 
-	const float MIN_Y = 16.0f / 255.0f;
-	const float MAX_Y = 235.0f / 255.0f;
-	const float MIN_C = 16.0f / 255.0f;
-	const float MAX_C = 240.0f / 255.0f;
+	//Constants specified for a hypothetic 16bit system. Unaccurate for higher precisions
+	const float MIN_Y = 16.0f*256.0f / 65535.0f;
+	const float MAX_Y = 235.0f*256.0f / 65535.0f;
+	const float MIN_C = 16.0f*256.0f / 65535.0f;
+	const float MAX_C = 240.0f*256.0f / 65535.0f;
 
 	switch(range){
 	case ct_COLOR_RANGE_FULL_YCBCR:
@@ -206,12 +208,11 @@ float ct_OETF_hybrid_linear_gamma_EG(in float thresh, in float gain1, in float g
 //Note: gain is expresed OETF-wise
 float ct_EOTF_PQ(in float c1, in float c2, in float m1, in float m2, in float value){
 	const float c3 = c1 + c2 - 1;
-	const float MIN = pow(c1, m2);
 
-	const float value2 = pow(max(value, MIN), 1.0f/m2);
-	const float num = max(value2 - c1, 0.0f);
+	const float value2 = pow(max(value, 0.0f), 1.0f/m2); //max is placed in order to avoid negative roots
+	const float num = value2 - c1;
 	const float den = c2 - c3*value2;
-	return pow(num/den, 1.0f/m1);
+	return pow(max(num/den, 0.0f), 1.0f/m1);
 }
 
 float ct_OETF_PQ(in float c1, in float c2, in float m1, in float m2, in float value){
@@ -262,21 +263,19 @@ float ct_OETF_bt601_709_2020(in float value){
 	return ct_OETF_hybrid_linear_gamma(0.0181f, 4.5f, 1.0993f, 1.0f/0.45f, value);
 }
 
-vec4 ct_EOTF_bt601_709_2020(in vec4 color){
-	return vec4(
+vec3 ct_EOTF_bt601_709_2020(in vec3 color){
+	return vec3(
 		ct_EOTF_bt601_709_2020(color.r),
 		ct_EOTF_bt601_709_2020(color.g),
-		ct_EOTF_bt601_709_2020(color.b),
-		color.a
+		ct_EOTF_bt601_709_2020(color.b)
 	);
 }
 
-vec4 ct_OETF_bt601_709_2020(in vec4 color){
-	return vec4(
+vec3 ct_OETF_bt601_709_2020(in vec3 color){
+	return vec3(
 		ct_OETF_bt601_709_2020(color.r),
 		ct_OETF_bt601_709_2020(color.g),
-		ct_OETF_bt601_709_2020(color.b),
-		color.a
+		ct_OETF_bt601_709_2020(color.b)
 	);
 }
 
@@ -289,21 +288,19 @@ float ct_OETF_gamma22(in float value){
 	return ct_OETF_gamma(1.0f, 2.2f, value);
 }
 
-vec4 ct_EOTF_gamma22(in vec4 color){
-	return vec4(
+vec3 ct_EOTF_gamma22(in vec3 color){
+	return vec3(
 		ct_EOTF_gamma22(color.r),
 		ct_EOTF_gamma22(color.g),
-		ct_EOTF_gamma22(color.b),
-		color.a
+		ct_EOTF_gamma22(color.b)
 	);
 }
 
-vec4 ct_OETF_gamma22(in vec4 color){
-	return vec4(
+vec3 ct_OETF_gamma22(in vec3 color){
+	return vec3(
 		ct_OETF_gamma22(color.r),
 		ct_OETF_gamma22(color.g),
-		ct_OETF_gamma22(color.b),
-		color.a
+		ct_OETF_gamma22(color.b)
 	);
 }
 
@@ -316,21 +313,19 @@ float ct_OETF_gamma26(in float value){
 	return ct_OETF_gamma(1.0f, 2.6f, value);
 }
 
-vec4 ct_EOTF_gamma26(in vec4 color){
-	return vec4(
+vec3 ct_EOTF_gamma26(in vec3 color){
+	return vec3(
 		ct_EOTF_gamma26(color.r),
 		ct_EOTF_gamma26(color.g),
-		ct_EOTF_gamma26(color.b),
-		color.a
+		ct_EOTF_gamma26(color.b)
 	);
 }
 
-vec4 ct_OETF_gamma26(in vec4 color){
-	return vec4(
+vec3 ct_OETF_gamma26(in vec3 color){
+	return vec3(
 		ct_OETF_gamma26(color.r),
 		ct_OETF_gamma26(color.g),
-		ct_OETF_gamma26(color.b),
-		color.a
+		ct_OETF_gamma26(color.b)
 	);
 }
 
@@ -343,21 +338,19 @@ float ct_OETF_gamma28(in float value){
 	return ct_OETF_gamma(1.0f, 2.8f, value);
 }
 
-vec4 ct_EOTF_gamma28(in vec4 color){
-	return vec4(
+vec3 ct_EOTF_gamma28(in vec3 color){
+	return vec3(
 		ct_EOTF_gamma28(color.r),
 		ct_EOTF_gamma28(color.g),
-		ct_EOTF_gamma28(color.b),
-		color.a
+		ct_EOTF_gamma28(color.b)
 	);
 }
 
-vec4 ct_OETF_gamma28(in vec4 color){
-	return vec4(
+vec3 ct_OETF_gamma28(in vec3 color){
+	return vec3(
 		ct_OETF_gamma28(color.r),
 		ct_OETF_gamma28(color.g),
-		ct_OETF_gamma28(color.b),
-		color.a
+		ct_OETF_gamma28(color.b)
 	);
 }
 
@@ -370,21 +363,19 @@ float ct_OETF_IEC61966_2_1(in float value){
 	return ct_OETF_hybrid_linear_gamma(0.0031308f, 12.92f, 1.055f, 12.0f/5.0f, value);
 }
 
-vec4 ct_EOTF_IEC61966_2_1(in vec4 color){
-	return vec4(
+vec3 ct_EOTF_IEC61966_2_1(in vec3 color){
+	return vec3(
 		ct_EOTF_IEC61966_2_1(color.r),
 		ct_EOTF_IEC61966_2_1(color.g),
-		ct_EOTF_IEC61966_2_1(color.b),
-		color.a
+		ct_EOTF_IEC61966_2_1(color.b)
 	);
 }
 
-vec4 ct_OETF_IEC61966_2_1(in vec4 color){
-	return vec4(
+vec3 ct_OETF_IEC61966_2_1(in vec3 color){
+	return vec3(
 		ct_OETF_IEC61966_2_1(color.r),
 		ct_OETF_IEC61966_2_1(color.g),
-		ct_OETF_IEC61966_2_1(color.b),
-		color.a
+		ct_OETF_IEC61966_2_1(color.b)
 	);
 }
 
@@ -397,21 +388,19 @@ float ct_OETF_IEC61966_2_4(in float value){
 	return ct_OETF_hybrid_linear_gamma_EG(0.0181f, 4.5f, 1.0993f, 1.0f/0.45f, value);
 }
 
-vec4 ct_EOTF_IEC61966_2_4(in vec4 color){
-	return vec4(
+vec3 ct_EOTF_IEC61966_2_4(in vec3 color){
+	return vec3(
 		ct_EOTF_IEC61966_2_4(color.r),
 		ct_EOTF_IEC61966_2_4(color.g),
-		ct_EOTF_IEC61966_2_4(color.b),
-		color.a
+		ct_EOTF_IEC61966_2_4(color.b)
 	);
 }
 
-vec4 ct_OETF_IEC61966_2_4(in vec4 color){
-	return vec4(
+vec3 ct_OETF_IEC61966_2_4(in vec3 color){
+	return vec3(
 		ct_OETF_IEC61966_2_4(color.r),
 		ct_OETF_IEC61966_2_4(color.g),
-		ct_OETF_IEC61966_2_4(color.b),
-		color.a
+		ct_OETF_IEC61966_2_4(color.b)
 	);
 }
 
@@ -424,21 +413,19 @@ float ct_OETF_SMPTE240M(in float value){
 	return ct_OETF_hybrid_linear_gamma(0.0031308f, 12.92f, 1.055f, 1.0f/0.45f, value);
 }
 
-vec4 ct_EOTF_SMPTE240M(in vec4 color){
-	return vec4(
+vec3 ct_EOTF_SMPTE240M(in vec3 color){
+	return vec3(
 		ct_EOTF_SMPTE240M(color.r),
 		ct_EOTF_SMPTE240M(color.g),
-		ct_EOTF_SMPTE240M(color.b),
-		color.a
+		ct_EOTF_SMPTE240M(color.b)
 	);
 }
 
-vec4 ct_OETF_SMPTE240M(in vec4 color){
-	return vec4(
+vec3 ct_OETF_SMPTE240M(in vec3 color){
+	return vec3(
 		ct_OETF_SMPTE240M(color.r),
 		ct_OETF_SMPTE240M(color.g),
-		ct_OETF_SMPTE240M(color.b),
-		color.a
+		ct_OETF_SMPTE240M(color.b)
 	);
 }
 
@@ -451,21 +438,19 @@ float ct_OETF_SMPTE2084(in float value){
 	return ct_OETF_PQ(3424.0f/4096.0f, 32.0f*2413.0f/4096.0f, 0.25f*2610.0f/4096.0f, 128.0f*2523.0f/4096.0f, value);
 }
 
-vec4 ct_EOTF_SMPTE2084(in vec4 color){
-	return vec4(
+vec3 ct_EOTF_SMPTE2084(in vec3 color){
+	return vec3(
 		ct_EOTF_SMPTE2084(color.r),
 		ct_EOTF_SMPTE2084(color.g),
-		ct_EOTF_SMPTE2084(color.b),
-		color.a
+		ct_EOTF_SMPTE2084(color.b)
 	);
 }
 
-vec4 ct_OETF_SMPTE2084(in vec4 color){
-	return vec4(
+vec3 ct_OETF_SMPTE2084(in vec3 color){
+	return vec3(
 		ct_OETF_SMPTE2084(color.r),
 		ct_OETF_SMPTE2084(color.g),
-		ct_OETF_SMPTE2084(color.b),
-		color.a
+		ct_OETF_SMPTE2084(color.b)
 	);
 }
 
@@ -480,27 +465,25 @@ float ct_OETF_ARIB_STD_B67(in float value){
 	return ct_OETF_hybrid_log_gamma(1.0f, 0.5f, 1.0f/0.5f, 0.17883277f, 0.28466892f, value * 12.0f);
 }
 
-vec4 ct_EOTF_ARIB_STD_B67(in vec4 color){
-	return vec4(
+vec3 ct_EOTF_ARIB_STD_B67(in vec3 color){
+	return vec3(
 		ct_EOTF_ARIB_STD_B67(color.r),
 		ct_EOTF_ARIB_STD_B67(color.g),
-		ct_EOTF_ARIB_STD_B67(color.b),
-		color.a
+		ct_EOTF_ARIB_STD_B67(color.b)
 	);
 }
 
-vec4 ct_OETF_ARIB_STD_B67(in vec4 color){
-	return vec4(
+vec3 ct_OETF_ARIB_STD_B67(in vec3 color){
+	return vec3(
 		ct_OETF_ARIB_STD_B67(color.r),
 		ct_OETF_ARIB_STD_B67(color.g),
-		ct_OETF_ARIB_STD_B67(color.b),
-		color.a
+		ct_OETF_ARIB_STD_B67(color.b)
 	);
 }
 
 
-vec4 ct_EOTF(in int encoding, in vec4 color){
-	vec4 result;
+vec3 ct_EOTF(in int encoding, in vec3 color){
+	vec3 result;
 
 	switch(encoding){
 	case ct_COLOR_TRANSFER_FUNCTION_BT601_709_2020:	result = ct_EOTF_bt601_709_2020(color);	break;
@@ -518,8 +501,8 @@ vec4 ct_EOTF(in int encoding, in vec4 color){
 	return result;
 }
 
-vec4 ct_OETF(in int encoding, in vec4 color){
-	vec4 result;
+vec3 ct_OETF(in int encoding, in vec3 color){
+	vec3 result;
 
 	switch(encoding){
 	case ct_COLOR_TRANSFER_FUNCTION_BT601_709_2020:	result = ct_OETF_bt601_709_2020(color);	break;
@@ -546,23 +529,20 @@ vec4 ct_premultiplyAlpha(in vec4 color) {
 
 
 vec4 ct_readColor(in ct_read_data inputProp, in ct_write_data outputProp, in vec4 color){
-	vec4 result = color;
-
-	result = ct_expand(inputProp.colorRange, result); //Normalize the values into [0.0, 1.0] (or [-0.5, 0.5] for chroma)
-	result = inputProp.mtxYCbCr2RGB * result; //Convert it into RGB color model
-	result = ct_EOTF(inputProp.colorTransferFunction, result); //Undo all gamma-like compressions
-	result = outputProp.mtxXYZ2RGB * inputProp.mtxRGB2XYZ * result; //Convert it into the destination color primaries
+	vec4 result = ct_expand(inputProp.colorRange, color); //Normalize the values into [0.0, 1.0] (or [-0.5, 0.5] for chroma)
+	result.rgb 	= (inputProp.mtxYCbCr2RGB * result).rgb; //Convert it into RGB color model
+	result.rgb	= ct_EOTF(inputProp.colorTransferFunction, result.rgb); //Undo all gamma-like compressions
+	result.rgb	= (outputProp.mtxXYZ2RGB * inputProp.mtxRGB2XYZ * result).rgb; //Convert it into the destination color primaries
 
 	return result;
 }
 
 vec4 ct_writeColor(in ct_write_data outputProp, in vec4 color){
 	vec4 result = color;
-
-	result = ct_OETF(outputProp.colorTransferFunction, result); //Apply a gamma-like compression
-	result = outputProp.mtxRGB2YCbCr * result; //Convert it into the destination color model
-	result = ct_contract(outputProp.colorRange, result); //Convert it into the corresponding range
-	result = ct_premultiplyAlpha(result); //Premultiply the color with the alpha channel
+	result.rgb 	= ct_OETF(outputProp.colorTransferFunction, result.rgb); //Apply a gamma-like compression
+	result.rgb 	= (outputProp.mtxRGB2YCbCr * result).rgb; //Convert it into the destination color model
+	result 		= ct_contract(outputProp.colorRange, result); //Convert it into the corresponding range
+	result 		= ct_premultiplyAlpha(result); //Premultiply the color with the alpha channel
 
 	return result;
 }
@@ -587,23 +567,19 @@ void ct_setColor(in ct_write_data outputProp, out vec4 plane0, out vec4 plane1, 
 
 
 vec4 ct_readColorYCbCr(in ct_read_data inputProp, in ct_write_data outputProp, in vec4 color){
-	vec4 result = color;
-
-	result = ct_expand(inputProp.colorRange, result); //Normalize the values into [0.0, 1.0] (or [-0.5, 0.5] for chroma)
-	result = inputProp.mtxYCbCr2RGB * result; //Convert it into RGB color model
-	result = ct_EOTF(inputProp.colorTransferFunction, result); //Undo all gamma-like compressions
-	result = outputProp.mtxXYZ2RGB * inputProp.mtxRGB2XYZ * result; //Convert it into the destination color primaries
-	result = ct_OETF(outputProp.colorTransferFunction, result); //Apply a gamma-like compression
-	result = outputProp.mtxRGB2YCbCr * result; //Convert it into the destination color model
+	vec4 result = ct_expand(inputProp.colorRange, color); //Normalize the values into [0.0, 1.0] (or [-0.5, 0.5] for chroma)
+	result.rgb	= (inputProp.mtxYCbCr2RGB * result).rgb; //Convert it into RGB color model
+	result.rgb	= ct_EOTF(inputProp.colorTransferFunction, result.rgb); //Undo all gamma-like compressions
+	result.rgb	= (outputProp.mtxXYZ2RGB * inputProp.mtxRGB2XYZ * result).rgb; //Convert it into the destination color primaries
+	result.rgb	= ct_OETF(outputProp.colorTransferFunction, result.rgb); //Apply a gamma-like compression
+	result.rgb	= (outputProp.mtxRGB2YCbCr * result).rgb; //Convert it into the destination color model
 
 	return result;
 }
 
 vec4 ct_writeColorYCbCr(in ct_write_data outputProp, in vec4 color){
-	vec4 result = color;
-
-	result = ct_contract(outputProp.colorRange, result); //Convert it into the corresponding range
-	result = ct_premultiplyAlpha(result); //Premultiply the color with the alpha channel
+	vec4 result = ct_contract(outputProp.colorRange, color); //Convert it into the corresponding range
+	result 		= ct_premultiplyAlpha(result); //Premultiply the color with the alpha channel
 
 	return result;
 }

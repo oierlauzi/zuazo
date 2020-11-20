@@ -4,7 +4,7 @@
 
 namespace Zuazo::Math {
 
-template <typename T, glm::i32 N, glm::i32 M>
+template <typename T, int N, int M>
 using Mat = glm::mat<N, M, T, glm::qualifier::defaultp>;
 
 template <typename T>
@@ -58,8 +58,20 @@ typedef Mat4x2<glm::f64> Mat4x2d;
 typedef Mat4x3<glm::f64> Mat4x3d;
 typedef Mat4x4<glm::f64> Mat4x4d;
 
-template <typename T, glm::i32 N, glm::i32 M>
-Mat<T, N, M> inv(const Mat<T, N, M>& m);
+template <typename T, int N, int M>
+constexpr Mat<T, M, N> transpose(const Mat<T, N, M>& m);
+
+template <typename T, int N>
+constexpr Mat<T, N, N> inv(const Mat<T, N, N>& m);
+
+template <typename T>
+constexpr Mat<T, 2, 2> diagonal(const Vec<T, 2>& v);
+
+template <typename T>
+constexpr Mat<T, 3, 3> diagonal(const Vec<T, 3>& v);
+
+template <typename T>
+constexpr Mat<T, 4, 4> diagonal(const Vec<T, 4>& v);
 
 }
 

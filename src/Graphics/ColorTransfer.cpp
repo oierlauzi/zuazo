@@ -95,8 +95,8 @@ static int32_t optimizeColorTransferFunction(	int32_t colorRange,
 
 static ct_write_data convert2Output(const ct_read_data& read) noexcept {
 	return ct_write_data {
-		glm::inverse(read.mtxRGB2XYZ),
-		glm::inverse(read.mtxYCbCr2RGB),
+		Math::inv(read.mtxRGB2XYZ),
+		Math::inv(read.mtxYCbCr2RGB),
 		read.colorTransferFunction,
 		read.colorRange,
 		read.planeFormat
@@ -114,7 +114,7 @@ struct InputColorTransfer::Impl {
 	Impl(const Frame::Descriptor& desc) noexcept
 		: transferData {
 			getRGB2XYZConversionMatrix(desc.colorPrimaries),
-			glm::inverse(getRGB2YCbCrConversionMatrix(desc.colorModel)),
+			Math::inv(getRGB2YCbCrConversionMatrix(desc.colorModel)),
 			getColorTransferFunction(desc.colorTransferFunction),
 			getColorRange(desc.colorRange, desc.colorModel),
 			getPlaneFormat(desc.colorFormat)
@@ -216,7 +216,7 @@ struct OutputColorTransfer::Impl {
 	Impl() noexcept = default;
 	Impl(const Frame::Descriptor& desc) noexcept
 		: transferData {
-			glm::inverse(getRGB2XYZConversionMatrix(desc.colorPrimaries)),
+			Math::inv(getRGB2XYZConversionMatrix(desc.colorPrimaries)),
 			getRGB2YCbCrConversionMatrix(desc.colorModel),
 			getColorTransferFunction(desc.colorTransferFunction),
 			getColorRange(desc.colorRange, desc.colorModel),

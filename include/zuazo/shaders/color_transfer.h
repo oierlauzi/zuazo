@@ -46,8 +46,10 @@ ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_TRANSFER_FUNCTION_ARIB_STD_B
 
 
 
+/*Using mat4 as glm does not have the 4N alignment*/
+
 struct ct_read_data {
-	ZUAZO_IF_CPP(glm::mat4, mat4) 		mtxRGB2XYZ;
+	ZUAZO_IF_CPP(glm::mat4, mat4) 		mtxRGB2XYZ; 
 	ZUAZO_IF_CPP(glm::mat4, mat4) 		mtxYCbCr2RGB;
 	ZUAZO_IF_CPP(int32_t, int) 			colorTransferFunction;
 	ZUAZO_IF_CPP(int32_t, int) 			colorRange;

@@ -3,7 +3,7 @@
 namespace Zuazo {
 
 template<typename T>
-constexpr Math::Mat4x4<T> constructRGB2XYZConversionMatrix(	const T white_x,const T white_y,
+constexpr Math::Mat3x3<T> constructRGB2XYZConversionMatrix(	const T white_x,const T white_y,
 															const T red_x,	const T red_y,
 															const T green_x,const T green_y,
 															const T blue_x, const T blue_y,
@@ -14,44 +14,41 @@ constexpr Math::Mat4x4<T> constructRGB2XYZConversionMatrix(	const T white_x,cons
 
 	//Define the rest of the coordenates provided that x+y+z=1
 	const T	white_z = T(1) - white_x - white_y,
-			red_z = T(1) - red_x - red_y,
+			red_z 	= T(1) - red_x - red_y,
 			green_z = T(1) - green_x - green_y,
-			blue_z = T(1) - blue_x - blue_y;
+			blue_z 	= T(1) - blue_x - blue_y;
 
 	//Obtain the white point
-	const auto white = Math::Vec4<T>(
+	const auto white = Math::Vec3<T>(
 		white_luminance * white_x / white_y, 
 		white_luminance,//white_y / white_y,
-		white_luminance * white_z / white_y, 
-		T(1)
+		white_luminance * white_z / white_y
 	);
 
 	//Express the primary chromaticities as a matrix
 	//Note that it gets transposed as glm expects the matrix to be specified
 	//in column major order, while it is being specified in row major
-	const auto chromaticities = glm::transpose(
-		Math::Mat4x4<T>(
-			red_x, green_x, blue_x, T(0),
-			red_y, green_y, blue_y, T(0),
-			red_z, green_z, blue_z, T(0),
-			T(0),  T(0),    T(0),   T(1)
+	const auto chromaticities = Math::transpose(
+		Math::Mat3x3<T>(
+			red_x, green_x, blue_x,
+			red_y, green_y, blue_y,
+			red_z, green_z, blue_z
 		)
 	);
 
 	//As T * Vec4(1) == white, obtain the scaling factors
-	const auto diagonal = glm::inverse(chromaticities) * white;
-	const auto scale = Math::Mat4x4<T>(
-		diagonal.r, T(0), 		T(0), 		T(0),
-		T(0), 		diagonal.g, T(0), 		T(0),
-		T(0), 		T(0), 		diagonal.b, T(0),
-		T(0), 		T(0), 		T(0), 		diagonal.a
-	);
+	const auto scale = Math::inv(chromaticities) * white;
 
-	//Scale the chromaticities accordingly
-	return chromaticities * scale;
+	//Compute the tristimulus values scaling them by the scaling factor
+	auto tristimulus = chromaticities;
+	for(size_t i = 0; i < scale.length(); ++i) {
+		tristimulus[i][i] *= scale[i];
+	}
+
+	return tristimulus;
 }
 
-constexpr Math::Mat4x4f getRGB2XYZConversionMatrix(ColorPrimaries colorPrim) noexcept {
+constexpr Math::Mat3x3f getRGB2XYZConversionMatrix(ColorPrimaries colorPrim) noexcept {
 	switch(colorPrim){
 	case ColorPrimaries::BT601_625: return constructRGB2XYZConversionMatrix(
 		//https://en.wikipedia.org/wiki/Rec._601
