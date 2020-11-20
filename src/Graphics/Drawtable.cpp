@@ -249,8 +249,8 @@ struct Drawtable::Impl {
 
 			//Create the depth and stencil attachment reference
 			const vk::AttachmentReference depthStencilAttachmentReference(
-				colorAttachmentCount, 							//Attachments index
-				vk::ImageLayout::eDepthStencilAttachmentOptimal //Attachemnt layout
+				depthStencilAttachmentCount ? colorAttachmentCount : VK_ATTACHMENT_UNUSED, 	//Attachments index
+				vk::ImageLayout::eDepthStencilAttachmentOptimal 							//Attachemnt layout
 			);
 
 			//Create the subpass descriptor
@@ -261,7 +261,7 @@ struct Drawtable::Impl {
 					0, nullptr,										//Input attachments
 					colorAttachmentReferences.size(), colorAttachmentReferences.data(), //Color attachments
 					nullptr,										//Resolve attachment
-					colorAttachmentCount ? &depthStencilAttachmentReference : nullptr, //Depth-stencil attachment
+					&depthStencilAttachmentReference, 				//Depth-stencil attachment
 					0, nullptr										//Preserve attachments
 				)
 			};
