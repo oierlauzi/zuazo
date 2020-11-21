@@ -4,6 +4,54 @@
 
 namespace Zuazo {
 
+template<typename T>
+constexpr Math::Mat3x3<T> constructRGB2XYZConversionMatrix(	const T red_x,	const T red_y,
+															const T green_x,const T green_y,
+															const T blue_x, const T blue_y,
+															const T white_x,const T white_y,
+															const T white_luminance ) noexcept
+{
+	//Based on: 
+	//https://pdfs.semanticscholar.org/a7a3/0558ee8036460b8570f34a4dd0ef6c8a7fb3.pdf
+
+	//Define the rest of the coordinates provided that x+y+z=1
+	const T	red_z 	= T(1) - red_x - red_y,
+			green_z = T(1) - green_x - green_y,
+			blue_z 	= T(1) - blue_x - blue_y,
+			white_z = T(1) - white_x - white_y;
+
+	//Obtain the white point
+	const auto white = Math::Vec3<T>(
+		white_luminance * white_x / white_y, 
+		white_luminance,//white_y / white_y,
+		white_luminance * white_z / white_y
+	);
+
+	//Express the primary chromaticities as a matrix
+	//Note that it gets transposed as glm expects the matrix to be specified
+	//in column major order, while it is being specified in row major
+	const auto chromaticities = Math::transpose(
+		Math::Mat3x3<T>(
+			red_x, green_x, blue_x,
+			red_y, green_y, blue_y,
+			red_z, green_z, blue_z
+		)
+	);
+
+	//As T * Vec4(1) == white, obtain the scaling factors
+	const auto scale = Math::inv(chromaticities) * white;
+
+	//Compute the tristimulus values scaling them by the scaling factor
+	auto tristimulus = chromaticities;
+	for(size_t i = 0; i < static_cast<size_t>(scale.length()); ++i) {
+		tristimulus[i][i] *= scale[i];
+	}
+
+	return tristimulus;
+}
+
+
+
 constexpr Chromaticities::Chromaticities(	Math::Vec2f red,
 											Math::Vec2f green,
 											Math::Vec2f blue,
@@ -147,54 +195,6 @@ constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept {
 
 	default: return Chromaticities();
 	}
-}
-
-
-
-template<typename T>
-constexpr Math::Mat3x3<T> constructRGB2XYZConversionMatrix(	const T red_x,	const T red_y,
-															const T green_x,const T green_y,
-															const T blue_x, const T blue_y,
-															const T white_x,const T white_y,
-															const T white_luminance ) noexcept
-{
-	//Based on: 
-	//https://pdfs.semanticscholar.org/a7a3/0558ee8036460b8570f34a4dd0ef6c8a7fb3.pdf
-
-	//Define the rest of the coordinates provided that x+y+z=1
-	const T	red_z 	= T(1) - red_x - red_y,
-			green_z = T(1) - green_x - green_y,
-			blue_z 	= T(1) - blue_x - blue_y,
-			white_z = T(1) - white_x - white_y;
-
-	//Obtain the white point
-	const auto white = Math::Vec3<T>(
-		white_luminance * white_x / white_y, 
-		white_luminance,//white_y / white_y,
-		white_luminance * white_z / white_y
-	);
-
-	//Express the primary chromaticities as a matrix
-	//Note that it gets transposed as glm expects the matrix to be specified
-	//in column major order, while it is being specified in row major
-	const auto chromaticities = Math::transpose(
-		Math::Mat3x3<T>(
-			red_x, green_x, blue_x,
-			red_y, green_y, blue_y,
-			red_z, green_z, blue_z
-		)
-	);
-
-	//As T * Vec4(1) == white, obtain the scaling factors
-	const auto scale = Math::inv(chromaticities) * white;
-
-	//Compute the tristimulus values scaling them by the scaling factor
-	auto tristimulus = chromaticities;
-	for(size_t i = 0; i < static_cast<size_t>(scale.length()); ++i) {
-		tristimulus[i][i] *= scale[i];
-	}
-
-	return tristimulus;
 }
 
 
