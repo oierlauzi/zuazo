@@ -38,7 +38,7 @@ public:
 										Math::Vec2f green = Math::Vec2f(0.0f, 1.0f),
 										Math::Vec2f blue = Math::Vec2f(0.0f, 0.0f),
 										Math::Vec2f white = Math::Vec2f(1.0f/3.0f),
-										float whiteLuminance = 1.0f) noexcept;
+										float whiteLuminance = 100.0f) noexcept;
 	constexpr Chromaticities(const Chromaticities& other) = default;
 	~Chromaticities() = default;
 
