@@ -67,14 +67,14 @@ inline Mat4x4<T> lookAt(const Vec3<T>& eye,
 						const Vec3<T>& center,
 						const Vec3<T>& up ) noexcept
 {
-	glm::lookAt(eye, center, up);
+	return glm::lookAt(eye, center, up);
 }
 
 
 
 template<typename T>
 inline Mat4x4<T> translate(const Mat4x4<T>& mat, const Vec3<T>& delta) noexcept {
-	glm::translate(mat, delta);
+	return glm::translate(mat, delta);
 }
 
 template<typename T>

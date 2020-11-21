@@ -39,15 +39,10 @@ constexpr Math::Mat3x3<T> constructRGB2XYZConversionMatrix(	const T red_x,	const
 	);
 
 	//As T * Vec4(1) == white, obtain the scaling factors
-	const auto scale = Math::inv(chromaticities) * white;
+	const auto scale = Math::diagonal(Math::inv(chromaticities) * white);
 
 	//Compute the tristimulus values scaling them by the scaling factor
-	auto tristimulus = chromaticities;
-	for(size_t i = 0; i < static_cast<size_t>(scale.length()); ++i) {
-		tristimulus[i][i] *= scale[i];
-	}
-
-	return tristimulus;
+	return chromaticities * scale;
 }
 
 
