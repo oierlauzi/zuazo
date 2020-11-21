@@ -1,5 +1,7 @@
 #include "ColorPrimaries.h"
 
+#include <tuple>
+
 namespace Zuazo {
 
 template<typename T>
