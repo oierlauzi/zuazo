@@ -1,5 +1,7 @@
 #include "ColorPrimaries.h"
 
+#include <cstring>
+
 namespace Zuazo {
 
 constexpr Chromaticities::Chromaticities(	Math::Vec2f red,
@@ -14,6 +16,16 @@ constexpr Chromaticities::Chromaticities(	Math::Vec2f red,
 	, m_whiteLuminance(whiteLuminance)
 {
 }
+
+
+constexpr bool Chromaticities::operator==(const Chromaticities& other) const noexcept {
+	return std::memcmp(this, &other, sizeof(*this)) == 0;
+}
+
+constexpr bool Chromaticities::operator!=(const Chromaticities& other) const noexcept {
+	return !operator==(other);
+}
+
 
 constexpr void Chromaticities::setRedPrimary(Math::Vec2f prim) noexcept {
 	m_red = prim;

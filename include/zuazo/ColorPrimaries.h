@@ -44,6 +44,9 @@ public:
 
 	constexpr Chromaticities&		operator=(const Chromaticities& other) = default;
 
+	constexpr bool					operator==(const Chromaticities& other) const noexcept;
+	constexpr bool					operator!=(const Chromaticities& other) const noexcept;
+
 	constexpr void					setRedPrimary(Math::Vec2f prim) noexcept;
 	constexpr const Math::Vec2f&	getRedPrimary() const noexcept;
 
