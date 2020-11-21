@@ -431,11 +431,11 @@ vec3 ct_OETF_SMPTE240M(in vec3 color){
 
 
 float ct_EOTF_SMPTE2084(in float value){
-	return ct_EOTF_PQ(3424.0f/4096.0f, 32.0f*2413.0f/4096.0f, 0.25f*2610.0f/4096.0f, 128.0f*2523.0f/4096.0f, value);
+	return ct_EOTF_PQ(107.0f/128.0f, 2413.0f/128.0f, 1305.0f/8192.0f, 2523.0f/32.0f, value);
 }
 
 float ct_OETF_SMPTE2084(in float value){
-	return ct_OETF_PQ(3424.0f/4096.0f, 32.0f*2413.0f/4096.0f, 0.25f*2610.0f/4096.0f, 128.0f*2523.0f/4096.0f, value);
+	return ct_OETF_PQ(107.0f/128.0f, 2413.0f/128.0f, 1305.0f/8192.0f, 2523.0f/32.0f, value);
 }
 
 vec3 ct_EOTF_SMPTE2084(in vec3 color){
