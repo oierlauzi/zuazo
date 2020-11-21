@@ -1,7 +1,5 @@
 #include "ColorPrimaries.h"
 
-#include <cstring>
-
 namespace Zuazo {
 
 template<typename T>
@@ -67,7 +65,7 @@ constexpr Chromaticities::Chromaticities(	Math::Vec2f red,
 
 
 constexpr bool Chromaticities::operator==(const Chromaticities& other) const noexcept {
-	return std::memcmp(this, &other, sizeof(*this)) == 0;
+	return std::tie(m_red, m_green, m_blue, m_white, m_whiteLuminance) == std::tie(other.m_red, other.m_green, other.m_blue, other.m_white, other.m_whiteLuminance);
 }
 
 constexpr bool Chromaticities::operator!=(const Chromaticities& other) const noexcept {
