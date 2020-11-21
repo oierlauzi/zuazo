@@ -32,14 +32,57 @@ enum class ColorPrimaries {
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorPrimaries)
 ZUAZO_ENUM_COMP_OPERATORS(ColorPrimaries)	
 
+class Chromaticities {
+public:
+	constexpr explicit Chromaticities(	Math::Vec2f red = Math::Vec2f(1.0f, 0.0f),
+										Math::Vec2f green = Math::Vec2f(0.0f, 1.0f),
+										Math::Vec2f blue = Math::Vec2f(0.0f, 0.0f),
+										Math::Vec2f white = Math::Vec2f(1.0f/3.0f),
+										float whiteLuminance = 1.0f) noexcept;
+	constexpr Chromaticities(const Chromaticities& other) = default;
+	~Chromaticities() = default;
+
+	constexpr Chromaticities&		operator=(const Chromaticities& other) = default;
+
+	constexpr void					setRedPrimary(Math::Vec2f prim) noexcept;
+	constexpr const Math::Vec2f&	getRedPrimary() const noexcept;
+
+	constexpr void					setGreenPrimary(Math::Vec2f prim) noexcept;
+	constexpr const Math::Vec2f&	getGreenPrimary() const noexcept;
+
+	constexpr void					setBluePrimary(Math::Vec2f prim) noexcept;
+	constexpr const Math::Vec2f&	getBluePrimary() const noexcept;
+
+	constexpr void					setWhitePoint(Math::Vec2f wp) noexcept;
+	constexpr const Math::Vec2f&	getWhitePoint() const noexcept;
+
+	constexpr void					setWhiteLuminance(float luminance) noexcept;
+	constexpr float					getWhiteLuminance() const noexcept;
+
+	constexpr Math::Mat3x3f			calculateRGB2XYZConversionMatrix() const noexcept;
+	constexpr Math::Mat3x3f			calculateXYZ2RGBConversionMatrix() const noexcept;
+
+private:
+	Math::Vec2f 					m_red;
+	Math::Vec2f 					m_green;
+	Math::Vec2f 					m_blue;
+	Math::Vec2f 					m_white;
+	float 							m_whiteLuminance;
+};
+
+
+constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept;
+
+
 template<typename T>
-constexpr Math::Mat3x3<T> constructRGB2XYZConversionMatrix(	const T white_x,const T white_y,
-															const T red_x,	const T red_y,
+constexpr Math::Mat3x3<T> constructRGB2XYZConversionMatrix(	const T red_x,	const T red_y,
 															const T green_x,const T green_y,
 															const T blue_x, const T blue_y,
+															const T white_x,const T white_y,
 															const T white_luminance = T(1) ) noexcept;
 
-constexpr Math::Mat3x3f getRGB2XYZConversionMatrix(ColorPrimaries colorPrim) noexcept;
+
+
 
 constexpr std::string_view toString(ColorPrimaries colorPrim) noexcept;
 std::ostream& operator<<(std::ostream& os, ColorPrimaries colorPrim);

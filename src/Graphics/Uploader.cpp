@@ -70,6 +70,19 @@ struct Uploader::Impl {
 	{
 	}
 
+	Impl(	const Vulkan& vulkan, 
+			const Frame::Descriptor& desc,
+			const Chromaticities& customPrimaries )
+		: vulkan(vulkan)
+		, frameDescriptor(Utils::makeShared<Frame::Descriptor>(desc))
+		, colorTransfer(*frameDescriptor, customPrimaries)
+		, planeDescriptors(createPlaneDescriptors(vulkan, desc, colorTransfer))
+		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, colorTransfer))
+		, commandPool(createCommandPool(vulkan))
+		, framePool(1, Allocator(*this))
+	{
+	}
+
 	~Impl() {
 		colorTransferBuffer->waitCompletion(vulkan);
 	}
@@ -183,6 +196,13 @@ private:
 Uploader::Uploader(	const Vulkan& vulkan, 
 					const Frame::Descriptor& desc )
 	: m_impl({}, vulkan, desc)
+{
+}
+
+Uploader::Uploader(	const Vulkan& vulkan, 
+					const Frame::Descriptor& desc,
+					const Chromaticities& customPrimaries )
+	: m_impl({}, vulkan, desc, customPrimaries)
 {
 }
 

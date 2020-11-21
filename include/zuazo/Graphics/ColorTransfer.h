@@ -22,6 +22,7 @@ class InputColorTransfer {
 public:
 	InputColorTransfer();
 	explicit InputColorTransfer(const Frame::Descriptor& desc);
+	InputColorTransfer(const Frame::Descriptor& desc, const Chromaticities& customPrimaries);
 	InputColorTransfer(const InputColorTransfer& other) = delete;
 	InputColorTransfer(InputColorTransfer&& other) noexcept;
 	~InputColorTransfer();
@@ -53,6 +54,7 @@ class OutputColorTransfer {
 public:
 	OutputColorTransfer();
 	explicit OutputColorTransfer(const Frame::Descriptor& desc);
+	OutputColorTransfer(const Frame::Descriptor& desc, const Chromaticities& customPrimaries);
 	explicit OutputColorTransfer(const InputColorTransfer& inputTransfer);
 	OutputColorTransfer(const OutputColorTransfer& other) = delete;
 	OutputColorTransfer(OutputColorTransfer&& other) noexcept;

@@ -14,6 +14,9 @@ class Uploader {
 public:
 	Uploader(	const Vulkan& vulkan, 
 				const Frame::Descriptor& desc );
+	Uploader(	const Vulkan& vulkan, 
+				const Frame::Descriptor& desc,
+				const Chromaticities& customPrimaries );
 	Uploader(const Uploader& other) = delete;
 	Uploader(Uploader&& other) noexcept;
 	~Uploader();

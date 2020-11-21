@@ -2,21 +2,158 @@
 
 namespace Zuazo {
 
+constexpr Chromaticities::Chromaticities(	Math::Vec2f red,
+											Math::Vec2f green,
+											Math::Vec2f blue,
+											Math::Vec2f white,
+											float whiteLuminance ) noexcept
+	: m_red(red)
+	, m_green(green)
+	, m_blue(blue)
+	, m_white(white)
+	, m_whiteLuminance(whiteLuminance)
+{
+}
+
+constexpr void Chromaticities::setRedPrimary(Math::Vec2f prim) noexcept {
+	m_red = prim;
+}
+
+constexpr const Math::Vec2f& Chromaticities::getRedPrimary() const noexcept {
+	return m_red;
+}
+
+
+constexpr void Chromaticities::setGreenPrimary(Math::Vec2f prim) noexcept {
+	m_green = prim;
+}
+
+constexpr const Math::Vec2f& Chromaticities::getGreenPrimary() const noexcept {
+	return m_green;
+}
+
+
+constexpr void Chromaticities::setBluePrimary(Math::Vec2f prim) noexcept {
+	m_blue = prim;
+}
+
+constexpr const Math::Vec2f& Chromaticities::getBluePrimary() const noexcept {
+	return m_blue;
+}
+
+
+constexpr void Chromaticities::setWhitePoint(Math::Vec2f wp) noexcept {
+	m_white = wp;
+}
+
+constexpr const Math::Vec2f& Chromaticities::getWhitePoint() const noexcept {
+	return m_white;
+}
+
+
+constexpr void Chromaticities::setWhiteLuminance(float luminance) noexcept {
+	m_whiteLuminance = luminance;
+}
+
+constexpr float Chromaticities::getWhiteLuminance() const noexcept {
+	return m_whiteLuminance;
+}
+
+
+constexpr Math::Mat3x3f Chromaticities::calculateRGB2XYZConversionMatrix() const noexcept {
+	return constructRGB2XYZConversionMatrix(
+		getRedPrimary().x, getRedPrimary().y,
+		getGreenPrimary().x, getGreenPrimary().y,
+		getBluePrimary().x, getBluePrimary().y,
+		getWhitePoint().x, getWhitePoint().y,
+		getWhiteLuminance()
+	);
+}
+constexpr Math::Mat3x3f Chromaticities::calculateXYZ2RGBConversionMatrix() const noexcept {
+	return Math::inv(calculateRGB2XYZConversionMatrix());
+}
+
+
+
+constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept {
+	switch(colorPrim){
+	case ColorPrimaries::BT601_625: return Chromaticities(
+		//https://en.wikipedia.org/wiki/Rec._601
+		Math::Vec2f(0.640f,		0.330f),
+		Math::Vec2f(0.290f, 	0.600f),
+		Math::Vec2f(0.150f, 	0.060f),
+		Math::Vec2f(0.3127f,	0.3290f) //D65
+	);
+
+	case ColorPrimaries::BT601_525: return Chromaticities(
+		//https://en.wikipedia.org/wiki/Rec._601
+		Math::Vec2f(0.630f, 	0.340f),
+		Math::Vec2f(0.310f, 	0.595f),
+		Math::Vec2f(0.155f, 	0.070f),
+		Math::Vec2f(0.3127f,	0.3290f) //D65
+	);
+
+	case ColorPrimaries::BT709: return Chromaticities(
+		//https://en.wikipedia.org/wiki/Rec._709
+		Math::Vec2f(0.64f,		0.33f),
+		Math::Vec2f(0.30f,	 	0.60f),
+		Math::Vec2f(0.15f,	 	0.06f),
+		Math::Vec2f(0.3127f,	0.3290f) //D65
+	);
+
+	case ColorPrimaries::BT2020: return Chromaticities(
+		//https://en.wikipedia.org/wiki/Rec._2020
+		Math::Vec2f(0.708f, 	0.292f),
+		Math::Vec2f(0.17f, 		0.797f),
+		Math::Vec2f(0.131f, 	0.046f),
+		Math::Vec2f(0.3127f,	0.3290f) //D65
+	);
+
+	case ColorPrimaries::SMPTE431: return Chromaticities(
+		//https://en.wikipedia.org/wiki/DCI-P3
+		Math::Vec2f(0.680f, 	0.320f),
+		Math::Vec2f(0.265f, 	0.690f),
+		Math::Vec2f(0.150f, 	0.060f),
+		Math::Vec2f(0.314f, 	0.351f) //D50
+	);
+
+	case ColorPrimaries::SMPTE432: return Chromaticities(
+		//https://en.wikipedia.org/wiki/DCI-P3 Just like the above one w/ different white point
+		Math::Vec2f(0.680f, 	0.320f),
+		Math::Vec2f(0.265f, 	0.690f),
+		Math::Vec2f(0.150f, 	0.060f),
+		Math::Vec2f(0.3127f,	0.3290f) //D65
+	);
+
+	case ColorPrimaries::ADOBE_RGB: return Chromaticities(
+		//https://en.wikipedia.org/wiki/Adobe_RGB_color_space
+		Math::Vec2f(0.6400f, 	0.3300f), 
+		Math::Vec2f(0.2100f, 	0.7100f), 
+		Math::Vec2f(0.1500f, 	0.0600f),
+		Math::Vec2f(0.3127f,	0.3290f) //D65
+	);
+
+	default: return Chromaticities();
+	}
+}
+
+
+
 template<typename T>
-constexpr Math::Mat3x3<T> constructRGB2XYZConversionMatrix(	const T white_x,const T white_y,
-															const T red_x,	const T red_y,
+constexpr Math::Mat3x3<T> constructRGB2XYZConversionMatrix(	const T red_x,	const T red_y,
 															const T green_x,const T green_y,
 															const T blue_x, const T blue_y,
+															const T white_x,const T white_y,
 															const T white_luminance ) noexcept
 {
 	//Based on: 
 	//https://pdfs.semanticscholar.org/a7a3/0558ee8036460b8570f34a4dd0ef6c8a7fb3.pdf
 
-	//Define the rest of the coordenates provided that x+y+z=1
-	const T	white_z = T(1) - white_x - white_y,
-			red_z 	= T(1) - red_x - red_y,
+	//Define the rest of the coordinates provided that x+y+z=1
+	const T	red_z 	= T(1) - red_x - red_y,
 			green_z = T(1) - green_x - green_y,
-			blue_z 	= T(1) - blue_x - blue_y;
+			blue_z 	= T(1) - blue_x - blue_y,
+			white_z = T(1) - white_x - white_y;
 
 	//Obtain the white point
 	const auto white = Math::Vec3<T>(
@@ -41,73 +178,11 @@ constexpr Math::Mat3x3<T> constructRGB2XYZConversionMatrix(	const T white_x,cons
 
 	//Compute the tristimulus values scaling them by the scaling factor
 	auto tristimulus = chromaticities;
-	for(size_t i = 0; i < scale.length(); ++i) {
+	for(size_t i = 0; i < static_cast<size_t>(scale.length()); ++i) {
 		tristimulus[i][i] *= scale[i];
 	}
 
 	return tristimulus;
-}
-
-constexpr Math::Mat3x3f getRGB2XYZConversionMatrix(ColorPrimaries colorPrim) noexcept {
-	switch(colorPrim){
-	case ColorPrimaries::BT601_625: return constructRGB2XYZConversionMatrix(
-		//https://en.wikipedia.org/wiki/Rec._601
-		0.3127f,	0.3290f,
-		0.640f,		0.330f,
-		0.290f, 	0.600f,
-		0.150f, 	0.060f
-	);
-
-	case ColorPrimaries::BT601_525: return constructRGB2XYZConversionMatrix(
-		//https://en.wikipedia.org/wiki/Rec._601
-		0.3127f,	0.3290f,
-		0.630f, 	0.340f,
-		0.310f, 	0.595f,
-		0.155f, 	0.070f
-	);
-
-	case ColorPrimaries::BT709: return constructRGB2XYZConversionMatrix(
-		//https://en.wikipedia.org/wiki/Rec._709
-		0.3127f, 	0.3290f,
-		0.64f,		0.33f,
-		0.30f,	 	0.60f,
-		0.15f,	 	0.06f
-	);
-
-	case ColorPrimaries::BT2020: return constructRGB2XYZConversionMatrix(
-		//https://en.wikipedia.org/wiki/Rec._2020
-		0.3127f, 	0.3290f,
-		0.708f, 	0.292f,
-		0.17f, 		0.797f,
-		0.131f, 	0.046f
-	);
-
-	case ColorPrimaries::SMPTE431: return constructRGB2XYZConversionMatrix(
-		//https://en.wikipedia.org/wiki/DCI-P3
-		0.314f,	 	0.351f,
-		0.680f, 	0.320f,
-		0.265f, 	0.690f,
-		0.150f, 	0.060f
-	);
-
-	case ColorPrimaries::SMPTE432: return constructRGB2XYZConversionMatrix(
-		//https://en.wikipedia.org/wiki/DCI-P3 Just like the above one w/ different white point
-		0.3127f, 	0.3290f,
-		0.680f, 	0.320f,
-		0.265f, 	0.690f,
-		0.150f, 	0.060f
-	);
-
-	case ColorPrimaries::ADOBE_RGB: return constructRGB2XYZConversionMatrix(
-		//https://en.wikipedia.org/wiki/Adobe_RGB_color_space
-		0.3127f, 	0.3290f, 
-		0.6400f, 	0.3300f, 
-		0.2100f, 	0.7100f, 
-		0.1500f, 	0.0600f
-	);
-
-	default: return {};
-	}
 }
 
 

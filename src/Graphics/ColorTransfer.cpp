@@ -111,9 +111,9 @@ struct InputColorTransfer::Impl {
 	ct_read_data transferData;
 
 	Impl() noexcept = default;
-	Impl(const Frame::Descriptor& desc) noexcept
+	Impl(const Frame::Descriptor& desc, const Chromaticities& chromaticities) noexcept
 		: transferData {
-			getRGB2XYZConversionMatrix(desc.colorPrimaries),
+			chromaticities.calculateRGB2XYZConversionMatrix(),
 			Math::inv(getRGB2YCbCrConversionMatrix(desc.colorModel)),
 			getColorTransferFunction(desc.colorTransferFunction),
 			getColorRange(desc.colorRange, desc.colorModel),
@@ -154,7 +154,12 @@ InputColorTransfer::InputColorTransfer()
 }
 
 InputColorTransfer::InputColorTransfer(const Frame::Descriptor& desc)
-	: m_impl({}, desc)
+	: InputColorTransfer(desc, getChromaticities(desc.colorPrimaries))
+{
+}
+
+InputColorTransfer::InputColorTransfer(const Frame::Descriptor& desc, const Chromaticities& customPrimaries)
+	: m_impl({}, desc, customPrimaries)
 {
 }
 
@@ -214,9 +219,9 @@ struct OutputColorTransfer::Impl {
 	ct_write_data transferData;
 
 	Impl() noexcept = default;
-	Impl(const Frame::Descriptor& desc) noexcept
+	Impl(const Frame::Descriptor& desc, const Chromaticities& chromaticities) noexcept
 		: transferData {
-			Math::inv(getRGB2XYZConversionMatrix(desc.colorPrimaries)),
+			chromaticities.calculateXYZ2RGBConversionMatrix(),
 			getRGB2YCbCrConversionMatrix(desc.colorModel),
 			getColorTransferFunction(desc.colorTransferFunction),
 			getColorRange(desc.colorRange, desc.colorModel),
@@ -262,7 +267,12 @@ OutputColorTransfer::OutputColorTransfer()
 }
 
 OutputColorTransfer::OutputColorTransfer(const Frame::Descriptor& desc)
-	: m_impl({}, desc)
+	: OutputColorTransfer(desc, getChromaticities(desc.colorPrimaries))
+{
+}
+
+OutputColorTransfer::OutputColorTransfer(const Frame::Descriptor& desc, const Chromaticities& customPrimaries)
+	: m_impl({}, desc, customPrimaries)
 {
 }
 
