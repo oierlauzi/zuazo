@@ -10,7 +10,7 @@ namespace Zuazo {
 
 
 enum class DepthStencilFormat {
-	NONE = 0,
+	NONE = -1,
 
 	D16,
 	X8D24_32,

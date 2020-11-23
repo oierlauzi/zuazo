@@ -7,7 +7,7 @@
 namespace Zuazo {
 
 enum class ScalingMode {
-	NONE,
+	NONE = -1,
 
 	STRETCH,
 	BOXED,

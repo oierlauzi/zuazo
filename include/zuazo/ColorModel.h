@@ -13,7 +13,7 @@ namespace Zuazo {
  * ColorModel represents how color gets encoded on a tuple of values or components
  */
 enum class ColorModel {
-	NONE = 0,					///<Not supported
+	NONE = -1,					///<Not supported
 
 	RGB,						///<RGB color model
 	BT601,						///<YCbCr color model used in SDTV \see https://www.itu.int/rec/R-REC-BT.601/en

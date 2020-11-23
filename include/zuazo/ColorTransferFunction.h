@@ -11,7 +11,7 @@ namespace Zuazo {
  * ColorTransferFunction represents how color components are encoded in their numeric values
  */
 enum class ColorTransferFunction {
-	NONE = 0,					///<Not supported
+	NONE = -1,					///<Not supported
 
 	LINEAR,						///<Linearly encoded
 	BT601,						///<Transfer function defined by ITU-R BT.601. Used on PAL, SECAM and NTSC SDTV systems. \see https://www.itu.int/rec/R-REC-BT.601/en

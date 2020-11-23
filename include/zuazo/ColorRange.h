@@ -12,7 +12,7 @@ namespace Zuazo {
  * or they leave headroom and footroom
  */
 enum class ColorRange {
-	NONE = 0,					///<Not supported
+	NONE = -1,					///<Not supported
 
 	FULL,						///<Components use all the available range in [0, 1], [-0.5, 0.5] if chroma samples
 								///<  (Cb and Cr)

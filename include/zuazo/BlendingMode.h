@@ -8,7 +8,7 @@
 namespace Zuazo {
 
 enum class BlendingMode {
-	NONE = 0,			///<C = C_dst
+	NONE = -1,			///<C = C_dst
 
 	WRITE,				///<C = C_src
 	OPACITY,			///<C = C_src * A_src + C_dst * (1 - A_src)

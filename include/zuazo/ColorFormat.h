@@ -29,7 +29,7 @@ namespace Zuazo {
  * 		B8G8R8A8, whilst on a big endian CPU it will be layed out as A8R8G8B8.
  */
 enum class ColorFormat {
-	NONE = 0,
+	NONE = -1,
 
 	//4 BIT COMPONENTS
 	Y4X4_8,

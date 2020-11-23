@@ -5,7 +5,7 @@
 namespace Zuazo {
 
 enum class ScalingFilter {
-	NONE,
+	NONE = -1,
 
 	NEAREST,
 	LINEAR,

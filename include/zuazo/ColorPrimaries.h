@@ -14,7 +14,7 @@ namespace Zuazo {
  * sythetise color. This influences the range of representable range of colors
  */
 enum class ColorPrimaries {
-	NONE = 0,					///<Not supported
+	NONE = -1,					///<Not supported
 
 	BT601_625,					///<Used in PAL and SECAM \see https://www.itu.int/rec/R-REC-BT.601/en
 	BT601_525,					///<Used in NTSC \see https://www.itu.int/rec/R-REC-BT.601/en
