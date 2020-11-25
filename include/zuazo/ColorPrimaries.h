@@ -22,6 +22,7 @@ enum class ColorPrimaries {
 	BT2020,						///<Used in UHDTV \see https://www.itu.int/rec/R-REC-BT.2020/en
 	SMPTE431,					///<Used in DCI-P3 color space
 	SMPTE432,					///<Used in Display P3 color space
+	IEC61966_2_1,				///<Used by sRGB
 	ADOBE_RGB,					///<Used in Adobe RGB color space
 
 	//Add here

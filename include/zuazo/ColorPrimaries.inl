@@ -137,7 +137,8 @@ constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept {
 		Math::Vec2f(0.640f,		0.330f),
 		Math::Vec2f(0.290f, 	0.600f),
 		Math::Vec2f(0.150f, 	0.060f),
-		Math::Vec2f(0.3127f,	0.3290f) //D65
+		Math::Vec2f(0.3127f,	0.3290f), //D65
+		100.0f
 	);
 
 	case ColorPrimaries::BT601_525: return Chromaticities(
@@ -145,7 +146,8 @@ constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept {
 		Math::Vec2f(0.630f, 	0.340f),
 		Math::Vec2f(0.310f, 	0.595f),
 		Math::Vec2f(0.155f, 	0.070f),
-		Math::Vec2f(0.3127f,	0.3290f) //D65
+		Math::Vec2f(0.3127f,	0.3290f), //D65
+		100.0f
 	);
 
 	case ColorPrimaries::BT709: return Chromaticities(
@@ -153,7 +155,8 @@ constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept {
 		Math::Vec2f(0.64f,		0.33f),
 		Math::Vec2f(0.30f,	 	0.60f),
 		Math::Vec2f(0.15f,	 	0.06f),
-		Math::Vec2f(0.3127f,	0.3290f) //D65
+		Math::Vec2f(0.3127f,	0.3290f), //D65
+		100.0f
 	);
 
 	case ColorPrimaries::BT2020: return Chromaticities(
@@ -161,7 +164,8 @@ constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept {
 		Math::Vec2f(0.708f, 	0.292f),
 		Math::Vec2f(0.17f, 		0.797f),
 		Math::Vec2f(0.131f, 	0.046f),
-		Math::Vec2f(0.3127f,	0.3290f) //D65
+		Math::Vec2f(0.3127f,	0.3290f), //D65
+		100.0f //Actually not specified.
 	);
 
 	case ColorPrimaries::SMPTE431: return Chromaticities(
@@ -169,7 +173,8 @@ constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept {
 		Math::Vec2f(0.680f, 	0.320f),
 		Math::Vec2f(0.265f, 	0.690f),
 		Math::Vec2f(0.150f, 	0.060f),
-		Math::Vec2f(0.314f, 	0.351f) //D50
+		Math::Vec2f(0.314f, 	0.351f), //D50
+		48.0f
 	);
 
 	case ColorPrimaries::SMPTE432: return Chromaticities(
@@ -177,7 +182,17 @@ constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept {
 		Math::Vec2f(0.680f, 	0.320f),
 		Math::Vec2f(0.265f, 	0.690f),
 		Math::Vec2f(0.150f, 	0.060f),
-		Math::Vec2f(0.3127f,	0.3290f) //D65
+		Math::Vec2f(0.3127f,	0.3290f), //D65
+		48.0f
+	);
+
+	case ColorPrimaries::IEC61966_2_1: return Chromaticities(
+		//https://en.wikipedia.org/wiki/Rec._709
+		Math::Vec2f(0.64f,		0.33f),
+		Math::Vec2f(0.30f,	 	0.60f),
+		Math::Vec2f(0.15f,	 	0.06f),
+		Math::Vec2f(0.3127f,	0.3290f), //D65
+		80.0f
 	);
 
 	case ColorPrimaries::ADOBE_RGB: return Chromaticities(
@@ -185,7 +200,8 @@ constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept {
 		Math::Vec2f(0.6400f, 	0.3300f), 
 		Math::Vec2f(0.2100f, 	0.7100f), 
 		Math::Vec2f(0.1500f, 	0.0600f),
-		Math::Vec2f(0.3127f,	0.3290f) //D65
+		Math::Vec2f(0.3127f,	0.3290f), //D65
+		160.0f
 	);
 
 	default: return Chromaticities();

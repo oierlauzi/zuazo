@@ -604,39 +604,39 @@ constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction 
 	case ColorTransferFunction::LINEAR:
 		//Linear encoding
 		switch(prim){
-		case ColorPrimaries::BT709: 	return vk::ColorSpaceKHR::eBt709LinearEXT;
-		case ColorPrimaries::BT2020:	return vk::ColorSpaceKHR::eBt2020LinearEXT;
-		case ColorPrimaries::SMPTE432:	return vk::ColorSpaceKHR::eDisplayP3LinearEXT;
-		case ColorPrimaries::ADOBE_RGB:	return vk::ColorSpaceKHR::eAdobergbLinearEXT;
+		case ColorPrimaries::BT709: 		return vk::ColorSpaceKHR::eBt709LinearEXT;
+		case ColorPrimaries::BT2020:		return vk::ColorSpaceKHR::eBt2020LinearEXT;
+		case ColorPrimaries::SMPTE432:		return vk::ColorSpaceKHR::eDisplayP3LinearEXT;
+		case ColorPrimaries::ADOBE_RGB:		return vk::ColorSpaceKHR::eAdobergbLinearEXT;
 		default: break;
 		}
 		break;
 	case ColorTransferFunction::BT709:
 		//IEC61966_2_1 non linear encoding
 		switch(prim){
-		case ColorPrimaries::BT709: 	return vk::ColorSpaceKHR::eBt709NonlinearEXT;
+		case ColorPrimaries::BT709: 		return vk::ColorSpaceKHR::eBt709NonlinearEXT;
 		default: break;
 		}
 		break;
 	case ColorTransferFunction::IEC61966_2_1:
 		//IEC61966_2_1 non linear encoding
 		switch(prim){
-		case ColorPrimaries::BT709: 	return vk::ColorSpaceKHR::eSrgbNonlinear;
-		case ColorPrimaries::SMPTE432:	return vk::ColorSpaceKHR::eDisplayP3NonlinearEXT;
+		case ColorPrimaries::IEC61966_2_1: 	return vk::ColorSpaceKHR::eSrgbNonlinear;
+		case ColorPrimaries::SMPTE432:		return vk::ColorSpaceKHR::eDisplayP3NonlinearEXT;
 		default: break;
 		}
 		break;
 	case ColorTransferFunction::SMPTE2084:
 		//IEC61966_2_1 non linear encoding
 		switch(prim){
-		case ColorPrimaries::BT2020: 	return vk::ColorSpaceKHR::eHdr10St2084EXT;
+		case ColorPrimaries::BT2020: 		return vk::ColorSpaceKHR::eHdr10St2084EXT;
 		default: break;
 		}
 		break;
 	case ColorTransferFunction::ARIB_STD_B67:
 		//IEC61966_2_1 non linear encoding
 		switch(prim){
-		case ColorPrimaries::BT2020: 	return vk::ColorSpaceKHR::eHdr10HlgEXT;
+		case ColorPrimaries::BT2020: 		return vk::ColorSpaceKHR::eHdr10HlgEXT;
 		default: break;
 		}
 		break;
@@ -650,18 +650,18 @@ constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction 
 constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::ColorSpaceKHR space) noexcept {
 	switch(space){
 
-	case vk::ColorSpaceKHR::eSrgbNonlinear:				return { ColorPrimaries::BT709, 	ColorTransferFunction::IEC61966_2_1 };
-	case vk::ColorSpaceKHR::eDisplayP3NonlinearEXT:		return { ColorPrimaries::SMPTE432, 	ColorTransferFunction::IEC61966_2_1 };
+	case vk::ColorSpaceKHR::eSrgbNonlinear:				return { ColorPrimaries::IEC61966_2_1, 	ColorTransferFunction::IEC61966_2_1 };
+	case vk::ColorSpaceKHR::eDisplayP3NonlinearEXT:		return { ColorPrimaries::SMPTE432, 		ColorTransferFunction::IEC61966_2_1 };
 	//case vk::ColorSpaceKHR::eExtendedSrgbLinearEXT:	return {}; /*NOT SUPPORTED*/
-	case vk::ColorSpaceKHR::eDisplayP3LinearEXT:		return { ColorPrimaries::SMPTE432, 	ColorTransferFunction::LINEAR };
+	case vk::ColorSpaceKHR::eDisplayP3LinearEXT:		return { ColorPrimaries::SMPTE432, 		ColorTransferFunction::LINEAR };
 	//case vk::ColorSpaceKHR::eDciP3NonlinearEXT:		return {}; /*NOT SUPPORTED: XYZ model expected*/
-	case vk::ColorSpaceKHR::eBt709LinearEXT:			return { ColorPrimaries::BT709, 	ColorTransferFunction::LINEAR };
-	case vk::ColorSpaceKHR::eBt709NonlinearEXT:			return { ColorPrimaries::BT709, 	ColorTransferFunction::BT709 };
-	case vk::ColorSpaceKHR::eBt2020LinearEXT:			return { ColorPrimaries::BT2020, 	ColorTransferFunction::LINEAR };
-	case vk::ColorSpaceKHR::eHdr10St2084EXT:			return { ColorPrimaries::BT2020, 	ColorTransferFunction::SMPTE2084 };
-	case vk::ColorSpaceKHR::eDolbyvisionEXT:			return { ColorPrimaries::BT2020, 	ColorTransferFunction::SMPTE2084 };
-	case vk::ColorSpaceKHR::eHdr10HlgEXT:				return { ColorPrimaries::BT2020, 	ColorTransferFunction::ARIB_STD_B67 };
-	case vk::ColorSpaceKHR::eAdobergbLinearEXT:			return { ColorPrimaries::ADOBE_RGB, ColorTransferFunction::LINEAR };
+	case vk::ColorSpaceKHR::eBt709LinearEXT:			return { ColorPrimaries::BT709, 		ColorTransferFunction::LINEAR };
+	case vk::ColorSpaceKHR::eBt709NonlinearEXT:			return { ColorPrimaries::BT709, 		ColorTransferFunction::BT709 };
+	case vk::ColorSpaceKHR::eBt2020LinearEXT:			return { ColorPrimaries::BT2020, 		ColorTransferFunction::LINEAR };
+	case vk::ColorSpaceKHR::eHdr10St2084EXT:			return { ColorPrimaries::BT2020, 		ColorTransferFunction::SMPTE2084 };
+	case vk::ColorSpaceKHR::eDolbyvisionEXT:			return { ColorPrimaries::BT2020, 		ColorTransferFunction::SMPTE2084 }; //FIXME is this correct?
+	case vk::ColorSpaceKHR::eHdr10HlgEXT:				return { ColorPrimaries::BT2020, 		ColorTransferFunction::ARIB_STD_B67 };
+	case vk::ColorSpaceKHR::eAdobergbLinearEXT:			return { ColorPrimaries::ADOBE_RGB, 	ColorTransferFunction::LINEAR };
 	//case vk::ColorSpaceKHR::eAdobergbNonlinearEXT:	return {}; /*NOT SUPPORTED*/
 	//case vk::ColorSpaceKHR::ePassThroughEXT:			return {}; /*NOT SUPPORTED*/
 	//case vk::ColorSpaceKHR::eExtendedSrgbNonlinearEXT:return {}; /*NOT SUPPORTED*/
