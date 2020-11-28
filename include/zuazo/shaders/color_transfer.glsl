@@ -538,11 +538,10 @@ vec4 ct_readColor(in ct_read_data inputProp, in ct_write_data outputProp, in vec
 }
 
 vec4 ct_writeColor(in ct_write_data outputProp, in vec4 color){
-	vec4 result = color;
+	vec4 result = ct_premultiplyAlpha(color); //Premultiply the color with the alpha channel
 	result.rgb 	= ct_OETF(outputProp.colorTransferFunction, result.rgb); //Apply a gamma-like compression
 	result.rgb 	= (outputProp.mtxRGB2YCbCr * result).rgb; //Convert it into the destination color model
 	result 		= ct_contract(outputProp.colorRange, result); //Convert it into the corresponding range
-	result 		= ct_premultiplyAlpha(result); //Premultiply the color with the alpha channel
 
 	return result;
 }
@@ -561,36 +560,5 @@ vec4 ct_getColor(in ct_read_data inputProp, in ct_write_data outputProp, in samp
 
 void ct_setColor(in ct_write_data outputProp, out vec4 plane0, out vec4 plane1, out vec4 plane2, out vec4 plane3, in vec4 color) {
 	vec4 result = ct_writeColor(outputProp, color);
-	ct_store(outputProp.planeFormat, plane0, plane1, plane2, plane3, result);
-}
-
-
-
-vec4 ct_readColorYCbCr(in ct_read_data inputProp, in ct_write_data outputProp, in vec4 color){
-	vec4 result = ct_expand(inputProp.colorRange, color); //Normalize the values into [0.0, 1.0] (or [-0.5, 0.5] for chroma)
-	result.rgb	= (inputProp.mtxYCbCr2RGB * result).rgb; //Convert it into RGB color model
-	result.rgb	= ct_EOTF(inputProp.colorTransferFunction, result.rgb); //Undo all gamma-like compressions
-	result.rgb	= (outputProp.mtxXYZ2RGB * inputProp.mtxRGB2XYZ * result).rgb; //Convert it into the destination color primaries
-	result.rgb	= ct_OETF(outputProp.colorTransferFunction, result.rgb); //Apply a gamma-like compression
-	result.rgb	= (outputProp.mtxRGB2YCbCr * result).rgb; //Convert it into the destination color model
-
-	return result;
-}
-
-vec4 ct_writeColorYCbCr(in ct_write_data outputProp, in vec4 color){
-	vec4 result = ct_contract(outputProp.colorRange, color); //Convert it into the corresponding range
-	result 		= ct_premultiplyAlpha(result); //Premultiply the color with the alpha channel
-
-	return result;
-}
-
-vec4 ct_getColorYCbCr(in ct_read_data inputProp, in ct_write_data outputProp, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords){
-	vec4 result = ct_load(inputProp.planeFormat, images, texCoords);
-	result = ct_readColorYCbCr(inputProp, outputProp, result);
-	return result;
-}
-
-void ct_setColorYCbCr(in ct_write_data outputProp, out vec4 plane0, out vec4 plane1, out vec4 plane2, out vec4 plane3, in vec4 color){
-	vec4 result = ct_writeColorYCbCr(outputProp, color);
 	ct_store(outputProp.planeFormat, plane0, plane1, plane2, plane3, result);
 }
