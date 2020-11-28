@@ -92,7 +92,7 @@ public:
 				ColorSubsampling colorSubsampling, 
 				ColorRange colorRange, 
 				ColorFormat colorFormat ) noexcept;
-	Descriptor(const Descriptor& other) noexcept;
+	Descriptor(const Descriptor& other) noexcept = default;
 	~Descriptor() = default;
 
 	Descriptor&								operator=(const Descriptor& other) noexcept = default;
