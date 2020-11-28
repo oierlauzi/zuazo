@@ -92,6 +92,11 @@ struct Uploader::Impl {
 		return vulkan;
 	}
 
+	const Frame::Descriptor& getFrameDescriptor() const noexcept {
+		assert(frameDescriptor);
+		return *frameDescriptor;
+	}
+
 
 	void setMaxSpareCount(size_t spares) noexcept {
 		framePool.setMaxSpareCount(spares);
@@ -216,6 +221,10 @@ Uploader& Uploader::operator=(Uploader&& other) noexcept = default;
 
 const Vulkan& Uploader::getVulkan() const noexcept {
 	return m_impl->getVulkan();
+}
+
+const Frame::Descriptor& Uploader::getFrameDescriptor() const noexcept {
+	return m_impl->getFrameDescriptor();
 }
 
 

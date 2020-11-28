@@ -25,6 +25,7 @@ public:
 	Uploader& 										operator=(Uploader&& other) noexcept;
 
 	const Vulkan&									getVulkan() const noexcept;
+	const Frame::Descriptor& 						getFrameDescriptor() const noexcept;	
 
 	void											setMaxSpareCount(size_t spares) noexcept;
 	size_t											getMaxSpareCount() const noexcept;

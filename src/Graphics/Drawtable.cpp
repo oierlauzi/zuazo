@@ -86,6 +86,12 @@ struct Drawtable::Impl {
 		return vulkan;
 	}
 
+	const Frame::Descriptor& getFrameDescriptor() const noexcept {
+		assert(frameDescriptor);
+		return *frameDescriptor;
+	}
+
+
 
 	void setMaxSpareCount(size_t spares) noexcept {
 		framePool.setMaxSpareCount(spares);
@@ -390,6 +396,10 @@ Drawtable& Drawtable::operator=(Drawtable&& other) noexcept = default;
 
 const Vulkan& Drawtable::getVulkan() const noexcept {
 	return m_impl->getVulkan();
+}
+
+const Frame::Descriptor& Drawtable::getFrameDescriptor() const noexcept {
+	return m_impl->getFrameDescriptor();
 }
 
 
