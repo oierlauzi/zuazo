@@ -58,6 +58,11 @@ vk::UniqueImageView DepthStencil::createImageView(	const Vulkan& vulkan,
 													vk::Format fmt, 
 													vk::Image image )
 {
+	//Ontain the aspect mask
+	auto aspectMask = vk::ImageAspectFlags();
+	if(hasDepth(fmt)) aspectMask |= vk::ImageAspectFlagBits::eDepth;
+	if(hasStencil(fmt)) aspectMask |= vk::ImageAspectFlagBits::eStencil;
+
 	const vk::ImageViewCreateInfo createInfo(
 		{},												//Flags
 		image,											//Image
@@ -65,7 +70,7 @@ vk::UniqueImageView DepthStencil::createImageView(	const Vulkan& vulkan,
 		fmt,											//Image format
 		vk::ComponentMapping(),							//Swizzle
 		vk::ImageSubresourceRange(						//Image subresources
-			vk::ImageAspectFlagBits::eColor,				//Aspect mask
+			aspectMask,										//Aspect mask
 			0, 1, 0, 1										//Base mipmap level, mipmap levels, base array layer, layers
 		)
 	);
