@@ -40,6 +40,9 @@ public:
 	static vk::RenderPass							getRenderPass(	const Vulkan& vulkan, 
 																	const Frame::Descriptor& frameDesc,
 																	DepthStencilFormat depthStencilFmt );
+	static std::vector<vk::ClearValue> 				getClearValues(	const Graphics::Frame::Descriptor& frameDesc,
+																	DepthStencilFormat depthStencilFmt );
+
 private:
 	struct Impl;
 	Utils::Pimpl<Impl>								m_impl;
