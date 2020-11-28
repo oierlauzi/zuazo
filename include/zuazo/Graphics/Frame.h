@@ -27,23 +27,13 @@ class InputColorTransfer;
 
 class Frame {
 public:
-	struct Descriptor {
-		Resolution								resolution;
-		AspectRatio								pixelAspectRatio;
-		ColorPrimaries							colorPrimaries;
-		ColorModel								colorModel;
-		ColorTransferFunction					colorTransferFunction;
-		ColorSubsampling						colorSubsampling;
-		ColorRange								colorRange;
-		ColorFormat								colorFormat;
-	};
-
 	struct PlaneDescriptor {
 		vk::Extent2D 							extent;
 		vk::Format 								format;
 		vk::ComponentMapping 					swizzle;
 	};
 
+	class Descriptor;
 	class Geometry;
 
 	using PixelData = std::vector<Utils::BufferView<std::byte>>;
@@ -92,6 +82,60 @@ private:
 };
 
 
+class Frame::Descriptor {
+public:
+	Descriptor(	Resolution resolution, 
+				AspectRatio pixelAspectRatio, 
+				ColorPrimaries colorPrimaries, 
+				ColorModel colorModel, 
+				ColorTransferFunction colorTransferFunction, 
+				ColorSubsampling colorSubsampling, 
+				ColorRange colorRange, 
+				ColorFormat colorFormat ) noexcept;
+	Descriptor(const Descriptor& other) noexcept;
+	~Descriptor() = default;
+
+	Descriptor&								operator=(const Descriptor& other) noexcept = default;
+
+	void									setResolution(Resolution resolution) noexcept;
+	Resolution								getResolution() const noexcept;
+
+	void									setPixelAspectRatio(AspectRatio pixelAspectRatio) noexcept;
+	AspectRatio								getPixelAspectRatio() const noexcept;
+	
+	void									setColorPrimaries(ColorPrimaries colorPrimaries) noexcept;
+	ColorPrimaries							getColorPrimaries() const noexcept;
+
+	void									setColorModel(ColorModel colorModel) noexcept;
+	ColorModel								getColorModel() const noexcept;
+
+	void									setColorTransferFunction(ColorTransferFunction colorTransferFunction) noexcept;
+	ColorTransferFunction					getColorTransferFunction() const noexcept;
+
+	void									setColorSubsampling(ColorSubsampling colorSubsampling) noexcept;
+	ColorSubsampling						getColorSubsampling() const noexcept;
+
+	void									setColorRange(ColorRange colorRange) noexcept;
+	ColorRange								getColorRange() const noexcept;
+
+	void									setColorFormat(ColorFormat colorFormat) noexcept;
+	ColorFormat								getColorFormat() const noexcept;
+
+	Math::Vec2f								calculateSize() const noexcept;
+
+private:
+	Resolution								m_resolution;
+	AspectRatio								m_pixelAspectRatio;
+	ColorPrimaries							m_colorPrimaries;
+	ColorModel								m_colorModel;
+	ColorTransferFunction					m_colorTransferFunction;
+	ColorSubsampling						m_colorSubsampling;
+	ColorRange								m_colorRange;
+	ColorFormat								m_colorFormat;
+
+};
+
+
 class Frame::Geometry {
 public:
 	Geometry(	std::byte* data,
@@ -114,8 +158,6 @@ public:
 	bool									useFrame(const Frame& frame);
 	
 	static constexpr size_t					VERTEX_COUNT = 4;
-
-	static Math::Vec2f						calculateSize(Resolution res, AspectRatio par) noexcept;
 
 private:
 	std::byte*								m_data;

@@ -190,8 +190,8 @@ struct Drawtable::Impl {
 	{
 		//Get an id for this configuration
 		static std::unordered_map<size_t, const Utils::StaticId> ids;
-		const auto index =	static_cast<size_t>(frameDesc.colorFormat) +
-							static_cast<size_t>(frameDesc.colorTransferFunction)*static_cast<size_t>(ColorFormat::COUNT) +
+		const auto index =	static_cast<size_t>(frameDesc.getColorFormat()) +
+							static_cast<size_t>(frameDesc.getColorTransferFunction())*static_cast<size_t>(ColorFormat::COUNT) +
 							static_cast<size_t>(depthStencilFmt)*static_cast<size_t>(ColorFormat::COUNT)*static_cast<size_t>(ColorTransferFunction::COUNT);
 		const size_t id = ids[index];
 

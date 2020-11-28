@@ -114,10 +114,10 @@ struct InputColorTransfer::Impl {
 	Impl(const Frame::Descriptor& desc, const Chromaticities& chromaticities) noexcept
 		: transferData {
 			chromaticities.calculateRGB2XYZConversionMatrix(),
-			Math::inv(getRGB2YCbCrConversionMatrix(desc.colorModel)),
-			getColorTransferFunction(desc.colorTransferFunction),
-			getColorRange(desc.colorRange, desc.colorModel),
-			getPlaneFormat(desc.colorFormat)
+			Math::inv(getRGB2YCbCrConversionMatrix(desc.getColorModel())),
+			getColorTransferFunction(desc.getColorTransferFunction()),
+			getColorRange(desc.getColorRange(), desc.getColorModel()),
+			getPlaneFormat(desc.getColorFormat())
 		}
 	{
 	}
@@ -154,7 +154,7 @@ InputColorTransfer::InputColorTransfer()
 }
 
 InputColorTransfer::InputColorTransfer(const Frame::Descriptor& desc)
-	: InputColorTransfer(desc, getChromaticities(desc.colorPrimaries))
+	: InputColorTransfer(desc, getChromaticities(desc.getColorPrimaries()))
 {
 }
 
@@ -222,10 +222,10 @@ struct OutputColorTransfer::Impl {
 	Impl(const Frame::Descriptor& desc, const Chromaticities& chromaticities) noexcept
 		: transferData {
 			chromaticities.calculateXYZ2RGBConversionMatrix(),
-			getRGB2YCbCrConversionMatrix(desc.colorModel),
-			getColorTransferFunction(desc.colorTransferFunction),
-			getColorRange(desc.colorRange, desc.colorModel),
-			getPlaneFormat(desc.colorFormat)
+			getRGB2YCbCrConversionMatrix(desc.getColorModel()),
+			getColorTransferFunction(desc.getColorTransferFunction()),
+			getColorRange(desc.getColorRange(), desc.getColorModel()),
+			getPlaneFormat(desc.getColorFormat())
 		}
 	{
 	}
@@ -267,7 +267,7 @@ OutputColorTransfer::OutputColorTransfer()
 }
 
 OutputColorTransfer::OutputColorTransfer(const Frame::Descriptor& desc)
-	: OutputColorTransfer(desc, getChromaticities(desc.colorPrimaries))
+	: OutputColorTransfer(desc, getChromaticities(desc.getColorPrimaries()))
 {
 }
 
