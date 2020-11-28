@@ -135,23 +135,76 @@ struct Drawtable::Impl {
 				}
 			);
 
-			//Check if it is supported
-			const auto supported = std::all_of(
-				conversion.cbegin(), endIte,
-				[&vulkanFormatSupport] (const std::tuple<vk::Format, vk::ComponentMapping>& conv) -> bool {
-					//Try to optimize the format (remove any swizzle if possible)
-					const auto optimized = optimizeFormat(conv);
+			//Check if the conversion succeeded
+			if(endIte != conversion.cbegin()) {
+				//Check if it is supported
+				const auto supported = std::all_of(
+					conversion.cbegin(), endIte,
+					[&vulkanFormatSupport] (const std::tuple<vk::Format, vk::ComponentMapping>& conv) -> bool {
+						//Try to optimize the format (remove any swizzle if possible)
+						const auto optimized = optimizeFormat(conv);
 
-					//Check if it has any swizzle
-					if(std::get<1>(optimized) != vk::ComponentMapping()) return false;
+						//Check if it has any swizzle
+						if(std::get<1>(optimized) != vk::ComponentMapping()) return false;
 
-					//Check if the format is supported indeed
-					return std::binary_search(vulkanFormatSupport.cbegin(), vulkanFormatSupport.cend(), std::get<0>(conv));
+						//Check if the format is supported indeed
+						return std::binary_search(vulkanFormatSupport.cbegin(), vulkanFormatSupport.cend(), std::get<0>(optimized));
+					}
+				);
+
+				if(supported) {
+					result.push_back(i);
+				}
+			}
+		}
+
+		return result;
+	}
+
+	static Utils::Discrete<ColorFormat> getSupportedSrgbFormats(const Vulkan& vulkan) {
+		Utils::Discrete<ColorFormat> result;
+
+		//Query support for Vulkan formats
+		const auto& vulkanFormatSupport = getVulkanFormatSupport(vulkan);
+		assert(std::is_sorted(vulkanFormatSupport.cbegin(), vulkanFormatSupport.cend())); //For binary search
+
+		//Test for each format
+		for(auto i = Utils::EnumTraits<ColorFormat>::first(); i <= Utils::EnumTraits<ColorFormat>::last(); ++i) {
+			//Convert it into a Vulkan format
+			auto conversion = toVulkan(i);
+
+			//Find the end of the range
+			const auto endIte = std::find_if(
+				conversion.cbegin(), conversion.cend(),
+				[] (const std::tuple<vk::Format, vk::ComponentMapping>& conv) -> bool {
+					return std::get<0>(conv) == vk::Format::eUndefined;
 				}
 			);
 
-			if(supported) {
-				result.push_back(i);
+			//Check if the conversion succeeded
+			if(endIte != conversion.cbegin()) {
+				//Check if it is supported
+				const auto supported = std::all_of(
+					conversion.cbegin(), endIte,
+					[&vulkanFormatSupport] (const std::tuple<vk::Format, vk::ComponentMapping>& conv) -> bool {
+						//Try to convert it to sRGB
+						const auto sRGBfmt = toSrgb(std::get<0>(conv));
+						if(sRGBfmt == std::get<0>(conv)) return false; //No sRGB equivalent
+
+						//Try to optimize the format (remove any swizzle if possible)
+						const auto optimized = optimizeFormat(std::make_tuple(sRGBfmt, std::get<1>(conv)));
+
+						//Check if it has any swizzle
+						if(std::get<1>(optimized) != vk::ComponentMapping()) return false;
+
+						//Check if the format is supported indeed
+						return std::binary_search(vulkanFormatSupport.cbegin(), vulkanFormatSupport.cend(), std::get<0>(optimized));
+					}
+				);
+
+				if(supported) {
+					result.push_back(i);
+				}
 			}
 		}
 
@@ -427,6 +480,10 @@ OutputColorTransfer Drawtable::getOutputColorTransfer() const {
 
 Utils::Discrete<ColorFormat> Drawtable::getSupportedFormats(const Vulkan& vulkan) {
 	return Impl::getSupportedFormats(vulkan);
+}
+
+Utils::Discrete<ColorFormat> Drawtable::getSupportedSrgbFormats(const Vulkan& vulkan) {
+	return Impl::getSupportedSrgbFormats(vulkan);
 }
 
 Utils::Discrete<DepthStencilFormat> Drawtable::getSupportedFormatsDepthStencil(const Vulkan& vulkan) {

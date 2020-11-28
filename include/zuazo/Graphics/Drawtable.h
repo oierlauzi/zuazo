@@ -35,6 +35,7 @@ public:
 	OutputColorTransfer								getOutputColorTransfer() const;
 
 	static Utils::Discrete<ColorFormat> 			getSupportedFormats(const Vulkan& vulkan);
+	static Utils::Discrete<ColorFormat> 			getSupportedSrgbFormats(const Vulkan& vulkan);
 	static Utils::Discrete<DepthStencilFormat> 		getSupportedFormatsDepthStencil(const Vulkan& vulkan);
 	static vk::RenderPass							getRenderPass(	const Vulkan& vulkan, 
 																	const Frame::Descriptor& frameDesc,
