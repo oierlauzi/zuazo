@@ -996,6 +996,11 @@ constexpr bool Limit<T>::operator>=(const Limit& other) const {
 }
 
 
+template <typename T>
+constexpr Limit<T>::operator bool() const {
+	return hasValue();
+}
+
 
 template <typename T>
 constexpr LimitType Limit<T>::getType() const {

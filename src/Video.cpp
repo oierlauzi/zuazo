@@ -72,7 +72,7 @@ int VideoMode::operator>=(const VideoMode& other) const {
 VideoMode::operator bool() const {
 	return std::apply(
 		[] (const auto&... x) -> bool {
-			return (x.hasValue() && ...);
+			return (static_cast<bool>(x) && ...);
 		},
 		m_data
 	);

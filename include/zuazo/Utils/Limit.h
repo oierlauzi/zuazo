@@ -315,6 +315,8 @@ public:
 	constexpr bool						operator>(const Limit& other) const;
 	constexpr bool						operator>=(const Limit& other) const;
 
+	constexpr 							operator bool() const;
+
 	constexpr LimitType					getType() const;
 	constexpr None<T>&					getNone();
 	constexpr const None<T>&			getNone() const;
