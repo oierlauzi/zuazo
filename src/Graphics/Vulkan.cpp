@@ -466,6 +466,31 @@ struct Vulkan::Impl {
 
 
 
+	std::vector<vk::UniqueDescriptorSet> allocateDescriptorSets(const vk::DescriptorSetAllocateInfo& allocInfo) const {
+		return device->allocateDescriptorSetsUnique(allocInfo, dispatcher);
+	}
+
+	vk::DescriptorSet allocateDescriptorSet(vk::DescriptorPool pool, 
+											vk::DescriptorSetLayout layout) const
+	{
+		const std::array layouts {
+			layout
+		};
+
+		const vk::DescriptorSetAllocateInfo allocInfo(
+			pool,													//Pool
+			layouts.size(), layouts.data()							//Layouts
+		);
+
+		//Allocate it
+		vk::DescriptorSet descriptorSet;
+		static_assert(layouts.size() == 1);
+		const auto result = device->allocateDescriptorSets(&allocInfo, &descriptorSet, dispatcher);
+		return vk::createResultValue(result, descriptorSet, VULKAN_HPP_NAMESPACE_STRING"::Device::allocateDescriptorSets");
+	}
+
+
+
 	vk::MemoryRequirements getMemoryRequirements(vk::Buffer buf) const {
 		return device->getBufferMemoryRequirements(buf, dispatcher);
 	}
@@ -1695,6 +1720,16 @@ Vulkan::AggregatedAllocation Vulkan::allocateMemory(Utils::BufferView<const vk::
 	return m_impl->allocateMemory(requirements, properties);
 }
 
+
+std::vector<vk::UniqueDescriptorSet> Vulkan::allocateDescriptorSets(const vk::DescriptorSetAllocateInfo& allocInfo) const {
+	return m_impl->allocateDescriptorSets(allocInfo);
+}
+
+vk::DescriptorSet Vulkan::allocateDescriptorSet(vk::DescriptorPool pool, 
+												vk::DescriptorSetLayout layout) const
+{
+	return m_impl->allocateDescriptorSet(pool, layout);
+}
 
 
 vk::MemoryRequirements Vulkan::getMemoryRequirements(vk::Buffer buf) const {

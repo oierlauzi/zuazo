@@ -10,8 +10,6 @@
 namespace Zuazo::Graphics {
 
 struct Frame::Impl {
-	using DescriptorSets = std::array<vk::DescriptorSet, FILTER_COUNT>;
-
 	const Vulkan&						vulkan;
 
 	std::shared_ptr<const Descriptor> 	descriptor;
@@ -23,7 +21,7 @@ struct Frame::Impl {
 	std::vector<vk::UniqueImageView>	imageViews;
 
 	vk::UniqueDescriptorPool			descriptorPool;
-	DescriptorSets						descriptorSets;
+	std::vector<vk::UniqueDescriptorSet>descriptorSets;
 
 	mutable std::vector<vk::Fence> 		dependencies;
 
@@ -59,7 +57,7 @@ struct Frame::Impl {
 				uint32_t index,
 				vk::Filter filter ) const noexcept
 	{
-		const auto& descriptorSet = descriptorSets[static_cast<size_t>(filter)];
+		const auto& descriptorSet = *(descriptorSets[static_cast<size_t>(filter)]);
 
 		cmd.bindDescriptorSets(
 			vk::PipelineBindPoint::eGraphics,	//Pipeline bind point
@@ -137,7 +135,7 @@ private:
 
 			const std::array writeDescriptorSets ={
 				vk::WriteDescriptorSet( //Image descriptor
-					descriptorSets[i],										//Descriptor set
+					*(descriptorSets[i]),									//Descriptor set
 					InputColorTransfer::getSamplerBinding(),				//Binding
 					0, 														//Index
 					images.size(), 											//Descriptor count
@@ -147,7 +145,7 @@ private:
 					nullptr													//Texel buffers
 				),
 				vk::WriteDescriptorSet( //Ubo descriptor set
-					descriptorSets[i],										//Descriptor set
+					*(descriptorSets[i]),									//Descriptor set
 					InputColorTransfer::getDataBinding(),					//Binding
 					0, 														//Index
 					buffers.size(),											//Descriptor count		
@@ -268,8 +266,8 @@ private:
 		return vulkan.createDescriptorPool(createInfo);
 	}
 
-	static DescriptorSets allocateDescriptorSets(	const Vulkan& vulkan,
-													vk::DescriptorPool pool )
+	static std::vector<vk::UniqueDescriptorSet> allocateDescriptorSets(	const Vulkan& vulkan,
+																		vk::DescriptorPool pool )
 	{
 		std::array<vk::DescriptorSetLayout, FILTER_COUNT> layouts;
 		for(size_t i = 0; i < layouts.size(); i++){
@@ -282,15 +280,7 @@ private:
 			layouts.size(), layouts.data()							//Layouts
 		);
 
-		DescriptorSets descriptorSets;
-		static_assert(descriptorSets.size() == layouts.size());
-		const auto result = vulkan.getDevice().allocateDescriptorSets(&allocInfo, descriptorSets.data(), vulkan.getDispatcher());
-
-		if(result != vk::Result::eSuccess){
-			throw Exception("Error allocating descriptor sets");
-		}
-
-		return descriptorSets;
+		return vulkan.allocateDescriptorSets(allocInfo);
 	}
 };
 

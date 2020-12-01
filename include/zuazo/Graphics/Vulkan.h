@@ -123,6 +123,10 @@ public:
 	AggregatedAllocation				allocateMemory(	Utils::BufferView<const vk::MemoryRequirements> requirements,
 														vk::MemoryPropertyFlags properties ) const;
 
+	std::vector<vk::UniqueDescriptorSet>allocateDescriptorSets(const vk::DescriptorSetAllocateInfo& allocInfo) const;
+	vk::DescriptorSet					allocateDescriptorSet(	vk::DescriptorPool pool, 
+																vk::DescriptorSetLayout layout) const;
+
 	vk::MemoryRequirements				getMemoryRequirements(vk::Buffer buf) const;
 	vk::MemoryRequirements				getMemoryRequirements(vk::Image img) const;
 
