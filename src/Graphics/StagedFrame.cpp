@@ -91,13 +91,7 @@ vk::UniqueCommandBuffer StagedFrame::createCommandBuffer(	const Vulkan& vulkan,
 															Utils::BufferView<const Utils::Area> areas,
 															const Buffer& stagingBuffer )
 {
-	const vk::CommandBufferAllocateInfo allocInfo(
-		cmdPool,
-		vk::CommandBufferLevel::ePrimary,
-		1
-	);
-
-	auto cmdBuffer = vulkan.allocateCommnadBuffer(allocInfo);
+	auto cmdBuffer = vulkan.allocateCommnadBuffer(cmdPool, vk::CommandBufferLevel::ePrimary);
 
 	//Record the command buffer
 	const vk::CommandBufferBeginInfo beginInfo(

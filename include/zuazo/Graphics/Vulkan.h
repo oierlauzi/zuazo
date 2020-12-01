@@ -113,7 +113,8 @@ public:
 														const vk::SamplerCreateInfo& createInfo ) const;
 
 	std::vector<vk::UniqueCommandBuffer>allocateCommnadBuffers(const vk::CommandBufferAllocateInfo& allocInfo) const;
-	vk::UniqueCommandBuffer				allocateCommnadBuffer(const vk::CommandBufferAllocateInfo& allocInfo) const;
+	vk::UniqueCommandBuffer				allocateCommnadBuffer(	vk::CommandPool commandPool, 
+																vk::CommandBufferLevel level ) const;
 	void								resetCommandPool(	vk::CommandPool cmdPool, 
 															vk::CommandPoolResetFlags flags ) const;
 
@@ -124,7 +125,7 @@ public:
 														vk::MemoryPropertyFlags properties ) const;
 
 	std::vector<vk::UniqueDescriptorSet>allocateDescriptorSets(const vk::DescriptorSetAllocateInfo& allocInfo) const;
-	vk::DescriptorSet					allocateDescriptorSet(	vk::DescriptorPool pool, 
+	vk::UniqueDescriptorSet				allocateDescriptorSet(	vk::DescriptorPool pool, 
 																vk::DescriptorSetLayout layout) const;
 
 	vk::MemoryRequirements				getMemoryRequirements(vk::Buffer buf) const;

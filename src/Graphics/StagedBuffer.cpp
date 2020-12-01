@@ -132,13 +132,7 @@ vk::CommandBuffer StagedBuffer::createCommandBuffer(const Vulkan& vulkan,
 													vk::AccessFlags access,
 													vk::PipelineStageFlags stage )
 {
-	const vk::CommandBufferAllocateInfo allocInfo(
-		*m_commandPool,
-		vk::CommandBufferLevel::ePrimary,
-		1
-	);
-
-	auto cmdBuffer = vulkan.allocateCommnadBuffer(allocInfo);
+	auto cmdBuffer = vulkan.allocateCommnadBuffer(*m_commandPool, vk::CommandBufferLevel::ePrimary);
 
 	//Record the command buffer
 	const vk::CommandBufferBeginInfo beginInfo(

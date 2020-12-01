@@ -254,14 +254,7 @@ vk::UniqueCommandBuffer CommandBuffer::createCommandBuffer(	const Vulkan& vulkan
 															vk::CommandBufferLevel level,
 															vk::CommandPool pool )
 {
-	assert(pool);
-	const vk::CommandBufferAllocateInfo allocInfo(
-		pool,
-		level,
-		1
-	);
-
-	return vulkan.allocateCommnadBuffer(allocInfo);
+	return vulkan.allocateCommnadBuffer(pool, level);
 }
 
 }

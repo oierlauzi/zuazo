@@ -394,10 +394,30 @@ struct Vulkan::Impl {
 		return device->allocateCommandBuffersUnique(allocInfo, dispatcher);
 	}
 
-	vk::UniqueCommandBuffer allocateCommnadBuffer(const vk::CommandBufferAllocateInfo& allocInfo) const {
+	vk::UniqueCommandBuffer allocateCommnadBuffer(	vk::CommandPool commandPool, 
+													vk::CommandBufferLevel level) const 
+	{
+		const vk::CommandBufferAllocateInfo allocInfo(
+			commandPool, 
+			level, 
+			1
+		);
+		const vk::PoolFree<vk::Device, vk::CommandPool, vk::DispatchLoaderDynamic> deleter(
+			*device, 
+			allocInfo.commandPool, 
+			dispatcher
+		);
 		assert(allocInfo.commandBufferCount == 1);
-		auto vec = device->allocateCommandBuffersUnique(allocInfo, dispatcher);
-		return std::move(vec[0]);
+
+		vk::CommandBuffer commandBuffer;
+		const auto result = device->allocateCommandBuffers(&allocInfo, &commandBuffer, dispatcher);
+		vk::UniqueCommandBuffer uniqueCommandBuffer(commandBuffer, deleter);
+
+		return vk::createResultValue(
+			result, 
+			uniqueCommandBuffer, 
+			VULKAN_HPP_NAMESPACE_STRING"::Device::allocateCommandBuffers"
+		);
 	}
 
 	void resetCommandPool(	vk::CommandPool cmdPool, 
@@ -470,23 +490,29 @@ struct Vulkan::Impl {
 		return device->allocateDescriptorSetsUnique(allocInfo, dispatcher);
 	}
 
-	vk::DescriptorSet allocateDescriptorSet(vk::DescriptorPool pool, 
-											vk::DescriptorSetLayout layout) const
+	vk::UniqueDescriptorSet allocateDescriptorSet(	vk::DescriptorPool pool, 
+													vk::DescriptorSetLayout layout) const
 	{
-		const std::array layouts {
-			layout
-		};
-
 		const vk::DescriptorSetAllocateInfo allocInfo(
 			pool,													//Pool
-			layouts.size(), layouts.data()							//Layouts
+			1, &layout												//Layouts
 		);
+		const vk::PoolFree<vk::Device, vk::DescriptorPool, vk::DispatchLoaderDynamic> deleter(
+			*device, 
+			allocInfo.descriptorPool, 
+			dispatcher
+		);
+		assert(allocInfo.descriptorSetCount == 1);
 
-		//Allocate it
 		vk::DescriptorSet descriptorSet;
-		static_assert(layouts.size() == 1);
 		const auto result = device->allocateDescriptorSets(&allocInfo, &descriptorSet, dispatcher);
-		return vk::createResultValue(result, descriptorSet, VULKAN_HPP_NAMESPACE_STRING"::Device::allocateDescriptorSets");
+		vk::UniqueDescriptorSet uniqueDescriptorSet(descriptorSet, deleter);
+
+		return vk::createResultValue(
+			result, 
+			uniqueDescriptorSet, 
+			VULKAN_HPP_NAMESPACE_STRING"::Device::allocateDescriptorSets"
+		);
 	}
 
 
@@ -1693,8 +1719,10 @@ std::vector<vk::UniqueCommandBuffer> Vulkan::allocateCommnadBuffers(const vk::Co
 	return m_impl->allocateCommnadBuffers(allocInfo);
 }
 
-vk::UniqueCommandBuffer Vulkan::allocateCommnadBuffer(const vk::CommandBufferAllocateInfo& allocInfo) const{
-	return m_impl->allocateCommnadBuffer(allocInfo);
+vk::UniqueCommandBuffer Vulkan::allocateCommnadBuffer(	vk::CommandPool commandPool, 
+														vk::CommandBufferLevel level ) const
+{
+	return m_impl->allocateCommnadBuffer(commandPool, level);
 }
 
 void Vulkan::resetCommandPool(	vk::CommandPool cmdPool, 
@@ -1725,8 +1753,8 @@ std::vector<vk::UniqueDescriptorSet> Vulkan::allocateDescriptorSets(const vk::De
 	return m_impl->allocateDescriptorSets(allocInfo);
 }
 
-vk::DescriptorSet Vulkan::allocateDescriptorSet(vk::DescriptorPool pool, 
-												vk::DescriptorSetLayout layout) const
+vk::UniqueDescriptorSet Vulkan::allocateDescriptorSet(	vk::DescriptorPool pool, 
+														vk::DescriptorSetLayout layout) const
 {
 	return m_impl->allocateDescriptorSet(pool, layout);
 }
