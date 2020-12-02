@@ -2,6 +2,8 @@
 
 #include "Transformations.h"
 
+#include <cstring>
+
 namespace Zuazo::Math {
 
 template<typename T>
@@ -16,6 +18,16 @@ Transform<T>::Transform(const Vec3<T>& position,
 {
 }
 
+
+template<typename T>
+bool Transform<T>::operator==(const Transform& other) const {
+	return std::memcmp(this, &other, sizeof(Transform)) == 0;
+}
+
+template<typename T>
+bool Transform<T>::operator!=(const Transform& other) const {
+	return !operator=(other);
+}
 
 
 template<typename T>

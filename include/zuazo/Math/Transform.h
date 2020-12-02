@@ -18,6 +18,9 @@ public:
 
 	Transform& 				operator=(const Transform& other) = default;
 
+	bool					operator==(const Transform& other) const;
+	bool					operator!=(const Transform& other) const;
+
 	void					setPosition(const Vec3<T>& position) noexcept;
 	const Vec3<T>&			getPosition() const noexcept;
 
