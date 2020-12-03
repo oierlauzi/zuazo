@@ -215,6 +215,18 @@ void CommandBuffer::bindDescriptorSets(	vk::PipelineBindPoint pipelineBindPoint,
 	getVulkan().bindDescriptorSets(getCommandBuffer(), pipelineBindPoint, layout, firstSet, descriptorSets, dynamicOffsets);
 }
 
+void CommandBuffer::setViewport(uint32_t first,
+								Utils::BufferView<const vk::Viewport> viewports ) noexcept 
+{
+	getVulkan().setViewport(getCommandBuffer(), first, viewports);
+}
+
+void CommandBuffer::setScissor(	uint32_t first,
+								Utils::BufferView<const vk::Rect2D> scissors ) noexcept
+{
+	getVulkan().setScissor(getCommandBuffer(), first, scissors);
+}
+
 void CommandBuffer::draw(	uint32_t vertexCount, 
 							uint32_t instanceCount, 
 							uint32_t firstVertex, 

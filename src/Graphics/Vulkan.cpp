@@ -851,6 +851,20 @@ struct Vulkan::Impl {
 		);
 	}
 
+	void setViewport(	vk::CommandBuffer cmd,
+						uint32_t first,
+						Utils::BufferView<const vk::Viewport> viewports ) const noexcept
+	{
+		cmd.setViewport(first, viewports.size(), viewports.data(), dispatcher);
+	}
+
+	void setScissor(vk::CommandBuffer cmd,
+					uint32_t first,
+					Utils::BufferView<const vk::Rect2D> scissors ) const noexcept
+	{
+		cmd.setScissor(first, scissors.size(), scissors.data(), dispatcher);
+	}
+
 	void draw(	vk::CommandBuffer cmd, 
 				uint32_t vertexCount, 
 				uint32_t instanceCount, 
@@ -2050,6 +2064,20 @@ void Vulkan::bindDescriptorSets(vk::CommandBuffer cmd,
 								Utils::BufferView<const uint32_t> dynamicOffsets) const noexcept
 {
 	m_impl->bindDescriptorSets(cmd, pipelineBindPoint, layout, firstSet, descriptorSets, dynamicOffsets);
+}
+
+void Vulkan::setViewport(	vk::CommandBuffer cmd,
+							uint32_t first,
+							Utils::BufferView<const vk::Viewport> viewports ) const noexcept
+{
+	m_impl->setViewport(cmd, first, viewports);
+}
+
+void Vulkan::setScissor(vk::CommandBuffer cmd,
+						uint32_t first,
+						Utils::BufferView<const vk::Rect2D> scissors ) const noexcept
+{
+	m_impl->setScissor(cmd, first, scissors);
 }
 
 void Vulkan::draw(	vk::CommandBuffer cmd, 

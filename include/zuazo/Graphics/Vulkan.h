@@ -271,6 +271,12 @@ public:
 															uint32_t firstSet, 
 															Utils::BufferView<const vk::DescriptorSet> descriptorSets, 
 															Utils::BufferView<const uint32_t> dynamicOffsets) const noexcept;
+	void								setViewport(vk::CommandBuffer cmd,
+													uint32_t first,
+													Utils::BufferView<const vk::Viewport> viewports ) const noexcept;
+	void								setScissor(	vk::CommandBuffer cmd,
+													uint32_t first,
+													Utils::BufferView<const vk::Rect2D> scissors ) const noexcept;
 	void								draw(	vk::CommandBuffer cmd, 
 												uint32_t vertexCount, 
 												uint32_t instanceCount, 
