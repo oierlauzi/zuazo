@@ -21,7 +21,7 @@ struct Frame::Impl {
 	std::vector<vk::UniqueImageView>	imageViews;
 
 	vk::UniqueDescriptorPool			descriptorPool;
-	std::vector<vk::UniqueDescriptorSet>descriptorSets;
+	std::vector<vk::DescriptorSet>		descriptorSets;
 
 	mutable std::vector<vk::Fence> 		dependencies;
 
@@ -57,7 +57,7 @@ struct Frame::Impl {
 				uint32_t index,
 				vk::Filter filter ) const noexcept
 	{
-		const auto& descriptorSet = *(descriptorSets[static_cast<size_t>(filter)]);
+		const auto descriptorSet = descriptorSets[static_cast<size_t>(filter)];
 
 		cmd.bindDescriptorSets(
 			vk::PipelineBindPoint::eGraphics,	//Pipeline bind point
@@ -135,7 +135,7 @@ private:
 
 			const std::array writeDescriptorSets ={
 				vk::WriteDescriptorSet( //Image descriptor
-					*(descriptorSets[i]),									//Descriptor set
+					descriptorSets[i],										//Descriptor set
 					InputColorTransfer::getSamplerBinding(),				//Binding
 					0, 														//Index
 					images.size(), 											//Descriptor count
@@ -145,7 +145,7 @@ private:
 					nullptr													//Texel buffers
 				),
 				vk::WriteDescriptorSet( //Ubo descriptor set
-					*(descriptorSets[i]),									//Descriptor set
+					descriptorSets[i],										//Descriptor set
 					InputColorTransfer::getDataBinding(),					//Binding
 					0, 														//Index
 					buffers.size(),											//Descriptor count		
@@ -266,9 +266,11 @@ private:
 		return vulkan.createDescriptorPool(createInfo);
 	}
 
-	static std::vector<vk::UniqueDescriptorSet> allocateDescriptorSets(	const Vulkan& vulkan,
-																		vk::DescriptorPool pool )
+	static std::vector<vk::DescriptorSet> allocateDescriptorSets(	const Vulkan& vulkan,
+																	vk::DescriptorPool pool )
 	{
+		std::vector<vk::DescriptorSet> result;
+
 		std::array<vk::DescriptorSetLayout, FILTER_COUNT> layouts;
 		for(size_t i = 0; i < layouts.size(); i++){
 			const auto filter = static_cast<vk::Filter>(i);
@@ -280,7 +282,18 @@ private:
 			layouts.size(), layouts.data()							//Layouts
 		);
 
-		return vulkan.allocateDescriptorSets(allocInfo);
+		//Allocate descriptor sets
+		auto uniqueDescriptorSets = vulkan.allocateDescriptorSets(allocInfo);
+
+		//Copy them into the result buffer releasing them
+		result.reserve(uniqueDescriptorSets.size());
+		std::transform(
+			uniqueDescriptorSets.begin(), uniqueDescriptorSets.end(),
+			std::back_inserter(result),
+			std::mem_fn(&vk::UniqueDescriptorSet::release)
+		);
+
+		return result;
 	}
 };
 
