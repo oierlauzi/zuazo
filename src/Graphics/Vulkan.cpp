@@ -1221,7 +1221,7 @@ private:
 		FormatSupport result;
 
 		for(const auto& range : FORMAT_RANGES){
-			for(auto format = range.getMin(); format <= range.getMax(); reinterpret_cast<int&>(format)++){
+			for(auto format = range.getMin(); format <= range.getMax(); format = static_cast<vk::Format>(static_cast<int>(format) + 1)){
 				result.emplace(format, physicalDevice.getFormatProperties(format, disp));
 			}
 		}

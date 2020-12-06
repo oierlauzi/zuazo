@@ -413,7 +413,7 @@ uint32_t Instance::defaultDeviceScoreFunc(	const vk::DispatchLoaderDynamic& disp
 
 	//Give the score based on the supported formats
 	for(const auto& range : Graphics::Vulkan::FORMAT_RANGES){
-		for(auto i = range.getMin(); i <= range.getMax(); reinterpret_cast<int&>(i)++){
+		for(auto i = range.getMin(); i <= range.getMax(); i = static_cast<vk::Format>(static_cast<int>(i) + 1)) {
 			const auto format = static_cast<vk::Format>(i);
 			const auto formatProperties = device.getFormatProperties(format, disp);
 
