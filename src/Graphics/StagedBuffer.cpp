@@ -45,56 +45,63 @@ Utils::BufferView<const std::byte> StagedBuffer::getData() const noexcept {
 
 
 void StagedBuffer::flushData(	const Vulkan& vulkan, 
-								size_t offset, 
-								size_t size, 					
+								Utils::BufferView<const Utils::Area> areas,				
 								uint32_t queue,
 								vk::AccessFlags access,
 								vk::PipelineStageFlags stage) 
 {
-	assert(!m_waitFence);
+	if(!areas.empty()) {
+		assert(!m_waitFence);
+		assert(std::is_sorted(areas.cbegin(), areas.cend()));
 
-	//The maximum size allowed for it
-	const auto maxSize = m_data.size() - offset;
+		//Until a more efficient way is found, copy from the
+		//begining to the end
+		const auto offset = areas.front().offset();
+		const auto size = areas.back().end() - offset;
 
-	//Flush the memory
-	const vk::MappedMemoryRange range(
-		m_stagingBuffer.getDeviceMemory(),
-		offset, getFlushSize(vulkan, size, maxSize)
-	);
-	vulkan.flushMappedMemory(range);
+		//The maximum size allowed for it
+		const auto maxSize = m_data.size() - offset;
 
-	//vkCopyBuffer does not support VK_WHOLE_SIZE, so use the real value
-	const auto copySize = (size == VK_WHOLE_SIZE) ? maxSize : size;
+		//Flush the memory
+		const vk::MappedMemoryRange range(
+			m_stagingBuffer.getDeviceMemory(),
+			offset, getFlushSize(vulkan, size, maxSize)
+		);
+		vulkan.flushMappedMemory(range);
 
-	//Ensure that the adecuate command buffer exists
-	const auto key = Key(offset, copySize, queue, access, stage);
-	auto ite = m_uploadCommands.find(key);
-	if(ite == m_uploadCommands.end()) {
-		std::tie(ite, std::ignore) = m_uploadCommands.emplace(
-			key,
-			createCommandBuffer(
-				vulkan, 
-				offset, copySize, 
-				queue, access, stage
-			)
+		//vkCopyBuffer does not support VK_WHOLE_SIZE, so use the real value
+		const auto copySize = (size == VK_WHOLE_SIZE) ? maxSize : size;
+
+		//Ensure that the adecuate command buffer exists
+		const auto key = Key(offset, copySize, queue, access, stage);
+		auto ite = m_uploadCommands.find(key);
+		if(ite == m_uploadCommands.end()) {
+			std::tie(ite, std::ignore) = m_uploadCommands.emplace(
+				key,
+				createCommandBuffer(
+					vulkan, 
+					offset, copySize, 
+					queue, access, stage
+				)
+			);
+		}
+
+		m_waitFence = *m_uploadComplete;
+		vulkan.resetFences(m_waitFence);
+
+		//Submit the command buffer
+		const auto subInfo = vk::SubmitInfo(
+			0, nullptr,							//Wait semaphores
+			nullptr,							//Pipeline stages
+			1, &(ite->second),					//Command buffers
+			0, nullptr							//Signal semaphores
+		);
+		vulkan.submit(
+			vulkan.getTransferQueue(),
+			subInfo,
+			m_waitFence
 		);
 	}
-
-	m_waitFence = *m_uploadComplete;
-	vulkan.resetFences(m_waitFence);
-
-	//Submit the command buffer
-	const auto subInfo = vk::SubmitInfo(
-		0, nullptr,							//Wait semaphores
-		nullptr,							//Pipeline stages
-		1, &(ite->second),					//Command buffers
-		0, nullptr							//Signal semaphores
-	);
-	vulkan.submit(
-		vulkan.getTransferQueue(),
-		subInfo,
-		m_waitFence
-	);
 }
 
 void StagedBuffer::flushData(	const Vulkan& vulkan, 					
@@ -102,7 +109,7 @@ void StagedBuffer::flushData(	const Vulkan& vulkan,
 								vk::AccessFlags access,
 								vk::PipelineStageFlags stage )
 {
-	flushData(vulkan, 0, VK_WHOLE_SIZE, queue, access, stage);
+	flushData(vulkan, Utils::Area(0, VK_WHOLE_SIZE), queue, access, stage);
 }
 
 bool StagedBuffer::waitCompletion(	const Vulkan& vulkan,

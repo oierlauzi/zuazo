@@ -30,8 +30,7 @@ public:
 	Utils::BufferView<const std::byte>	getData() const noexcept;
 
 	void								flushData(	const Vulkan& vulkan, 
-													size_t offset, 
-													size_t size, 					
+													Utils::BufferView<const Utils::Area> areas,					
 													uint32_t queue,
 													vk::AccessFlags access,
 													vk::PipelineStageFlags stage );
