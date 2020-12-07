@@ -45,19 +45,15 @@ Utils::BufferView<const std::byte> StagedBuffer::getData() const noexcept {
 
 
 void StagedBuffer::flushData(	const Vulkan& vulkan, 
-								Utils::BufferView<const Utils::Area> areas,				
+								Utils::Area area,				
 								uint32_t queue,
 								vk::AccessFlags access,
 								vk::PipelineStageFlags stage) 
 {
-	if(!areas.empty()) {
+	if(area.size() > 0) {
 		assert(!m_waitFence);
-		assert(std::is_sorted(areas.cbegin(), areas.cend()));
-
-		//Until a more efficient way is found, copy from the
-		//begining to the end
-		const auto offset = areas.front().offset();
-		const auto size = areas.back().end() - offset;
+		const auto offset = area.offset();
+		const auto size = area.size();
 
 		//The maximum size allowed for it
 		const auto maxSize = m_data.size() - offset;
