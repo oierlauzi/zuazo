@@ -26,7 +26,7 @@ bool Transform<T>::operator==(const Transform& other) const {
 
 template<typename T>
 bool Transform<T>::operator!=(const Transform& other) const {
-	return !operator=(other);
+	return !operator==(other);
 }
 
 
