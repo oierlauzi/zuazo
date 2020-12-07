@@ -43,6 +43,36 @@ constexpr bool Area::operator>=(const Area& other) const noexcept {
 }
 
 
+constexpr Area Area::operator|(const Area& other) const noexcept {
+	Area result;
+
+	if(this->size() && other.size()) {
+		const auto begin = Math::min(this->begin(), other.begin());
+		const auto end = Math::max(this->end(), other.end());
+		result = Area(begin, end - begin);
+	} else if(this->size()) {
+		result = *this; 
+	} else if(other.size()) {
+		result = other;
+	}
+
+	return result;
+}
+
+constexpr Area& Area::operator|=(const Area& other) noexcept {
+	return *this = *this | other;
+}
+
+constexpr Area Area::operator&(const Area& other) const noexcept {
+	const auto begin = Math::max(this->begin(), other.begin());
+	const auto end = Math::min(this->end(), other.end());
+	return (begin < end) ? Area(begin, end - begin) : Area(); //Result might be invalid
+}
+
+constexpr Area& Area::operator&=(const Area& other) noexcept {
+	return *this = *this & other;
+}
+
 
 constexpr size_t Area::offset() const noexcept {
 	return m_offset;
@@ -52,8 +82,12 @@ constexpr size_t Area::size() const noexcept {
 	return m_size;
 }
 
+constexpr size_t Area::begin() const noexcept {
+	return offset();
+}
+
 constexpr size_t Area::end() const noexcept {
-	return m_offset + m_size;
+	return begin() + size();
 }
 
 constexpr size_t Area::elementOffset(size_t elementSize) const noexcept {

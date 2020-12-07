@@ -22,8 +22,14 @@ public:
 	constexpr bool		operator>(const Area& other) const noexcept;
 	constexpr bool		operator>=(const Area& other) const noexcept;
 
+	constexpr Area		operator|(const Area& other) const noexcept;
+	constexpr Area&		operator|=(const Area& other) noexcept;
+	constexpr Area		operator&(const Area& other) const noexcept;
+	constexpr Area&		operator&=(const Area& other) noexcept;
+
 	constexpr size_t	offset() const noexcept;
 	constexpr size_t	size() const noexcept;
+	constexpr size_t	begin() const noexcept;
 	constexpr size_t	end() const noexcept;
 	constexpr size_t	elementOffset(size_t elementSize) const noexcept;
 	constexpr size_t	elementCount(size_t elementSize) const noexcept;
