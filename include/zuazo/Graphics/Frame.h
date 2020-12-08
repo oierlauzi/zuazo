@@ -57,9 +57,6 @@ public:
 													uint32_t index,
 													vk::Filter filter ) const noexcept;
 
-	void									addDependecy(vk::Fence fence) noexcept;
-	void									waitDependencies(uint64_t timeo = Vulkan::NO_TIMEOUT) const noexcept;
-
 	const Vulkan&							getVulkan() const noexcept;
 	const Descriptor&						getDescriptor() const noexcept;
 	const Math::Vec2f&						getSize() const noexcept;

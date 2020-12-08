@@ -24,7 +24,7 @@ TargetFrame::TargetFrame(	const Vulkan& vulkan,
 }
 
 TargetFrame::~TargetFrame() {
-	waitDependencies();
+	getVulkan().waitForFences(*m_renderComplete, true, Vulkan::NO_TIMEOUT);
 }
 
 
@@ -55,7 +55,9 @@ void TargetFrame::endRenderPass(vk::CommandBuffer cmd) const noexcept {
 
 
 void TargetFrame::draw(std::shared_ptr<const CommandBuffer> cmd) {
-	waitDependencies(); //Wait until rendering finishes
+	//Wait until the rendering finishes
+	getVulkan().waitForFences(*m_renderComplete, true, Vulkan::NO_TIMEOUT);
+	
 	m_commandBuffer = std::move(cmd);
 
 	assert(m_commandBuffer);
@@ -78,8 +80,6 @@ void TargetFrame::draw(std::shared_ptr<const CommandBuffer> cmd) {
 		submitInfo,
 		*m_renderComplete
 	);
-
-	addDependecy(*m_renderComplete);
 }
 
 

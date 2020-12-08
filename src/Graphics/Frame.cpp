@@ -23,8 +23,6 @@ struct Frame::Impl {
 	vk::UniqueDescriptorPool			descriptorPool;
 	std::vector<vk::DescriptorSet>		descriptorSets;
 
-	mutable std::vector<vk::Fence> 		dependencies;
-
 	Impl(	const Vulkan& vulkan,
 			std::shared_ptr<const Descriptor> desc,
 			std::shared_ptr<const Buffer> colorTransfer,
@@ -47,9 +45,7 @@ struct Frame::Impl {
 		writeDescriptorSets();
 	}
 
-	~Impl() {
-		waitDependencies(Vulkan::NO_TIMEOUT);
-	}
+	~Impl() = default;
 
 
 	void bind(	vk::CommandBuffer cmd,
@@ -69,18 +65,6 @@ struct Frame::Impl {
 		);
 	}
 
-
-
-	void addDependecy(vk::Fence fence) noexcept {
-		dependencies.push_back(fence);
-	}
-
-	void waitDependencies(uint64_t timeo) const noexcept {
-		if(dependencies.size()) {
-			vulkan.waitForFences(dependencies, true, timeo);
-			dependencies.clear();
-		}
-	}
 
 
 	const Vulkan& getVulkan() const noexcept { 
@@ -323,15 +307,6 @@ void Frame::bind( 	vk::CommandBuffer cmd,
 	m_impl->bind(cmd, layout, index, filter);
 }
 
-
-
-void Frame::addDependecy(vk::Fence fence) noexcept {
-	m_impl->addDependecy(fence);
-}
-
-void Frame::waitDependencies(uint64_t timeo) const noexcept {
-	m_impl->waitDependencies(timeo);
-}
 
 
 const Vulkan& Frame::getVulkan() const noexcept { 

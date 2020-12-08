@@ -113,7 +113,7 @@ struct Uploader::Impl {
 
 	std::shared_ptr<StagedFrame> acquireFrame() const {
 		auto frame = framePool.acquire();
-		frame->waitDependencies();
+		frame->waitCompletion(Vulkan::NO_TIMEOUT);
 		return frame;
 	}
 

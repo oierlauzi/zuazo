@@ -22,6 +22,7 @@ public:
 
 	const PixelData&							getPixelData() noexcept;
 	void										flush();
+	bool										waitCompletion(uint64_t timeo) const;
 
 private:
 	Buffer										m_stagingBuffer;

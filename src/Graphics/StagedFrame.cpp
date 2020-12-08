@@ -18,12 +18,12 @@ StagedFrame::StagedFrame(	const Vulkan& vulkan,
 	, m_commandPool(std::move(cmdPool))
 	, m_commandBuffer(createCommandBuffer(getVulkan(), planes, **m_commandPool, getImages(), getPlaneAreas(), m_stagingBuffer))
 	, m_commandBufferSubmit(createSubmitInfo(*m_commandBuffer))
-	, m_uploadComplete(vulkan.createFence(false))
+	, m_uploadComplete(vulkan.createFence(true))
 {
 }
 
 StagedFrame::~StagedFrame() {
-	waitDependencies();
+	waitCompletion(Vulkan::NO_TIMEOUT);
 }
 
 const Frame::PixelData& StagedFrame::getPixelData() noexcept {
@@ -31,7 +31,8 @@ const Frame::PixelData& StagedFrame::getPixelData() noexcept {
 }
 
 void StagedFrame::flush() {
-	waitDependencies();
+	//There should not be any pending upload
+	assert(waitCompletion(0));
 
 	//Flush the mapped memory
 	const vk::MappedMemoryRange range(
@@ -47,8 +48,10 @@ void StagedFrame::flush() {
 		m_commandBufferSubmit,
 		*m_uploadComplete
 	);
+}
 
-	addDependecy(*m_uploadComplete);
+bool StagedFrame::waitCompletion(uint64_t timeo) const {
+	return getVulkan().waitForFences(*m_uploadComplete, true, timeo);
 }
 
 
