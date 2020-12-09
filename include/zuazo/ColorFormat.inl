@@ -36,6 +36,118 @@ constexpr size_t getPlaneCount(ColorFormat format) noexcept {
 	}
 }
 
+constexpr bool hasAlpha(ColorFormat format) noexcept {
+	switch(format) {
+	case ColorFormat::Y4A4_8:
+	case ColorFormat::A4Y4_8:
+	case ColorFormat::A4R4G4B4_16:
+	case ColorFormat::A4B4G4R4_16:
+	case ColorFormat::A4G4R4B4_16:
+	case ColorFormat::A4G4B4R4_16:
+	case ColorFormat::R4G4B4A4_16:
+	case ColorFormat::B4G4R4A4_16:
+	case ColorFormat::G4R4B4A4_16:
+	case ColorFormat::G4B4R4A4_16:
+	case ColorFormat::A1R5G5B5_16:
+	case ColorFormat::A1B5G5R5_16:
+	case ColorFormat::A1G5R5B5_16:
+	case ColorFormat::A1G5B5R5_16:
+	case ColorFormat::R5G5B5A1_16:
+	case ColorFormat::B5G5R5A1_16:
+	case ColorFormat::G5R5B5A1_16:
+	case ColorFormat::G5B5R5A1_16:
+	case ColorFormat::Y8A8:
+	case ColorFormat::A8Y8:
+	case ColorFormat::A8R8G8B8:
+	case ColorFormat::A8B8G8R8:
+	case ColorFormat::A8G8R8B8:
+	case ColorFormat::A8G8B8R8:
+	case ColorFormat::R8G8B8A8:
+	case ColorFormat::B8G8R8A8:
+	case ColorFormat::G8R8B8A8:
+	case ColorFormat::G8B8R8A8:
+	case ColorFormat::A8R8G8B8_32:
+	case ColorFormat::A8B8G8R8_32:
+	case ColorFormat::R8G8B8A8_32:
+	case ColorFormat::B8G8R8A8_32:
+	case ColorFormat::G8_B8_R8_A8:
+	case ColorFormat::Y10X6A10X6_16:
+	case ColorFormat::A10X6Y10X6_16:
+	case ColorFormat::A10X6R10X6G10X6B10X6_16:
+	case ColorFormat::A10X6B10X6G10X6R10X6_16:
+	case ColorFormat::A10X6G10X6R10X6B10X6_16:
+	case ColorFormat::A10X6G10X6B10X6R10X6_16:
+	case ColorFormat::R10X6G10X6B10X6A10X6_16:
+	case ColorFormat::B10X6G10X6R10X6A10X6_16:
+	case ColorFormat::G10X6R10X6B10X6A10X6_16:
+	case ColorFormat::G10X6B10X6R10X6A10X6_16:	
+	case ColorFormat::A2R10G10B10_32: 
+	case ColorFormat::A2B10G10R10_32:
+	case ColorFormat::A2G10R10B10_32: 
+	case ColorFormat::A2G10B10R10_32:
+	case ColorFormat::G10X6_B10X6_R10X6_A10X6_16:
+	case ColorFormat::Y12X4A12X4_16:
+	case ColorFormat::A12X4Y12X4_16:
+	case ColorFormat::A12X4R12X4G12X4B12X4_16:
+	case ColorFormat::A12X4B12X4G12X4R12X4_16:
+	case ColorFormat::A12X4G12X4R12X4B12X4_16:
+	case ColorFormat::A12X4G12X4B12X4R12X4_16:
+	case ColorFormat::R12X4G12X4B12X4A12X4_16:
+	case ColorFormat::B12X4G12X4R12X4A12X4_16:
+	case ColorFormat::G12X4R12X4B12X4A12X4_16:
+	case ColorFormat::G12X4B12X4R12X4A12X4_16:
+	case ColorFormat::G12X4_B12X4_R12X4_A12X4_16:
+	case ColorFormat::Y16A16:
+	case ColorFormat::A16Y16:
+	case ColorFormat::Y16fA16f:
+	case ColorFormat::A16fY16f:
+	case ColorFormat::A16R16G16B16:
+	case ColorFormat::A16B16G16R16:
+	case ColorFormat::A16G16R16B16:
+	case ColorFormat::A16G16B16R16:
+	case ColorFormat::R16G16B16A16:
+	case ColorFormat::B16G16R16A16:
+	case ColorFormat::G16R16B16A16:
+	case ColorFormat::G16B16R16A16:
+	case ColorFormat::A16fR16fG16fB16f:
+	case ColorFormat::A16fB16fG16fR16f:
+	case ColorFormat::A16fG16fR16fB16f:
+	case ColorFormat::A16fG16fB16fR16f:
+	case ColorFormat::R16fG16fB16fA16f:
+	case ColorFormat::B16fG16fR16fA16f:
+	case ColorFormat::G16fR16fB16fA16f:
+	case ColorFormat::G16fB16fR16fA16f:
+	case ColorFormat::G16_B16_R16_A16:
+	case ColorFormat::G16f_B16f_R16f_A16f:
+	case ColorFormat::Y32f:
+	case ColorFormat::Y32fA32f:
+	case ColorFormat::A32fY32f:
+	case ColorFormat::A32fR32fG32fB32f:
+	case ColorFormat::A32fB32fG32fR32f:
+	case ColorFormat::A32fG32fR32fB32f:
+	case ColorFormat::A32fG32fB32fR32f:
+	case ColorFormat::R32fG32fB32fA32f:
+	case ColorFormat::B32fG32fR32fA32f:
+	case ColorFormat::G32fR32fB32fA32f:
+	case ColorFormat::G32fB32fR32fA32f:
+	case ColorFormat::G32f_B32f_R32f_A32f:
+	case ColorFormat::Y64fA64f:
+	case ColorFormat::A64fY64f:
+	case ColorFormat::A64fR64fG64fB64f:
+	case ColorFormat::A64fB64fG64fR64f:
+	case ColorFormat::A64fG64fR64fB64f:
+	case ColorFormat::A64fG64fB64fR64f:
+	case ColorFormat::R64fG64fB64fA64f:
+	case ColorFormat::B64fG64fR64fA64f:
+	case ColorFormat::G64fR64fB64fA64f:
+	case ColorFormat::G64fB64fR64fA64f:
+	case ColorFormat::G64f_B64f_R64f_A64f:
+		return true;
+	default:
+		return false;
+	}
+}
+
 
 
 constexpr std::string_view toString(ColorFormat format) noexcept {

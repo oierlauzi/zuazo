@@ -294,6 +294,7 @@ ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorFormat)
 ZUAZO_ENUM_COMP_OPERATORS(ColorFormat)	
 
 constexpr size_t getPlaneCount(ColorFormat format) noexcept;
+constexpr bool hasAlpha(ColorFormat format) noexcept;
 
 constexpr std::string_view toString(ColorFormat format) noexcept;
 std::ostream& operator<<(std::ostream& os, ColorFormat format);
