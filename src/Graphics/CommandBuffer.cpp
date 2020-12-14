@@ -24,9 +24,11 @@ vk::CommandBuffer CommandBuffer::getCommandBuffer() const noexcept {
 }
 
 
-
-void CommandBuffer::setDependencies(Utils::BufferView<const Dependency> dep) {
+void CommandBuffer::clearDependencies() noexcept {
 	m_dependencies.clear();
+}
+
+void CommandBuffer::addDependencies(Utils::BufferView<const Dependency> dep) {
 	m_dependencies.insert(m_dependencies.cend(), dep.cbegin(), dep.cend());
 }
 
