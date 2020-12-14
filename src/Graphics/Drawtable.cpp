@@ -135,8 +135,9 @@ struct Drawtable::Impl {
 				}
 			);
 
-			//Check if the conversion succeeded
-			if(endIte != conversion.cbegin()) {
+			//Check if the conversion succeeded. For the moment only single-plane formats are supported
+			//The code below would be multi-plane proof changing the if statement to endIte != conversion.cbegin()
+			if(endIte == (conversion.cbegin() + 1)) {
 				//Check if it is supported
 				const auto supported = std::all_of(
 					conversion.cbegin(), endIte,
@@ -181,8 +182,9 @@ struct Drawtable::Impl {
 				}
 			);
 
-			//Check if the conversion succeeded
-			if(endIte != conversion.cbegin()) {
+			//Check if the conversion succeeded. For the moment only single-plane formats are supported
+			//The code below would be multi-plane proof changing the if statement to endIte != conversion.cbegin()
+			if(endIte == (conversion.cbegin() + 1)) {
 				//Check if it is supported
 				const auto supported = std::all_of(
 					conversion.cbegin(), endIte,
@@ -217,6 +219,9 @@ struct Drawtable::Impl {
 		//Query support for Vulkan formats
 		const auto& vulkanFormatSupport = getVulkanFormatSupportDepthStencil(vulkan);
 		assert(std::is_sorted(vulkanFormatSupport.cbegin(), vulkanFormatSupport.cend())); //For binary search
+
+		//Having no depth/stencil is supported:
+		result.emplace_back(DepthStencilFormat::NONE);
 
 		//Test for each format
 		for(auto i = Utils::EnumTraits<DepthStencilFormat>::first(); i <= Utils::EnumTraits<DepthStencilFormat>::last(); ++i) {
