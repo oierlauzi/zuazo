@@ -19,6 +19,9 @@ ZUAZO_IF_CPP(constexpr uint32_t, const uint) ct_SAMPLER_COUNT = 4;
 ZUAZO_IF_CPP(constexpr uint32_t, const uint) ct_SAMPLER_BINDING = 0;
 ZUAZO_IF_CPP(constexpr uint32_t, const uint) ct_DATA_BINDING = 1;
 
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_SAMPLE_MODE_PASSTHOUGH = 0;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_SAMPLE_MODE_BILINEAR2BICUBIC = 1;
+
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_RGBA = 0;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_G_BR = 1;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_G_B_R = 2;
@@ -54,6 +57,7 @@ struct ct_read_data {
 	ZUAZO_IF_CPP(int32_t, int) 			colorTransferFunction;
 	ZUAZO_IF_CPP(int32_t, int) 			colorRange;
 	ZUAZO_IF_CPP(int32_t, int) 			planeFormat;
+	ZUAZO_IF_CPP(int32_t, int) 			sampleMode;
 };
 
 struct ct_write_data {

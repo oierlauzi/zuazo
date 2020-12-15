@@ -117,7 +117,8 @@ struct InputColorTransfer::Impl {
 			Math::inv(getRGB2YCbCrConversionMatrix(desc.getColorModel())),
 			getColorTransferFunction(desc.getColorTransferFunction()),
 			getColorRange(desc.getColorRange(), desc.getColorModel()),
-			getPlaneFormat(desc.getColorFormat())
+			getPlaneFormat(desc.getColorFormat()),
+			ct_SAMPLE_MODE_PASSTHOUGH //TODO
 		}
 	{
 	}

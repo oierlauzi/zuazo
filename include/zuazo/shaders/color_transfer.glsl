@@ -1,29 +1,92 @@
 #include "color_transfer.h"
 
-vec4 ct_load(in int planeFormat, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords){
+vec4 ct_cubic(in float v) {
+	//From https://stackoverflow.com/questions/13501081/efficient-bicubic-filtering-code-in-glsl
+    const vec4 n = vec4(1.0f, 2.0f, 3.0f, 4.0f) - vec4(v);
+    const vec4 s = n * n * n;
+    const float x = s.x;
+    const float y = s.y - 4.0f * s.x;
+    const float z = s.z - 4.0f * s.y + 6.0f * s.x;
+    const float w = 6.0 - x - y - z;
+    return vec4(x, y, z, w) * (1.0f/6.0f);
+}
+
+
+vec4 ct_bilinear2bicubic(in sampler2D tex, in vec2 texCoords) {
+	//From https://stackoverflow.com/questions/13501081/efficient-bicubic-filtering-code-in-glsl
+	//Convert the texture coordinates into image coordinates
+	const ivec2 texSize = textureSize(tex, 0);
+	texCoords = texCoords * texSize - 0.5f;
+
+	//Obtain the fractional and integer part of the image coordinates
+	const vec2 fxy  = fract(texCoords);
+	texCoords -= fxy;
+
+	//Sample the cubic function for the fractional parts
+	const vec4 xcubic = ct_cubic(fxy.x);
+	const vec4 ycubic = ct_cubic(fxy.y);
+	
+	//Calculate the multi-sample offsets
+	const vec4 c = texCoords.xxyy + vec2 (-0.5f, +1.5f).xyxy;
+	const vec4 s = vec4(xcubic.xz + xcubic.yw, ycubic.xz + ycubic.yw);
+	vec4 offset = c + vec4 (xcubic.yw, ycubic.yw) / s;
+
+	//Convert back the offsets into texture coordinates
+	offset /= texSize.xxyy;
+
+	//Sample multiple values
+	const vec4 sample0 = texture(tex, offset.xz);
+	const vec4 sample1 = texture(tex, offset.yz);
+	const vec4 sample2 = texture(tex, offset.xw);
+	const vec4 sample3 = texture(tex, offset.yw);
+
+	//Obtain the sampla weights
+	const float sx = s.x / (s.x + s.y);
+	const float sy = s.z / (s.z + s.w);
+
+	//Interpolate bilinearly between the samples
+	return mix(mix(sample3, sample2, sx), mix(sample1, sample0, sx), sy);
+}
+
+vec4 ct_texture(in int mode, in sampler2D tex, in vec2 texCoords) {
+	vec4 result;
+
+	switch(mode){
+	case ct_SAMPLE_MODE_BILINEAR2BICUBIC:
+		result = ct_bilinear2bicubic(tex, texCoords);
+		break;
+	default: //ct_SAMPLE_MODE_PASSTHOUGH
+		result = texture(tex, texCoords);
+		break;
+	}
+
+	return result;
+}
+
+vec4 ct_load(in int planeFormat, in int mode, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords) {
 	vec4 result;
 
 	switch(planeFormat){
 	case ct_PLANE_FORMAT_G_BR:
-		result.g = texture(images[0], texCoords).r;
-		result.br = texture(images[1], texCoords).rg;
+		result.g = ct_texture(mode, images[0], texCoords).r;
+		result.br = ct_texture(mode, images[1], texCoords).rg;
 		result.a = 1.0f;
 		break;
 	case ct_PLANE_FORMAT_G_B_R:
-		result.g = texture(images[0], texCoords).r;
-		result.b = texture(images[1], texCoords).r;
-		result.r = texture(images[2], texCoords).r;
+		result.g = ct_texture(mode, images[0], texCoords).r;
+		result.b = ct_texture(mode, images[1], texCoords).r;
+		result.r = ct_texture(mode, images[2], texCoords).r;
 		result.a = 1.0f;
 		break;
 	case ct_PLANE_FORMAT_G_B_R_A:
-		result.g = texture(images[0], texCoords).r;
-		result.b = texture(images[1], texCoords).r;
-		result.r = texture(images[2], texCoords).r;
-		result.a = texture(images[3], texCoords).r;
+		result.g = ct_texture(mode, images[0], texCoords).r;
+		result.b = ct_texture(mode, images[1], texCoords).r;
+		result.r = ct_texture(mode, images[2], texCoords).r;
+		result.a = ct_texture(mode, images[3], texCoords).r;
 		break;
 	
 	default: //ct_PLANE_FORMAT_RGBA
-		result = texture(images[0], texCoords);
+		result = ct_texture(mode, images[0], texCoords);
 		break;
 	}
 
@@ -553,7 +616,7 @@ vec4 ct_transferColor(in ct_read_data inputProp, in ct_write_data outputProp, in
 }
 
 vec4 ct_getColor(in ct_read_data inputProp, in ct_write_data outputProp, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords){
-	vec4 result = ct_load(inputProp.planeFormat, images, texCoords);
+	vec4 result = ct_load(inputProp.planeFormat, inputProp.sampleMode, images, texCoords);
 	result = ct_readColor(inputProp, outputProp, result);
 	return result;
 }
