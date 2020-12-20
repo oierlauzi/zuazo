@@ -57,7 +57,6 @@ struct ct_read_data {
 	ZUAZO_IF_CPP(int32_t, int) 			colorTransferFunction;
 	ZUAZO_IF_CPP(int32_t, int) 			colorRange;
 	ZUAZO_IF_CPP(int32_t, int) 			planeFormat;
-	ZUAZO_IF_CPP(int32_t, int) 			sampleMode;
 };
 
 struct ct_write_data {

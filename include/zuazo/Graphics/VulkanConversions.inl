@@ -785,6 +785,7 @@ constexpr vk::Filter toVulkan(ScalingFilter filt) noexcept {
 	switch(filt){
 	case ScalingFilter::NEAREST: return vk::Filter::eNearest;
 	case ScalingFilter::LINEAR: return vk::Filter::eLinear;
+	case ScalingFilter::CUBIC: return vk::Filter::eCubicEXT;
 	default: return static_cast<vk::Filter>(-1);
 	}
 }
@@ -793,6 +794,7 @@ constexpr ScalingFilter fromVulkan(vk::Filter filt) noexcept {
 	switch(filt){
 	case vk::Filter::eNearest: return ScalingFilter::NEAREST;
 	case vk::Filter::eLinear: return ScalingFilter::LINEAR;
+	case vk::Filter::eCubicEXT: return ScalingFilter::CUBIC;
 	default: return ScalingFilter::NONE;
 	}
 }

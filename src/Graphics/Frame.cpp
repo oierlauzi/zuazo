@@ -5,6 +5,8 @@
 #include <zuazo/Graphics/ColorTransfer.h>
 #include <zuazo/Graphics/StagedBuffer.h>
 
+#include <zuazo/shaders/color_transfer.h>
+
 #include <vector>
 
 namespace Zuazo::Graphics {
@@ -49,9 +51,9 @@ struct Frame::Impl {
 
 
 	void bind(	vk::CommandBuffer cmd,
-				vk::PipelineLayout layout,
-				uint32_t index,
-				vk::Filter filter ) const noexcept
+					vk::PipelineLayout layout,
+					uint32_t index,
+					vk::Filter filter ) const noexcept
 	{
 		const auto descriptorSet = descriptorSets[static_cast<size_t>(filter)];
 
@@ -388,8 +390,27 @@ std::vector<Frame::PlaneDescriptor> Frame::getPlaneDescriptors(const Descriptor&
 	return result;
 }
 
+Frame::SamplerDescriptor Frame::getSamplerDescriptor(ScalingFilter filter) {
+	Frame::SamplerDescriptor result;
+
+	if(filter == ScalingFilter::CUBIC) {
+		result = {
+			vk::Filter::eLinear,
+			ct_SAMPLE_MODE_BILINEAR2BICUBIC
+		};
+	} else {
+		result = {
+			toVulkan(filter),
+			ct_SAMPLE_MODE_PASSTHOUGH
+		};
+	}
+
+	return result;
+}
+
 vk::DescriptorSetLayout	Frame::getDescriptorSetLayout(	const Vulkan& vulkan,
-														vk::Filter filter) {
+														vk::Filter filter) 
+{
 	static const std::array<Utils::StaticId, FILTER_COUNT> ids;
 	const size_t id = ids[static_cast<size_t>(filter)];
 

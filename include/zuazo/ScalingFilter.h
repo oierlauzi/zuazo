@@ -9,6 +9,7 @@ enum class ScalingFilter {
 
 	NEAREST,
 	LINEAR,
+	CUBIC,
 
 	COUNT
 };

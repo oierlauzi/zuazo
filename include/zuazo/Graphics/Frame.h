@@ -33,6 +33,11 @@ public:
 		vk::ComponentMapping 					swizzle;
 	};
 
+	struct SamplerDescriptor {
+		vk::Filter								filter;
+		int32_t									samplingMode;
+	};
+
 	class Descriptor;
 	class Geometry;
 
@@ -69,6 +74,7 @@ public:
 	static std::shared_ptr<StagedBuffer>	createColorTransferBuffer(	const Vulkan& vulkan,
 																		const InputColorTransfer& colorTransfer );
 	static std::vector<PlaneDescriptor>		getPlaneDescriptors(const Descriptor& desc);
+	static SamplerDescriptor				getSamplerDescriptor(ScalingFilter filter);
 	static vk::DescriptorSetLayout			getDescriptorSetLayout(	const Vulkan& vulkan,
 																	vk::Filter filt );
 

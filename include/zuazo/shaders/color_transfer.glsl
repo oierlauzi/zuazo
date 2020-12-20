@@ -615,8 +615,8 @@ vec4 ct_transferColor(in ct_read_data inputProp, in ct_write_data outputProp, in
 	return result;
 }
 
-vec4 ct_getColor(in ct_read_data inputProp, in ct_write_data outputProp, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords){
-	vec4 result = ct_load(inputProp.planeFormat, inputProp.sampleMode, images, texCoords);
+vec4 ct_getColor(in ct_read_data inputProp, in ct_write_data outputProp, in sampler2D images[ct_SAMPLER_COUNT], in int sampleMode, in vec2 texCoords){
+	vec4 result = ct_load(inputProp.planeFormat, sampleMode, images, texCoords);
 	result = ct_readColor(inputProp, outputProp, result);
 	return result;
 }

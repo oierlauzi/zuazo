@@ -7,6 +7,7 @@ constexpr std::string_view toString(ScalingFilter filter) noexcept {
 
 	ZUAZO_ENUM2STR_CASE( ScalingFilter, NEAREST )
 	ZUAZO_ENUM2STR_CASE( ScalingFilter, LINEAR )
+	ZUAZO_ENUM2STR_CASE( ScalingFilter, CUBIC )
 
 	default: return "";
 	}
