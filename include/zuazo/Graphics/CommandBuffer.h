@@ -13,6 +13,9 @@ public:
 	using Dependency = std::shared_ptr<const void>;
 
 	CommandBuffer(	const Vulkan& vulkan,
+					vk::UniqueCommandBuffer commandBuffer,
+					std::shared_ptr<const vk::UniqueCommandPool> commandPool = {} );
+	CommandBuffer(	const Vulkan& vulkan,
 					vk::CommandBufferLevel level,
 					std::shared_ptr<const vk::UniqueCommandPool> commandPool);
 	CommandBuffer(const CommandBuffer& other) = delete;

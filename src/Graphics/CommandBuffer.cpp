@@ -5,11 +5,18 @@
 namespace Zuazo::Graphics {
 
 CommandBuffer::CommandBuffer(	const Vulkan& vulkan,
-								vk::CommandBufferLevel level,
+								vk::UniqueCommandBuffer commandBuffer,
 								std::shared_ptr<const vk::UniqueCommandPool> commandPool )
 	: m_vulkan(vulkan)
 	, m_commandPool(std::move(commandPool))
-	, m_commandBuffer(createCommandBuffer(m_vulkan, level, **m_commandPool))
+	, m_commandBuffer(std::move(commandBuffer))
+{
+}
+
+CommandBuffer::CommandBuffer(	const Vulkan& vulkan,
+								vk::CommandBufferLevel level,
+								std::shared_ptr<const vk::UniqueCommandPool> commandPool )
+	: CommandBuffer(vulkan, createCommandBuffer(vulkan, level, **commandPool), std::move(commandPool))
 {
 }
 
