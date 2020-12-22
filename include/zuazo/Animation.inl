@@ -29,7 +29,7 @@ inline void Animation<T>::refresh() {
 	const auto time = getTime();
 
 	//Find the keyframe right after the current time
-	const auto nextKeyframe = lowerBoundKeyFrame(time);
+	const auto nextKeyframe = lowerBound(time);
 
 	//Find the keyframe right before the current time
 	const auto prevKeyframe = (nextKeyframe != cbegin()) ? std::prev(nextKeyframe) : cend();
@@ -168,50 +168,50 @@ inline void Animation<T>::clear() noexcept {
 }
 
 template <typename T>
-inline std::pair<typename Animation<T>::iterator, bool> Animation<T>::insertKeyFrame(TimePoint time, AnimatedType value) {
-	return m_keyFrames.emplace(time, value);
+inline std::pair<typename Animation<T>::iterator, bool> Animation<T>::insert(TimePoint time, AnimatedType value) {
+	return m_keyFrames.emplace(time, std::move(value));
 }
 
 template <typename T>
-inline typename Animation<T>::iterator Animation<T>::eraseKeyFrame(const_iterator ite) {
+inline typename Animation<T>::iterator Animation<T>::erase(const_iterator ite) {
 	return m_keyFrames.erase(ite);
 }
 
 template <typename T>
-inline typename Animation<T>::iterator Animation<T>::eraseKeyFrame(const_iterator first, const_iterator last) {
+inline typename Animation<T>::iterator Animation<T>::erase(const_iterator first, const_iterator last) {
 	return m_keyFrames.erase(first, last);
 }
 
 
 template <typename T>
-inline typename Animation<T>::iterator Animation<T>::findKeyFrame(TimePoint time) {
+inline typename Animation<T>::iterator Animation<T>::find(TimePoint time) {
 	return m_keyFrames.find(time);
 }
 
 template <typename T>
-inline typename Animation<T>::const_iterator Animation<T>::findKeyFrame(TimePoint time) const {
+inline typename Animation<T>::const_iterator Animation<T>::find(TimePoint time) const {
 	return m_keyFrames.find(time);
 }
 
 
 template <typename T>
-inline typename Animation<T>::iterator Animation<T>::lowerBoundKeyFrame(TimePoint time) {
+inline typename Animation<T>::iterator Animation<T>::lowerBound(TimePoint time) {
 	return m_keyFrames.lower_bound(time);
 }
 
 template <typename T>
-inline typename Animation<T>::const_iterator Animation<T>::lowerBoundKeyFrame(TimePoint time) const {
+inline typename Animation<T>::const_iterator Animation<T>::lowerBound(TimePoint time) const {
 	return m_keyFrames.lower_bound(time);
 }
 
 
 template <typename T>
-inline typename Animation<T>::iterator Animation<T>::upperBoundKeyFrame(TimePoint time) {
+inline typename Animation<T>::iterator Animation<T>::upperBound(TimePoint time) {
 	return m_keyFrames.upper_bound(time);
 }
 
 template <typename T>
-inline typename Animation<T>::const_iterator Animation<T>::upperBoundKeyFrame(TimePoint time) const {
+inline typename Animation<T>::const_iterator Animation<T>::upperBound(TimePoint time) const {
 	return m_keyFrames.upper_bound(time);
 }
 

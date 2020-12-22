@@ -60,18 +60,18 @@ public:
 	size_t								size() const noexcept;
 
 	void								clear() noexcept;
-	std::pair<iterator, bool>			insertKeyFrame(TimePoint time, AnimatedType value);
-	iterator							eraseKeyFrame(const_iterator ite);
-	iterator							eraseKeyFrame(const_iterator first, const_iterator last);
+	std::pair<iterator, bool>			insert(TimePoint time, AnimatedType value);
+	iterator							erase(const_iterator ite);
+	iterator							erase(const_iterator first, const_iterator last);
 
-	iterator							findKeyFrame(TimePoint time);
-	const_iterator						findKeyFrame(TimePoint time) const;
+	iterator							find(TimePoint time);
+	const_iterator						find(TimePoint time) const;
 
-	iterator							lowerBoundKeyFrame(TimePoint time);
-	const_iterator						lowerBoundKeyFrame(TimePoint time) const;
+	iterator							lowerBound(TimePoint time);
+	const_iterator						lowerBound(TimePoint time) const;
 
-	iterator							upperBoundKeyFrame(TimePoint time);
-	const_iterator						upperBoundKeyFrame(TimePoint time) const;
+	iterator							upperBound(TimePoint time);
+	const_iterator						upperBound(TimePoint time) const;
 
 private:
 	Callback							m_callback;
