@@ -330,7 +330,7 @@ struct Drawtable::Impl {
 				)
 			};
 
-			//Create subpass dependencies
+			//Create subpass dependencies //TODO maybe remove
 			constexpr vk::PipelineStageFlags subpassDependencyStages =
 				vk::PipelineStageFlagBits::eColorAttachmentOutput 	|
 				vk::PipelineStageFlagBits::eEarlyFragmentTests 		;

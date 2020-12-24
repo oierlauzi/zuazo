@@ -9,10 +9,8 @@ namespace Zuazo::Math {
 template<typename T>
 Transform<T>::Transform(const Vec3<T>& position,
 						const Quaternion<T>& rotation,
-						const Vec3<T>& scale,
-						const Vec3<T>& center ) noexcept
+						const Vec3<T>& scale ) noexcept
 	: m_rotation(rotation)
-	, m_center(center)
 	, m_scale(scale)
 	, m_position(position)
 {
@@ -57,21 +55,9 @@ void Transform<T>::setScale(const Vec3<T>& scale) noexcept {
 	m_scale = scale;
 }
 
-
 template<typename T>
 const Vec3<T>& Transform<T>::getScale() const noexcept {
 	return m_position;
-}
-
-
-template<typename T>
-void Transform<T>::setCenter(const Vec3<T>& center) noexcept {
-	m_center = center;
-}
-
-template<typename T>
-const Vec3<T>& Transform<T>::getCenter() const noexcept {
-	return m_center;
 }
 
 
@@ -92,7 +78,6 @@ template<typename T>
 Math::Mat4x4<T> Transform<T>::calculateMatrix() const noexcept {
 	Math::Mat4x4<T> result(1.0f); //Load identity
 
-	result = Math::translate(result, -m_center);
 	result = Math::scale(result, m_scale);
 	result = Math::rotate(result, m_rotation);
 	result = Math::translate(result, m_position);

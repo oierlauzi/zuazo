@@ -46,6 +46,7 @@ public:
 	void								setBlendingMode(BlendingMode mode);
 	BlendingMode						getBlendingMode() const;
 
+	bool								hasAlpha() const;
 	bool								hasChanged(const RendererBase& renderer) const;
 	void								draw(const RendererBase& renderer, Graphics::CommandBuffer& cmd) const;
 

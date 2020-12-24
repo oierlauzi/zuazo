@@ -98,6 +98,10 @@ struct LayerBase::Impl {
 	}
 
 
+	bool hasAlpha() const {
+		return opacity != 1.0f; //TODO also take into account the actual layer
+	}
+
 	bool hasChanged(const LayerBase& base, const RendererBase& renderer) const {
 		return hasChangedCallback ? hasChangedCallback(base, renderer) : true;
 	}
@@ -222,6 +226,10 @@ BlendingMode LayerBase::getBlendingMode() const {
 	return m_impl->getBlendingMode();
 }
 
+
+bool LayerBase::hasAlpha() const {
+	return m_impl->hasAlpha();
+}
 
 bool LayerBase::hasChanged(const RendererBase& renderer) const {
 	return m_impl->hasChanged(*this, renderer);

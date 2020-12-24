@@ -6,6 +6,8 @@
 
 #include <algorithm>
 
+#include <glm/gtc/matrix_access.hpp> 
+
 namespace Zuazo {
 
 struct RendererBase::Impl {
@@ -27,7 +29,10 @@ struct RendererBase::Impl {
 	CameraCallback										cameraCbk;
 	RenderPassQueryCallback								renderPassQueryCbk;
 
+	Math::Mat4x4f										projectionMatrix; //Precomputed for use in layerComp
 	mutable std::vector<LayerRef>						sortedLayers;
+
+	static constexpr Math::Vec2f DUMMY_SIZE = Math::Vec2f(1.0f, 1.0f);
 
 
 	Impl(	Utils::Limit<DepthStencilFormat> depthStencil,
@@ -43,6 +48,7 @@ struct RendererBase::Impl {
 		, depthStencilFmtCbk{ std::move(internalDepthStencilFormatCbk) }
 		, cameraCbk(std::move(cameraCbk))
 		, renderPassQueryCbk(std::move(renderPassQueryCbk))
+		, projectionMatrix(camera.calculateProjectionMatrix(DUMMY_SIZE))
 	{
 	}
 
@@ -91,6 +97,7 @@ struct RendererBase::Impl {
 	void setCamera(RendererBase& base, const Camera& cam) {
 		if(camera != cam) {
 			camera = cam;
+			projectionMatrix = camera.calculateProjectionMatrix(DUMMY_SIZE);
 			Utils::invokeIf(cameraCbk, base, camera);
 		}
 	}
@@ -291,25 +298,25 @@ private:
 			* 2. Draw the transparent objscts forwards, writing and testing depth
 			*/
 		
-		/*if(a.getHasAlpha() != b.getHasAlpha()) {
+		if(a.hasAlpha() != b.hasAlpha()) {
 			//Prioritize alphaless drawing
-			return a.getHasAlpha() < b.getHasAlpha();
+			return a.hasAlpha() < b.hasAlpha();
 		} else {
 			//Both or neither have alpha. Depth must be taken in consideration
-			assert(a.getHasAlpha() == b.getHasAlpha());
-			const auto hasAlpha = a.getHasAlpha();
+			assert(a.hasAlpha() == b.hasAlpha());
+			const auto hasAlpha = a.hasAlpha();
 
-			//Calculate the average depth
-			const auto& projMatrix = *(reinterpret_cast<const Math::Mat4x4f*>(uniformBufferLayout[RendererBase::DESCRIPTOR_BINDING_PROJECTION_MATRIX].begin(uniformBuffer.data())));
-			const auto aDepth = (projMatrix * a.getAveragePosition()).z;
-			const auto bDepth = (projMatrix * b.getAveragePosition()).z;
+			//Calculate the average depth 
+			constexpr int zRowIndex = 2; //0: x, 1: y, 2: z, 3: w
+			const auto zProjection = glm::row(projectionMatrix, zRowIndex);
+
+			const auto aDepth = glm::dot(zProjection, Math::Vec4f(a.getTransform().getPosition(), 1.0f));
+			const auto bDepth = glm::dot(zProjection, Math::Vec4f(b.getTransform().getPosition(), 1.0f));
 
 			return !hasAlpha
 				? aDepth < bDepth
 				: aDepth > bDepth;
-		}*/ //TODO
-
-		return true;
+		}
 	}
 
 };

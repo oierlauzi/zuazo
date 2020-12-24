@@ -11,8 +11,7 @@ class Transform {
 public:
 	explicit Transform(	const Vec3<T>& position 		= Vec3<T>(0.0f, 0.0f, 0.0f),
 						const Quaternion<T>& rotation	= Quaternion<T>(0.0f, 0.0f, 0.0f, 0.0f),
-						const Vec3<T>& scale			= Vec3<T>(1.0f, 1.0f, 1.0f),
-						const Vec3<T>& center 			= Vec3<T>(0.0f, 0.0f, 0.0f) ) noexcept;
+						const Vec3<T>& scale			= Vec3<T>(1.0f, 1.0f, 1.0f) ) noexcept;
 	Transform(const Transform& other) = default;
 	~Transform() = default;
 
@@ -30,9 +29,6 @@ public:
 	void					setScale(const Vec3<T>& scale) noexcept;
 	const Vec3<T>&			getScale() const noexcept;
 
-	void					setCenter(const Vec3<T>& center) noexcept;
-	const Vec3<T>&			getCenter() const noexcept;
-
 	void					lookAt(const Vec3<T>& position, const Vec3<T>& target, const Vec3<T>& up) noexcept;
 	void					lookAt(const Vec3<T>& target, const Vec3<T>& up) noexcept;
 
@@ -40,7 +36,6 @@ public:
 
 private:
 	Quaternion<T>			m_rotation;
-	Vec3<T>					m_center;
 	Vec3<T>					m_scale;
 	Vec3<T>					m_position;
 
