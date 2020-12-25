@@ -42,6 +42,7 @@ public:
 		PROCESSOR_PRIORITY = 0,
 		INPUT_PRIORITY = HIGHEST_PRIORITY / 2,
 
+		PLAYER_PRIORITY = OUTPUT_PRIORITY - 128,
 		PRESENT_PRIORITY = OUTPUT_PRIORITY - 64,
 		EVENT_QUERY_PRIORITY = INPUT_PRIORITY + 64,
 	};
@@ -61,11 +62,14 @@ public:
 	const Utils::Discrete<ColorFormat>& getFormatSupport() const noexcept;
 	const Utils::Range<Resolution>&		getResolutionSupport() const noexcept;
 
-	void								addRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior);
-	void								removeRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk);
+	void								addRegularCallback(	std::shared_ptr<const ScheduledCallback> cbk, 
+															Priority prior );
+	void								removeRegularCallback(const std::shared_ptr<const ScheduledCallback>& cbk);
 
-	void								addPeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior, Duration period);
-	void								removePeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk);
+	void								addPeriodicCallback(	std::shared_ptr<const ScheduledCallback> cbk, 
+																Priority prior, 
+																Duration period );
+	void								removePeriodicCallback(const std::shared_ptr<const ScheduledCallback>& cbk);
 
 	TimePoint							getTime() const noexcept;
 	TimePoint							getEpoch() const noexcept;

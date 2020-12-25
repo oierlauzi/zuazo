@@ -87,25 +87,31 @@ struct Instance::Impl {
 		return resolutionSupport;
 	}
 
-	void addRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior) {
-		scheduler.addRegularCallback(cbk, prior);
+
+	void addRegularCallback(std::shared_ptr<const ScheduledCallback> cbk, Priority prior) {
+		scheduler.addRegularCallback(std::move(cbk), prior);
 		loop.interrupt();
+		ZUAZO_LOG(instance, Severity::VERBOSE, generateAddRegularEventMessage(cbk, prior));
 	}
 
-	void removeRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk) {
+	void removeRegularCallback(const std::shared_ptr<const ScheduledCallback>& cbk) {
 		scheduler.removeRegularCallback(cbk);
 		loop.interrupt();
+		ZUAZO_LOG(instance, Severity::VERBOSE, generateRemoveRegularEventMessage(cbk));
 	}
 
-	void addPeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior, Duration period) {
-		scheduler.addPeriodicCallback(cbk, prior, period);
+	void addPeriodicCallback(std::shared_ptr<const ScheduledCallback> cbk, Priority prior, Duration period) {
+		scheduler.addPeriodicCallback(std::move(cbk), prior, period);
 		loop.interrupt();
+		ZUAZO_LOG(instance, Severity::VERBOSE, generateAddPeriodicEventMessage(cbk, prior, period));
 	}
 
-	void removePeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk) {
+	void removePeriodicCallback(const std::shared_ptr<const ScheduledCallback>& cbk) {
 		scheduler.removePeriodicCallback(cbk);
 		loop.interrupt();
+		ZUAZO_LOG(instance, Severity::VERBOSE, generateRemovePeriodicEventMessage(cbk));
 	}
+
 
 	TimePoint getTime() const noexcept {
 		return scheduler.getTime();
@@ -164,7 +170,7 @@ struct Instance::Impl {
 		return message.str();
 	}
 
-	std::string generateAddRegularEventMessage(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior) const {
+	std::string generateAddRegularEventMessage(const std::shared_ptr<const ScheduledCallback>& cbk, Priority prior) const {
 		std::ostringstream message;
 
 		message << "Regular event added: " << cbk << " ";
@@ -173,7 +179,7 @@ struct Instance::Impl {
 		return message.str();
 	}
 	
-	std::string generateRemoveRegularEventMessage(const std::shared_ptr<ScheduledCallback>& cbk) const {
+	std::string generateRemoveRegularEventMessage(const std::shared_ptr<const ScheduledCallback>& cbk) const {
 		std::ostringstream message;
 
 		message << "Regular event removed: " << cbk << " ";
@@ -181,7 +187,7 @@ struct Instance::Impl {
 		return message.str();
 	}
 
-	std::string generateAddPeriodicEventMessage(const std::shared_ptr<ScheduledCallback>& cbk, Priority prior, Duration period) const {
+	std::string generateAddPeriodicEventMessage(const std::shared_ptr<const ScheduledCallback>& cbk, Priority prior, Duration period) const {
 		std::ostringstream message;
 
 		message << "Periodic event added: " << cbk << " ";
@@ -191,7 +197,7 @@ struct Instance::Impl {
 		return message.str();
 	}
 
-	std::string generateRemovePeriodicEventMessage(const std::shared_ptr<ScheduledCallback>& cbk) const {
+	std::string generateRemovePeriodicEventMessage(const std::shared_ptr<const ScheduledCallback>& cbk) const {
 		std::ostringstream message;
 
 		message << "Periodic event removed: " << cbk << " ";
@@ -332,31 +338,28 @@ const Utils::Range<Resolution>& Instance::getResolutionSupport() const noexcept 
 	return m_impl->getResolutionSupport();
 }
 
-void Instance::addRegularCallback(	const std::shared_ptr<ScheduledCallback>& cbk, 
-									Priority prior ) 
+
+void Instance::addRegularCallback(	std::shared_ptr<const ScheduledCallback> cbk, 
+									Priority prior )
 {
-	m_impl->addRegularCallback(cbk, prior);
-	ZUAZO_LOG(*this, Severity::VERBOSE, m_impl->generateAddRegularEventMessage(cbk, prior));
+	m_impl->addRegularCallback(std::move(cbk), prior);
 }
 
-void Instance::removeRegularCallback(const std::shared_ptr<ScheduledCallback>& cbk) {
+void Instance::removeRegularCallback(const std::shared_ptr<const ScheduledCallback>& cbk) {
 	m_impl->removeRegularCallback(cbk);
-	ZUAZO_LOG(*this, Severity::VERBOSE, m_impl->generateRemoveRegularEventMessage(cbk));
 }
 
-
-void Instance::addPeriodicCallback(	const std::shared_ptr<ScheduledCallback>& cbk, 
+void Instance::addPeriodicCallback(	std::shared_ptr<const ScheduledCallback> cbk, 
 									Priority prior, 
-									Duration period ) 
+									Duration period )
 {
-	m_impl->addPeriodicCallback(cbk, prior, period );
-	ZUAZO_LOG(*this, Severity::VERBOSE, m_impl->generateAddPeriodicEventMessage(cbk, prior, period));
+	m_impl->addPeriodicCallback(std::move(cbk), prior, period);
 }
 
-void Instance::removePeriodicCallback(const std::shared_ptr<ScheduledCallback>& cbk) {
+void Instance::removePeriodicCallback(const std::shared_ptr<const ScheduledCallback>& cbk) {
 	m_impl->removePeriodicCallback(cbk);
-	ZUAZO_LOG(*this, Severity::VERBOSE, m_impl->generateRemovePeriodicEventMessage(cbk));
 }
+
 
 TimePoint Instance::getTime() const noexcept {
 	return m_impl->getTime();

@@ -55,7 +55,7 @@ void Scheduler::gotoTime(TimePoint tp)  {
 
 		//Call all
 		for(const auto& c : m_calls){
-			const Callback& cbk = *(std::get<std::shared_ptr<Callback>>(c));
+			const Callback& cbk = *(std::get<std::shared_ptr<const Callback>>(c));
 			Utils::invokeIf(cbk);
 		}
 }
@@ -85,36 +85,37 @@ Duration Scheduler::getTimeForNextEvent() const noexcept {
 	return result;
 }
 
-void Scheduler::addRegularCallback(const std::shared_ptr<Callback>& cbk, Priority prior) {
-	m_regularCallbacks.emplace_back(cbk, prior);
+void Scheduler::addRegularCallback(std::shared_ptr<const Callback> cbk, Priority prior) {
+	m_regularCallbacks.emplace_back(std::move(cbk), prior);
 }
 
-void Scheduler::removeRegularCallback(const std::shared_ptr<Callback>& cbk) {
+void Scheduler::removeRegularCallback(const std::shared_ptr<const Callback>& cbk) {
 	auto end = std::remove_if(
 		m_regularCallbacks.begin(), 
 		m_regularCallbacks.end(), 
 		[&] (const auto& e) -> bool {
-			return std::get<std::shared_ptr<Callback>>(e) == cbk; //Compare callback's pointers
+			return std::get<std::shared_ptr<const Callback>>(e) == cbk; //Compare callback's pointers
 		}
 	);
 	m_regularCallbacks.erase(end, m_regularCallbacks.end());
 }
 
 
-void Scheduler::addPeriodicCallback(const std::shared_ptr<Callback>& cbk, Priority prior, Duration period) {
+void Scheduler::addPeriodicCallback(std::shared_ptr<const Callback> cbk, Priority prior, Duration period) {
 	auto ite = m_periodicCallbacks.find(period);
 
 	if(ite == m_periodicCallbacks.cend()){
 		//Period does not exist. Create it.
-
-		m_periodicCallbacks.emplace(period, 
-									CallbackSet{CallbackSet::value_type(cbk, prior)} );			
+		m_periodicCallbacks.emplace(
+			period, 
+			CallbackSet{ CallbackSet::value_type(std::move(cbk), prior) } 
+		);			
 	} else {
-		ite->second.emplace_back(cbk, prior);
+		ite->second.emplace_back(std::move(cbk), prior);
 	}
 }
 
-void Scheduler::removePeriodicCallback(const std::shared_ptr<Callback>& cbk) {
+void Scheduler::removePeriodicCallback(const std::shared_ptr<const Callback>& cbk) {
 	auto ite = m_periodicCallbacks.begin();
 
 	while(ite != m_periodicCallbacks.end()) {
@@ -123,7 +124,7 @@ void Scheduler::removePeriodicCallback(const std::shared_ptr<Callback>& cbk) {
 			ite->second.begin(), 
 			ite->second.end(), 
 			[&] (const auto& e) -> bool {
-				return std::get<std::shared_ptr<Callback>>(e) == cbk; //Compare callback's pointers
+				return std::get<std::shared_ptr<const Callback>>(e) == cbk; //Compare callback's pointers
 			}
 		);
 		ite->second.erase(end, ite->second.end());

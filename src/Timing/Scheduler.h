@@ -33,14 +33,14 @@ public:
 
 	Duration               	getTimeForNextEvent() const noexcept;
 
-	void					addRegularCallback(const std::shared_ptr<Callback>& cbk, Priority prior);
-	void					removeRegularCallback(const std::shared_ptr<Callback>& cbk);
+	void					addRegularCallback(std::shared_ptr<const Callback> cbk, Priority prior);
+	void					removeRegularCallback(const std::shared_ptr<const Callback>& cbk);
 
-	void					addPeriodicCallback(const std::shared_ptr<Callback>& cbk, Priority prior, Duration period);
-	void					removePeriodicCallback(const std::shared_ptr<Callback>& cbk);
+	void					addPeriodicCallback(std::shared_ptr<const Callback> cbk, Priority prior, Duration period);
+	void					removePeriodicCallback(const std::shared_ptr<const Callback>& cbk);
 
 private:
-	using CallbackSet = std::vector<std::tuple<std::shared_ptr<Callback>, Priority>>;
+	using CallbackSet = std::vector<std::tuple<std::shared_ptr<const Callback>, Priority>>;
 	using PeriodMap = std::map<Duration, CallbackSet>;
 
 	TimePoint				m_epoch;
