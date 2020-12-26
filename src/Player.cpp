@@ -30,10 +30,10 @@ struct Player::Impl {
 		clip = c;
 
 		assert(callback);
-		if(callback && !clip) {
+		if(*callback && !clip) {
 			//It has become invalid
 			*callback = {};
-		} else if(!callback && clip) {
+		} else if(!(*callback) && clip) {
 			*callback = std::bind(&Impl::updateFunc, std::cref(*this));
 		}
 	}
