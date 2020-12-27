@@ -27,14 +27,12 @@ ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_G_BR = 1;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_G_B_R = 2;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_G_B_R_A = 3;
 
-ZUAZO_IF_CPP(constexpr int32_t, const int) ct_YCBCR_FALSE = 0;
-ZUAZO_IF_CPP(constexpr int32_t, const int) ct_YCBCR_TRUE = 1;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_RANGE_FULL = 0;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_RANGE_ITU_NARROW_RGB = 1;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_RANGE_ITU_NARROW_YCBCR = 2;
 
-ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_RANGE_FULL_RGB = 0;
-ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_RANGE_FULL_YCBCR = 1;
-ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_RANGE_ITU_NARROW_RGB = 2;
-ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_RANGE_ITU_NARROW_YCBCR = 3;
-
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_MODEL_RGB = 0;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_MODEL_YCBCR = 1;
 
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_TRANSFER_FUNCTION_LINEAR = 0;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_TRANSFER_FUNCTION_BT601_709_2020 = 1;
@@ -47,6 +45,8 @@ ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_TRANSFER_FUNCTION_SMPTE240M 
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_TRANSFER_FUNCTION_SMPTE2084 = 8;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_TRANSFER_FUNCTION_ARIB_STD_B67 = 9;
 
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_PRIMARIES_UNKNOWN = -1;
+
 
 
 /*Using mat4 as glm does not have the 4N alignment*/
@@ -54,7 +54,9 @@ ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_TRANSFER_FUNCTION_ARIB_STD_B
 struct ct_read_data {
 	ZUAZO_IF_CPP(glm::mat4, mat4) 		mtxRGB2XYZ; 
 	ZUAZO_IF_CPP(glm::mat4, mat4) 		mtxYCbCr2RGB;
+	ZUAZO_IF_CPP(int32_t, int) 			colorPrimaries;
 	ZUAZO_IF_CPP(int32_t, int) 			colorTransferFunction;
+	ZUAZO_IF_CPP(int32_t, int) 			colorModel;
 	ZUAZO_IF_CPP(int32_t, int) 			colorRange;
 	ZUAZO_IF_CPP(int32_t, int) 			planeFormat;
 };
@@ -62,7 +64,9 @@ struct ct_read_data {
 struct ct_write_data {
 	ZUAZO_IF_CPP(glm::mat4, mat4) 		mtxXYZ2RGB;
 	ZUAZO_IF_CPP(glm::mat4, mat4) 		mtxRGB2YCbCr;
+	ZUAZO_IF_CPP(int32_t, int) 			colorPrimaries;
 	ZUAZO_IF_CPP(int32_t, int) 			colorTransferFunction;
+	ZUAZO_IF_CPP(int32_t, int) 			colorModel;
 	ZUAZO_IF_CPP(int32_t, int) 			colorRange;
 	ZUAZO_IF_CPP(int32_t, int) 			planeFormat;
 };

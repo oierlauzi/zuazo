@@ -1,5 +1,6 @@
 #include <zuazo/Graphics/ColorTransfer.h>
 #include <zuazo/Graphics/VulkanConversions.h>
+#include <zuazo/Math/Transformations.h>
 
 #include <zuazo/shaders/color_transfer.h>
 
@@ -8,6 +9,21 @@ namespace Zuazo::Graphics {
 /*
  * Conversions
  */
+namespace ColorTransfer {
+
+constexpr int32_t getColorPrimaries(ColorPrimaries primaries, const Chromaticities& chroma) noexcept {
+	int32_t result = 0;
+
+	if(getChromaticities(primaries) == chroma) {
+		result = static_cast<int32_t>(primaries);
+	} else {
+		//If chromaticities are not the expected ones, force conversion
+		result = ct_COLOR_PRIMARIES_UNKNOWN;
+	}
+
+	return result;
+}
+
 constexpr int32_t getColorTransferFunction(ColorTransferFunction transferFunction) noexcept {
 	switch(transferFunction){		
 	case ColorTransferFunction::BT601:
@@ -26,10 +42,33 @@ constexpr int32_t getColorTransferFunction(ColorTransferFunction transferFunctio
 	}
 }
 
+inline Math::Mat4x4f getRGB2YCbCrMatrix(ColorModel model) noexcept {
+	Math::Mat4x4f result = getRGB2YCbCrConversionMatrix(model);
+
+	if(isYCbCr(model)) {
+		//If it is YCbCr a displacement needs to be applied from [-0.5, 0.5] to [0.0, 1.0]
+		//							Cr		Y		Cb
+		constexpr Math::Vec3f delta(0.5f, 	0.0f, 	0.5f );
+		result[result.length() - 1] = Math::Vec4f(delta, 1.0f);
+	}
+
+	return result;
+}
+
+constexpr int32_t getColorModel(ColorModel model) {
+	int32_t result = ct_COLOR_MODEL_RGB;
+
+	if(isYCbCr(model)) {
+		result = ct_COLOR_MODEL_YCBCR;
+	}
+
+	return result;
+}
+
 constexpr int32_t getColorRange(ColorRange range, ColorModel model) noexcept {
 	switch(range){
 	case ColorRange::ITU_NARROW: 		return isYCbCr(model) ? ct_COLOR_RANGE_ITU_NARROW_YCBCR : ct_COLOR_RANGE_ITU_NARROW_RGB;
-	default: /*ColorRange::FULL_RGB*/	return isYCbCr(model) ? ct_COLOR_RANGE_FULL_YCBCR : ct_COLOR_RANGE_FULL_RGB;
+	default: /*ColorRange::FULL*/		return ct_COLOR_RANGE_FULL;
 	}
 }
 
@@ -45,6 +84,7 @@ constexpr int32_t getPlaneFormat(ColorFormat format) noexcept {
 }
 
 static int32_t optimizeColorTransferFunction(	int32_t colorRange,
+												int32_t colorModel,
 												int32_t colorTransferFunction,
 												Utils::BufferView<Frame::PlaneDescriptor> planes,
 												Utils::BufferView<const vk::Format> supportedFormats ) noexcept
@@ -52,8 +92,11 @@ static int32_t optimizeColorTransferFunction(	int32_t colorRange,
 	//For binary search:
 	assert(std::is_sorted(supportedFormats.cbegin(), supportedFormats.cend()));
 
-	//Test if SRGB formats can be used
-	if(colorRange == ct_COLOR_RANGE_FULL_RGB && colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_1) {
+	//Test if sRGB formats can be used
+	if(	colorRange == ct_COLOR_RANGE_FULL && 
+		colorModel == ct_COLOR_MODEL_RGB && 
+		colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_1 )
+	{
 		//For being able to use Vulkan's built in sRGB formats, all planes need to support it
 		colorTransferFunction = ct_COLOR_TRANSFER_FUNCTION_LINEAR; //Suppose it is supported
 		for(size_t i = 0; i < planes.size(); i++) {
@@ -97,10 +140,14 @@ static ct_write_data convert2Output(const ct_read_data& read) noexcept {
 	return ct_write_data {
 		Math::inv(read.mtxRGB2XYZ),
 		Math::inv(read.mtxYCbCr2RGB),
+		read.colorPrimaries,
 		read.colorTransferFunction,
+		read.colorModel,
 		read.colorRange,
 		read.planeFormat
 	};
+}
+
 }
 
 
@@ -114,10 +161,12 @@ struct InputColorTransfer::Impl {
 	Impl(const Frame::Descriptor& desc, const Chromaticities& chromaticities) noexcept
 		: transferData {
 			chromaticities.calculateRGB2XYZConversionMatrix(),
-			Math::inv(getRGB2YCbCrConversionMatrix(desc.getColorModel())),
-			getColorTransferFunction(desc.getColorTransferFunction()),
-			getColorRange(desc.getColorRange(), desc.getColorModel()),
-			getPlaneFormat(desc.getColorFormat())
+			Math::inv(ColorTransfer::getRGB2YCbCrMatrix(desc.getColorModel())),
+			ColorTransfer::getColorPrimaries(desc.getColorPrimaries(), chromaticities),
+			ColorTransfer::getColorTransferFunction(desc.getColorTransferFunction()),
+			ColorTransfer::getColorModel(desc.getColorModel()),
+			ColorTransfer::getColorRange(desc.getColorRange(), desc.getColorModel()),
+			ColorTransfer::getPlaneFormat(desc.getColorFormat())
 		}
 	{
 	}
@@ -129,8 +178,9 @@ struct InputColorTransfer::Impl {
 	void optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
 					Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 	{
-		transferData.colorTransferFunction = optimizeColorTransferFunction(
+		transferData.colorTransferFunction = ColorTransfer::optimizeColorTransferFunction(
 			transferData.colorRange,
+			transferData.colorModel,
 			transferData.colorTransferFunction,
 			planes,
 			supportedFormats
@@ -222,16 +272,18 @@ struct OutputColorTransfer::Impl {
 	Impl(const Frame::Descriptor& desc, const Chromaticities& chromaticities) noexcept
 		: transferData {
 			chromaticities.calculateXYZ2RGBConversionMatrix(),
-			getRGB2YCbCrConversionMatrix(desc.getColorModel()),
-			getColorTransferFunction(desc.getColorTransferFunction()),
-			getColorRange(desc.getColorRange(), desc.getColorModel()),
-			getPlaneFormat(desc.getColorFormat())
+			ColorTransfer::getRGB2YCbCrMatrix(desc.getColorModel()),
+			ColorTransfer::getColorPrimaries(desc.getColorPrimaries(), chromaticities),
+			ColorTransfer::getColorTransferFunction(desc.getColorTransferFunction()),
+			ColorTransfer::getColorModel(desc.getColorModel()),
+			ColorTransfer::getColorRange(desc.getColorRange(), desc.getColorModel()),
+			ColorTransfer::getPlaneFormat(desc.getColorFormat())
 		}
 	{
 	}
 
 	Impl(const InputColorTransfer::Impl& input) noexcept
-		: transferData(convert2Output(input.transferData))
+		: transferData(ColorTransfer::convert2Output(input.transferData))
 	{
 	}
 
@@ -243,8 +295,9 @@ struct OutputColorTransfer::Impl {
 	void optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
 					Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 	{
-		transferData.colorTransferFunction = optimizeColorTransferFunction(
+		transferData.colorTransferFunction = ColorTransfer::optimizeColorTransferFunction(
 			transferData.colorRange,
+			transferData.colorModel,
 			transferData.colorTransferFunction,
 			planes,
 			supportedFormats

@@ -120,28 +120,24 @@ void ct_store(in int planeFormat, out vec4 plane0, out vec4 plane1, out vec4 pla
 
 
 
+//Constants specified for a hypothetic 16bit system. Unaccurate for higher precisions
+const float ct_ITU_NARROW_MIN_Y = 16.0f*256.0f / 65535.0f;
+const float ct_ITU_NARROW_MAX_Y = 235.0f*256.0f / 65535.0f;
+const float ct_ITU_NARROW_MIN_C = 16.0f*256.0f / 65535.0f;
+const float ct_ITU_NARROW_MAX_C = 240.0f*256.0f / 65535.0f;
+
 vec4 ct_expand(in int range, in vec4 color){
 	vec4 result;
 
-	//Constants specified for a hypothetic 16bit system. Unaccurate for higher precisions
-	const float MIN_Y = 16.0f*256.0f / 65535.0f;
-	const float MAX_Y = 235.0f*256.0f / 65535.0f;
-	const float MIN_C = 16.0f*256.0f / 65535.0f;
-	const float MAX_C = 240.0f*256.0f / 65535.0f;
-
 	switch(range){
-	case ct_COLOR_RANGE_FULL_YCBCR:
-		result.ga = color.ga;
-		result.rb = color.rb - vec2(0.5f);
-		break;
 	case ct_COLOR_RANGE_ITU_NARROW_RGB:
-		result = (color - vec4(MIN_Y)) / (MAX_Y - MIN_Y);
+		result = (color - vec4(ct_ITU_NARROW_MIN_Y)) / (ct_ITU_NARROW_MAX_Y - ct_ITU_NARROW_MIN_Y);
 		break;
 	case ct_COLOR_RANGE_ITU_NARROW_YCBCR:
-		result.ga = (color.ga - vec2(MIN_Y)) / (MAX_Y - MIN_Y);
-		result.rb = (color.rb - vec2(MIN_C)) / (MAX_C - MIN_C) - vec2(0.5f);
+		result.ga = (color.ga - vec2(ct_ITU_NARROW_MIN_Y)) / (ct_ITU_NARROW_MAX_Y - ct_ITU_NARROW_MIN_Y);
+		result.rb = (color.rb - vec2(ct_ITU_NARROW_MIN_C)) / (ct_ITU_NARROW_MAX_C - ct_ITU_NARROW_MIN_C);
 		break;
-	default: //ct_COLOR_RANGE_FULL_RGB
+	default: //ct_COLOR_RANGE_FULL
 		result = color;
 		break;
 	}
@@ -152,25 +148,15 @@ vec4 ct_expand(in int range, in vec4 color){
 vec4 ct_contract(in int range, in vec4 color){
 	vec4 result;
 
-	//Constants specified for a hypothetic 16bit system. Unaccurate for higher precisions
-	const float MIN_Y = 16.0f*256.0f / 65535.0f;
-	const float MAX_Y = 235.0f*256.0f / 65535.0f;
-	const float MIN_C = 16.0f*256.0f / 65535.0f;
-	const float MAX_C = 240.0f*256.0f / 65535.0f;
-
 	switch(range){
-	case ct_COLOR_RANGE_FULL_YCBCR:
-		result.ga = color.ga;
-		result.rb = color.rb + vec2(0.5f);
-		break;
 	case ct_COLOR_RANGE_ITU_NARROW_RGB:
-		result = color * (MAX_Y - MIN_Y) + vec4(MIN_Y);
+		result = color * (ct_ITU_NARROW_MAX_Y - ct_ITU_NARROW_MIN_Y) + vec4(ct_ITU_NARROW_MIN_Y);
 		break;
 	case ct_COLOR_RANGE_ITU_NARROW_YCBCR:
-		result.ga = color.ga * (MAX_Y - MIN_Y) + vec2(MIN_Y);
-		result.rb = (color.rb  + vec2(0.5f)) * (MAX_C - MIN_C) + vec2(MIN_C);
+		result.ga = color.ga * (ct_ITU_NARROW_MAX_Y - ct_ITU_NARROW_MIN_Y) + vec2(ct_ITU_NARROW_MIN_Y);
+		result.rb = color.rb * (ct_ITU_NARROW_MAX_C - ct_ITU_NARROW_MIN_C) + vec2(ct_ITU_NARROW_MIN_C);
 		break;
-	default: //ct_COLOR_RANGE_FULL_RGB
+	default: //ct_COLOR_RANGE_FULL
 		result = color;
 		break;
 	}
@@ -592,19 +578,39 @@ vec4 ct_premultiplyAlpha(in vec4 color) {
 
 
 vec4 ct_readColor(in ct_read_data inputProp, in ct_write_data outputProp, in vec4 color){
-	vec4 result = ct_expand(inputProp.colorRange, color); //Normalize the values into [0.0, 1.0] (or [-0.5, 0.5] for chroma)
-	result.rgb 	= (inputProp.mtxYCbCr2RGB * result).rgb; //Convert it into RGB color model
-	result.rgb	= ct_EOTF(inputProp.colorTransferFunction, result.rgb); //Undo all gamma-like compressions
-	result.rgb	= (outputProp.mtxXYZ2RGB * inputProp.mtxRGB2XYZ * result).rgb; //Convert it into the destination color primaries
+	//Normalize the values into [0.0, 1.0] (or [-0.5, 0.5] for chroma)
+	vec4 result = ct_expand(inputProp.colorRange, color); 
+
+	//Convert it into RGB color model if necessary
+	if(inputProp.colorModel != ct_COLOR_MODEL_RGB) {
+		result.rgb = (inputProp.mtxYCbCr2RGB * vec4(result.rgb, 1.0f)).rgb; 
+	}
+	
+	//Undo all gamma-like compressions
+	result.rgb = ct_EOTF(inputProp.colorTransferFunction, result.rgb); 
+
+	//Convert it into the destination color primaries if necessary
+	if(inputProp.colorPrimaries != outputProp.colorPrimaries || inputProp.colorPrimaries == ct_COLOR_PRIMARIES_UNKNOWN) {
+		result = outputProp.mtxXYZ2RGB * inputProp.mtxRGB2XYZ * result; //Both matrices should have a passthough for alpha
+	}
 
 	return result;
 }
 
 vec4 ct_writeColor(in ct_write_data outputProp, in vec4 color){
-	vec4 result = ct_premultiplyAlpha(color); //Premultiply the color with the alpha channel
-	result.rgb 	= ct_OETF(outputProp.colorTransferFunction, result.rgb); //Apply a gamma-like compression
-	result.rgb 	= (outputProp.mtxRGB2YCbCr * result).rgb; //Convert it into the destination color model
-	result 		= ct_contract(outputProp.colorRange, result); //Convert it into the corresponding range
+	//Premultiply the color with the alpha channel
+	vec4 result = ct_premultiplyAlpha(color); 
+
+	//Apply a gamma-like compression
+	result.rgb = ct_OETF(outputProp.colorTransferFunction, result.rgb); 
+
+	//Convert it into a YCbCr color model if necessary
+	if(outputProp.colorModel != ct_COLOR_MODEL_RGB) {
+		result.rgb 	= (outputProp.mtxRGB2YCbCr * vec4(result.rgb, 1.0f)).rgb; 
+	}
+
+	//Convert it into the corresponding range
+	result = ct_contract(outputProp.colorRange, result); 
 
 	return result;
 }
