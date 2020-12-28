@@ -41,8 +41,6 @@ public:
 	class Descriptor;
 	class Geometry;
 
-	using PixelData = std::vector<Utils::BufferView<std::byte>>;
-
 	static constexpr size_t FILTER_COUNT = VK_FILTER_LINEAR - VK_FILTER_NEAREST + 1;
 
 	Frame(	const Vulkan& vulkan,

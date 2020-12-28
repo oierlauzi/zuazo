@@ -4,6 +4,7 @@
 #include "Frame.h"
 #include "CommandBuffer.h"
 #include "DepthStencil.h"
+#include "RenderPass.h"
 #include "../Utils/BufferView.h"
 
 #include <vector>
@@ -19,7 +20,7 @@ public:
 				std::shared_ptr<const Buffer> colorTransfer,
 				Utils::BufferView<const PlaneDescriptor> planes,
 				std::shared_ptr<const DepthStencil> depthStencil,
-				vk::RenderPass renderPass );
+				RenderPass renderPass );
 	TargetFrame(const TargetFrame& other) = delete;
 	TargetFrame(TargetFrame&& other) noexcept = default;
 	virtual ~TargetFrame(); 
@@ -36,7 +37,7 @@ public:
 
 private:
 	std::shared_ptr<const DepthStencil> 		m_depthStencil;
-	vk::RenderPass 								m_renderPass;
+	RenderPass 									m_renderPass;
 	vk::UniqueFramebuffer						m_framebuffer;
 	vk::UniqueFence								m_renderComplete;
 

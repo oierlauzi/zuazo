@@ -3,6 +3,7 @@
 #include "DepthStencilFormat.h"
 #include "Graphics/Vulkan.h"
 #include "Graphics/CommandBuffer.h"
+#include "Graphics/RenderPass.h"
 #include "Math/Transform.h"
 #include "Utils/Area.h"
 #include "Utils/Pimpl.h"
@@ -23,7 +24,7 @@ public:
 
 	using DepthStencilFormatCallback = std::function<void(RendererBase&, const Utils::Limit<DepthStencilFormat>&)>;
 	using CameraCallback = std::function<void(RendererBase&, const Camera& camera)>;
-	using RenderPassQueryCallback = std::function<vk::RenderPass(const RendererBase&)>;
+	using RenderPassQueryCallback = std::function<Graphics::RenderPass(const RendererBase&)>;
 
 	enum DescriptorBindings {
 		DESCRIPTOR_BINDING_PROJECTION_MATRIX,
@@ -66,7 +67,7 @@ public:
 	bool									layersHaveChanged() const;
 	void									draw(Graphics::CommandBuffer& cmd) const;
 
-	vk::RenderPass							getRenderPass() const;
+	Graphics::RenderPass					getRenderPass() const;
 
 	static UniformBufferLayout				getUniformBufferLayout(const Graphics::Vulkan& vulkan);
 	static vk::DescriptorSetLayout			getDescriptorSetLayout(const Graphics::Vulkan& vulkan);

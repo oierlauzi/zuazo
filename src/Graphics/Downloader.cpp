@@ -1,4 +1,4 @@
-#include <zuazo/Graphics/Drawtable.h>
+#include <zuazo/Graphics/Downloader.h>
 
 #include <zuazo/Graphics/ColorTransfer.h>
 #include <zuazo/Graphics/Buffer.h>
@@ -16,52 +16,18 @@
 namespace Zuazo::Graphics {
 
 /*
- * Drawtable::Impl
+ * Downloader::Impl
  */
 
-struct Drawtable::Impl {
-	class Allocator : public std::allocator<TargetFrame> {
-	
-	public:
-		Allocator(const Impl& impl) 
-			: m_drawtable(impl) 
-		{
-		}
-
-		Allocator(const Allocator& other) = default;
-		~Allocator() = default;
-
-		Allocator& operator=(const Allocator& other) = default;
-
-		void construct(TargetFrame* x) {
-			const Impl& drw = m_drawtable;
-
-			new (x) TargetFrame(
-				drw.vulkan,
-				drw.frameDescriptor,
-				drw.colorTransferBuffer,
-				drw.planeDescriptors,
-				drw.depthStencil,
-				drw.renderPass
-			);
-		}
-
-	private:
-		std::reference_wrapper<const Impl>				m_drawtable;
-
-	};
-
+struct Downloader::Impl {
 	std::reference_wrapper<const Vulkan>			vulkan;
 	std::shared_ptr<Frame::Descriptor>				frameDescriptor;
 	InputColorTransfer								colorTransfer;
-	std::shared_ptr<StagedBuffer>					colorTransferBuffer;
 	std::vector<Frame::PlaneDescriptor>				planeDescriptors;
 
 	std::shared_ptr<DepthStencil>					depthStencil;
-
 	RenderPass										renderPass;
 
-	mutable Utils::Pool<TargetFrame, Allocator>		framePool;
 
 
 	Impl(	const Vulkan& vulkan, 
@@ -70,17 +36,13 @@ struct Drawtable::Impl {
 		: vulkan(vulkan)
 		, frameDescriptor(Utils::makeShared<Frame::Descriptor>(frameDesc))
 		, colorTransfer(*frameDescriptor)
-		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, colorTransfer))
 		, planeDescriptors(createPlaneDescriptors(vulkan, frameDesc, colorTransfer))
 		, depthStencil(createDepthStencil(vulkan, toVulkan(depthStencilFmt), planeDescriptors))
 		, renderPass(getRenderPass(vulkan, planeDescriptors, depthStencilFmt))
-		, framePool(1, Allocator(*this))
 	{
 	}
 
-	~Impl() {
-		colorTransferBuffer->waitCompletion(vulkan);
-	}
+	~Impl() = default;
 
 
 	const Vulkan& getVulkan() const noexcept {
@@ -97,21 +59,28 @@ struct Drawtable::Impl {
 	}
 
 
-	void setMaxSpareCount(size_t spares) noexcept {
-		framePool.setMaxSpareCount(spares);
+	vk::Framebuffer getFramebuffer() const noexcept {
+		//TODO
 	}
 
-	size_t getMaxSpareCount() const noexcept {
-		return framePool.getMaxSpareCount();
+	void beginRenderPass(	vk::CommandBuffer cmd, 
+							vk::Rect2D renderArea,
+							Utils::BufferView<const vk::ClearValue> clearValues,
+							vk::SubpassContents contents ) const noexcept
+	{
+		//TODO
 	}
 
-	size_t getSpareCount() const noexcept {
-		return framePool.getSpareCount();
+	void endRenderPass(vk::CommandBuffer cmd) const noexcept {
+		vulkan.get().endRenderPass(cmd);
 	}
 
+	void draw(std::shared_ptr<const CommandBuffer> cmd) {
+		//TODO
+	}
 
-	std::shared_ptr<TargetFrame> acquireFrame() const {
-		return framePool.acquire();
+	Utils::BufferView<const Utils::BufferView<const std::byte>>	getPixelData() const noexcept {
+		//TODO
 	}
 
 
@@ -135,9 +104,8 @@ struct Drawtable::Impl {
 				}
 			);
 
-			//Check if the conversion succeeded. For the moment only single-plane formats are supported
-			//The code below would be multi-plane proof changing the if statement to endIte != conversion.cbegin()
-			if(endIte == (conversion.cbegin() + 1)) {
+			//Check if the conversion succeeded
+			if(endIte != conversion.cbegin()) {
 				//Check if it is supported
 				const auto supported = std::all_of(
 					conversion.cbegin(), endIte,
@@ -182,9 +150,8 @@ struct Drawtable::Impl {
 				}
 			);
 
-			//Check if the conversion succeeded. For the moment only single-plane formats are supported
-			//The code below would be multi-plane proof changing the if statement to endIte != conversion.cbegin()
-			if(endIte == (conversion.cbegin() + 1)) {
+			//Check if the conversion succeeded
+			if(endIte != conversion.cbegin()) {
 				//Check if it is supported
 				const auto supported = std::all_of(
 					conversion.cbegin(), endIte,
@@ -240,7 +207,7 @@ struct Drawtable::Impl {
 		}
 
 		return result;
-	}
+	}	
 
 	static RenderPass getRenderPass(const Vulkan& vulkan, 
 									const Frame::Descriptor& frameDesc,
@@ -248,9 +215,9 @@ struct Drawtable::Impl {
 	{
 		InputColorTransfer inputColorTransfer(frameDesc);
 		const auto planeDescriptors = createPlaneDescriptors(vulkan, frameDesc, inputColorTransfer);
-		return RenderPass(vulkan, planeDescriptors, depthStencilFmt, vk::ImageLayout::eShaderReadOnlyOptimal);
+		return RenderPass(vulkan, planeDescriptors, depthStencilFmt, vk::ImageLayout::eTransferSrcOptimal);
 	}
-
+	
 	static std::vector<vk::ClearValue> getClearValues(	const Graphics::Frame::Descriptor& frameDesc,
 														DepthStencilFormat depthStencilFmt )
 	{
@@ -280,7 +247,7 @@ struct Drawtable::Impl {
 
 		return result;
 	}
-	
+
 
 private:
 	static RenderPass getRenderPass(const Vulkan& vulkan, 
@@ -294,7 +261,8 @@ private:
 		constexpr vk::FormatFeatureFlags DESIRED_FLAGS =
 			vk::FormatFeatureFlagBits::eSampledImage |
 			vk::FormatFeatureFlagBits::eColorAttachment |
-			vk::FormatFeatureFlagBits::eColorAttachmentBlend ;
+			vk::FormatFeatureFlagBits::eColorAttachmentBlend |
+			vk::FormatFeatureFlagBits::eTransferSrc ;
 
 		return vulkan.listSupportedFormatsOptimal(DESIRED_FLAGS);
 	}
@@ -306,7 +274,6 @@ private:
 		return vulkan.listSupportedFormatsOptimal(DESIRED_FLAGS);
 	}
 
-private:
 	static std::vector<Frame::PlaneDescriptor> createPlaneDescriptors(	const Vulkan& vulkan, 
 																		const Frame::Descriptor& desc,
 																		InputColorTransfer& colorTransfer )
@@ -471,75 +438,82 @@ private:
 
 
 /*
- * Drawtable
+ * Downloader
  */
 
-Drawtable::Drawtable(	const Vulkan& vulkan, 
+Downloader::Downloader(	const Vulkan& vulkan, 
 						const Frame::Descriptor& frameDesc,
 						DepthStencilFormat depthStencilFmt )
 	: m_impl({}, vulkan, frameDesc, depthStencilFmt)
 {
 }
 
-Drawtable::Drawtable(Drawtable&& other) noexcept = default;
+Downloader::Downloader(Downloader&& other) noexcept = default;
 
-Drawtable::~Drawtable() = default;
+Downloader::~Downloader() = default;
 
-Drawtable& Drawtable::operator=(Drawtable&& other) noexcept = default;
+Downloader& Downloader::operator=(Downloader&& other) noexcept = default;
 
 
 
-const Vulkan& Drawtable::getVulkan() const noexcept {
+const Vulkan& Downloader::getVulkan() const noexcept {
 	return m_impl->getVulkan();
 }
 
-const Frame::Descriptor& Drawtable::getFrameDescriptor() const noexcept {
+const Frame::Descriptor& Downloader::getFrameDescriptor() const noexcept {
 	return m_impl->getFrameDescriptor();
 }
 
-OutputColorTransfer Drawtable::getOutputColorTransfer() const {
+OutputColorTransfer Downloader::getOutputColorTransfer() const {
 	return m_impl->getOutputColorTransfer();
 }
 
 
-void Drawtable::setMaxSpareCount(size_t spares) noexcept {
-	m_impl->setMaxSpareCount(spares);
+vk::Framebuffer Downloader::getFramebuffer() const noexcept {
+	return m_impl->getFramebuffer();
 }
 
-size_t Drawtable::getMaxSpareCount() const noexcept {
-	return m_impl->getMaxSpareCount();
+void Downloader::beginRenderPass(	vk::CommandBuffer cmd, 
+									vk::Rect2D renderArea,
+									Utils::BufferView<const vk::ClearValue> clearValues,
+									vk::SubpassContents contents ) const noexcept
+{
+	m_impl->beginRenderPass(cmd, renderArea, clearValues, contents);
 }
 
-size_t Drawtable::getSpareCount() const noexcept {
-	return m_impl->getSpareCount();
+void Downloader::endRenderPass(vk::CommandBuffer cmd) const noexcept {
+	m_impl->endRenderPass(cmd);
+}
+
+void Downloader::draw(std::shared_ptr<const CommandBuffer> cmd) {
+	m_impl->draw(std::move(cmd));
+}
+
+Downloader::PixelData Downloader::getPixelData() const noexcept {
+	return m_impl->getPixelData();
 }
 
 
-std::shared_ptr<TargetFrame> Drawtable::acquireFrame() const {
-	return m_impl->acquireFrame();
-}
-
-
-Utils::Discrete<ColorFormat> Drawtable::getSupportedFormats(const Vulkan& vulkan) {
+Utils::Discrete<ColorFormat> Downloader::getSupportedFormats(const Vulkan& vulkan) {
 	return Impl::getSupportedFormats(vulkan);
 }
 
-Utils::Discrete<ColorFormat> Drawtable::getSupportedSrgbFormats(const Vulkan& vulkan) {
+Utils::Discrete<ColorFormat> Downloader::getSupportedSrgbFormats(const Vulkan& vulkan) {
 	return Impl::getSupportedSrgbFormats(vulkan);
 }
 
-Utils::Discrete<DepthStencilFormat> Drawtable::getSupportedFormatsDepthStencil(const Vulkan& vulkan) {
+Utils::Discrete<DepthStencilFormat> Downloader::getSupportedFormatsDepthStencil(const Vulkan& vulkan) {
 	return Impl::getSupportedFormatsDepthStencil(vulkan);
 }
 
-RenderPass Drawtable::getRenderPass(const Vulkan& vulkan, 
+RenderPass Downloader::getRenderPass(const Vulkan& vulkan, 
 										const Frame::Descriptor& frameDesc,
 										DepthStencilFormat depthStencilFmt )
 {
 	return Impl::getRenderPass(vulkan, frameDesc, depthStencilFmt);
 }
 
-std::vector<vk::ClearValue> Drawtable::getClearValues(	const Graphics::Frame::Descriptor& frameDesc,
+std::vector<vk::ClearValue> Downloader::getClearValues(	const Graphics::Frame::Descriptor& frameDesc,
 														DepthStencilFormat depthStencilFmt )
 {
 	return Impl::getClearValues(frameDesc, depthStencilFmt);

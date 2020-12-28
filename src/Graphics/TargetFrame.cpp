@@ -9,7 +9,7 @@ TargetFrame::TargetFrame(	const Vulkan& vulkan,
 							std::shared_ptr<const Buffer> colorTransfer,
 							Utils::BufferView<const Frame::PlaneDescriptor> planes,
 							std::shared_ptr<const DepthStencil> depthStencil,
-							vk::RenderPass renderPass )
+							RenderPass renderPass )
 	: Frame(
 		vulkan,
 		std::move(desc),
@@ -18,7 +18,7 @@ TargetFrame::TargetFrame(	const Vulkan& vulkan,
 		vk::ImageUsageFlagBits::eColorAttachment )
 	, m_depthStencil(std::move(depthStencil))
 	, m_renderPass(renderPass)
-	, m_framebuffer(createFramebuffer(vulkan, planes, m_depthStencil, m_renderPass, getImageViews()))
+	, m_framebuffer(createFramebuffer(vulkan, planes, m_depthStencil, m_renderPass.getRenderPass(), getImageViews()))
 	, m_renderComplete(vulkan.createFence(true))
 {
 }
@@ -39,7 +39,7 @@ void TargetFrame::beginRenderPass(	vk::CommandBuffer cmd,
 									vk::SubpassContents contents ) const noexcept 
 {
 	const vk::RenderPassBeginInfo beginInfo(
-		m_renderPass,
+		m_renderPass.getRenderPass(),
 		*m_framebuffer,
 		renderArea,
 		clearValues.size(), clearValues.data()

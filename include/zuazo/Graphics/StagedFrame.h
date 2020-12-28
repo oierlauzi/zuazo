@@ -9,6 +9,9 @@ class StagedFrame
 	: public Frame 
 {
 public:
+	using PixelData = Utils::BufferView<const Utils::BufferView<std::byte>>;
+	using ConstPixelData = Utils::BufferView<const Utils::BufferView<const std::byte>>;
+
 	StagedFrame(const Vulkan& vulkan,
 				std::shared_ptr<const Descriptor> desc,
 				std::shared_ptr<const Buffer> colorTransfer,
@@ -20,13 +23,14 @@ public:
 
 	StagedFrame& 								operator=(const StagedFrame& other) noexcept = delete;
 
-	const PixelData&							getPixelData() noexcept;
+	PixelData									getPixelData() noexcept;
+	ConstPixelData								getPixelData() const noexcept;
 	void										flush();
 	bool										waitCompletion(uint64_t timeo) const;
 
 private:
 	Buffer										m_stagingBuffer;
-	PixelData 									m_pixelData;
+	std::vector<Utils::BufferView<std::byte>> 	m_pixelData;
 		
 	std::shared_ptr<const vk::UniqueCommandPool>m_commandPool;
 	vk::UniqueCommandBuffer						m_commandBuffer;
@@ -35,9 +39,9 @@ private:
 
 	static Buffer								createStagingBuffer(const Vulkan& vulkan,
 																	Utils::BufferView<const Utils::Area> areas );
-	static PixelData 							getPixelData(	const Vulkan& vulkan,
-																Utils::BufferView<const Utils::Area> areas,
-																const Buffer& buffer );
+	static std::vector<Utils::BufferView<std::byte>> getPixelData(	const Vulkan& vulkan,
+																	Utils::BufferView<const Utils::Area> areas,
+																	const Buffer& buffer );
 	static vk::UniqueCommandBuffer				createCommandBuffer(const Vulkan& vulkan,
 																	Utils::BufferView<const PlaneDescriptor> planes,
 																	vk::CommandPool cmdPool,

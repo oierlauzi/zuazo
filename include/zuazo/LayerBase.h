@@ -5,6 +5,7 @@
 #include "Utils/Pimpl.h"
 #include "Graphics/Vulkan.h"
 #include "Graphics/CommandBuffer.h"
+#include "Graphics/RenderPass.h"
 #include "Math/Transform.h"
 
 #include <functional>
@@ -18,7 +19,7 @@ public:
 	using BlendingModeCallback = std::function<void(LayerBase&, BlendingMode)>;
 	using HasChangedCallback = std::function<bool(const LayerBase&, const RendererBase&)>;
 	using DrawCallback = std::function<void(const LayerBase&, const RendererBase&, Graphics::CommandBuffer&)>;
-	using RenderPassCallback = std::function<void(LayerBase&, vk::RenderPass)>;
+	using RenderPassCallback = std::function<void(LayerBase&, Graphics::RenderPass)>;
 
 	LayerBase(	const RendererBase* renderer,
 				TransformCallback transformCbk = {},
@@ -50,7 +51,7 @@ public:
 	bool								hasChanged(const RendererBase& renderer) const;
 	void								draw(const RendererBase& renderer, Graphics::CommandBuffer& cmd) const;
 
-	vk::RenderPass						getRenderPass() const;
+	Graphics::RenderPass				getRenderPass() const;
 
 protected:
 	void								setTransformCallback(TransformCallback cbk);

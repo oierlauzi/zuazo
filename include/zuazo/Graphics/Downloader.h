@@ -12,27 +12,33 @@
 
 namespace Zuazo::Graphics {
 
-class Drawtable {
+class Downloader {
 public:
-	Drawtable(	const Vulkan& vulkan, 
+	using PixelData = Utils::BufferView<const Utils::BufferView<const std::byte>>;
+
+	Downloader(	const Vulkan& vulkan, 
 				const Frame::Descriptor& frameDesc,
 				DepthStencilFormat depthStencilFmt );
-	Drawtable(const Drawtable& other) = delete;
-	Drawtable(Drawtable&& other) noexcept;
-	~Drawtable();
+	Downloader(const Downloader& other) = delete;
+	Downloader(Downloader&& other) noexcept;
+	~Downloader();
 
-	Drawtable& 										operator=(const Drawtable& other) = delete;
-	Drawtable& 										operator=(Drawtable&& other) noexcept;
+	Downloader& 									operator=(const Downloader& other) = delete;
+	Downloader& 									operator=(Downloader&& other) noexcept;
 
 	const Vulkan&									getVulkan() const noexcept;
-	const Frame::Descriptor& 						getFrameDescriptor() const noexcept;
-	OutputColorTransfer								getOutputColorTransfer() const;	
+	const Frame::Descriptor& 						getFrameDescriptor() const noexcept;	
+	OutputColorTransfer								getOutputColorTransfer() const;
 
-	void											setMaxSpareCount(size_t spares) noexcept;
-	size_t											getMaxSpareCount() const noexcept;
-	size_t											getSpareCount() const noexcept;
+	vk::Framebuffer									getFramebuffer() const noexcept;
+	void											beginRenderPass(vk::CommandBuffer cmd, 
+																	vk::Rect2D renderArea,
+																	Utils::BufferView<const vk::ClearValue> clearValues,
+																	vk::SubpassContents contents ) const noexcept;
+	void											endRenderPass(vk::CommandBuffer cmd) const noexcept;
 
-	std::shared_ptr<TargetFrame>					acquireFrame() const;
+	void											draw(std::shared_ptr<const CommandBuffer> cmd);
+	PixelData										getPixelData() const noexcept;
 
 	static Utils::Discrete<ColorFormat> 			getSupportedFormats(const Vulkan& vulkan);
 	static Utils::Discrete<ColorFormat> 			getSupportedSrgbFormats(const Vulkan& vulkan);

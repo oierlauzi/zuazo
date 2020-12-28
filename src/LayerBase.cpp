@@ -13,7 +13,7 @@ struct LayerBase::Impl {
 	float											opacity;
 	BlendingMode									blendingMode;
 
-	vk::RenderPass									renderPass;
+	Graphics::RenderPass							renderPass;
 
 	TransformCallback								transformCallback;
 	OpacityCallback									opacityCallback;
@@ -34,7 +34,7 @@ struct LayerBase::Impl {
 		, transform()
 		, opacity(1.0f)
 		, blendingMode(BlendingMode::OPACITY)
-		, renderPass(renderer ? renderer->getRenderPass() : vk::RenderPass())
+		, renderPass(renderer ? renderer->getRenderPass() : Graphics::RenderPass())
 		, transformCallback(std::move(transformCbk))
 		, opacityCallback(std::move(opacityCbk))
 		, blendingModeCallback(std::move(blendingModeCbk))
@@ -49,7 +49,7 @@ struct LayerBase::Impl {
 
 	void setRenderer(LayerBase& base, const RendererBase* rend) {
 		renderer = rend;
-		const auto rendPass = renderer ? renderer->getRenderPass() : vk::RenderPass();
+		const auto rendPass = renderer ? renderer->getRenderPass() : Graphics::RenderPass();
 
 		if(renderPass != rendPass) {
 			renderPass = rendPass;
@@ -111,7 +111,7 @@ struct LayerBase::Impl {
 	}
 
 
-	vk::RenderPass getRenderPass() const {
+	Graphics::RenderPass getRenderPass() const {
 		return renderPass;
 	}
 
@@ -240,7 +240,7 @@ void LayerBase::draw(const RendererBase& renderer, Graphics::CommandBuffer& cmd)
 }
 
 
-vk::RenderPass LayerBase::getRenderPass() const {
+Graphics::RenderPass LayerBase::getRenderPass() const {
 	return m_impl->getRenderPass();
 }
 

@@ -148,8 +148,8 @@ struct RendererBase::Impl {
 	}
 
 
-	vk::RenderPass getRenderPass(const RendererBase& base) const {
-		vk::RenderPass result = {};
+	Graphics::RenderPass getRenderPass(const RendererBase& base) const {
+		Graphics::RenderPass result;
 
 		if(renderPassQueryCbk) {
 			result = renderPassQueryCbk(base);
@@ -401,7 +401,7 @@ Utils::BufferView<const RendererBase::LayerRef> RendererBase::getLayers() const 
 }
 
 
-vk::RenderPass RendererBase::getRenderPass() const {
+Graphics::RenderPass RendererBase::getRenderPass() const {
 	return m_impl->getRenderPass(*this);
 }
 

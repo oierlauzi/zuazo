@@ -26,9 +26,17 @@ StagedFrame::~StagedFrame() {
 	waitCompletion(Vulkan::NO_TIMEOUT);
 }
 
-const Frame::PixelData& StagedFrame::getPixelData() noexcept {
+StagedFrame::PixelData StagedFrame::getPixelData() noexcept {
 	return m_pixelData;
 }
+
+StagedFrame::ConstPixelData StagedFrame::getPixelData() const noexcept {
+	return ConstPixelData(
+		reinterpret_cast<const Utils::BufferView<const std::byte>*>(m_pixelData.data()),
+		m_pixelData.size()
+	);
+}
+
 
 void StagedFrame::flush() {
 	//There should not be any pending upload
@@ -74,9 +82,9 @@ Buffer StagedFrame::createStagingBuffer(const Vulkan& vulkan,
 	);
 }
 
-Frame::PixelData StagedFrame::getPixelData(	const Vulkan& vulkan,
-											Utils::BufferView<const Utils::Area> areas,
-											const Buffer& buffer )
+std::vector<Utils::BufferView<std::byte>> StagedFrame::getPixelData(const Vulkan& vulkan,
+																	Utils::BufferView<const Utils::Area> areas,
+																	const Buffer& buffer )
 {
 	const vk::MappedMemoryRange range(
 		buffer.getDeviceMemory(),
