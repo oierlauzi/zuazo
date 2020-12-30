@@ -20,14 +20,20 @@ namespace Zuazo::Graphics {
  */
 
 struct Downloader::Impl {
-	std::reference_wrapper<const Vulkan>			vulkan;
+	const Vulkan&									vulkan;
 	std::shared_ptr<Frame::Descriptor>				frameDescriptor;
 	InputColorTransfer								colorTransfer;
-	std::vector<Frame::PlaneDescriptor>				planeDescriptors;
+	std::vector<Image::PlaneDescriptor>				planeDescriptors;
 
 	std::shared_ptr<DepthStencil>					depthStencil;
 	RenderPass										renderPass;
+	Buffer											stagingBuffer;
 
+	std::shared_ptr<const CommandBuffer>			lastCommandBuffer;
+	vk::UniqueCommandPool							commandPool;
+	vk::CommandBuffer								downloadCommand;
+	vk::UniqueSemaphore								renderComplete;
+	vk::UniqueFence									downloadComplete;
 
 
 	Impl(	const Vulkan& vulkan, 
@@ -39,10 +45,17 @@ struct Downloader::Impl {
 		, planeDescriptors(createPlaneDescriptors(vulkan, frameDesc, colorTransfer))
 		, depthStencil(createDepthStencil(vulkan, toVulkan(depthStencilFmt), planeDescriptors))
 		, renderPass(getRenderPass(vulkan, planeDescriptors, depthStencilFmt))
+		, lastCommandBuffer()
+		, commandPool() //TODO
+		, downloadCommand() //TODO
+		, renderComplete(vulkan.createSemaphore())
+		, downloadComplete(vulkan.createFence(true))
 	{
 	}
 
-	~Impl() = default;
+	~Impl() {
+		waitCompletion(Vulkan::NO_TIMEOUT);
+	}
 
 
 	const Vulkan& getVulkan() const noexcept {
@@ -72,11 +85,55 @@ struct Downloader::Impl {
 	}
 
 	void endRenderPass(vk::CommandBuffer cmd) const noexcept {
-		vulkan.get().endRenderPass(cmd);
+		vulkan.endRenderPass(cmd);
 	}
 
 	void draw(std::shared_ptr<const CommandBuffer> cmd) {
-		//TODO
+		//No previous download should be in progress
+		waitCompletion(Vulkan::NO_TIMEOUT);
+
+		lastCommandBuffer = std::move(cmd);
+		assert(lastCommandBuffer);
+
+		//Submit drawing commands to the graphics queue
+		const std::array renderCommandbuffers = {
+			lastCommandBuffer->getCommandBuffer()
+		};
+
+		const std::array intermediateSemaphores = {
+			*renderComplete
+		};
+
+		const vk::SubmitInfo renderSubmitInfo(
+			0,								nullptr,	nullptr,			//Wait semaphores
+			renderCommandbuffers.size(), 	renderCommandbuffers.data(),	//Command buffers
+			intermediateSemaphores.size(), 	intermediateSemaphores.data()	//Signal semaphores
+		);
+
+		vulkan.submit(vulkan.getGraphicsQueue(), renderSubmitInfo, vk::Fence());
+
+		//Submit download commands to the transfer queue
+		constexpr std::array downloadWaitStages = {
+			vk::PipelineStageFlags(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+		};    
+		static_assert(intermediateSemaphores.size() == downloadWaitStages.size(), "Wait semaphore sizes do not match");
+
+		const std::array downloadCommandbuffers = {
+			downloadCommand
+		};
+
+		const vk::SubmitInfo dowloadSubmitInfo(
+			intermediateSemaphores.size(),	intermediateSemaphores.data(),	downloadWaitStages.data(),	//Wait semaphores
+			downloadCommandbuffers.size(), 	downloadCommandbuffers.data(),								//Command buffers
+			0, 								nullptr														//Signal semaphores
+		);
+
+		vulkan.resetFences(*downloadComplete);
+		vulkan.submit(vulkan.getTransferQueue(), renderSubmitInfo, *downloadComplete);
+	}
+
+	bool waitCompletion(uint64_t timeo) const {
+		return vulkan.waitForFences(*downloadComplete, true, timeo);
 	}
 
 	Utils::BufferView<const Utils::BufferView<const std::byte>>	getPixelData() const noexcept {
@@ -251,7 +308,7 @@ struct Downloader::Impl {
 
 private:
 	static RenderPass getRenderPass(const Vulkan& vulkan, 
-									Utils::BufferView<const Frame::PlaneDescriptor> planeDescriptors,
+									Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
 									DepthStencilFormat depthStencilFmt )
 	{
 		return RenderPass(vulkan, planeDescriptors, depthStencilFmt, vk::ImageLayout::eShaderReadOnlyOptimal);
@@ -274,11 +331,11 @@ private:
 		return vulkan.listSupportedFormatsOptimal(DESIRED_FLAGS);
 	}
 
-	static std::vector<Frame::PlaneDescriptor> createPlaneDescriptors(	const Vulkan& vulkan, 
+	static std::vector<Image::PlaneDescriptor> createPlaneDescriptors(	const Vulkan& vulkan, 
 																		const Frame::Descriptor& desc,
 																		InputColorTransfer& colorTransfer )
 	{
-		std::vector<Frame::PlaneDescriptor> result = Frame::getPlaneDescriptors(desc);
+		std::vector<Image::PlaneDescriptor> result = Frame::getPlaneDescriptors(desc);
 
 		//Try to optimize it
 		const auto& supportedFormats = getVulkanFormatSupport(vulkan);
@@ -299,7 +356,7 @@ private:
 
 	static std::shared_ptr<DepthStencil> createDepthStencil(const Vulkan& vulkan,
 															vk::Format format,
-															const std::vector<Frame::PlaneDescriptor>& desc)
+															const std::vector<Image::PlaneDescriptor>& desc)
 	{
 		std::shared_ptr<DepthStencil> result;
 
@@ -487,6 +544,10 @@ void Downloader::endRenderPass(vk::CommandBuffer cmd) const noexcept {
 
 void Downloader::draw(std::shared_ptr<const CommandBuffer> cmd) {
 	m_impl->draw(std::move(cmd));
+}
+
+bool Downloader::waitCompletion(uint64_t timeo) const {
+	return m_impl->waitCompletion(timeo);
 }
 
 Downloader::PixelData Downloader::getPixelData() const noexcept {

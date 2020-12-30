@@ -5,7 +5,7 @@ namespace Zuazo::Graphics {
 StagedFrame::StagedFrame(	const Vulkan& vulkan,
 							std::shared_ptr<const Descriptor> desc,
 							std::shared_ptr<const Buffer> colorTransfer,
-							Utils::BufferView<const Frame::PlaneDescriptor> planes,
+							Utils::BufferView<const Image::PlaneDescriptor> planes,
 							std::shared_ptr<const vk::UniqueCommandPool> cmdPool )
 	: Frame(
 		vulkan,
@@ -13,10 +13,10 @@ StagedFrame::StagedFrame(	const Vulkan& vulkan,
 		std::move(colorTransfer),
 		planes,
 		vk::ImageUsageFlagBits::eTransferDst )
-	, m_stagingBuffer(createStagingBuffer(vulkan, getPlaneAreas()))
-	, m_pixelData(getPixelData(vulkan, getPlaneAreas(), m_stagingBuffer))
+	, m_stagingBuffer(createStagingBuffer(vulkan, getImage().getMemory().areas))
+	, m_pixelData(getPixelData(vulkan, getImage().getMemory().areas, m_stagingBuffer))
 	, m_commandPool(std::move(cmdPool))
-	, m_commandBuffer(createCommandBuffer(getVulkan(), planes, **m_commandPool, getImages(), getPlaneAreas(), m_stagingBuffer))
+	, m_commandBuffer(createCommandBuffer(getVulkan(), planes, **m_commandPool, getImage(), m_stagingBuffer))
 	, m_commandBufferSubmit(createSubmitInfo(*m_commandBuffer))
 	, m_uploadComplete(vulkan.createFence(true))
 {
@@ -78,7 +78,7 @@ Buffer StagedFrame::createStagingBuffer(const Vulkan& vulkan,
 		vulkan,
 		usageFlags,
 		memoryFlags,
-		areas.back().offset() + areas.back().size() 
+		areas.back().end()
 	);
 }
 
@@ -96,14 +96,18 @@ std::vector<Utils::BufferView<std::byte>> StagedFrame::getPixelData(const Vulkan
 }
 
 vk::UniqueCommandBuffer StagedFrame::createCommandBuffer(	const Vulkan& vulkan,
-															Utils::BufferView<const PlaneDescriptor> planes,
+															Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
 															vk::CommandPool cmdPool,
-															Utils::BufferView<const vk::UniqueImage> images,
-															Utils::BufferView<const Utils::Area> areas,
+															const Image& image,
 															const Buffer& stagingBuffer )
 {
 	auto cmdBuffer = vulkan.allocateCommnadBuffer(cmdPool, vk::CommandBufferLevel::ePrimary);
 
+	const bool queueOwnershipTransfer = vulkan.getTransferQueueIndex() != vulkan.getGraphicsQueueIndex();
+	const size_t planeCount = planeDescriptors.size();
+	assert(planeCount == image.getMemory().areas.size());
+	assert(planeCount == image.getPlanes().size());
+	
 	//Record the command buffer
 	const vk::CommandBufferBeginInfo beginInfo(
 		{},
@@ -112,11 +116,9 @@ vk::UniqueCommandBuffer StagedFrame::createCommandBuffer(	const Vulkan& vulkan,
 
 	vulkan.begin(*cmdBuffer, beginInfo);
 	{
-		const bool queueOwnershipTransfer = vulkan.getTransferQueueIndex() != vulkan.getGraphicsQueueIndex();
-		assert(images.size() == areas.size());
-		assert(images.size() == planes.size());
+		std::vector<vk::ImageMemoryBarrier> memoryBarriers;
+		memoryBarriers.reserve(planeCount);
 
-		std::vector<vk::ImageMemoryBarrier> memoryBarriers(images.size());
 		constexpr vk::ImageSubresourceRange imageSubresourceRange(
 			vk::ImageAspectFlagBits::eColor,				//Aspect mask
 			0, 1, 0, 1										//Base mipmap level, mipmap levels, base array layer, layers
@@ -124,7 +126,8 @@ vk::UniqueCommandBuffer StagedFrame::createCommandBuffer(	const Vulkan& vulkan,
 
 		//Transition the layout of the images
 		{
-			for(size_t i = 0; i < images.size(); i++){
+			memoryBarriers.clear();
+			for(const auto& plane : image.getPlanes()){
 				constexpr vk::AccessFlags srcAccess = {};
 				constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eTransferWrite;
 
@@ -135,17 +138,18 @@ vk::UniqueCommandBuffer StagedFrame::createCommandBuffer(	const Vulkan& vulkan,
 				constexpr auto srcFamily = VK_QUEUE_FAMILY_IGNORED;
 				constexpr auto dstFamily = VK_QUEUE_FAMILY_IGNORED;
 
-				memoryBarriers[i] = vk::ImageMemoryBarrier(
+				memoryBarriers.emplace_back(
 					srcAccess,								//Old access mask
 					dstAccess,								//New access mask
 					srcLayout,								//Old layout
 					dstLayout,								//New layout
 					srcFamily,								//Old queue family
 					dstFamily,								//New queue family
-					*(images[i]),							//Image
+					*plane.image,							//Image
 					imageSubresourceRange					//Image subresource
 				);
 			}
+			assert(memoryBarriers.size() == planeCount);
 
 			constexpr vk::PipelineStageFlags srcStages = 
 				vk::PipelineStageFlagBits::eTopOfPipe;
@@ -163,26 +167,27 @@ vk::UniqueCommandBuffer StagedFrame::createCommandBuffer(	const Vulkan& vulkan,
 		}
 
 		//Copy the buffer to the image
-		for(size_t i = 0; i < images.size(); i++){
-			const vk::BufferImageCopy region(
-				areas[i].offset(), 						//Buffer offset
-				0,										//Buffer line stride
-				0,										//Buffer image lines
-				vk::ImageSubresourceLayers(				//Image subresource
-					imageSubresourceRange.aspectMask,		//Aspect mask
-					imageSubresourceRange.baseMipLevel,		//Mip level
-					imageSubresourceRange.baseArrayLayer,	//Array layer offset
-					imageSubresourceRange.layerCount 		//Array layers
-				),	
-				vk::Offset3D(),							//Image offset
-				vk::Extent3D(planes[i].extent, 1)		//Image extent
+		for(size_t i = 0; i < planeCount; i++){
+			constexpr vk::ImageSubresourceLayers imageSubresourceLayers(
+				imageSubresourceRange.aspectMask,					//Aspect mask
+				imageSubresourceRange.baseMipLevel,					//Mip level
+				imageSubresourceRange.baseArrayLayer,				//Array layer offset
+				imageSubresourceRange.layerCount 					//Array layers
 			);
 
+			const vk::BufferImageCopy region(
+				image.getMemory().areas[i].offset(), 				//Buffer offset
+				0,													//Buffer line stride
+				0,													//Buffer image lines
+				imageSubresourceLayers,								//Image subresource
+				vk::Offset3D(),										//Image offset
+				vk::Extent3D(planeDescriptors[i].extent, 1)			//Image extent
+			);
 
 			vulkan.copy(
 				*cmdBuffer,
 				stagingBuffer.getBuffer(),
-				*(images[i]),
+				*(image.getPlanes()[i].image),
 				vk::ImageLayout::eTransferDstOptimal,
 				region
 			);
@@ -190,7 +195,8 @@ vk::UniqueCommandBuffer StagedFrame::createCommandBuffer(	const Vulkan& vulkan,
 
 		//Transition the layout of the images (again)
 		{
-			for(size_t i = 0; i < images.size(); i++){
+			memoryBarriers.clear();
+			for(const auto& plane : image.getPlanes()){
 				constexpr vk::AccessFlags srcAccess = vk::AccessFlagBits::eTransferWrite;
 				constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eShaderRead;
 
@@ -200,17 +206,18 @@ vk::UniqueCommandBuffer StagedFrame::createCommandBuffer(	const Vulkan& vulkan,
 				const auto srcFamily = queueOwnershipTransfer ? vulkan.getTransferQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
 				const auto dstFamily = queueOwnershipTransfer ? vulkan.getGraphicsQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
 
-				memoryBarriers[i] = vk::ImageMemoryBarrier(
+				memoryBarriers.emplace_back(
 					srcAccess,								//Old access mask
 					dstAccess,								//New access mask
 					srcLayout,								//Old layout
 					dstLayout,								//New layout
 					srcFamily,								//Old queue family
 					dstFamily,								//New queue family
-					*(images[i]),							//Image
+					*plane.image,							//Image
 					imageSubresourceRange					//Image subresource
 				);
 			}
+			assert(memoryBarriers.size() == planeCount);
 
 			constexpr vk::PipelineStageFlags srcStages = 
 				vk::PipelineStageFlagBits::eTransfer;

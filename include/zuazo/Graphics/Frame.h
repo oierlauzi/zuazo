@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Vulkan.h"
+#include "Image.h"
 #include "Buffer.h"
 #include "StagedBuffer.h"
 #include "VulkanConversions.h"
@@ -27,17 +28,6 @@ class InputColorTransfer;
 
 class Frame {
 public:
-	struct PlaneDescriptor {
-		vk::Extent2D 							extent;
-		vk::Format 								format;
-		vk::ComponentMapping 					swizzle;
-	};
-
-	struct SamplerDescriptor {
-		vk::Filter								filter;
-		int32_t									samplingMode;
-	};
-
 	class Descriptor;
 	class Geometry;
 
@@ -46,7 +36,7 @@ public:
 	Frame(	const Vulkan& vulkan,
 			std::shared_ptr<const Descriptor> desc,
 			std::shared_ptr<const Buffer> colorTransfer,
-			Utils::BufferView<const PlaneDescriptor> planes,
+			Utils::BufferView<const Image::PlaneDescriptor> planes,
 			vk::ImageUsageFlags usage );
 	Frame(const Frame& other) = delete;
 	Frame(Frame&& other) noexcept;
@@ -63,16 +53,11 @@ public:
 	const Vulkan&							getVulkan() const noexcept;
 	const Descriptor&						getDescriptor() const noexcept;
 	const Math::Vec2f&						getSize() const noexcept;
-
-	const std::vector<vk::UniqueImage>&		getImages() const noexcept;
-	const std::vector<vk::UniqueImageView>&	getImageViews() const noexcept;
-	const std::vector<Utils::Area>&			getPlaneAreas() const noexcept;
-	const vk::DeviceMemory&					getMemory() const noexcept;
+	const Image&							getImage() const noexcept;
 
 	static std::shared_ptr<StagedBuffer>	createColorTransferBuffer(	const Vulkan& vulkan,
 																		const InputColorTransfer& colorTransfer );
-	static std::vector<PlaneDescriptor>		getPlaneDescriptors(const Descriptor& desc);
-	static SamplerDescriptor				getSamplerDescriptor(ScalingFilter filter);
+	static std::vector<Image::PlaneDescriptor> getPlaneDescriptors(const Descriptor& desc);
 	static vk::DescriptorSetLayout			getDescriptorSetLayout(	const Vulkan& vulkan,
 																	vk::Filter filt );
 

@@ -51,11 +51,11 @@ struct Drawtable::Impl {
 
 	};
 
-	std::reference_wrapper<const Vulkan>			vulkan;
+	const Vulkan&									vulkan;
 	std::shared_ptr<Frame::Descriptor>				frameDescriptor;
 	InputColorTransfer								colorTransfer;
 	std::shared_ptr<StagedBuffer>					colorTransferBuffer;
-	std::vector<Frame::PlaneDescriptor>				planeDescriptors;
+	std::vector<Image::PlaneDescriptor>				planeDescriptors;
 
 	std::shared_ptr<DepthStencil>					depthStencil;
 
@@ -284,7 +284,7 @@ struct Drawtable::Impl {
 
 private:
 	static RenderPass getRenderPass(const Vulkan& vulkan, 
-									Utils::BufferView<const Frame::PlaneDescriptor> planeDescriptors,
+									Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
 									DepthStencilFormat depthStencilFmt )
 	{
 		return RenderPass(vulkan, planeDescriptors, depthStencilFmt, vk::ImageLayout::eShaderReadOnlyOptimal);
@@ -307,11 +307,11 @@ private:
 	}
 
 private:
-	static std::vector<Frame::PlaneDescriptor> createPlaneDescriptors(	const Vulkan& vulkan, 
+	static std::vector<Image::PlaneDescriptor> createPlaneDescriptors(	const Vulkan& vulkan, 
 																		const Frame::Descriptor& desc,
 																		InputColorTransfer& colorTransfer )
 	{
-		std::vector<Frame::PlaneDescriptor> result = Frame::getPlaneDescriptors(desc);
+		std::vector<Image::PlaneDescriptor> result = Frame::getPlaneDescriptors(desc);
 
 		//Try to optimize it
 		const auto& supportedFormats = getVulkanFormatSupport(vulkan);
@@ -332,7 +332,7 @@ private:
 
 	static std::shared_ptr<DepthStencil> createDepthStencil(const Vulkan& vulkan,
 															vk::Format format,
-															const std::vector<Frame::PlaneDescriptor>& desc)
+															const std::vector<Image::PlaneDescriptor>& desc)
 	{
 		std::shared_ptr<DepthStencil> result;
 

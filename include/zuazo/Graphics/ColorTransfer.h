@@ -20,6 +20,11 @@ namespace Zuazo::Graphics {
 class InputColorTransfer {
 	friend class OutputColorTransfer;
 public:
+	struct SamplerDescriptor {
+		vk::Filter								filter;
+		int32_t									samplingMode;
+	};
+
 	InputColorTransfer();
 	explicit InputColorTransfer(const Frame::Descriptor& desc);
 	InputColorTransfer(const Frame::Descriptor& desc, const Chromaticities& customPrimaries);
@@ -33,11 +38,12 @@ public:
 	bool								operator==(const InputColorTransfer& other) const noexcept;
 	bool								operator!=(const InputColorTransfer& other) const noexcept;
 
-	void								optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
+	void								optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
 													Utils::BufferView<const vk::Format> supportedFormats ) noexcept;
 
 	const std::byte*					data() const noexcept;
 
+	static SamplerDescriptor			getSamplerDescriptor(ScalingFilter filter);
 	static uint32_t 					getSamplerCount() noexcept;
 	static uint32_t 					getSamplerBinding() noexcept;
 	static uint32_t 					getDataBinding() noexcept;
@@ -66,7 +72,7 @@ public:
 	bool								operator==(const OutputColorTransfer& other) const noexcept;
 	bool								operator!=(const OutputColorTransfer& other) const noexcept;
 
-	void								optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
+	void								optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
 													Utils::BufferView<const vk::Format> supportedFormats ) noexcept;
 
 	const std::byte*					data() const noexcept;

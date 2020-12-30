@@ -28,7 +28,6 @@ public:
 	const Vulkan&									getVulkan() const noexcept;
 	vk::CommandBuffer								getCommandBuffer() const noexcept;
 
-	void											clearDependencies() noexcept;
 	void											addDependencies(Utils::BufferView<const Dependency> dep);
 	Utils::BufferView<const Dependency>				getDependencies() const noexcept;
 

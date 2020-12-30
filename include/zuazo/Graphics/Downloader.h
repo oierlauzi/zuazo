@@ -38,6 +38,7 @@ public:
 	void											endRenderPass(vk::CommandBuffer cmd) const noexcept;
 
 	void											draw(std::shared_ptr<const CommandBuffer> cmd);
+	bool											waitCompletion(uint64_t timeo) const;
 	PixelData										getPixelData() const noexcept;
 
 	static Utils::Discrete<ColorFormat> 			getSupportedFormats(const Vulkan& vulkan);

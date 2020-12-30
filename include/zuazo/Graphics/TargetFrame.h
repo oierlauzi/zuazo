@@ -18,7 +18,7 @@ public:
 	TargetFrame(const Vulkan& vulkan,
 				std::shared_ptr<const Descriptor> desc,
 				std::shared_ptr<const Buffer> colorTransfer,
-				Utils::BufferView<const PlaneDescriptor> planes,
+				Utils::BufferView<const Image::PlaneDescriptor> planes,
 				std::shared_ptr<const DepthStencil> depthStencil,
 				RenderPass renderPass );
 	TargetFrame(const TargetFrame& other) = delete;
@@ -45,10 +45,10 @@ private:
 
 
 	static vk::UniqueFramebuffer				createFramebuffer(	const Graphics::Vulkan& vulkan,
-																	Utils::BufferView<const PlaneDescriptor> planes,
+																	Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
 																	const std::shared_ptr<const DepthStencil>& depthStencil,
 																	vk::RenderPass renderPass,
-																	const std::vector<vk::UniqueImageView>& imageViews );
+																	const Image& image );
 
 };
 

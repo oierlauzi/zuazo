@@ -86,7 +86,7 @@ constexpr int32_t getPlaneFormat(ColorFormat format) noexcept {
 static int32_t optimizeColorTransferFunction(	int32_t colorRange,
 												int32_t colorModel,
 												int32_t colorTransferFunction,
-												Utils::BufferView<Frame::PlaneDescriptor> planes,
+												Utils::BufferView<Image::PlaneDescriptor> planes,
 												Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 {
 	//For binary search:
@@ -175,7 +175,7 @@ struct InputColorTransfer::Impl {
 		return std::memcmp(data(), other.data(), size()) == 0;
 	}
 
-	void optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
+	void optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
 					Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 	{
 		transferData.colorTransferFunction = ColorTransfer::optimizeColorTransferFunction(
@@ -231,7 +231,7 @@ bool InputColorTransfer::operator!=(const InputColorTransfer& other) const noexc
 
 
 
-void InputColorTransfer::optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
+void InputColorTransfer::optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
 									Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 {
 	m_impl->optimize(planes, supportedFormats);
@@ -243,6 +243,23 @@ const std::byte* InputColorTransfer::data() const noexcept {
 }
 
 
+InputColorTransfer::SamplerDescriptor InputColorTransfer::getSamplerDescriptor(ScalingFilter filter) {
+	SamplerDescriptor result;
+
+	if(filter == ScalingFilter::CUBIC) {
+		result = {
+			vk::Filter::eLinear,
+			ct_SAMPLE_MODE_BILINEAR2BICUBIC
+		};
+	} else {
+		result = {
+			toVulkan(filter),
+			ct_SAMPLE_MODE_PASSTHOUGH
+		};
+	}
+
+	return result;
+}
 
 uint32_t InputColorTransfer::getSamplerCount() noexcept {
 	return ct_SAMPLER_COUNT;
@@ -292,7 +309,7 @@ struct OutputColorTransfer::Impl {
 		return std::memcmp(data(), other.data(), size()) == 0;
 	}
 
-	void optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
+	void optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
 					Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 	{
 		transferData.colorTransferFunction = ColorTransfer::optimizeColorTransferFunction(
@@ -352,7 +369,7 @@ bool OutputColorTransfer::operator!=(const OutputColorTransfer& other) const noe
 
 
 
-void OutputColorTransfer::optimize(	Utils::BufferView<Frame::PlaneDescriptor> planes,
+void OutputColorTransfer::optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
 									Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 {
 	m_impl->optimize(planes, supportedFormats);

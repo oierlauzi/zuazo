@@ -50,7 +50,7 @@ struct Uploader::Impl {
 	std::reference_wrapper<const Vulkan>			vulkan;
 	std::shared_ptr<Frame::Descriptor>				frameDescriptor;
 	InputColorTransfer								colorTransfer;
-	std::vector<Frame::PlaneDescriptor>				planeDescriptors;
+	std::vector<Image::PlaneDescriptor>				planeDescriptors;
 
 	std::shared_ptr<StagedBuffer>					colorTransferBuffer;
 	std::shared_ptr<vk::UniqueCommandPool>			commandPool;
@@ -163,11 +163,11 @@ private:
 		return vulkan.listSupportedFormatsOptimal(DESIRED_FLAGS);
 	}
 
-	static std::vector<Frame::PlaneDescriptor> createPlaneDescriptors(	const Vulkan& vulkan, 
+	static std::vector<Image::PlaneDescriptor> createPlaneDescriptors(	const Vulkan& vulkan, 
 																		const Frame::Descriptor& desc,
 																		InputColorTransfer& colorTransfer )
 	{
-		std::vector<Frame::PlaneDescriptor> result = Frame::getPlaneDescriptors(desc);
+		std::vector<Image::PlaneDescriptor> result = Frame::getPlaneDescriptors(desc);
 
 		//Try to optimize it
 		const auto supportedFormats = getVulkanFormatSupport(vulkan);

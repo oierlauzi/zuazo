@@ -31,10 +31,6 @@ vk::CommandBuffer CommandBuffer::getCommandBuffer() const noexcept {
 }
 
 
-void CommandBuffer::clearDependencies() noexcept {
-	m_dependencies.clear();
-}
-
 void CommandBuffer::addDependencies(Utils::BufferView<const Dependency> dep) {
 	m_dependencies.insert(m_dependencies.cend(), dep.cbegin(), dep.cend());
 }
@@ -47,6 +43,7 @@ Utils::BufferView<const CommandBuffer::Dependency> CommandBuffer::getDependencie
 
 void CommandBuffer::begin(const vk::CommandBufferBeginInfo& beginInfo) noexcept {
 	getVulkan().begin(getCommandBuffer(), beginInfo);
+	m_dependencies.clear();
 }
 
 void CommandBuffer::end() noexcept {

@@ -15,7 +15,7 @@ public:
 	StagedFrame(const Vulkan& vulkan,
 				std::shared_ptr<const Descriptor> desc,
 				std::shared_ptr<const Buffer> colorTransfer,
-				Utils::BufferView<const PlaneDescriptor> planes,
+				Utils::BufferView<const Image::PlaneDescriptor> planes,
 				std::shared_ptr<const vk::UniqueCommandPool> cmdPool );
 	StagedFrame(const StagedFrame& other) = delete;
 	StagedFrame(StagedFrame&& other) noexcept = default;
@@ -43,10 +43,9 @@ private:
 																	Utils::BufferView<const Utils::Area> areas,
 																	const Buffer& buffer );
 	static vk::UniqueCommandBuffer				createCommandBuffer(const Vulkan& vulkan,
-																	Utils::BufferView<const PlaneDescriptor> planes,
+																	Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
 																	vk::CommandPool cmdPool,
-																	Utils::BufferView<const vk::UniqueImage> images,
-																	Utils::BufferView<const Utils::Area> areas,
+																	const Image& image,
 																	const Buffer& stagingBuffer );
 	static vk::SubmitInfo						createSubmitInfo(const vk::CommandBuffer& cmdBuffer);
 };

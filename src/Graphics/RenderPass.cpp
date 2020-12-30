@@ -8,7 +8,7 @@
 namespace Zuazo::Graphics {
 
 RenderPass::RenderPass(	const Vulkan& vulkan, 
-						Utils::BufferView<const Frame::PlaneDescriptor> planeDescriptors,
+						Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
 						DepthStencilFormat depthStencilFmt,
 						vk::ImageLayout finalLayout )
 	: m_renderPass(createRenderPass(vulkan, planeDescriptors, depthStencilFmt, finalLayout))
@@ -32,7 +32,7 @@ vk::RenderPass RenderPass::getRenderPass() const {
 
 
 vk::RenderPass RenderPass::createRenderPass(const Vulkan& vulkan, 
-											Utils::BufferView<const Frame::PlaneDescriptor> planeDescriptors,
+											Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
 											DepthStencilFormat depthStencilFmt,
 											vk::ImageLayout finalLayout )
 {

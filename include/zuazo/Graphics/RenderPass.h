@@ -9,7 +9,7 @@ class RenderPass {
 public:
 	RenderPass() = default;
 	RenderPass(	const Vulkan& vulkan, 
-				Utils::BufferView<const Frame::PlaneDescriptor> planeDescriptors,
+				Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
 				DepthStencilFormat depthStencilFmt,
 				vk::ImageLayout finalLayout );
 
@@ -27,7 +27,7 @@ private:
 	vk::RenderPass			m_renderPass;
 
 	static vk::RenderPass	createRenderPass(	const Vulkan& vulkan, 
-												Utils::BufferView<const Frame::PlaneDescriptor> planeDescriptors,
+												Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
 												DepthStencilFormat depthStencilFmt,
 												vk::ImageLayout finalLayout );
 

@@ -5,8 +5,6 @@
 #include <zuazo/Graphics/ColorTransfer.h>
 #include <zuazo/Graphics/StagedBuffer.h>
 
-#include <zuazo/shaders/color_transfer.h>
-
 #include <vector>
 
 namespace Zuazo::Graphics {
@@ -17,10 +15,7 @@ struct Frame::Impl {
 	std::shared_ptr<const Descriptor> 	descriptor;
 	Math::Vec2f 						size;
 	std::shared_ptr<const Buffer> 		colorTransferBuffer;
-
-	std::vector<vk::UniqueImage> 		images;
-	Vulkan::AggregatedAllocation		memory;
-	std::vector<vk::UniqueImageView>	imageViews;
+	Image								image;
 
 	vk::UniqueDescriptorPool			descriptorPool;
 	std::vector<vk::DescriptorSet>		descriptorSets;
@@ -28,21 +23,18 @@ struct Frame::Impl {
 	Impl(	const Vulkan& vulkan,
 			std::shared_ptr<const Descriptor> desc,
 			std::shared_ptr<const Buffer> colorTransfer,
-			Utils::BufferView<const PlaneDescriptor> planes,
+			Utils::BufferView<const Image::PlaneDescriptor> planes,
 			vk::ImageUsageFlags usage )
 		: vulkan(vulkan)
 		, descriptor(std::move(desc))
 		, size(descriptor->calculateSize())
 		, colorTransferBuffer(std::move(colorTransfer))
-		, images(createImages(vulkan, usage, planes))
-		, memory(allocateMemory(vulkan, images))
-		, imageViews(createImageViews(vulkan, planes, images))
+		, image(vulkan, planes, usage | vk::ImageUsageFlagBits::eSampled)
 		, descriptorPool(createDescriptorPool(vulkan))
 		, descriptorSets(allocateDescriptorSets(vulkan, *descriptorPool))
 	{
 		assert(descriptor);
 		assert(colorTransferBuffer);
-		assert(images.size());
 
 		writeDescriptorSets();
 	}
@@ -81,20 +73,8 @@ struct Frame::Impl {
 		return size;
 	}
 
-	const std::vector<vk::UniqueImage>& getImages() const noexcept {
-		return images;
-	}
-
-	const std::vector<vk::UniqueImageView>& getImageViews() const noexcept {
-		return imageViews;
-	}
-
-	const std::vector<Utils::Area>& getPlaneAreas() const noexcept {
-		return memory.areas;
-	}
-
-	const vk::DeviceMemory& getMemory() const noexcept {
-		return *(memory.memory);
+	const Image& getImage() const noexcept {
+		return image;
 	}
 
 
@@ -102,11 +82,20 @@ private:
 	void writeDescriptorSets() {
 		for(size_t i = 0; i < descriptorSets.size(); i++){
 			//Update all images. As nullptr images can't be passed, repeat available images		
-			std::array<vk::DescriptorImageInfo, MAX_PLANE_COUNT> images;
-			for(size_t j = 0; j < images.size(); j++){
-				images[j] = vk::DescriptorImageInfo(
+			const auto planes = image.getPlanes();
+			std::vector<vk::DescriptorImageInfo> images;
+			images.reserve(InputColorTransfer::getSamplerCount());
+			for(const auto& plane : planes) {
+				images.emplace_back(
 					nullptr,												//Sampler
-					*(imageViews[j % imageViews.size()]),					//Image views
+					*plane.imageView,										//Image views
+					vk::ImageLayout::eShaderReadOnlyOptimal					//Layout
+				);
+			}
+			while(images.size() < InputColorTransfer::getSamplerCount()) {
+				images.emplace_back(
+					nullptr,												//Sampler
+					*planes.front().imageView,								//Image views
 					vk::ImageLayout::eShaderReadOnlyOptimal					//Layout
 				);
 			}
@@ -144,88 +133,6 @@ private:
 
 			vulkan.updateDescriptorSets(Utils::BufferView<const vk::WriteDescriptorSet>(writeDescriptorSets));
 		}
-	}
-
-	static std::vector<vk::UniqueImage> createImages(	const Vulkan& vulkan,
-														vk::ImageUsageFlags usage,
-														Utils::BufferView<const PlaneDescriptor> imagePlanes )
-	{
-		std::vector<vk::UniqueImage> result;
-		result.reserve(imagePlanes.size());
-
-		usage |= vk::ImageUsageFlagBits::eSampled; //Ensure sampled is set
-
-		for(size_t i = 0; i < imagePlanes.size(); i++){
-			const vk::ImageCreateInfo createInfo(
-				{},											//Flags
-				vk::ImageType::e2D,							//Image type
-				imagePlanes[i].format,						//Pixel format
-				vk::Extent3D(imagePlanes[i].extent, 1), 	//Extent
-				1,											//Mip levels
-				1,											//Array layers
-				vk::SampleCountFlagBits::e1,				//Sample count
-				vk::ImageTiling::eOptimal,					//Tiling
-				usage,										//Usage
-				vk::SharingMode::eExclusive,				//Sharing mode
-				0, nullptr,									//Queue family indices
-				vk::ImageLayout::eUndefined					//Initial layout
-			);
-
-			result.emplace_back(vulkan.createImage(createInfo));
-		}
-		
-		return result;
-	}
-
-	static Vulkan::AggregatedAllocation	allocateMemory(	const Vulkan& vulkan,
-														const std::vector<vk::UniqueImage>& images )
-	{
-		constexpr vk::MemoryPropertyFlags memoryProperties =
-			vk::MemoryPropertyFlagBits::eDeviceLocal;
-
-		std::vector<vk::MemoryRequirements> requirements;
-		requirements.reserve(images.size());
-
-		for(size_t i = 0; i < images.size(); i++) {
-			requirements.push_back(vulkan.getMemoryRequirements(*images[i]));
-		}
-
-		auto result = vulkan.allocateMemory(requirements, memoryProperties);
-		assert(result.areas.size() == images.size());
-
-		//Bind image's memory
-		for(size_t i = 0; i < images.size(); i++){
-			vulkan.bindMemory(*images[i], *result.memory, result.areas[i].offset());
-		}
-
-		return result;
-	}
-
-	static std::vector<vk::UniqueImageView>	createImageViews(	const Vulkan& vulkan,
-																Utils::BufferView<const PlaneDescriptor> imagePlanes,
-																const std::vector<vk::UniqueImage>& images )
-	{
-		assert(imagePlanes.size() == images.size());
-		std::vector<vk::UniqueImageView> result;
-		result.reserve(images.size());
-
-		for(size_t i = 0; i < images.size(); i++){
-			const vk::ImageViewCreateInfo createInfo(
-				{},												//Flags
-				*(images[i]),									//Image
-				vk::ImageViewType::e2D,							//ImageView type
-				imagePlanes[i].format,							//Image format
-				imagePlanes[i].swizzle,							//Swizzle
-				vk::ImageSubresourceRange(						//Image subresources
-					vk::ImageAspectFlagBits::eColor,				//Aspect mask
-					0, 1, 0, 1										//Base mipmap level, mipmap levels, base array layer, layers
-				)
-			);
-
-			result.emplace_back(vulkan.createImageView(createInfo));
-		}
-
-		return result;
 	}
 
 	static vk::UniqueDescriptorPool	createDescriptorPool(const Vulkan& vulkan) {
@@ -287,7 +194,7 @@ private:
 Frame::Frame(	const Vulkan& vulkan,
 				std::shared_ptr<const Descriptor> desc,
 				std::shared_ptr<const Buffer> colorTransfer,
-				Utils::BufferView<const PlaneDescriptor> planes,
+				Utils::BufferView<const Image::PlaneDescriptor> planes,
 				vk::ImageUsageFlags usage )
 	: m_impl({}, vulkan, std::move(desc), std::move(colorTransfer), planes, usage)
 {
@@ -324,22 +231,9 @@ const Math::Vec2f& Frame::getSize() const noexcept {
 }
 
 
-const std::vector<vk::UniqueImage>& Frame::getImages() const noexcept {
-	return m_impl->getImages();
+const Image& Frame::getImage() const noexcept {
+	return m_impl->getImage();
 }
-
-const std::vector<vk::UniqueImageView>& Frame::getImageViews() const noexcept {
-	return m_impl->getImageViews();
-}
-
-const std::vector<Utils::Area>& Frame::getPlaneAreas() const noexcept {
-	return m_impl->getPlaneAreas();
-}
-
-const vk::DeviceMemory& Frame::getMemory() const noexcept {
-	return m_impl->getMemory();
-}
-
 
 
 std::shared_ptr<StagedBuffer> Frame::createColorTransferBuffer(	const Vulkan& vulkan,
@@ -362,13 +256,13 @@ std::shared_ptr<StagedBuffer> Frame::createColorTransferBuffer(	const Vulkan& vu
 	return result;
 }
 
-std::vector<Frame::PlaneDescriptor> Frame::getPlaneDescriptors(const Descriptor& desc) {
+std::vector<Image::PlaneDescriptor> Frame::getPlaneDescriptors(const Descriptor& desc) {
 	const Resolution resolution = desc.getResolution();
 	const ColorSubsampling subsampling = desc.getColorSubsampling();
 	const ColorFormat format = desc.getColorFormat();
 
 	const auto planeCount = getPlaneCount(format);
-	std::vector<PlaneDescriptor> result;
+	std::vector<Image::PlaneDescriptor> result;
 	result.reserve(planeCount);
 
 	const auto formats = toVulkan(format);
@@ -379,30 +273,12 @@ std::vector<Frame::PlaneDescriptor> Frame::getPlaneDescriptors(const Descriptor&
 
 	for(size_t i = 0; i < planeCount; i++) {
 		result.push_back(
-			PlaneDescriptor {
-				(i == 0) ? extent : subsampledExtent,
+			Image::PlaneDescriptor {
+				(i == 0) ? extent : subsampledExtent, //FIXME G_B_R_A planar format
 				std::get<vk::Format>(formats[i]),
 				std::get<vk::ComponentMapping>(formats[i])
 			}
 		);
-	}
-
-	return result;
-}
-
-Frame::SamplerDescriptor Frame::getSamplerDescriptor(ScalingFilter filter) {
-	Frame::SamplerDescriptor result;
-
-	if(filter == ScalingFilter::CUBIC) {
-		result = {
-			vk::Filter::eLinear,
-			ct_SAMPLE_MODE_BILINEAR2BICUBIC
-		};
-	} else {
-		result = {
-			toVulkan(filter),
-			ct_SAMPLE_MODE_PASSTHOUGH
-		};
 	}
 
 	return result;

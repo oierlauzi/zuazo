@@ -84,8 +84,6 @@ struct CommandBufferPool::Impl {
 	std::shared_ptr<CommandBuffer> acquireCommandBuffer() const {
 		auto result = pool.acquire();
 		assert(result);
-		result->clearDependencies();
-
 		return result;
 	}
 

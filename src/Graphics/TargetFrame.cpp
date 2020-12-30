@@ -7,7 +7,7 @@ namespace Zuazo::Graphics {
 TargetFrame::TargetFrame(	const Vulkan& vulkan,
 							std::shared_ptr<const Descriptor> desc,
 							std::shared_ptr<const Buffer> colorTransfer,
-							Utils::BufferView<const Frame::PlaneDescriptor> planes,
+							Utils::BufferView<const Image::PlaneDescriptor> planes,
 							std::shared_ptr<const DepthStencil> depthStencil,
 							RenderPass renderPass )
 	: Frame(
@@ -18,7 +18,7 @@ TargetFrame::TargetFrame(	const Vulkan& vulkan,
 		vk::ImageUsageFlagBits::eColorAttachment )
 	, m_depthStencil(std::move(depthStencil))
 	, m_renderPass(renderPass)
-	, m_framebuffer(createFramebuffer(vulkan, planes, m_depthStencil, m_renderPass.getRenderPass(), getImageViews()))
+	, m_framebuffer(createFramebuffer(vulkan, planes, m_depthStencil, m_renderPass.getRenderPass(), getImage()))
 	, m_renderComplete(vulkan.createFence(true))
 {
 }
@@ -85,23 +85,23 @@ void TargetFrame::draw(std::shared_ptr<const CommandBuffer> cmd) {
 
 
 vk::UniqueFramebuffer TargetFrame::createFramebuffer(	const Graphics::Vulkan& vulkan,
-														Utils::BufferView<const PlaneDescriptor> planes,
+														Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
 														const std::shared_ptr<const DepthStencil>& depthStencil,
 														vk::RenderPass renderPass,
-														const std::vector<vk::UniqueImageView>& imageViews )
+														const Image& image )
 {
 	assert(renderPass);
-	assert(imageViews.size() == planes.size());
-	const auto attachmentCount = imageViews.size() + (depthStencil ? 1 : 0);
+	assert(planeDescriptors.size() == image.getPlanes().size());
+	const auto attachmentCount = image.getPlanes().size() + (depthStencil ? 1 : 0);
 
 	//Enumerate all attachments
 	std::vector<vk::ImageView> attachments;
 	attachments.reserve(attachmentCount);
 	std::transform(
-		imageViews.cbegin(), imageViews.cend(),
+		image.getPlanes().cbegin(), image.getPlanes().cend(),
 		std::back_inserter(attachments),
-		[] (const vk::UniqueImageView& iv) -> vk::ImageView {
-			return *iv;
+		[] (const Image::Plane& plane) -> vk::ImageView {
+			return *plane.imageView;
 		}
 	);
 
@@ -116,14 +116,14 @@ vk::UniqueFramebuffer TargetFrame::createFramebuffer(	const Graphics::Vulkan& vu
 		renderPass,
 		attachments.size(),
 		attachments.data(),
-		planes[0].extent.width, planes[0].extent.height,
+		planeDescriptors.front().extent.width, planeDescriptors.front().extent.height,
 		1
 	);
 	
 	//Ensure that all planes have the same size
-	for(size_t i = 1; i < planes.size(); ++i) {
-		assert(planes[i].extent.width >= createInfo.width); 
-		assert(planes[i].extent.height >= createInfo.height); 
+	for(size_t i = 1; i < planeDescriptors.size(); ++i) {
+		assert(planeDescriptors[i].extent.width >= createInfo.width); 
+		assert(planeDescriptors[i].extent.height >= createInfo.height); 
 	}
 
 	return vulkan.createFramebuffer(createInfo);
