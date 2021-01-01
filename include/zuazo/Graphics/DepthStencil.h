@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Vulkan.h"
+#include "Image.h"
 
 namespace Zuazo::Graphics {
 
@@ -17,22 +18,15 @@ public:
 	DepthStencil&					operator=(DepthStencil&& other) noexcept = default;
 
 	vk::Image						getImage() const noexcept;
-	vk::DeviceMemory				getDeviceMemory() const noexcept;
 	vk::ImageView					getImageView() const noexcept;
+	vk::DeviceMemory				getDeviceMemory() const noexcept;
 
 private:
-	vk::UniqueImage					m_image;
-	vk::UniqueDeviceMemory			m_memory;
-	vk::UniqueImageView				m_imageView;
+	Image							m_image;
 
-	static vk::UniqueImage			createImage(const Vulkan& vulkan, 
+	static Image 					createImage(const Vulkan& vulkan, 
 												vk::Extent2D ext,
 												vk::Format fmt );
-	static vk::UniqueDeviceMemory 	createDeviceMemory(	const Vulkan& vulkan, 
-														vk::Image image );
-	static vk::UniqueImageView 		createImageView(const Vulkan& vulkan, 
-													vk::Format fmt, 
-													vk::Image image );
 };
 
 }

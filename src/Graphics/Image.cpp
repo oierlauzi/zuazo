@@ -6,18 +6,32 @@ namespace Zuazo::Graphics {
 
 Image::Image(	const Vulkan& vulkan,
 				Utils::BufferView<const PlaneDescriptor> planesDescriptors,
-				vk::ImageUsageFlags usage )
-	: m_imagePlanes(createPlanes(vulkan, planesDescriptors, usage))
-	, m_memory(createMemory(vulkan, m_imagePlanes))
+				vk::ImageUsageFlags usage,
+				vk::ImageTiling tiling,
+				vk::MemoryPropertyFlags memory )
+	: m_imagePlanes(createPlanes(vulkan, planesDescriptors, usage, tiling))
+	, m_memory(createMemory(vulkan, m_imagePlanes, memory))
 {
+	//Bind the memory memory to the image
 	for(size_t i = 0; i < m_imagePlanes.size(); ++i) {
 		const auto image = *m_imagePlanes[i].image;
-
-		//Bind the memory memory to the image
 		vulkan.bindMemory(image, *m_memory.memory, m_memory.areas[i].offset());
+	}
 
-		//Image views must be created once the memory is bound
-		m_imagePlanes[i].imageView = createImageView(vulkan, planesDescriptors[i], image);
+	//Create the image view if possible
+	constexpr vk::ImageUsageFlags IMAGE_VIEW_USAGE_FLAGS =
+		vk::ImageUsageFlagBits::eSampled |
+		vk::ImageUsageFlagBits::eStorage |
+		vk::ImageUsageFlagBits::eColorAttachment |
+		vk::ImageUsageFlagBits::eDepthStencilAttachment |
+		vk::ImageUsageFlagBits::eInputAttachment |
+		vk::ImageUsageFlagBits::eTransientAttachment ;
+
+	if(usage & IMAGE_VIEW_USAGE_FLAGS) {
+		for(size_t i = 0; i < m_imagePlanes.size(); ++i) {
+			const auto image = *m_imagePlanes[i].image;
+			m_imagePlanes[i].imageView = createImageView(vulkan, planesDescriptors[i], image);
+		}
 	}
 }
 
@@ -33,7 +47,8 @@ const Vulkan::AggregatedAllocation& Image::getMemory() const {
 
 vk::UniqueImage Image::createImage(	const Vulkan& vulkan,
 									const PlaneDescriptor& desc, 
-									vk::ImageUsageFlags usage )
+									vk::ImageUsageFlags usage,
+									vk::ImageTiling tiling )
 {
 	const vk::ImageCreateInfo createInfo(
 		{},											//Flags
@@ -43,7 +58,7 @@ vk::UniqueImage Image::createImage(	const Vulkan& vulkan,
 		1,											//Mip levels
 		1,											//Array layers
 		vk::SampleCountFlagBits::e1,				//Sample count
-		vk::ImageTiling::eOptimal,					//Tiling
+		tiling,										//Tiling
 		usage,										//Usage
 		vk::SharingMode::eExclusive,				//Sharing mode
 		0, nullptr,									//Queue family indices
@@ -92,13 +107,14 @@ vk::UniqueImageView Image::createImageView(	const Vulkan& vulkan,
 
 std::vector<Image::Plane> Image::createPlanes(	const Vulkan& vulkan,
 												Utils::BufferView<const PlaneDescriptor> desc, 
-												vk::ImageUsageFlags usage )
+												vk::ImageUsageFlags usage,
+												vk::ImageTiling tiling )
 {
 	std::vector<Plane> result;
 	result.reserve(desc.size());
 
 	for(const auto& d : desc) {
-		result.emplace_back(Plane{ createImage(vulkan, d, usage), vk::UniqueImageView() });
+		result.emplace_back(Plane{ createImage(vulkan, d, usage, tiling), vk::UniqueImageView() });
 	}
 
 	assert(result.size() == desc.size());
@@ -106,11 +122,9 @@ std::vector<Image::Plane> Image::createPlanes(	const Vulkan& vulkan,
 }
 
 Vulkan::AggregatedAllocation Image::createMemory(	const Vulkan& vulkan,
-													const std::vector<Plane>& planes )
+													const std::vector<Plane>& planes,
+													vk::MemoryPropertyFlags memoryProperties )
 {
-	constexpr vk::MemoryPropertyFlags memoryProperties =
-		vk::MemoryPropertyFlagBits::eDeviceLocal;
-
 	std::vector<vk::MemoryRequirements> requirements;
 	requirements.reserve(planes.size());
 

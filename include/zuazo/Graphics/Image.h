@@ -23,7 +23,9 @@ public:
 	Image() = default;
 	Image(	const Vulkan& vulkan,
 			Utils::BufferView<const PlaneDescriptor> planes,
-			vk::ImageUsageFlags usage );
+			vk::ImageUsageFlags usage,
+			vk::ImageTiling tiling,
+			vk::MemoryPropertyFlags memory );
 	Image(const Image& other) = delete;
 	Image(Image&& other) = default;
 	~Image() = default;
@@ -40,15 +42,18 @@ private:
 
 	static vk::UniqueImage				createImage(const Vulkan& vulkan,
 													const PlaneDescriptor& desc, 
-													vk::ImageUsageFlags usage );
+													vk::ImageUsageFlags usage,
+													vk::ImageTiling tiling );
 	static vk::UniqueImageView			createImageView(const Vulkan& vulkan,
 														const PlaneDescriptor& desc,
 														vk::Image image );
 	static std::vector<Plane>			createPlanes(	const Vulkan& vulkan,
 														Utils::BufferView<const PlaneDescriptor> desc, 
-														vk::ImageUsageFlags usage );
+														vk::ImageUsageFlags usage,
+														vk::ImageTiling tiling );
 	static Vulkan::AggregatedAllocation	createMemory(	const Vulkan& vulkan,
-														const std::vector<Plane>& planes );
+														const std::vector<Plane>& planes,
+														vk::MemoryPropertyFlags memoryProperties );
 
 };
 

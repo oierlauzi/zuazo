@@ -29,7 +29,7 @@ struct Frame::Impl {
 		, descriptor(std::move(desc))
 		, size(descriptor->calculateSize())
 		, colorTransferBuffer(std::move(colorTransfer))
-		, image(vulkan, planes, usage | vk::ImageUsageFlagBits::eSampled)
+		, image(createImage(vulkan, planes, usage))
 		, descriptorPool(createDescriptorPool(vulkan))
 		, descriptorSets(allocateDescriptorSets(vulkan, *descriptorPool))
 	{
@@ -133,6 +133,27 @@ private:
 
 			vulkan.updateDescriptorSets(Utils::BufferView<const vk::WriteDescriptorSet>(writeDescriptorSets));
 		}
+	}
+
+	static Image createImage(	const Vulkan& vulkan,
+								Utils::BufferView<const Image::PlaneDescriptor> planes,
+								vk::ImageUsageFlags usage )
+	{
+		usage |= vk::ImageUsageFlagBits::eSampled;
+
+		constexpr vk::ImageTiling tiling =
+			vk::ImageTiling::eOptimal;
+
+		constexpr vk::MemoryPropertyFlags memory =
+			vk::MemoryPropertyFlagBits::eDeviceLocal;
+
+		return Image(
+			vulkan,
+			planes,
+			usage,
+			tiling,
+			memory
+		);
 	}
 
 	static vk::UniqueDescriptorPool	createDescriptorPool(const Vulkan& vulkan) {

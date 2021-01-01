@@ -65,7 +65,7 @@ struct Uploader::Impl {
 		, colorTransfer(*frameDescriptor)
 		, planeDescriptors(createPlaneDescriptors(vulkan, desc, colorTransfer))
 		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, colorTransfer))
-		, commandPool(createCommandPool(vulkan))
+		, commandPool(StagedFrame::createCommandPool(vulkan))
 		, framePool(1, Allocator(*this))
 	{
 	}
@@ -78,7 +78,7 @@ struct Uploader::Impl {
 		, colorTransfer(*frameDescriptor, customPrimaries)
 		, planeDescriptors(createPlaneDescriptors(vulkan, desc, colorTransfer))
 		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, colorTransfer))
-		, commandPool(createCommandPool(vulkan))
+		, commandPool(StagedFrame::createCommandPool(vulkan))
 		, framePool(1, Allocator(*this))
 	{
 	}
@@ -180,16 +180,6 @@ private:
 
 		return result;
 	}
-
-	static std::shared_ptr<vk::UniqueCommandPool> createCommandPool(const Vulkan& vulkan) {
-		const vk::CommandPoolCreateInfo createInfo(
-			{},													//Flags
-			vulkan.getTransferQueueIndex()						//Queue index
-		);
-
-		return Utils::makeShared<vk::UniqueCommandPool>(vulkan.createCommandPool(createInfo));
-	}
-
 };
 
 

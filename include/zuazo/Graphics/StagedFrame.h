@@ -2,6 +2,7 @@
 
 #include "Vulkan.h"
 #include "Frame.h"
+#include "Image.h"
 
 namespace Zuazo::Graphics {
 
@@ -28,8 +29,10 @@ public:
 	void										flush();
 	bool										waitCompletion(uint64_t timeo) const;
 
+	static std::shared_ptr<vk::UniqueCommandPool> createCommandPool(const Vulkan& vulkan);
+
 private:
-	Buffer										m_stagingBuffer;
+	Image										m_stagingImage;
 	std::vector<Utils::BufferView<std::byte>> 	m_pixelData;
 		
 	std::shared_ptr<const vk::UniqueCommandPool>m_commandPool;
@@ -37,17 +40,17 @@ private:
 	vk::SubmitInfo 								m_commandBufferSubmit;
 	vk::UniqueFence								m_uploadComplete;
 
-	static Buffer								createStagingBuffer(const Vulkan& vulkan,
-																	Utils::BufferView<const Utils::Area> areas );
+	void										transitionStagingimageLayout();
+	void										recordCommandBuffer(Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors);
+
+	static Image								createStagingImage(	const Vulkan& vulkan,
+																	Utils::BufferView<const Image::PlaneDescriptor> planes );
 	static std::vector<Utils::BufferView<std::byte>> getPixelData(	const Vulkan& vulkan,
-																	Utils::BufferView<const Utils::Area> areas,
-																	const Buffer& buffer );
+																	const Image& stagingImage );
 	static vk::UniqueCommandBuffer				createCommandBuffer(const Vulkan& vulkan,
-																	Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
-																	vk::CommandPool cmdPool,
-																	const Image& image,
-																	const Buffer& stagingBuffer );
+																	vk::CommandPool cmdPool );
 	static vk::SubmitInfo						createSubmitInfo(const vk::CommandBuffer& cmdBuffer);
+
 };
 
 
