@@ -2,23 +2,43 @@
 
 #include <zuazo/Graphics/VulkanConversions.h>
 
+#include <algorithm>
+
 namespace Zuazo::Graphics {
 
 Image::Image(	const Vulkan& vulkan,
-				Utils::BufferView<const PlaneDescriptor> planesDescriptors,
+				Utils::BufferView<const PlaneDescriptor> planeDescriptors,
 				vk::ImageUsageFlags usage,
 				vk::ImageTiling tiling,
 				vk::MemoryPropertyFlags memory )
-	: m_imagePlanes(createPlanes(vulkan, planesDescriptors, usage, tiling))
+	: m_imagePlanes(createPlanes(vulkan, planeDescriptors, usage, tiling))
 	, m_memory(createMemory(vulkan, m_imagePlanes, memory))
 {
-	//Bind the memory memory to the image
+	bindMemory(vulkan);
+	createImageViews(vulkan, planeDescriptors, usage);
+}
+
+
+Utils::BufferView<const Image::Plane> Image::getPlanes() const {
+	return m_imagePlanes;
+}
+
+const Vulkan::AggregatedAllocation& Image::getMemory() const {
+	return m_memory;
+}
+
+
+void Image::bindMemory(const Vulkan& vulkan) {
 	for(size_t i = 0; i < m_imagePlanes.size(); ++i) {
 		const auto image = *m_imagePlanes[i].image;
 		vulkan.bindMemory(image, *m_memory.memory, m_memory.areas[i].offset());
 	}
+}
 
-	//Create the image view if possible
+void Image::createImageViews(	const Vulkan& vulkan, 
+								Utils::BufferView<const PlaneDescriptor> planeDescriptors,
+								vk::ImageUsageFlags usage ) 
+	{
 	constexpr vk::ImageUsageFlags IMAGE_VIEW_USAGE_FLAGS =
 		vk::ImageUsageFlagBits::eSampled |
 		vk::ImageUsageFlagBits::eStorage |
@@ -30,25 +50,9 @@ Image::Image(	const Vulkan& vulkan,
 	if(usage & IMAGE_VIEW_USAGE_FLAGS) {
 		for(size_t i = 0; i < m_imagePlanes.size(); ++i) {
 			const auto image = *m_imagePlanes[i].image;
-			m_imagePlanes[i].imageView = createImageView(vulkan, planesDescriptors[i], image);
+			m_imagePlanes[i].imageView = createImageView(vulkan, planeDescriptors[i], image);
 		}
 	}
-}
-
-Image::Image(	std::vector<Plane> planes,
-				Vulkan::AggregatedAllocation memory ) noexcept
-	: m_imagePlanes(std::move(planes))
-	, m_memory(std::move(memory))
-{
-}
-
-
-Utils::BufferView<const Image::Plane> Image::getPlanes() const {
-	return m_imagePlanes;
-}
-
-const Vulkan::AggregatedAllocation& Image::getMemory() const {
-	return m_memory;
 }
 
 
@@ -113,18 +117,18 @@ vk::UniqueImageView Image::createImageView(	const Vulkan& vulkan,
 }
 
 std::vector<Image::Plane> Image::createPlanes(	const Vulkan& vulkan,
-												Utils::BufferView<const PlaneDescriptor> desc, 
+												Utils::BufferView<const PlaneDescriptor> planeDescriptors, 
 												vk::ImageUsageFlags usage,
 												vk::ImageTiling tiling )
 {
 	std::vector<Plane> result;
-	result.reserve(desc.size());
+	result.reserve(planeDescriptors.size());
 
-	for(const auto& d : desc) {
+	for(const auto& d : planeDescriptors) {
 		result.emplace_back(Plane{ createImage(vulkan, d, usage, tiling), vk::UniqueImageView() });
 	}
 
-	assert(result.size() == desc.size());
+	assert(result.size() == planeDescriptors.size());
 	return result;
 }
 
