@@ -30,7 +30,7 @@ public:
 	const Frame::Descriptor& 						getFrameDescriptor() const noexcept;	
 	OutputColorTransfer								getOutputColorTransfer() const;
 
-	vk::Framebuffer									getFramebuffer() const noexcept;
+	const Framebuffer&								getFramebuffer() const noexcept;
 	void											beginRenderPass(vk::CommandBuffer cmd, 
 																	vk::Rect2D renderArea,
 																	Utils::BufferView<const vk::ClearValue> clearValues,

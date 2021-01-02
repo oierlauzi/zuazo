@@ -21,7 +21,7 @@ public:
 	bool					operator==(const RenderPass& other) const noexcept;
 	bool					operator!=(const RenderPass& other) const noexcept;
 
-	vk::RenderPass			getRenderPass() const;
+	vk::RenderPass			get() const noexcept;
 
 private:
 	vk::RenderPass			m_renderPass;

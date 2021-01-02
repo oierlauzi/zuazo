@@ -26,6 +26,8 @@ public:
 			vk::ImageUsageFlags usage,
 			vk::ImageTiling tiling,
 			vk::MemoryPropertyFlags memory );
+	Image(	std::vector<Plane> planes,
+			Vulkan::AggregatedAllocation memory ) noexcept;
 	Image(const Image& other) = delete;
 	Image(Image&& other) = default;
 	~Image() = default;

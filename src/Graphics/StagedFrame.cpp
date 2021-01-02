@@ -238,7 +238,7 @@ void StagedFrame::recordCommandBuffer(Utils::BufferView<const Image::PlaneDescri
 			);
 		}
 
-		//Copy the buffer to the image
+		//Copy the image to the image
 		for(size_t i = 0; i < planeCount; i++){
 			constexpr vk::ImageSubresourceLayers imageSubresourceLayers(
 				imageSubresourceRange.aspectMask,					//Aspect mask

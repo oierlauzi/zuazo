@@ -35,6 +35,13 @@ Image::Image(	const Vulkan& vulkan,
 	}
 }
 
+Image::Image(	std::vector<Plane> planes,
+				Vulkan::AggregatedAllocation memory ) noexcept
+	: m_imagePlanes(std::move(planes))
+	, m_memory(std::move(memory))
+{
+}
+
 
 Utils::BufferView<const Image::Plane> Image::getPlanes() const {
 	return m_imagePlanes;

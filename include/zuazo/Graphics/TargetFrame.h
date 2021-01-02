@@ -4,6 +4,7 @@
 #include "Frame.h"
 #include "CommandBuffer.h"
 #include "DepthStencil.h"
+#include "Framebuffer.h"
 #include "RenderPass.h"
 #include "../Utils/BufferView.h"
 
@@ -27,7 +28,7 @@ public:
 
 	TargetFrame& 								operator=(const TargetFrame& other) = delete;
 
-	vk::Framebuffer								getFramebuffer() const noexcept;
+	const Framebuffer&							getFramebuffer() const noexcept;
 	void										beginRenderPass(	vk::CommandBuffer cmd, 
 																	vk::Rect2D renderArea,
 																	Utils::BufferView<const vk::ClearValue> clearValues,
@@ -38,17 +39,17 @@ public:
 private:
 	std::shared_ptr<const DepthStencil> 		m_depthStencil;
 	RenderPass 									m_renderPass;
-	vk::UniqueFramebuffer						m_framebuffer;
+	Framebuffer									m_framebuffer;
 	vk::UniqueFence								m_renderComplete;
 
 	std::shared_ptr<const CommandBuffer>		m_commandBuffer;
 
 
-	static vk::UniqueFramebuffer				createFramebuffer(	const Graphics::Vulkan& vulkan,
+	static Framebuffer							createFramebuffer(	const Vulkan& vulkan,
 																	Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
-																	const std::shared_ptr<const DepthStencil>& depthStencil,
-																	vk::RenderPass renderPass,
-																	const Image& image );
+																	const Image& image,
+																	const DepthStencil* depthStencil,
+																	RenderPass renderPass );
 
 };
 

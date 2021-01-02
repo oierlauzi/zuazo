@@ -25,7 +25,7 @@ bool RenderPass::operator!=(const RenderPass& other) const noexcept {
 
 
 
-vk::RenderPass RenderPass::getRenderPass() const {
+vk::RenderPass RenderPass::get() const noexcept {
 	return m_renderPass;
 }
 

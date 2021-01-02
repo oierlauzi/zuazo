@@ -26,7 +26,7 @@ public:
 	CommandBuffer&									operator=(CommandBuffer&& other) noexcept = default;
 
 	const Vulkan&									getVulkan() const noexcept;
-	vk::CommandBuffer								getCommandBuffer() const noexcept;
+	vk::CommandBuffer								get() const noexcept;
 
 	void											addDependencies(Utils::BufferView<const Dependency> dep);
 	Utils::BufferView<const Dependency>				getDependencies() const noexcept;
