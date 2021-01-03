@@ -4,9 +4,39 @@
  * Load / Store performs image read/writes in a planar maner
  */
 
+vec4 ct_load(in int planeFormat, in vec4 plane0, in vec4 plane1, in vec4 plane2, in vec4 plane3) {
+	vec4 result;
+
+	switch(planeFormat){
+	case ct_PLANE_FORMAT_G_BR:
+		result.g = plane0.r;
+		result.br = plane1.rg;
+		result.a = 1.0f;
+		break;
+	case ct_PLANE_FORMAT_G_B_R:
+		result.g = plane0.r;
+		result.b = plane1.r;
+		result.r = plane2.r;
+		result.a = 1.0f;
+		break;
+	case ct_PLANE_FORMAT_G_B_R_A:
+		result.g = plane0.r;
+		result.b = plane1.r;
+		result.r = plane2.r;
+		result.a = plane3.r;
+		break;
+	
+	default: //ct_PLANE_FORMAT_RGBA
+		result = plane0;
+		break;
+	}
+
+	return result;
+}
+
 vec4 ct_load(in int planeFormat, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords) {
 	vec4 result;
-	//TODO proper cchroma reconstruction
+	//TODO proper chroma reconstruction
 	//TODO consider chroma size when interp.
 
 	switch(planeFormat){
@@ -36,7 +66,7 @@ vec4 ct_load(in int planeFormat, in sampler2D images[ct_SAMPLER_COUNT], in vec2 
 	return result;
 }
 
-void ct_store(in int planeFormat, out vec4 plane0, out vec4 plane1, out vec4 plane2, out vec4 plane3, in vec4 color){
+void ct_store(in int planeFormat, in vec4 color, out vec4 plane0, out vec4 plane1, out vec4 plane2, out vec4 plane3) {
 	//Attach the alpha channel so that it gets correctly blended
 	switch(planeFormat){
 	case ct_PLANE_FORMAT_G_BR:
@@ -519,25 +549,52 @@ vec3 ct_OETF(in int encoding, in vec3 color){
 }
 
 
+
+/*
+ * Read / Write wrap all former operations
+ */
+
+vec4 ct_read(in ct_read_data inputProp, in vec4 color) {
+	//Normalize the values into [0.0, 1.0]
+	color = ct_expand(inputProp.colorRange, color); 
+
+	//Convert it into RGB color model if necessary
+	if(inputProp.colorModel != ct_COLOR_MODEL_RGB) {
+		color.rgb = (inputProp.mtxYCbCr2RGB * vec4(color.rgb, 1.0f)).rgb; 
+	}
+
+	//Undo all gamma-like compressions
+	color.rgb = ct_EOTF(inputProp.colorTransferFunction, color.rgb);
+
+	return color;
+}
+
+vec4 ct_write(in ct_write_data outputProp, in vec4 color) {
+	//Premultiply the color with the alpha channel
+	color = vec4(color.rgb, 1.0f) * color.a;
+
+	//Apply a gamma-like compression
+	color.rgb = ct_OETF(outputProp.colorTransferFunction, color.rgb); 
+
+	//Convert it into a YCbCr color model if necessary
+	if(outputProp.colorModel != ct_COLOR_MODEL_RGB) {
+		color.rgb 	= (outputProp.mtxRGB2YCbCr * vec4(color.rgb, 1.0f)).rgb; 
+	}
+
+	//Convert it into the corresponding range
+	color = ct_contract(outputProp.colorRange, color);
+
+	return color;
+}
+
+
 /*
  * Sampling interpolation operations
  */
 
 vec4 ct_passthrough(in ct_read_data inputProp, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords) {
-	vec4 result = ct_load(inputProp.planeFormat,  images, texCoords); 
-
-	//Normalize the values into [0.0, 1.0] (or [-0.5, 0.5] for chroma)
-	result = ct_expand(inputProp.colorRange, result); 
-
-	//Convert it into RGB color model if necessary
-	if(inputProp.colorModel != ct_COLOR_MODEL_RGB) {
-		result.rgb = (inputProp.mtxYCbCr2RGB * vec4(result.rgb, 1.0f)).rgb; 
-	}
-	
-	//Undo all gamma-like compressions
-	result.rgb = ct_EOTF(inputProp.colorTransferFunction, result.rgb);
-
-	return result;
+	const vec4 color = ct_load(inputProp.planeFormat,  images, texCoords);
+	return ct_read(inputProp, color);
 }
 
 vec4 ct_bilinear(in ct_read_data inputProp, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords) {
@@ -649,29 +706,12 @@ vec4 ct_texture(in int mode, in ct_read_data inputProp, in sampler2D images[ct_S
 
 
 /*
- * Color output operations
+ * Color output
  */
 
-vec4 ct_premultiplyAlpha(in vec4 color) {
-	return vec4(color.rgb * color.a, color.a);
-}
-
-void ct_writeColor(in ct_write_data outputProp, out vec4 plane0, out vec4 plane1, out vec4 plane2, out vec4 plane3, in vec4 color){
-	//Premultiply the color with the alpha channel
-	vec4 result = ct_premultiplyAlpha(color); 
-
-	//Apply a gamma-like compression
-	result.rgb = ct_OETF(outputProp.colorTransferFunction, result.rgb); 
-
-	//Convert it into a YCbCr color model if necessary
-	if(outputProp.colorModel != ct_COLOR_MODEL_RGB) {
-		result.rgb 	= (outputProp.mtxRGB2YCbCr * vec4(result.rgb, 1.0f)).rgb; 
-	}
-
-	//Convert it into the corresponding range
-	result = ct_contract(outputProp.colorRange, result); 
-
-	ct_store(outputProp.planeFormat, plane0, plane1, plane2, plane3, result);
+void ct_output(in ct_write_data outputProp, in vec4 color, out vec4 plane0, out vec4 plane1, out vec4 plane2, out vec4 plane3){
+	color = ct_write(outputProp, color);
+	ct_store(outputProp.planeFormat, color, plane0, plane1, plane2, plane3);
 }
 
 
