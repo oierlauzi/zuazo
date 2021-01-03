@@ -15,7 +15,8 @@ public:
 
 	StagedFrame(const Vulkan& vulkan,
 				std::shared_ptr<const Descriptor> desc,
-				std::shared_ptr<const Buffer> colorTransfer,
+				std::shared_ptr<const InputColorTransfer> colorTransfer,
+				std::shared_ptr<const Buffer> colorTransferBuffer,
 				Utils::BufferView<const Image::PlaneDescriptor> planes,
 				std::shared_ptr<const vk::UniqueCommandPool> cmdPool );
 	StagedFrame(const StagedFrame& other) = delete;

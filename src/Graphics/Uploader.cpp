@@ -36,6 +36,7 @@ struct Uploader::Impl {
 			new (x) StagedFrame(
 				uplo.vulkan,
 				uplo.frameDescriptor,
+				uplo.colorTransfer,
 				uplo.colorTransferBuffer,
 				uplo.planeDescriptors,
 				uplo.commandPool
@@ -49,7 +50,7 @@ struct Uploader::Impl {
 
 	std::reference_wrapper<const Vulkan>			vulkan;
 	std::shared_ptr<Frame::Descriptor>				frameDescriptor;
-	InputColorTransfer								colorTransfer;
+	std::shared_ptr<InputColorTransfer>				colorTransfer;
 	std::vector<Image::PlaneDescriptor>				planeDescriptors;
 
 	std::shared_ptr<StagedBuffer>					colorTransferBuffer;
@@ -62,9 +63,9 @@ struct Uploader::Impl {
 			const Frame::Descriptor& desc )
 		: vulkan(vulkan)
 		, frameDescriptor(Utils::makeShared<Frame::Descriptor>(desc))
-		, colorTransfer(*frameDescriptor)
-		, planeDescriptors(createPlaneDescriptors(vulkan, desc, colorTransfer))
-		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, colorTransfer))
+		, colorTransfer(Utils::makeShared<InputColorTransfer>(*frameDescriptor))
+		, planeDescriptors(createPlaneDescriptors(vulkan, desc, *colorTransfer))
+		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, *colorTransfer))
 		, commandPool(StagedFrame::createCommandPool(vulkan))
 		, framePool(1, Allocator(*this))
 	{
@@ -75,9 +76,9 @@ struct Uploader::Impl {
 			const Chromaticities& customPrimaries )
 		: vulkan(vulkan)
 		, frameDescriptor(Utils::makeShared<Frame::Descriptor>(desc))
-		, colorTransfer(*frameDescriptor, customPrimaries)
-		, planeDescriptors(createPlaneDescriptors(vulkan, desc, colorTransfer))
-		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, colorTransfer))
+		, colorTransfer(Utils::makeShared<InputColorTransfer>(*frameDescriptor, customPrimaries))
+		, planeDescriptors(createPlaneDescriptors(vulkan, desc, *colorTransfer))
+		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, *colorTransfer))
 		, commandPool(StagedFrame::createCommandPool(vulkan))
 		, framePool(1, Allocator(*this))
 	{

@@ -191,6 +191,54 @@ struct InputColorTransfer::Impl {
 		return reinterpret_cast<const std::byte*>(&transferData);
 	}
 
+	SamplerDescriptor getSamplerDescriptor(ScalingFilter filter) const noexcept {
+		SamplerDescriptor result;
+
+		switch(filter) {
+		case ScalingFilter::LINEAR:
+			if(transferData.colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_LINEAR) {
+				//Perform bilinear sampling using bilinear samplers
+				result = {
+					vk::Filter::eLinear,
+					ct_SAMPLE_MODE_PASSTHOUGH
+				};
+			} else {
+				//Perform bilinear sampling using nearest samplers as gamma correction needs to 
+				//be done prior to interpolating
+				result = {
+					vk::Filter::eNearest,
+					ct_SAMPLE_MODE_BILINEAR
+				};
+			}
+			break;
+		
+		case ScalingFilter::CUBIC:
+			if(transferData.colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_LINEAR) {
+				//Perform bicubic sampling using linear samplers
+				result = {
+					vk::Filter::eLinear,
+					ct_SAMPLE_MODE_BICUBIC
+				};
+			} else {
+				//Perform bicubic sampling using nearest samplers as gamma correction needs to 
+				//be done prior to interpolating
+				result = {
+					vk::Filter::eNearest,
+					ct_SAMPLE_MODE_BICUBIC
+				};
+			}
+			break;
+
+		default: //ScalingFilter::NEAREST
+			result = {
+				vk::Filter::eNearest,
+				ct_SAMPLE_MODE_PASSTHOUGH
+			};
+			break;
+		}
+
+		return result;
+	}
 };
 
 
@@ -243,22 +291,8 @@ const std::byte* InputColorTransfer::data() const noexcept {
 }
 
 
-InputColorTransfer::SamplerDescriptor InputColorTransfer::getSamplerDescriptor(ScalingFilter filter) {
-	SamplerDescriptor result;
-
-	if(filter == ScalingFilter::CUBIC) {
-		result = {
-			vk::Filter::eLinear,
-			ct_SAMPLE_MODE_BILINEAR2BICUBIC
-		};
-	} else {
-		result = {
-			toVulkan(filter),
-			ct_SAMPLE_MODE_PASSTHOUGH
-		};
-	}
-
-	return result;
+InputColorTransfer::SamplerDescriptor InputColorTransfer::getSamplerDescriptor(ScalingFilter filter) const noexcept {
+	return m_impl->getSamplerDescriptor(filter);
 }
 
 uint32_t InputColorTransfer::getSamplerCount() noexcept {

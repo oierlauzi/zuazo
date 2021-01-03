@@ -14,6 +14,7 @@ struct Frame::Impl {
 
 	std::shared_ptr<const Descriptor> 	descriptor;
 	Math::Vec2f 						size;
+	std::shared_ptr<const InputColorTransfer> colorTransfer;
 	std::shared_ptr<const Buffer> 		colorTransferBuffer;
 	Image								image;
 
@@ -22,19 +23,22 @@ struct Frame::Impl {
 
 	Impl(	const Vulkan& vulkan,
 			std::shared_ptr<const Descriptor> desc,
-			std::shared_ptr<const Buffer> colorTransfer,
+			std::shared_ptr<const InputColorTransfer> colorTransfer,
+			std::shared_ptr<const Buffer> colorTransferBuffer,
 			Utils::BufferView<const Image::PlaneDescriptor> planes,
 			vk::ImageUsageFlags usage )
 		: vulkan(vulkan)
 		, descriptor(std::move(desc))
 		, size(descriptor->calculateSize())
-		, colorTransferBuffer(std::move(colorTransfer))
+		, colorTransfer(std::move(colorTransfer))
+		, colorTransferBuffer(std::move(colorTransferBuffer))
 		, image(createImage(vulkan, planes, usage))
 		, descriptorPool(createDescriptorPool(vulkan))
 		, descriptorSets(allocateDescriptorSets(vulkan, *descriptorPool))
 	{
-		assert(descriptor);
-		assert(colorTransferBuffer);
+		assert(this->descriptor);
+		assert(this->colorTransfer);
+		assert(this->colorTransferBuffer);
 
 		writeDescriptorSets();
 	}
@@ -71,6 +75,10 @@ struct Frame::Impl {
 
 	const Math::Vec2f& getSize() const noexcept {
 		return size;
+	}
+
+	const InputColorTransfer& getColorTransfer() const noexcept {
+		return *colorTransfer;
 	}
 
 	const Image& getImage() const noexcept {
@@ -214,10 +222,11 @@ private:
 
 Frame::Frame(	const Vulkan& vulkan,
 				std::shared_ptr<const Descriptor> desc,
-				std::shared_ptr<const Buffer> colorTransfer,
+				std::shared_ptr<const InputColorTransfer> colorTransfer,
+				std::shared_ptr<const Buffer> colorTransferBuffer,
 				Utils::BufferView<const Image::PlaneDescriptor> planes,
 				vk::ImageUsageFlags usage )
-	: m_impl({}, vulkan, std::move(desc), std::move(colorTransfer), planes, usage)
+	: m_impl({}, vulkan, std::move(desc), std::move(colorTransfer), std::move(colorTransferBuffer), planes, usage)
 {
 }
 
@@ -251,6 +260,9 @@ const Math::Vec2f& Frame::getSize() const noexcept {
 	return m_impl->getSize();
 }
 
+const InputColorTransfer& Frame::getColorTransfer() const noexcept {
+	return m_impl->getColorTransfer();
+}
 
 const Image& Frame::getImage() const noexcept {
 	return m_impl->getImage();

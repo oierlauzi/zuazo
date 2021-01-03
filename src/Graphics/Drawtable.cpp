@@ -39,6 +39,7 @@ struct Drawtable::Impl {
 			new (x) TargetFrame(
 				drw.vulkan,
 				drw.frameDescriptor,
+				drw.colorTransfer,
 				drw.colorTransferBuffer,
 				drw.planeDescriptors,
 				drw.depthStencil,
@@ -53,7 +54,7 @@ struct Drawtable::Impl {
 
 	const Vulkan&									vulkan;
 	std::shared_ptr<Frame::Descriptor>				frameDescriptor;
-	InputColorTransfer								colorTransfer;
+	std::shared_ptr<InputColorTransfer>				colorTransfer;
 	std::shared_ptr<StagedBuffer>					colorTransferBuffer;
 	std::vector<Image::PlaneDescriptor>				planeDescriptors;
 
@@ -69,9 +70,9 @@ struct Drawtable::Impl {
 			DepthStencilFormat depthStencilFmt )
 		: vulkan(vulkan)
 		, frameDescriptor(Utils::makeShared<Frame::Descriptor>(frameDesc))
-		, colorTransfer(*frameDescriptor)
-		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, colorTransfer))
-		, planeDescriptors(createPlaneDescriptors(vulkan, frameDesc, colorTransfer))
+		, colorTransfer(Utils::makeShared<InputColorTransfer>(*frameDescriptor))
+		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, *colorTransfer))
+		, planeDescriptors(createPlaneDescriptors(vulkan, frameDesc, *colorTransfer))
 		, depthStencil(createDepthStencil(vulkan, toVulkan(depthStencilFmt), planeDescriptors))
 		, renderPass(getRenderPass(vulkan, planeDescriptors, depthStencilFmt))
 		, framePool(1, Allocator(*this))
@@ -93,7 +94,7 @@ struct Drawtable::Impl {
 	}
 
 	OutputColorTransfer getOutputColorTransfer() const {
-		return OutputColorTransfer(colorTransfer);
+		return OutputColorTransfer(*colorTransfer);
 	}
 
 

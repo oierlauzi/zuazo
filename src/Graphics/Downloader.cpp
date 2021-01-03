@@ -454,7 +454,7 @@ private:
 					constexpr vk::ImageLayout srcLayout = vk::ImageLayout::eTransferSrcOptimal;
 					constexpr vk::ImageLayout dstLayout = vk::ImageLayout::eTransferSrcOptimal;
 					
-					//Handle the image to the graphics queue
+					//Handle the image back to the graphics queue
 					const auto srcFamily = queueOwnershipTransfer ? vulkan.getTransferQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
 					const auto dstFamily = queueOwnershipTransfer ? vulkan.getGraphicsQueueIndex() : VK_QUEUE_FAMILY_IGNORED;
 
