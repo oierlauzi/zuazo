@@ -540,42 +540,31 @@ vec4 ct_passthrough(in ct_read_data inputProp, in sampler2D images[ct_SAMPLER_CO
 	return result;
 }
 
-vec4 ct_nearest(in ct_read_data inputProp, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords) {
-	//Always pass-though
-	return ct_passthrough(inputProp, images, texCoords);
-}
-
 vec4 ct_bilinear(in ct_read_data inputProp, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords) {
 	vec4 result;
 
-	if(inputProp.colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_LINEAR) {
-		//Use passthough, sampler set up for linear sampling
-		result = ct_passthrough(inputProp, images, texCoords);
-	} else {
-		//Manually perform interpolation
-		//Convert the texture coordinates into image coordinates
-		const ivec2 texSize = textureSize(images[0], 0);
-		texCoords = texCoords * texSize - 0.5f;
+	//Convert the texture coordinates into image coordinates
+	const ivec2 texSize = textureSize(images[0], 0);
+	texCoords = texCoords * texSize - 0.5f;
 
-		//Obtain the fractional part of the image coordinates
-		const vec2 fxy  = fract(texCoords);
+	//Obtain the fractional part of the image coordinates
+	const vec2 fxy  = fract(texCoords);
 
-		//Calculate the offset
-		const vec4 offset = (texCoords.xxyy + vec2(-0.5f, +0.5f).xyxy) / texSize.xxyy;
+	//Calculate the offset
+	const vec4 offset = (texCoords.xxyy + vec2(-0.5f, +0.5f).xyxy) / texSize.xxyy;
 
-		//Sample multiple values.
-		const vec4 sample0 = ct_nearest(inputProp, images, offset.xz);
-		const vec4 sample1 = ct_nearest(inputProp, images, offset.yz);
-		const vec4 sample2 = ct_nearest(inputProp, images, offset.xw);
-		const vec4 sample3 = ct_nearest(inputProp, images, offset.yw);
+	//Sample multiple values.
+	const vec4 sample0 = ct_passthrough(inputProp, images, offset.xz);
+	const vec4 sample1 = ct_passthrough(inputProp, images, offset.yz);
+	const vec4 sample2 = ct_passthrough(inputProp, images, offset.xw);
+	const vec4 sample3 = ct_passthrough(inputProp, images, offset.yw);
 
-		//Obtain the sample weights
-		const float sx = fxy.x;
-		const float sy = fxy.y;
+	//Obtain the sample weights
+	const float sx = fxy.x;
+	const float sy = fxy.y;
 
-		//Interpolate bilinearly between the samples
-		result = mix(mix(sample3, sample2, sx), mix(sample1, sample0, sx), sy);
-	}
+	//Interpolate bilinearly between the samples
+	result = mix(mix(sample3, sample2, sx), mix(sample1, sample0, sx), sy);
 
 	return result;
 }
@@ -612,10 +601,24 @@ vec4 ct_bicubic(in ct_read_data inputProp, in sampler2D images[ct_SAMPLER_COUNT]
 	const vec4 offset = (c + vec4(xcubic.yw, ycubic.yw) / s) / texSize.xxyy;
 
 	//Sample multiple values
-	const vec4 sample0 = ct_bilinear(inputProp, images, offset.xz);
-	const vec4 sample1 = ct_bilinear(inputProp, images, offset.yz);
-	const vec4 sample2 = ct_bilinear(inputProp, images, offset.xw);
-	const vec4 sample3 = ct_bilinear(inputProp, images, offset.yw);
+	vec4 sample0;
+	vec4 sample1;
+	vec4 sample2;
+	vec4 sample3;
+
+	if(inputProp.colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_LINEAR) {
+		//Sampler configured as bilinear
+		sample0 = ct_passthrough(inputProp, images, offset.xz);
+		sample1 = ct_passthrough(inputProp, images, offset.yz);
+		sample2 = ct_passthrough(inputProp, images, offset.xw);
+		sample3 = ct_passthrough(inputProp, images, offset.yw);
+	} else {
+		//Sampler configured as nearest
+		sample0 = ct_bilinear(inputProp, images, offset.xz);
+		sample1 = ct_bilinear(inputProp, images, offset.yz);
+		sample2 = ct_bilinear(inputProp, images, offset.xw);
+		sample3 = ct_bilinear(inputProp, images, offset.yw);
+	}
 
 	//Obtain the sample weights
 	const float sx = s.x / (s.x + s.y);
