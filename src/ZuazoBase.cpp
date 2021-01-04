@@ -201,12 +201,16 @@ ZuazoBase::ZuazoBase(ZuazoBase&& other) noexcept
 	: Signal::Layout(std::move(static_cast<Signal::Layout&>(other)))
 	, m_impl(std::move(other.m_impl))
 {
-	m_impl->moved(*this);
-	ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Moved");
+	if(m_impl) {
+		m_impl->moved(*this);
+		ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Moved");
+	}
 }
 
 ZuazoBase::~ZuazoBase() {
-	ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Destroyed");
+	if(m_impl) {
+		ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Destroyed");
+	}
 }
 
 
@@ -214,8 +218,11 @@ ZuazoBase& ZuazoBase::operator=(ZuazoBase&& other) noexcept {
 	static_cast<Signal::Layout&>(*this) = std::move(static_cast<Signal::Layout&>(other));
 	m_impl = std::move(other.m_impl);
 
-	m_impl->moved(*this);
-	ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Move assigned");
+	if(m_impl) {
+		m_impl->moved(*this);
+		ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Move assigned");
+	}
+
 	return *this;
 }
 

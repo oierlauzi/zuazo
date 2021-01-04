@@ -100,7 +100,7 @@ vk::UniqueImageView Image::createImageView(	const Vulkan& vulkan,
 	}
 
 	const vk::ImageSubresourceRange subresourceRange(
-		vk::ImageAspectFlagBits::eColor,				//Aspect mask
+		aspectMask,										//Aspect mask
 		0, 1, 0, 1										//Base mipmap level, mipmap levels, base array layer, layers
 	);
 
