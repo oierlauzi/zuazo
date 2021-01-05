@@ -32,6 +32,8 @@ struct RendererBase::Impl {
 	Math::Mat4x4f										projectionMatrix; //Precomputed for use in layerComp
 	mutable std::vector<LayerRef>						sortedLayers;
 
+	bool												hasChanged;
+
 	static constexpr Math::Vec2f DUMMY_SIZE = Math::Vec2f(1.0f, 1.0f);
 
 
@@ -49,6 +51,7 @@ struct RendererBase::Impl {
 		, cameraCbk(std::move(cameraCbk))
 		, renderPassQueryCbk(std::move(renderPassQueryCbk))
 		, projectionMatrix(camera.calculateProjectionMatrix(DUMMY_SIZE))
+		, hasChanged(true)
 	{
 	}
 
@@ -110,6 +113,7 @@ struct RendererBase::Impl {
 	void setLayers(Utils::BufferView<const LayerRef> l) {
 		layers.clear();
 		layers.insert(layers.cend(), l.cbegin(), l.cend());
+		hasChanged = true;
 	}
 
 	Utils::BufferView<const LayerRef> getLayers() const {
@@ -118,6 +122,10 @@ struct RendererBase::Impl {
 
 
 	bool layersHaveChanged(const RendererBase& renderer) const {
+		if(hasChanged) {
+			return true;
+		}
+
 		return std::any_of(
 			layers.cbegin(), layers.cend(),
 			[&renderer] (const LayerBase& layer) -> bool {
