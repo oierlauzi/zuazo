@@ -65,7 +65,7 @@ public:
 	Utils::BufferView<const LayerRef>		getLayers() const;
 
 	bool									layersHaveChanged() const;
-	void									draw(Graphics::CommandBuffer& cmd) const;
+	void									draw(Graphics::CommandBuffer& cmd);
 
 	Graphics::RenderPass					getRenderPass() const;
 

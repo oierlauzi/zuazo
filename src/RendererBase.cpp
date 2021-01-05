@@ -30,8 +30,7 @@ struct RendererBase::Impl {
 	RenderPassQueryCallback								renderPassQueryCbk;
 
 	Math::Mat4x4f										projectionMatrix; //Precomputed for use in layerComp
-	mutable std::vector<LayerRef>						sortedLayers;
-
+	std::vector<LayerRef>								sortedLayers;
 	bool												hasChanged;
 
 	static constexpr Math::Vec2f DUMMY_SIZE = Math::Vec2f(1.0f, 1.0f);
@@ -111,9 +110,19 @@ struct RendererBase::Impl {
 
 
 	void setLayers(Utils::BufferView<const LayerRef> l) {
-		layers.clear();
-		layers.insert(layers.cend(), l.cbegin(), l.cend());
-		hasChanged = true;
+		const bool areEqual = std::equal(
+			layers.cbegin(), layers.cend(),
+			l.cbegin(), l.cend(),
+			[] (LayerRef a, LayerRef b) -> bool {
+				return &(a.get()) == &(b.get());
+			}
+		);
+		
+		if(!areEqual) {
+			layers.clear();
+			layers.insert(layers.cend(), l.cbegin(), l.cend());
+			hasChanged = true;
+		}
 	}
 
 	Utils::BufferView<const LayerRef> getLayers() const {
@@ -134,7 +143,7 @@ struct RendererBase::Impl {
 		);
 	}
 
-	void draw(const RendererBase& renderer, Graphics::CommandBuffer& cmd) const {
+	void draw(const RendererBase& renderer, Graphics::CommandBuffer& cmd) {
 		assert(sortedLayers.empty());
 
 		//Insert all the layers
@@ -153,6 +162,7 @@ struct RendererBase::Impl {
 
 		//Empty the sorted layers array. This should not deallocate it
 		sortedLayers.clear();
+		hasChanged = false;
 	}
 
 
@@ -395,7 +405,7 @@ bool RendererBase::layersHaveChanged() const {
 	return m_impl->layersHaveChanged(*this);
 }
 
-void RendererBase::draw(Graphics::CommandBuffer& cmd) const {
+void RendererBase::draw(Graphics::CommandBuffer& cmd) {
 	m_impl->draw(*this, cmd);
 }
 
