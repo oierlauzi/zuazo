@@ -40,13 +40,15 @@ Image DepthStencil::createImage(const Vulkan& vulkan,
 	};
 
 	constexpr vk::ImageUsageFlags usage =
-		vk::ImageUsageFlagBits::eDepthStencilAttachment;
+		vk::ImageUsageFlagBits::eDepthStencilAttachment |
+		vk::ImageUsageFlagBits::eTransientAttachment ; //No need to read it after the renderpass
 
 	constexpr vk::ImageTiling tiling =
 		vk::ImageTiling::eOptimal;
 
 	constexpr vk::MemoryPropertyFlags memory =
-		vk::MemoryPropertyFlagBits::eDeviceLocal;
+		vk::MemoryPropertyFlagBits::eDeviceLocal |
+		vk::MemoryPropertyFlagBits::eLazilyAllocated ;
 
 	return Image(
 		vulkan,

@@ -434,6 +434,7 @@ struct Vulkan::Impl {
 	vk::UniqueDeviceMemory allocateMemory(	const vk::MemoryRequirements& requirements,
 											vk::MemoryPropertyFlags properties ) const
 	{
+		vk::UniqueDeviceMemory result;
 		const auto memoryProperties = physicalDevice.getMemoryProperties(dispatcher);
 
 		//Find an apropiate index for the type
@@ -447,16 +448,28 @@ struct Vulkan::Impl {
 				break; //Found one!
 			}
 		}
-		if(i == memoryProperties.memoryTypeCount){
-			throw Exception("Error allocating device memory");
+
+		if(i < memoryProperties.memoryTypeCount){
+			//Found a suitable memory type
+			const vk::MemoryAllocateInfo allocInfo(
+				requirements.size,						//Size
+				i										//Memory type index
+			);
+
+			result = allocateMemory(allocInfo);
+		} else {
+			//Did not find any suitable memory
+			if(properties & vk::MemoryPropertyFlagBits::eLazilyAllocated) {
+				//Try to allocate without the lazy allocation bit
+				constexpr vk::MemoryPropertyFlags MASK = ~vk::MemoryPropertyFlagBits::eLazilyAllocated;
+				result = allocateMemory(requirements, properties & MASK);
+			} else {
+				//No solution :-<
+				throw Exception("Error allocating device memory");
+			}
 		}
 
-		const vk::MemoryAllocateInfo allocInfo(
-			requirements.size,						//Size
-			i										//Memory type index
-		);
-
-		return allocateMemory(allocInfo);
+		return result;
 	}
 
 	AggregatedAllocation allocateMemory(Utils::BufferView<const vk::MemoryRequirements> requirements,
