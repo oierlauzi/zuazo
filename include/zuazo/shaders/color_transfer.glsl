@@ -119,6 +119,7 @@ vec4 ct_expand(in int range, in vec4 color){
 		break;
 	}
 
+	result.a = clamp(result.a, 0.0f, 1.0f); //Alpha might have been set to the default value, which lead to out of range results
 	return result;
 }
 
@@ -556,7 +557,7 @@ vec3 ct_OETF(in int encoding, in vec3 color){
 
 vec4 ct_read(in ct_read_data inputProp, in vec4 color) {
 	//Normalize the values into [0.0, 1.0]
-	color = ct_expand(inputProp.colorRange, color); 
+	color = ct_expand(inputProp.colorRange, color);
 
 	//Convert it into RGB color model if necessary
 	if(inputProp.colorModel != ct_COLOR_MODEL_RGB) {
