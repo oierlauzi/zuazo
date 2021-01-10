@@ -6,6 +6,7 @@
 #include "Signal/Layout.h"
 
 #include <functional>
+#include <mutex>
 
 namespace Zuazo {
 
@@ -15,7 +16,9 @@ class ZuazoBase
 public:
 	using MoveCallback = std::function<void(ZuazoBase&)>;
 	using OpenCallback = std::function<void(ZuazoBase&)>;
+	using AsyncOpenCallback = std::function<void(ZuazoBase&, std::unique_lock<Instance>&)>;
 	using CloseCallback = std::function<void(ZuazoBase&)>;
+	using AsyncCloseCallback = std::function<void(ZuazoBase&, std::unique_lock<Instance>&)>;
 	using UpdateCallback = std::function<void()>;
 
 	ZuazoBase(	Instance& instance, 
@@ -23,7 +26,9 @@ public:
 				Utils::BufferView<const PadRef> pads = {},
 				MoveCallback moveCbk = {},
 				OpenCallback openCbk = {},
+				AsyncOpenCallback asyncOpenCbk = {},
 				CloseCallback closeCbk = {},
+				AsyncCloseCallback asyncCloseCbk = {},
 				UpdateCallback updateCbk = {} );
 	ZuazoBase(const ZuazoBase& other) = delete;
 	ZuazoBase(ZuazoBase&& other) noexcept;
@@ -33,7 +38,9 @@ public:
 	ZuazoBase& 						operator=(ZuazoBase&& other) noexcept;
 
 	void 							open();
+	void							asyncOpen(std::unique_lock<Instance>& lock);
 	void 							close();
+	void							asyncClose(std::unique_lock<Instance>& lock);
 	bool 							isOpen() const noexcept;
 
 	Instance&						getInstance() const noexcept;

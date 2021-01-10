@@ -2,6 +2,8 @@
 
 #include <zuazo/Utils/Functions.h>
 
+#include <future>
+
 namespace Zuazo {
 
 /*
@@ -21,30 +23,35 @@ struct ZuazoBase::Impl {
 
 	Instance& 						instance;
 
-	bool    						opened;
+	bool							opened;
 
 	//Callbacks
 	MoveCallback					moveCallback;
 	OpenCallback					openCallback;
+	AsyncOpenCallback				asyncOpenCallback;
 	CloseCallback					closeCallback;
+	AsyncCloseCallback				asyncCloseCallback;
 	UpdateCallbacks					updateCallbacks;
 
 	Impl(	Instance& instance, 
 			MoveCallback moveCbk,
 			OpenCallback openCbk,
+			AsyncOpenCallback asyncOpenCbk,
 			CloseCallback closeCbk,
+			AsyncCloseCallback asyncCloseCbk,
 			UpdateCallback updateCbk ) noexcept
 		: instance(instance)
 		, opened(false)
 		, moveCallback(std::move(moveCbk))
 		, openCallback(std::move(openCbk))
+		, asyncOpenCallback(std::move(asyncOpenCbk))
 		, closeCallback(std::move(closeCbk))
+		, asyncCloseCallback(std::move(asyncCloseCbk))
 		, updateCallbacks{ 
 			Utils::makeShared<UpdateCallback>(),
 			Utils::makeShared<UpdateCallback>(std::move(updateCbk)),
 			Utils::makeShared<UpdateCallback>() }
 	{
-
 	}
 
 	~Impl() {
@@ -62,20 +69,66 @@ struct ZuazoBase::Impl {
 		if(opened == false) {
 			Utils::invokeIf(openCallback, base);
 			opened = true;
+
 			ZUAZO_BASE_LOG(base, Severity::VERBOSE, "Opened");
 		} else {
 			ZUAZO_BASE_LOG(base, Severity::ERROR, "Opening an already opened element");
 		}
+
+		assert(opened == true);
+	}
+
+	void asyncOpen(ZuazoBase& base, std::unique_lock<Instance>& lock) {
+		assert(lock.owns_lock());
+
+		if(opened == false) {
+			if(asyncOpenCallback) {
+				asyncOpenCallback(base, lock);
+			} else {
+				Utils::invokeIf(openCallback, base);
+			}
+			opened = true;
+
+			ZUAZO_BASE_LOG(base, Severity::VERBOSE, "Opened asynchronously");
+		} else {
+			ZUAZO_BASE_LOG(base, Severity::ERROR, "Opening asynchronously an already opened element");
+		}
+
+		assert(opened == true);
+		assert(lock.owns_lock());
 	}
 
 	void close(ZuazoBase& base) {
 		if(opened == true) {
 			Utils::invokeIf(closeCallback, base);
 			opened = false;
+
 			ZUAZO_BASE_LOG(base, Severity::VERBOSE, "Closed");
 		} else {
 			ZUAZO_BASE_LOG(base, Severity::ERROR, "Closing an already closed element");
 		}
+
+		assert(opened == false);
+	}
+
+	void asyncClose(ZuazoBase& base, std::unique_lock<Instance>& lock) {
+		assert(lock.owns_lock());
+
+		if(opened == true) {
+			if(asyncCloseCallback) {
+				asyncCloseCallback(base, lock);
+			} else {
+				Utils::invokeIf(closeCallback, base);
+			}
+			opened = false;
+
+			ZUAZO_BASE_LOG(base, Severity::VERBOSE, "Closed asynchronously");
+		} else {
+			ZUAZO_BASE_LOG(base, Severity::ERROR, "Closing asynchronously an already opened element");
+		}
+
+		assert(opened == false);
+		assert(lock.owns_lock());
 	}
 
 	bool isOpen() const noexcept {
@@ -176,6 +229,7 @@ struct ZuazoBase::Impl {
 			getInstance().removePeriodicCallback(cbk);
 		}
 	}
+
 };
 
 
@@ -189,10 +243,12 @@ ZuazoBase::ZuazoBase(	Instance& instance,
 						Utils::BufferView<const PadRef> pads,
 						MoveCallback moveCbk,
 						OpenCallback openCbk,
+						AsyncOpenCallback asyncOpenCbk,
 						CloseCallback closeCbk,
+						AsyncCloseCallback asyncCloseCbk,
 						UpdateCallback updateCbk )
 	: Signal::Layout(std::move(name), pads.begin(), pads.end())
-	, m_impl({}, instance, std::move(moveCbk), std::move(openCbk), std::move(closeCbk), std::move(updateCbk))
+	, m_impl({}, instance, std::move(moveCbk), std::move(openCbk), std::move(asyncOpenCbk), std::move(closeCbk), std::move(asyncCloseCbk), std::move(updateCbk))
 {
 	ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Constructed");
 }
@@ -232,8 +288,16 @@ void ZuazoBase::open() {
 	m_impl->open(*this);
 }
 
+void ZuazoBase::asyncOpen(std::unique_lock<Instance>& lock) {
+	m_impl->asyncOpen(*this, lock);
+}
+
 void ZuazoBase::close() {
 	m_impl->close(*this);
+}
+
+void ZuazoBase::asyncClose(std::unique_lock<Instance>& lock) {
+	m_impl->asyncClose(*this, lock);
 }
 
 bool ZuazoBase::isOpen() const noexcept {
