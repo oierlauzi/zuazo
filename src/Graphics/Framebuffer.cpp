@@ -6,11 +6,12 @@
 namespace Zuazo::Graphics {
 
 Framebuffer::Framebuffer(	const Vulkan& vulkan,
-							Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
+							Resolution resolution,
 							const Image& image,
+							const Image* intermediaryImage,
 							const DepthStencil* depthStencil,
 							RenderPass renderPass )
-	: m_framebuffer(createFramebuffer(vulkan, planeDescriptors, image, depthStencil, renderPass))
+	: m_framebuffer(createFramebuffer(vulkan, resolution, image, intermediaryImage, depthStencil, renderPass))
 {
 }
 
@@ -21,17 +22,30 @@ vk::Framebuffer Framebuffer::get() const noexcept {
 
 
 vk::UniqueFramebuffer Framebuffer::createFramebuffer(	const Vulkan& vulkan,
-														Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
+														Resolution resolution,
 														const Image& image,
+														const Image* intermediaryImage,
 														const DepthStencil* depthStencil,
 														RenderPass renderPass )
 {
-	assert(planeDescriptors.size() == image.getPlanes().size());
-	const auto attachmentCount = image.getPlanes().size() + (depthStencil ? 1 : 0);
+	const auto attachmentCount = image.getPlanes().size() + (intermediaryImage ? 1 : 0) + (depthStencil ? 1 : 0);
 
 	//Enumerate all attachments
 	std::vector<vk::ImageView> attachments;
 	attachments.reserve(attachmentCount);
+
+	//First comes the depth image, if present
+	if(depthStencil) {
+		attachments.emplace_back(depthStencil->getImageView());
+	}
+
+	//Then comes the intermediary image, if present
+	if(intermediaryImage) {
+		assert(intermediaryImage->getPlanes().size() == 1);
+		attachments.emplace_back(*(intermediaryImage->getPlanes().front().imageView));
+	}
+
+	//Finally comes the result image
 	std::transform(
 		image.getPlanes().cbegin(), image.getPlanes().cend(),
 		std::back_inserter(attachments),
@@ -40,10 +54,6 @@ vk::UniqueFramebuffer Framebuffer::createFramebuffer(	const Vulkan& vulkan,
 		}
 	);
 
-	if(depthStencil) {
-		attachments.emplace_back(depthStencil->getImageView());
-	}
-
 	assert(attachments.size() == attachmentCount);
 
 	const vk::FramebufferCreateInfo createInfo(
@@ -51,15 +61,9 @@ vk::UniqueFramebuffer Framebuffer::createFramebuffer(	const Vulkan& vulkan,
 		renderPass.get(),
 		attachments.size(),
 		attachments.data(),
-		planeDescriptors.front().extent.width, planeDescriptors.front().extent.height,
+		resolution.width, resolution.height,
 		1
 	);
-	
-	//Ensure that all planes have the same size
-	for(size_t i = 1; i < planeDescriptors.size(); ++i) {
-		assert(planeDescriptors[i].extent.width >= createInfo.width); 
-		assert(planeDescriptors[i].extent.height >= createInfo.height); 
-	}
 
 	return vulkan.createFramebuffer(createInfo);
 }

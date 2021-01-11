@@ -254,6 +254,7 @@ struct RendererBase::Impl {
 			result = vulkan.createPipelineLayout(id, createInfo);
 		}
 
+		assert(result);
 		return result;
 	}
 

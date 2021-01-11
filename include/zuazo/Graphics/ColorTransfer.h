@@ -76,6 +76,8 @@ public:
 													Utils::BufferView<const vk::Format> supportedFormats ) noexcept;
 
 	const std::byte*					data() const noexcept;
+
+	static uint32_t 					getAttachmentCount() noexcept;
 	static size_t						size() noexcept;
 
 private:

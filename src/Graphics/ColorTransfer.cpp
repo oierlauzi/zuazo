@@ -414,6 +414,10 @@ const std::byte* OutputColorTransfer::data() const noexcept {
 	return m_impl->data();
 }
 
+uint32_t OutputColorTransfer::getAttachmentCount() noexcept {
+	return ct_OUTPUT_COUNT;
+}
+
 size_t OutputColorTransfer::size() noexcept {
 	return sizeof(ct_read_data);
 }

@@ -249,46 +249,15 @@ struct Drawtable::Impl {
 	{
 		InputColorTransfer inputColorTransfer(frameDesc);
 		const auto planeDescriptors = createPlaneDescriptors(vulkan, frameDesc, inputColorTransfer);
-		return RenderPass(vulkan, planeDescriptors, depthStencilFmt, vk::ImageLayout::eShaderReadOnlyOptimal);
-	}
-
-	static std::vector<vk::ClearValue> getClearValues(	const Graphics::Frame::Descriptor& frameDesc,
-														DepthStencilFormat depthStencilFmt )
-	{
-		std::vector<vk::ClearValue> result;
-
-		//Obtain information about the attachments
-		const auto coloAttachmentCount = getPlaneCount(frameDesc.getColorFormat());
-		const auto hasDepthStencil = DepthStencilFormat::NONE < depthStencilFmt && depthStencilFmt < DepthStencilFormat::COUNT;
-		assert(coloAttachmentCount > 0 && coloAttachmentCount <= 4);
-		result.reserve(coloAttachmentCount + hasDepthStencil);
-
-		//Add the color attachment clear values
-		if(isYCbCr(frameDesc.getColorModel())) {
-			for(size_t i = 0; i < coloAttachmentCount; ++i) {
-				result.emplace_back(getYCbCrClearValues(frameDesc.getColorFormat(), i));
-			}
-		} else {
-			for(size_t i = 0; i < coloAttachmentCount; ++i) {
-				result.emplace_back(vk::ClearColorValue()); //Default initializer to 0 of floats (Unorm)
-			}
-		}
-
-		//Add the depth/stencil attachemnt clear values
-		if(hasDepthStencil) {
-			result.emplace_back(vk::ClearDepthStencilValue(1.0f, 0x00)); //Clear to the far plane
-		}
-
-		return result;
-	}
-	
+		return RenderPass(vulkan, planeDescriptors, depthStencilFmt, vk::Format::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
+	}	
 
 private:
 	static RenderPass getRenderPass(const Vulkan& vulkan, 
 									Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
 									DepthStencilFormat depthStencilFmt )
 	{
-		return RenderPass(vulkan, planeDescriptors, depthStencilFmt, vk::ImageLayout::eShaderReadOnlyOptimal);
+		return RenderPass(vulkan, planeDescriptors, depthStencilFmt, vk::Format::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
 	}
 
 	static const std::vector<vk::Format>& getVulkanFormatSupport(const Vulkan& vulkan) {
@@ -307,7 +276,6 @@ private:
 		return vulkan.listSupportedFormatsOptimal(DESIRED_FLAGS);
 	}
 
-private:
 	static std::vector<Image::PlaneDescriptor> createPlaneDescriptors(	const Vulkan& vulkan, 
 																		const Frame::Descriptor& desc,
 																		InputColorTransfer& colorTransfer )
@@ -354,118 +322,6 @@ private:
 		}
 
 		return result;
-	}
-
-	static std::array<float, 4> getYCbCrClearValues(ColorFormat format, uint32_t plane) {
-		const auto planeCount = getPlaneCount(format);
-		assert(plane < planeCount);
-
-		if(planeCount > 1) {
-			//Multiplanar format. Decide what are the contents of each plane
-			//Note, the following table may have some misleading values. They are there 
-			//so that the compiler may optimise it to a smoother LUT. As practically speaking
-			//they wont be read. They have been commented with the component name followed 
-			//by an asterisk (*)
-			switch(plane) {
-			case 1:
-				switch(format) {
-				case ColorFormat::G8_B8_R8_A8:
-				case ColorFormat::G10X6_B10X6_R10X6_A10X6_16:
-				case ColorFormat::G12X4_B12X4_R12X4_A12X4_16:
-				case ColorFormat::G16_B16_R16_A16:
-				case ColorFormat::G16f_B16f_R16f_A16f:
-				case ColorFormat::G32f_B32f_R32f_A32f:
-				case ColorFormat::G64f_B64f_R64f_A64f:
-				case ColorFormat::G8_B8_R8:
-				case ColorFormat::G10X6_B10X6_R10X6_16:
-				case ColorFormat::G12X4_B12X4_R12X4_16:
-				case ColorFormat::G16_B16_R16:
-				case ColorFormat::G16f_B16f_R16f:
-				case ColorFormat::G32f_B32f_R32f:
-				case ColorFormat::G64f_B64f_R64f:
-					return {0.5f, 0.5f, 0.0f, 0.0f}; //Cb on R, put it to .5. The rest won't be read. G*
-				case ColorFormat::G8_R8B8:
-				case ColorFormat::G8_B8R8:
-				case ColorFormat::G10X6_R10X6B10X6_16:
-				case ColorFormat::G10X6_B10X6R10X6_16:
-				case ColorFormat::G12X4_R12X4B12X4_16:
-				case ColorFormat::G12X4_B12X4R12X4_16:
-				case ColorFormat::G16_R16B16:
-				case ColorFormat::G16_B16R16:
-					return {0.5f, 0.5f, 0.0f, 0.0f}; //Cb/Cr on R, Cb/Cr on G put them to .5. The rest won't be read
-				default:
-					assert(false);
-					return {0.5f, 0.5f, 0.0f, 0.0f}; //Unknown format. R*G*
-				}
-			case 2:
-				switch(format) {
-				case ColorFormat::G8_B8_R8_A8:
-				case ColorFormat::G10X6_B10X6_R10X6_A10X6_16:
-				case ColorFormat::G12X4_B12X4_R12X4_A12X4_16:
-				case ColorFormat::G16_B16_R16_A16:
-				case ColorFormat::G16f_B16f_R16f_A16f:
-				case ColorFormat::G32f_B32f_R32f_A32f:
-				case ColorFormat::G64f_B64f_R64f_A64f:
-				case ColorFormat::G8_B8_R8:
-				case ColorFormat::G10X6_B10X6_R10X6_16:
-				case ColorFormat::G12X4_B12X4_R12X4_16:
-				case ColorFormat::G16_B16_R16:
-				case ColorFormat::G16f_B16f_R16f:
-				case ColorFormat::G32f_B32f_R32f:
-				case ColorFormat::G64f_B64f_R64f:
-					return {0.5f, 0.5f, 0.0f, 0.0f}; //Cr on R, put it to .5. The rest won't be read. G*
-				default:
-					assert(false);
-					return {0.5f, 0.5f, 0.0f, 0.0f}; //Unknown format R*G*
-				}
-			case 3:
-				switch(format) {
-				case ColorFormat::G8_B8_R8_A8:
-				case ColorFormat::G10X6_B10X6_R10X6_A10X6_16:
-				case ColorFormat::G12X4_B12X4_R12X4_A12X4_16:
-				case ColorFormat::G16_B16_R16_A16:
-				case ColorFormat::G16f_B16f_R16f_A16f:
-				case ColorFormat::G32f_B32f_R32f_A32f:
-				case ColorFormat::G64f_B64f_R64f_A64f:
-					return {0.0f, 0.0f, 0.0f, 0.0f}; //Alpha plane
-				default:
-					assert(false);
-					return {0.0f, 0.0f, 0.0f, 0.0f}; //Unknown format
-				}
-			default: //0
-				switch(format) {
-				case ColorFormat::G8_B8_R8_A8:
-				case ColorFormat::G10X6_B10X6_R10X6_A10X6_16:
-				case ColorFormat::G12X4_B12X4_R12X4_A12X4_16:
-				case ColorFormat::G16_B16_R16_A16:
-				case ColorFormat::G16f_B16f_R16f_A16f:
-				case ColorFormat::G32f_B32f_R32f_A32f:
-				case ColorFormat::G64f_B64f_R64f_A64f:
-				case ColorFormat::G8_B8_R8:
-				case ColorFormat::G10X6_B10X6_R10X6_16:
-				case ColorFormat::G12X4_B12X4_R12X4_16:
-				case ColorFormat::G16_B16_R16:
-				case ColorFormat::G16f_B16f_R16f:
-				case ColorFormat::G32f_B32f_R32f:
-				case ColorFormat::G64f_B64f_R64f:
-				case ColorFormat::G8_R8B8:
-				case ColorFormat::G8_B8R8:
-				case ColorFormat::G10X6_R10X6B10X6_16:
-				case ColorFormat::G10X6_B10X6R10X6_16:
-				case ColorFormat::G12X4_R12X4B12X4_16:
-				case ColorFormat::G12X4_B12X4R12X4_16:
-				case ColorFormat::G16_R16B16:
-				case ColorFormat::G16_B16R16:
-					return {0.0f, 0.0f, 0.0f, 0.0f}; //Allways the luminance plane
-				default:
-					assert(false);
-					return {0.0f, 0.0f, 0.0f, 0.0f}; //Unknown format
-				}
-			}
-		} else {
-			//Packed format
-			return {0.5f, 0.0f, 0.5f, 0.0f}; //Cr Y Cb A.
-		}
 	}
 };
 
@@ -538,12 +394,6 @@ RenderPass Drawtable::getRenderPass(const Vulkan& vulkan,
 										DepthStencilFormat depthStencilFmt )
 {
 	return Impl::getRenderPass(vulkan, frameDesc, depthStencilFmt);
-}
-
-std::vector<vk::ClearValue> Drawtable::getClearValues(	const Graphics::Frame::Descriptor& frameDesc,
-														DepthStencilFormat depthStencilFmt )
-{
-	return Impl::getClearValues(frameDesc, depthStencilFmt);
 }
 
 }

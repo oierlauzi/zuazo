@@ -26,6 +26,10 @@ public:
 			vk::ImageUsageFlags usage,
 			vk::ImageTiling tiling,
 			vk::MemoryPropertyFlags memory );
+	Image(	const Vulkan& vulkan,
+			Utils::BufferView<const PlaneDescriptor> planeDescriptors,
+			Utils::BufferView<const vk::Image> planes,
+			vk::ImageUsageFlags usage );
 	Image(const Image& other) = delete;
 	Image(Image&& other) = default;
 	~Image() = default;
@@ -43,6 +47,7 @@ private:
 	void								bindMemory(const Vulkan& vulkan);
 	void								createImageViews(	const Vulkan& vulkan,
 															Utils::BufferView<const PlaneDescriptor> planeDescriptors,
+															Utils::BufferView<const vk::Image> planes,
 															vk::ImageUsageFlags usage );
 
 	static vk::UniqueImage				createImage(const Vulkan& vulkan,

@@ -81,7 +81,6 @@ public:
 	vk::UniqueSwapchainKHR				createSwapchain(const vk::SwapchainCreateInfoKHR& createInfo) const;
 	vk::UniqueImage						createImage(const vk::ImageCreateInfo& createInfo) const;
 	vk::UniqueImageView					createImageView(const vk::ImageViewCreateInfo& createInfo) const;
-	vk::UniquePipeline					createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& createInfo ) const;
 	vk::UniqueFramebuffer				createFramebuffer(const vk::FramebufferCreateInfo& createInfo) const;
 	vk::UniqueCommandPool				createCommandPool(const vk::CommandPoolCreateInfo& createInfo) const;
 	vk::UniqueBuffer					createBuffer(const vk::BufferCreateInfo& createInfo) const;
@@ -102,6 +101,12 @@ public:
 	vk::PipelineLayout					createPipelineLayout(size_t id) const;
 	vk::PipelineLayout					createPipelineLayout(	size_t id,
 																const vk::PipelineLayoutCreateInfo& createInfo ) const;
+
+	vk::UniquePipeline					createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& createInfo) const;
+	vk::Pipeline						createGraphicsPipeline(size_t id) const;
+	vk::Pipeline						createGraphicsPipeline(	size_t id,
+																const vk::GraphicsPipelineCreateInfo& createInfo ) const;
+
 	vk::UniqueDescriptorSetLayout		createDescriptorSetLayout(const vk::DescriptorSetLayoutCreateInfo& createInfo) const;
 	vk::DescriptorSetLayout				createDescriptorSetLayout(size_t id) const;
 	vk::DescriptorSetLayout				createDescriptorSetLayout(	size_t id,

@@ -47,7 +47,7 @@ private:
 
 
 	static Framebuffer							createFramebuffer(	const Vulkan& vulkan,
-																	Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
+																	Resolution resolution,
 																	const Image& image,
 																	const DepthStencil* depthStencil,
 																	RenderPass renderPass );

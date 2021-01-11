@@ -11,8 +11,9 @@ class Framebuffer {
 public:
 	Framebuffer() = default;
 	Framebuffer(const Vulkan& vulkan,
-				Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
+				Resolution resolution,
 				const Image& image,
+				const Image* intermediaryImage,
 				const DepthStencil* depthStencil,
 				RenderPass renderPass );
 	Framebuffer(const Framebuffer& other) = delete;
@@ -28,8 +29,9 @@ private:
 	vk::UniqueFramebuffer			m_framebuffer;
 
 	static vk::UniqueFramebuffer	createFramebuffer(	const Vulkan& vulkan,
-														Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
+														Resolution resolution,
 														const Image& image,
+														const Image* intermediaryImage,
 														const DepthStencil* depthStencil,
 														RenderPass renderPass );
 

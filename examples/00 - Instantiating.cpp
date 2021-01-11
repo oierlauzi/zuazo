@@ -26,13 +26,13 @@ int main() {
 	ZUAZO_IGNORE_PARAM(defaultInitAppInfo); //This line is here only to avoid warnings
 
 	/*
-	 * Finaly instantiate the library. 
+	 * Finally instantiate the library. 
 	 * Tip: Move the appinfo in order to save memory allocations.
 	 */
 	Zuazo::Instance instance(std::move(appInfo));
 
 	/*
-	 * For now on you're free to use Zuazo objects and functions.
+	 * For now on, you're free to use Zuazo objects and functions.
 	 * The instance will be destroyed at the end of the scope.
 	 */
 

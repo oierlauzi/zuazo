@@ -57,6 +57,7 @@ struct Vulkan::Impl {
 	mutable HashMap<vk::UniqueRenderPass>			renderPasses;
 	mutable HashMap<vk::UniqueShaderModule>			shaders;
 	mutable HashMap<vk::UniquePipelineLayout>		pipelineLayouts;
+	mutable HashMap<vk::UniquePipeline>				graphicsPipelines;
 	mutable HashMap<vk::UniqueDescriptorSetLayout>	descriptorSetLayouts;
 	mutable HashMap<vk::UniqueSampler>				samplers;
 
@@ -237,12 +238,6 @@ struct Vulkan::Impl {
 		return device->createImageViewUnique(createInfo, nullptr, dispatcher);
 	}
 
-	vk::UniquePipeline createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& createInfo ) const 
-	{
-		auto result = device->createGraphicsPipelineUnique(*pipelineCache, createInfo, nullptr, dispatcher);
-		return std::move(result.value);
-	}
-
 	vk::UniqueFramebuffer createFramebuffer(const vk::FramebufferCreateInfo& createInfo) const{
 		return device->createFramebufferUnique(createInfo, nullptr, dispatcher);
 	}
@@ -341,6 +336,30 @@ struct Vulkan::Impl {
 
 		assert(result);
 		assert(ite != pipelineLayouts.cend());
+		return *(ite->second);
+	}
+
+	vk::UniquePipeline createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& createInfo) const 
+	{
+		auto result = device->createGraphicsPipelineUnique(*pipelineCache, createInfo, nullptr, dispatcher);
+		return std::move(result.value);
+	}
+
+	vk::Pipeline createGraphicsPipeline(size_t id) const {
+		auto ite = graphicsPipelines.find(id);
+		return ite != graphicsPipelines.cend() ? *(ite->second) : vk::Pipeline();
+	}
+
+	vk::Pipeline createGraphicsPipeline(size_t id,
+										const vk::GraphicsPipelineCreateInfo& createInfo ) const
+	{
+		auto [ite, result] = graphicsPipelines.emplace(
+			id,
+			createGraphicsPipeline(createInfo)
+		);
+
+		assert(result);
+		assert(ite != graphicsPipelines.cend());
 		return *(ite->second);
 	}
 
@@ -1640,11 +1659,6 @@ vk::UniqueImageView Vulkan::createImageView(const vk::ImageViewCreateInfo& creat
 	return m_impl->createImageView(createInfo);
 }
 
-vk::UniquePipeline Vulkan::createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& createInfo ) const 
-{
-	return m_impl->createGraphicsPipeline(createInfo);
-}
-
 vk::UniqueFramebuffer Vulkan::createFramebuffer(const vk::FramebufferCreateInfo& createInfo) const{
 	return m_impl->createFramebuffer(createInfo);
 }
@@ -1710,6 +1724,20 @@ vk::PipelineLayout Vulkan::createPipelineLayout(size_t id,
 												const vk::PipelineLayoutCreateInfo& createInfo ) const
 {
 	return m_impl->createPipelineLayout(id, createInfo);
+}
+
+vk::UniquePipeline Vulkan::createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& createInfo) const {
+	return m_impl->createGraphicsPipeline(createInfo);
+}
+
+vk::Pipeline Vulkan::createGraphicsPipeline(size_t id) const {
+	return m_impl->createGraphicsPipeline(id);
+}
+
+vk::Pipeline Vulkan::createGraphicsPipeline(size_t id,
+											const vk::GraphicsPipelineCreateInfo& createInfo ) const
+{
+	return m_impl->createGraphicsPipeline(id, createInfo);
 }
 
 vk::UniqueDescriptorSetLayout Vulkan::createDescriptorSetLayout(const vk::DescriptorSetLayoutCreateInfo& createInfo) const {

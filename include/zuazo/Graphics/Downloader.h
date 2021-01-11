@@ -28,7 +28,7 @@ public:
 
 	const Vulkan&									getVulkan() const noexcept;
 	const Frame::Descriptor& 						getFrameDescriptor() const noexcept;	
-	OutputColorTransfer								getOutputColorTransfer() const;
+	const OutputColorTransfer&						getOutputColorTransfer() const;
 
 	const Framebuffer&								getFramebuffer() const noexcept;
 	void											beginRenderPass(vk::CommandBuffer cmd, 
@@ -46,8 +46,6 @@ public:
 	static Utils::Discrete<DepthStencilFormat> 		getSupportedFormatsDepthStencil(const Vulkan& vulkan);
 	static RenderPass								getRenderPass(	const Vulkan& vulkan, 
 																	const Frame::Descriptor& frameDesc,
-																	DepthStencilFormat depthStencilFmt );
-	static std::vector<vk::ClearValue> 				getClearValues(	const Graphics::Frame::Descriptor& frameDesc,
 																	DepthStencilFormat depthStencilFmt );
 
 private:

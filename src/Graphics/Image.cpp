@@ -15,7 +15,17 @@ Image::Image(	const Vulkan& vulkan,
 	, m_memory(createMemory(vulkan, m_imagePlanes, memory))
 {
 	bindMemory(vulkan);
-	createImageViews(vulkan, planeDescriptors, usage);
+	createImageViews(vulkan, planeDescriptors, {}, usage);
+}
+
+Image::Image(	const Vulkan& vulkan,
+				Utils::BufferView<const PlaneDescriptor> planeDescriptors,
+				Utils::BufferView<const vk::Image> planes,
+				vk::ImageUsageFlags usage )
+	: m_imagePlanes(planeDescriptors.size())
+	, m_memory()
+{
+	createImageViews(vulkan, planeDescriptors, planes, usage);
 }
 
 
@@ -37,6 +47,7 @@ void Image::bindMemory(const Vulkan& vulkan) {
 
 void Image::createImageViews(	const Vulkan& vulkan, 
 								Utils::BufferView<const PlaneDescriptor> planeDescriptors,
+								Utils::BufferView<const vk::Image> planes,
 								vk::ImageUsageFlags usage ) 
 	{
 	constexpr vk::ImageUsageFlags IMAGE_VIEW_USAGE_FLAGS =
@@ -49,7 +60,8 @@ void Image::createImageViews(	const Vulkan& vulkan,
 
 	if(usage & IMAGE_VIEW_USAGE_FLAGS) {
 		for(size_t i = 0; i < m_imagePlanes.size(); ++i) {
-			const auto image = *m_imagePlanes[i].image;
+			const auto image = (i < planes.size()) ? planes[i] : *m_imagePlanes[i].image;
+			assert(image);
 			m_imagePlanes[i].imageView = createImageView(vulkan, planeDescriptors[i], image);
 		}
 	}
