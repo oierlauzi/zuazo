@@ -30,10 +30,12 @@ public:
 		DESCRIPTOR_BINDING_PROJECTION_MATRIX,
 		DESCRIPTOR_BINDING_OUTPUT_COLOR_TRANSFER,
 
-		DESCRIPTOR_COUNT
+		DESCRIPTOR_BINDING_COUNT,
+		DESCRIPTOR_UNIFORM_BUFFER_COUNT = 2,
+		DESCRIPTOR_INPUT_ATTACHMENT_COUNT = 0
 	};
 
-	using UniformBufferLayout = std::array<Utils::Area, DESCRIPTOR_COUNT>;
+	using UniformBufferLayout = std::array<Utils::Area, DESCRIPTOR_UNIFORM_BUFFER_COUNT>;
 
 
 	RendererBase(	Utils::Limit<DepthStencilFormat> depthStencil = {},

@@ -41,7 +41,98 @@ void RenderPass::finalize(const Vulkan& vulkan, vk::CommandBuffer cmd) const noe
 	}
 }
 
+vk::Format RenderPass::getIntermediateFormat(	const Vulkan& vulkan, 
+												Utils::BufferView<const Image::PlaneDescriptor> planes,
+												const OutputColorTransfer& colorTransfer )
+{
+	auto result = vk::Format::eUndefined;
+	const auto referenceFormat = planes.front().format;
 
+	if(!colorTransfer.isPassthough() && referenceFormat != vk::Format::eUndefined) {
+		enum IntermediateFormatPrecision {
+			INTERMEDIATE_FORMAT_PRECISION_16f,
+			INTERMEDIATE_FORMAT_PRECISION_32f,
+			INTERMEDIATE_FORMAT_PRECISION_64f,
+
+			INTERMEDIATE_FORMAT_PRECISION_COUNT
+		};
+
+		constexpr std::array<vk::Format, INTERMEDIATE_FORMAT_PRECISION_COUNT> INTERMEDIATE_FORMATS = {
+			vk::Format::eR16G16B16A16Sfloat,
+			vk::Format::eR32G32B32A32Sfloat,
+			vk::Format::eR64G64B64A64Sfloat
+		};
+
+		//Decide which precision will be needed
+		int minimumPrecision;
+		switch(referenceFormat) {
+		//64f used:
+		case vk::Format::eR64G64B64A64Sfloat:
+		case vk::Format::eR64G64B64Sfloat:
+		case vk::Format::eR64G64Sfloat:
+		case vk::Format::eR64Sfloat:
+			minimumPrecision = INTERMEDIATE_FORMAT_PRECISION_64f;
+			break;
+
+		//32f used:
+		case vk::Format::eR32G32B32A32Sfloat:
+		case vk::Format::eR32G32B32Sfloat:
+		case vk::Format::eR32G32Sfloat:
+		case vk::Format::eR32Sfloat:
+		case vk::Format::eR16G16B16A16Unorm:
+		case vk::Format::eR16G16B16Unorm:
+		case vk::Format::eR16G16Unorm:
+		case vk::Format::eR16Unorm:
+		case vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16:
+		case vk::Format::eR12X4G12X4Unorm2Pack16:
+		case vk::Format::eR12X4UnormPack16:
+		case vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16:
+		case vk::Format::eR10X6G10X6Unorm2Pack16:
+		case vk::Format::eR10X6UnormPack16:
+		case vk::Format::eA2R10G10B10UnormPack32:
+		case vk::Format::eA2B10G10R10UnormPack32:
+			minimumPrecision = INTERMEDIATE_FORMAT_PRECISION_32f;
+			break;
+
+		//16f used:
+		default:
+			minimumPrecision = INTERMEDIATE_FORMAT_PRECISION_16f;
+			break;
+		}
+
+		//Obtain the format support
+		constexpr vk::FormatFeatureFlags formatFeatures =
+			vk::FormatFeatureFlagBits::eColorAttachment |
+			vk::FormatFeatureFlagBits::eColorAttachmentBlend ;
+
+		const auto& formatSupport = vulkan.listSupportedFormatsOptimal(formatFeatures);
+		assert(std::is_sorted(formatSupport.cbegin(), formatSupport.cend())); //For binary search
+
+		//Decide which format to use based on the minimum precision. If not available,
+		//lower the precision (unlikely)
+		while(minimumPrecision >= 0) {
+			const auto desiredFormat = INTERMEDIATE_FORMATS[minimumPrecision];
+			if(std::binary_search(formatSupport.cbegin(), formatSupport.cend(), desiredFormat)) {
+				//It is supported
+				break;
+			}
+
+			--minimumPrecision;
+		}
+
+		//Evaluate if the intermediary format was found
+		if(minimumPrecision < 0) {
+			throw Exception("Unable to find a suitable intermediate format");
+		} else {
+			result = INTERMEDIATE_FORMATS[minimumPrecision];
+		}
+
+		//At this point, we should have succeeded at finding an intermediary format
+		assert(result != vk::Format::eUndefined);
+	}
+
+	return result;
+}
 
 std::vector<vk::ClearValue>	RenderPass::getClearValues(DepthStencilFormat depthStencilFmt) {
 	std::vector<vk::ClearValue> result; 

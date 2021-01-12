@@ -44,6 +44,8 @@ public:
 	const std::byte*					data() const noexcept;
 	SamplerDescriptor					getSamplerDescriptor(ScalingFilter filter) const noexcept;
 
+	bool								isPassthough() const noexcept;
+
 	static uint32_t 					getSamplerCount() noexcept;
 	static uint32_t 					getSamplerBinding() noexcept;
 	static uint32_t 					getDataBinding() noexcept;
@@ -76,6 +78,8 @@ public:
 													Utils::BufferView<const vk::Format> supportedFormats ) noexcept;
 
 	const std::byte*					data() const noexcept;
+
+	bool								isPassthough() const noexcept;
 
 	static uint32_t 					getAttachmentCount() noexcept;
 	static size_t						size() noexcept;

@@ -239,6 +239,13 @@ struct InputColorTransfer::Impl {
 
 		return result;
 	}
+
+	bool isPassthough() const noexcept {
+		return	transferData.colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_LINEAR &&
+				transferData.colorModel == ct_COLOR_MODEL_RGB &&
+				transferData.colorRange == ct_COLOR_RANGE_FULL &&
+				transferData.planeFormat == ct_PLANE_FORMAT_RGBA ;
+	}
 };
 
 
@@ -290,10 +297,15 @@ const std::byte* InputColorTransfer::data() const noexcept {
 	return m_impl->data();
 }
 
-
 InputColorTransfer::SamplerDescriptor InputColorTransfer::getSamplerDescriptor(ScalingFilter filter) const noexcept {
 	return m_impl->getSamplerDescriptor(filter);
 }
+
+
+bool InputColorTransfer::isPassthough() const noexcept {
+	return m_impl->isPassthough();
+}
+
 
 uint32_t InputColorTransfer::getSamplerCount() noexcept {
 	return ct_SAMPLER_COUNT;
@@ -358,6 +370,13 @@ struct OutputColorTransfer::Impl {
 	const std::byte* data() const noexcept {
 		return reinterpret_cast<const std::byte*>(&transferData);
 	}
+
+	bool isPassthough() const noexcept {
+		return	transferData.colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_LINEAR &&
+				transferData.colorModel == ct_COLOR_MODEL_RGB &&
+				transferData.colorRange == ct_COLOR_RANGE_FULL &&
+				transferData.planeFormat == ct_PLANE_FORMAT_RGBA ;
+	}
 };
 
 
@@ -413,6 +432,11 @@ void OutputColorTransfer::optimize(	Utils::BufferView<Image::PlaneDescriptor> pl
 const std::byte* OutputColorTransfer::data() const noexcept {
 	return m_impl->data();
 }
+
+bool OutputColorTransfer::isPassthough() const noexcept {
+	return m_impl->isPassthough();
+}
+
 
 uint32_t OutputColorTransfer::getAttachmentCount() noexcept {
 	return ct_OUTPUT_COUNT;
