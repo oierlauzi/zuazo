@@ -49,7 +49,7 @@ struct Downloader::Impl {
 		, frameDescriptor(Utils::makeShared<Frame::Descriptor>(frameDesc))
 		, colorTransfer(*frameDescriptor)
 		, planeDescriptors(createPlaneDescriptors(vulkan, frameDesc, colorTransfer))
-		, intermediaryFormat(vk::Format::eR32G32B32Sfloat) //TODO
+		, intermediaryFormat(RenderPass::getIntermediateFormat(vulkan, planeDescriptors, colorTransfer))
 		, depthStencil(createDepthStencil(vulkan, toVulkan(depthStencilFmt), planeDescriptors.front().extent))
 		, renderPass(getRenderPass(vulkan, planeDescriptors, depthStencilFmt))
 		, intermediaryTargetImage(createIntermediaryTargetImage(vulkan, intermediaryFormat, planeDescriptors.front().extent))

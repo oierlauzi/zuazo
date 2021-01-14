@@ -63,6 +63,8 @@ constexpr bool hasStencil(vk::Format format) noexcept;
 constexpr vk::Filter toVulkan(ScalingFilter filt) noexcept;
 constexpr ScalingFilter fromVulkan(vk::Filter filt) noexcept;
 
+constexpr vk::PipelineStageFlags toPipelineStageFlags(vk::ShaderStageFlags flags) noexcept;
+constexpr vk::ShaderStageFlags toShaderStageFlags(vk::PipelineStageFlags flags) noexcept;
 
 constexpr vk::PipelineColorBlendAttachmentState toVulkan(BlendingMode mode) noexcept;
 

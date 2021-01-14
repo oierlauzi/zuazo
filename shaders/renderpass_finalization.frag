@@ -16,7 +16,7 @@ layout(set = 0, binding = 0) uniform OutputColorTransferBlock{
 };
 
 //Input attachments
-layout (input_attachment_index = 0, binding = 1) uniform subpassInput in_color;
+layout (set = 0, binding = 1, input_attachment_index = 0) uniform subpassInput in_color;
 
 
 void main() {

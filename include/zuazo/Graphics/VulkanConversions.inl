@@ -801,6 +801,34 @@ constexpr ScalingFilter fromVulkan(vk::Filter filt) noexcept {
 
 
 
+constexpr vk::PipelineStageFlags toPipelineStageFlags(vk::ShaderStageFlags flags) noexcept {
+	vk::PipelineStageFlags result;
+
+	if(flags & vk::ShaderStageFlagBits::eVertex)					result |= vk::PipelineStageFlagBits::eVertexShader;
+	if(flags & vk::ShaderStageFlagBits::eTessellationControl)		result |= vk::PipelineStageFlagBits::eTessellationControlShader;
+	if(flags & vk::ShaderStageFlagBits::eTessellationEvaluation)	result |= vk::PipelineStageFlagBits::eTessellationEvaluationShader;
+	if(flags & vk::ShaderStageFlagBits::eGeometry)					result |= vk::PipelineStageFlagBits::eGeometryShader;
+	if(flags & vk::ShaderStageFlagBits::eFragment)					result |= vk::PipelineStageFlagBits::eFragmentShader;
+	if(flags & vk::ShaderStageFlagBits::eCompute)					result |= vk::PipelineStageFlagBits::eComputeShader;
+
+	return result;
+}
+
+constexpr vk::ShaderStageFlags toShaderStageFlags(vk::PipelineStageFlags flags) noexcept {
+	vk::ShaderStageFlags result;
+
+	if(flags & vk::PipelineStageFlagBits::eVertexShader)					result |= vk::ShaderStageFlagBits::eVertex;
+	if(flags & vk::PipelineStageFlagBits::eTessellationControlShader)		result |= vk::ShaderStageFlagBits::eTessellationControl;
+	if(flags & vk::PipelineStageFlagBits::eTessellationEvaluationShader)	result |= vk::ShaderStageFlagBits::eTessellationEvaluation;
+	if(flags & vk::PipelineStageFlagBits::eGeometryShader)					result |= vk::ShaderStageFlagBits::eGeometry;
+	if(flags & vk::PipelineStageFlagBits::eFragmentShader)					result |= vk::ShaderStageFlagBits::eFragment;
+	if(flags & vk::PipelineStageFlagBits::eComputeShader)					result |= vk::ShaderStageFlagBits::eCompute;
+
+	return result;
+}
+
+
+
 constexpr vk::PipelineColorBlendAttachmentState toVulkan(BlendingMode mode) noexcept {
 	constexpr vk::ColorComponentFlags colorWriteMask = 
 		vk::ColorComponentFlagBits::eR |

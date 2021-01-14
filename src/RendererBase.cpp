@@ -178,22 +178,24 @@ struct RendererBase::Impl {
 
 
 
-	static UniformBufferLayout getUniformBufferLayout(const Graphics::Vulkan& vulkan) {
-		const auto& limits = vulkan.getPhysicalDeviceProperties().limits;
-
-		constexpr size_t projectionMatrixOff = 0;
-		constexpr size_t projectionMatrixSize = sizeof(glm::mat4);
-		
-		const size_t colorTansferOff = Utils::align(
-			projectionMatrixOff + projectionMatrixSize, 
-			limits.minUniformBufferOffsetAlignment
-		);
-		const size_t colorTansferSize = Graphics::OutputColorTransfer::size();
-
-		return UniformBufferLayout {
-			Utils::Area(projectionMatrixOff,	projectionMatrixSize),	//Projection matrix
-			Utils::Area(colorTansferOff,		colorTansferSize )		//Color Transfer
+	static UniformBufferSizes getUniformBufferSizes() noexcept {
+		static const std::array uniformBufferSizes = {
+			std::make_pair(static_cast<uint32_t>(DESCRIPTOR_BINDING_PROJECTION_MATRIX), 	sizeof(glm::mat4)),
+			std::make_pair(static_cast<uint32_t>(DESCRIPTOR_BINDING_OUTPUT_COLOR_TRANSFER),	Graphics::OutputColorTransfer::size())
 		};
+
+		return uniformBufferSizes;
+	}
+
+	static DescriptorPoolSizes getDescriptorPoolSizes() noexcept {
+		static const std::array descriptorPoolSizes = {
+			vk::DescriptorPoolSize(
+				vk::DescriptorType::eUniformBuffer,
+				getUniformBufferSizes().size()
+			)
+		};
+
+		return descriptorPoolSizes;
 	}
 
 	static vk::DescriptorSetLayout getDescriptorSetLayout(const Graphics::Vulkan& vulkan) {
@@ -239,7 +241,6 @@ struct RendererBase::Impl {
 		static const Utils::StaticId id;
 
 		auto result = vulkan.createPipelineLayout(id);
-
 		if(!result) {
 			const std::array layouts {
 				getDescriptorSetLayout(vulkan)
@@ -257,7 +258,6 @@ struct RendererBase::Impl {
 		assert(result);
 		return result;
 	}
-
 
 
 	void setDepthStencilFormatCompatibility(RendererBase& base, Utils::Limit<DepthStencilFormat> comp) {
@@ -425,17 +425,23 @@ Graphics::RenderPass RendererBase::getRenderPass() const {
 }
 
 
-RendererBase::UniformBufferLayout RendererBase::getUniformBufferLayout(const Graphics::Vulkan& vulkan) {
-	return Impl::getUniformBufferLayout(vulkan);
+
+RendererBase::UniformBufferSizes RendererBase::getUniformBufferSizes() noexcept {
+	return Impl::getUniformBufferSizes();
 }
 
-vk::DescriptorSetLayout	RendererBase::getDescriptorSetLayout(const Graphics::Vulkan& vulkan) {
+RendererBase::DescriptorPoolSizes RendererBase::getDescriptorPoolSizes() noexcept {
+	return Impl::getDescriptorPoolSizes();
+}
+
+vk::DescriptorSetLayout RendererBase::getDescriptorSetLayout(const Graphics::Vulkan& vulkan) {
 	return Impl::getDescriptorSetLayout(vulkan);
 }
 
-vk::PipelineLayout RendererBase::getPipelineLayout(const Graphics::Vulkan& vulkan) {
+vk::PipelineLayout RendererBase::getBasePipelineLayout(const Graphics::Vulkan& vulkan) {
 	return Impl::getBasePipelineLayout(vulkan);
 }
+
 
 
 void RendererBase::setDepthStencilFormatCompatibility(Utils::Limit<DepthStencilFormat> comp) {

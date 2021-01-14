@@ -4,6 +4,7 @@
 #include <zuazo/Utils/StaticId.h>
 
 #include <algorithm>
+#include <bitset>
 
 namespace Zuazo::Graphics {
 
@@ -33,11 +34,30 @@ vk::RenderPass RenderPass::get() const noexcept {
 
 
 
-void RenderPass::finalize(const Vulkan& vulkan, vk::CommandBuffer cmd) const noexcept {
+void RenderPass::finalize(	const Vulkan& vulkan, 
+							vk::CommandBuffer cmd, 
+							vk::DescriptorSet descriptorSet ) const noexcept 
+{
 	if(m_finalizationPipeline) {
 		vulkan.nextSubpass(cmd, vk::SubpassContents::eInline);
-		vulkan.bindPipeline(cmd, vk::PipelineBindPoint::eGraphics, m_finalizationPipeline);
-		vulkan.draw(cmd, 3, 1, 0, 0); //Draws a fullscreen tri
+
+		vulkan.bindDescriptorSets(
+			cmd,									//Command buffer
+			vk::PipelineBindPoint::eGraphics,		//Pipeline bind point
+			getFinalizationPipelineLayout(vulkan),	//Pipeline layout //TODO maybe cache?
+			DESCRIPTOR_SET,							//First index
+			descriptorSet,							//Descriptor sets
+			{}										//Dynamic offsets
+		);
+
+		vulkan.bindPipeline(
+			cmd, 									//Command buffer
+			vk::PipelineBindPoint::eGraphics, 		//Pipeline bind point
+			m_finalizationPipeline					//Pipeline
+		);
+
+		//Draw a fullscreen triangle
+		vulkan.draw(cmd, 3, 1, 0, 0);
 	}
 }
 
@@ -150,34 +170,53 @@ std::vector<vk::ClearValue>	RenderPass::getClearValues(DepthStencilFormat depthS
 	return result;
 }
 
+
+
+RenderPass::UniformBufferSizes RenderPass::getFinalizationUniformBufferSizes() noexcept {
+	static const std::array uniformBufferSizes = {
+		std::make_pair(static_cast<uint32_t>(FINALIZATION_DESCRIPTOR_BINDING_OUTPUT_COLOR_TRANSFER), Graphics::OutputColorTransfer::size())
+	};
+
+	return uniformBufferSizes;
+}
+
+RenderPass::DescriptorPoolSizes RenderPass::getFinalizationDescriptorPoolSizes() noexcept {
+	constexpr uint32_t INPUT_ATTACHMENT_COUNT = 1;
+	static const std::array descriptorPoolSizes = {
+		vk::DescriptorPoolSize(
+			vk::DescriptorType::eUniformBuffer,
+			getFinalizationUniformBufferSizes().size()
+		),
+		vk::DescriptorPoolSize(
+			vk::DescriptorType::eInputAttachment,
+			INPUT_ATTACHMENT_COUNT
+		)
+	};
+
+	return descriptorPoolSizes;
+}
+
 vk::DescriptorSetLayout	RenderPass::getFinalizationDescriptorSetLayout(const Vulkan& vulkan) {
 	static const Utils::StaticId id;
 
 	auto result = vulkan.createDescriptorSetLayout(id);
 
 	if(!result) {
-		enum {
-			FINALIZATION_BINDING_OUTPUT_COLOR_TRANSFER,
-			FINALIZATION_BINDING_INPUT_ATTACHMENT,
-
-			FINALIZATION_BINDING_COUNT
-		};
-
 		//Create the bindings
 		const std::array bindings = {
 			vk::DescriptorSetLayoutBinding(	//UBO binding
-				FINALIZATION_BINDING_OUTPUT_COLOR_TRANSFER,		//Binding
-				vk::DescriptorType::eUniformBuffer,				//Type
-				1,												//Count
-				vk::ShaderStageFlagBits::eFragment,				//Shader stage
-				nullptr											//Immutable samplers
+				FINALIZATION_DESCRIPTOR_BINDING_OUTPUT_COLOR_TRANSFER,	//Binding
+				vk::DescriptorType::eUniformBuffer,						//Type
+				1,														//Count
+				vk::ShaderStageFlagBits::eFragment,						//Shader stage
+				nullptr													//Immutable samplers
 			), 
 			vk::DescriptorSetLayoutBinding(	//Input attachment binding
-				FINALIZATION_BINDING_INPUT_ATTACHMENT,			//Binding
-				vk::DescriptorType::eInputAttachment,			//Type
-				1,												//Count
-				vk::ShaderStageFlagBits::eFragment,				//Shader stage
-				nullptr											//Immutable samplers
+				FINALIZATION_DESCRIPTOR_BINDING_INPUT_ATTACHMENT,		//Binding
+				vk::DescriptorType::eInputAttachment,					//Type
+				1,														//Count
+				vk::ShaderStageFlagBits::eFragment,						//Shader stage
+				nullptr													//Immutable samplers
 			), 
 		};
 
@@ -216,6 +255,34 @@ vk::PipelineLayout RenderPass::getFinalizationPipelineLayout(const Vulkan& vulka
 	return result;
 }
 
+void RenderPass::writeFinalizationDescriptorSet(const Graphics::Vulkan& vulkan,
+												vk::DescriptorSet descriptorSet,
+												const Image& intermediaryImage )
+{
+	assert(intermediaryImage.getPlanes().size() == 1);
+	const auto imageView = *(intermediaryImage.getPlanes().front().imageView);
+
+	const vk::DescriptorImageInfo descriptorImageInfo(
+		nullptr,											//Sampler
+		imageView,											//Image view
+		vk::ImageLayout::eShaderReadOnlyOptimal				//Image layout
+	);
+
+	const vk::WriteDescriptorSet writeDescriptorSet(
+		descriptorSet,										//Descriptor set
+		FINALIZATION_DESCRIPTOR_BINDING_INPUT_ATTACHMENT,	//Binding
+		0,													//Array index
+		1,													//Descriptor count
+		vk::DescriptorType::eInputAttachment,				//Descriptor type
+		&descriptorImageInfo,								//Image descriptors
+		nullptr,											//Uniform buffer descriptors
+		nullptr												//Texel buffers
+	);
+
+	vulkan.updateDescriptorSets(writeDescriptorSet, {});
+}
+
+
 
 vk::RenderPass RenderPass::createRenderPass(const Vulkan& vulkan, 
 											Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
@@ -223,37 +290,40 @@ vk::RenderPass RenderPass::createRenderPass(const Vulkan& vulkan,
 											vk::Format intermediaryFmt,
 											vk::ImageLayout finalLayout )
 {
-	//Get an id for this configuration
-	static std::unordered_map<uint64_t, const Utils::StaticId> ids; //TODO make thread-safe
+	//Some type definitions and constants used for indexing
+	using Field = uint;
+	constexpr size_t INDEX_FIELD_COUNT = 8; //Actually 7, just in case 8
+	constexpr size_t INDEX_FIELD_OFFSET = sizeof(Field) * Utils::getByteSize();
+	using Index = std::bitset<INDEX_FIELD_OFFSET * INDEX_FIELD_COUNT>;
 
-	uint64_t index = 0;
+	//Obtain the index for these parameters
+	Index index;
 
-	constexpr uint64_t COLOR_FORMAT_MULT = 0x100; //4*8 = 32bits
+	//Add all the plane formats
 	for(const auto& plane : planeDescriptors) {
 		assert(plane.swizzle == vk::ComponentMapping());
 
-		index *= COLOR_FORMAT_MULT;
-		index += static_cast<uint64_t>(plane.format) % COLOR_FORMAT_MULT; //TODO this does not work well with extensions, too big numbers.
-	}
-	for(size_t i = planeDescriptors.size(); i < 4; ++i) {
-		index *= COLOR_FORMAT_MULT;
+		index <<= INDEX_FIELD_OFFSET;
+		index |= static_cast<Field>(plane.format);
 	}
 
-	constexpr uint64_t DEPTH_STENCIL_MULT = 0x100; //8 bits
-	index *= DEPTH_STENCIL_MULT;
-	index += static_cast<uint64_t>(depthStencilFmt) % DEPTH_STENCIL_MULT;
+	//Pad upto 4 plane formats and add the depth stencil format
+	index <<= INDEX_FIELD_OFFSET * (4 - planeDescriptors.size() + 1);
+	index |= static_cast<Field>(depthStencilFmt);
 
-	constexpr uint64_t INTERMEDIARY_MULT = 0x100; //8 bits
-	index *= INTERMEDIARY_MULT;
-	index += static_cast<uint64_t>(intermediaryFmt) % INTERMEDIARY_MULT; //TODO this does not work well with extensions, too big numbers.
+	//Add the intermediary format
+	index <<= INDEX_FIELD_OFFSET;
+	index |= static_cast<Field>(intermediaryFmt);
 
-	constexpr uint64_t FINAL_LAYOUT_MULT = 0x100; //8bits
-	index *= FINAL_LAYOUT_MULT;
-	index += static_cast<uint64_t>(finalLayout) % FINAL_LAYOUT_MULT; //TODO this does not work well with extensions, too big numbers.
+	//Add the final layout
+	index <<= INDEX_FIELD_OFFSET;
+	index |= static_cast<Field>(finalLayout);
 
-	const size_t id = ids[index];
+	//Finally obtain the id
+	static std::unordered_map<Index, const Utils::StaticId> ids; //TODO make thread-safe
+	const auto& id = ids[index];
 
-	//Check if a renderpass with this id exists
+	//Check if a renderpass with this id is cached
 	vk::RenderPass result = vulkan.createRenderPass(id);
 	if(!result) {
 		//Get the element count for the arrays

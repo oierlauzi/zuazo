@@ -31,12 +31,12 @@ public:
 		DESCRIPTOR_BINDING_OUTPUT_COLOR_TRANSFER,
 
 		DESCRIPTOR_BINDING_COUNT,
-		DESCRIPTOR_UNIFORM_BUFFER_COUNT = 2,
-		DESCRIPTOR_INPUT_ATTACHMENT_COUNT = 0
 	};
 
-	using UniformBufferLayout = std::array<Utils::Area, DESCRIPTOR_UNIFORM_BUFFER_COUNT>;
+	using UniformBufferSizes = Utils::BufferView<const std::pair<uint32_t, size_t>>;
+	using DescriptorPoolSizes = Utils::BufferView<const vk::DescriptorPoolSize>;
 
+	static constexpr uint32_t DESCRIPTOR_SET = 0;
 
 	RendererBase(	Utils::Limit<DepthStencilFormat> depthStencil = {},
 					DepthStencilFormatCallback internalDepthStencilCbk = {},
@@ -71,9 +71,10 @@ public:
 
 	Graphics::RenderPass					getRenderPass() const;
 
-	static UniformBufferLayout				getUniformBufferLayout(const Graphics::Vulkan& vulkan);
+	static UniformBufferSizes				getUniformBufferSizes() noexcept;
+	static DescriptorPoolSizes				getDescriptorPoolSizes() noexcept;
 	static vk::DescriptorSetLayout			getDescriptorSetLayout(const Graphics::Vulkan& vulkan);
-	static vk::PipelineLayout				getPipelineLayout(const Graphics::Vulkan& vulkan);
+	static vk::PipelineLayout				getBasePipelineLayout(const Graphics::Vulkan& vulkan);
 
 protected:
 	void									setDepthStencilFormatCompatibility(Utils::Limit<DepthStencilFormat> comp);
