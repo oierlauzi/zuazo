@@ -52,33 +52,28 @@ void StagedBuffer::flushData(	const Vulkan& vulkan,
 {
 	if(area.size() > 0) {
 		assert(!m_waitFence);
-		const auto offset = area.offset();
-		const auto size = area.size();
 
-		//The maximum size allowed for it
-		const auto maxSize = m_data.size() - offset;
+		//Set the concrete size value if necessary
+		if(area.size() > m_data.size()) {
+			area = Utils::Area(area.offset(), m_data.size());
+		}
 
 		//Flush the memory
+		const auto& limits = vulkan.getPhysicalDeviceProperties().limits;
 		const vk::MappedMemoryRange range(
 			m_stagingBuffer.getDeviceMemory(),
-			offset, getFlushSize(vulkan, size, maxSize)
+			area.offset(), 
+			Utils::align(area.size(), limits.nonCoherentAtomSize)
 		);
 		vulkan.flushMappedMemory(range);
 
-		//vkCopyBuffer does not support VK_WHOLE_SIZE, so use the real value
-		const auto copySize = (size == VK_WHOLE_SIZE) ? maxSize : size;
-
-		//Ensure that the adecuate command buffer exists
-		const auto key = Key(offset, copySize, queue, access, stage);
+		//Ensure that the adequate command buffer exists
+		const auto key = Key(area, queue, access, stage);
 		auto ite = m_uploadCommands.find(key);
 		if(ite == m_uploadCommands.end()) {
 			std::tie(ite, std::ignore) = m_uploadCommands.emplace(
 				key,
-				createCommandBuffer(
-					vulkan, 
-					offset, copySize, 
-					queue, access, stage
-				)
+				createCommandBuffer(vulkan, area, queue, access, stage)
 			);
 		}
 
@@ -129,8 +124,7 @@ Buffer StagedBuffer::finish(const Vulkan& vulkan) {
 }
 
 vk::CommandBuffer StagedBuffer::createCommandBuffer(const Vulkan& vulkan,
-													size_t offset,
-													size_t size,
+													Utils::Area area,
 													uint32_t queue,
 													vk::AccessFlags access,
 													vk::PipelineStageFlags stage )
@@ -151,7 +145,7 @@ vk::CommandBuffer StagedBuffer::createCommandBuffer(const Vulkan& vulkan,
 			constexpr vk::AccessFlags srcAccess = {};
 			constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eTransferWrite;
 
-			//We don't mind about the previous contents, so skip the ownewship transfer
+			//We don't mind about the previous contents, so skip the ownership transfer
 			constexpr auto srcFamily = VK_QUEUE_FAMILY_IGNORED;
 			constexpr auto dstFamily = VK_QUEUE_FAMILY_IGNORED;
 
@@ -161,7 +155,7 @@ vk::CommandBuffer StagedBuffer::createCommandBuffer(const Vulkan& vulkan,
 				srcFamily,						//Old queue family
 				dstFamily, 						//New queue family
 				getBuffer(),					//Buffer
-				offset, size					//Range
+				area.offset(), area.size()		//Range
 			);
 
 			constexpr vk::PipelineStageFlags srcStages = 
@@ -184,7 +178,7 @@ vk::CommandBuffer StagedBuffer::createCommandBuffer(const Vulkan& vulkan,
 			*cmdBuffer,
 			m_stagingBuffer.getBuffer(),
 			getBuffer(),
-			vk::BufferCopy(offset, offset, size)
+			vk::BufferCopy(area.offset(), area.offset(), area.size())
 		);
 
 		//Insert a memory barrier, so that changes are visible
@@ -203,7 +197,7 @@ vk::CommandBuffer StagedBuffer::createCommandBuffer(const Vulkan& vulkan,
 				srcFamily,						//Old queue family
 				dstFamily, 						//New queue family
 				getBuffer(),					//Buffer
-				offset, size					//Range
+				area.offset(), area.size()		//Range
 			);
 
 			constexpr vk::PipelineStageFlags srcStages = 
@@ -252,6 +246,11 @@ Buffer StagedBuffer::createStagingBuffer(	const Vulkan& vulkan,
 	constexpr vk::MemoryPropertyFlags memoryFlags =
 		vk::MemoryPropertyFlagBits::eHostVisible;
 
+	//In order to align size with nonCoherentAtomSize for flushing,
+	// it might need to be lengthened in order to have the correct size
+	const auto& limits = vulkan.getPhysicalDeviceProperties().limits;
+	size = Utils::align(size, limits.nonCoherentAtomSize);
+
 	return Buffer(
 		vulkan,
 		usageFlags,
@@ -284,24 +283,6 @@ vk::UniqueCommandPool StagedBuffer::createCommandPool(const Vulkan& vulkan) {
 	);
 
 	return vulkan.createCommandPool(createInfo);
-}
-
-size_t StagedBuffer::getFlushSize(const Vulkan& vulkan, size_t size, size_t maxSize) noexcept {
-	size_t result;
-
-	if(size == VK_WHOLE_SIZE) {
-		result = VK_WHOLE_SIZE; //Do not modify
-	} else {
-		//Size must be a multiple of nonCoherentAtomSize or reach the end of the buffer
-		const auto nonCoherentAtomSize = vulkan.getPhysicalDeviceProperties().limits.nonCoherentAtomSize;
-		result = Utils::align(size, nonCoherentAtomSize);
-
-		if(result >= maxSize) {
-			result = VK_WHOLE_SIZE; //Size exceeds the maximum
-		}
-	}
-
-	return result;
 }
 
 }

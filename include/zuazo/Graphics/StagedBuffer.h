@@ -44,7 +44,7 @@ public:
 	Buffer								finish(const Vulkan& vulkan);
 	
 private:
-	using Key = std::tuple<size_t, size_t, uint32_t, vk::AccessFlags, vk::PipelineStageFlags>;
+	using Key = std::tuple<Utils::Area, uint32_t, vk::AccessFlags, vk::PipelineStageFlags>;
 
 	Buffer								m_stagingBuffer;
 	Utils::BufferView<std::byte>		m_data;
@@ -56,8 +56,7 @@ private:
 	mutable vk::Fence					m_waitFence;
 
 	vk::CommandBuffer					createCommandBuffer(const Vulkan& vulkan,
-															size_t offset,
-															size_t size,
+															Utils::Area area,
 															uint32_t queue,
 															vk::AccessFlags access,
 															vk::PipelineStageFlags stage );
@@ -71,8 +70,6 @@ private:
 															size_t size,
 															const Buffer& stagingBuffer );
 	static vk::UniqueCommandPool		createCommandPool(const Vulkan& vulkan);
-
-	static size_t						getFlushSize(const Vulkan& vulkan, size_t size, size_t maxSize) noexcept;
 
 };
 
