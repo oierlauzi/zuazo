@@ -28,18 +28,15 @@ constexpr Math::Mat3x3<T> constructRGB2XYZConversionMatrix(	const T red_x,	const
 	);
 
 	//Express the primary chromaticities as a matrix
-	//Note that it gets transposed as glm expects the matrix to be specified
-	//in column major order, while it is being specified in row major
-	const auto chromaticities = Math::transpose(
-		Math::Mat3x3<T>(
-			red_x, green_x, blue_x,
-			red_y, green_y, blue_y,
-			red_z, green_z, blue_z
-		)
+	const Math::Mat3x3<T> chromaticities(
+		red_x, green_x, blue_x,
+		red_y, green_y, blue_y,
+		red_z, green_z, blue_z
 	);
 
 	//As T * Vec4(1) == white, obtain the scaling factors
-	const auto scale = Math::diagonal(Math::inv(chromaticities) * white);
+	const auto diagonal = Math::inv(chromaticities) * white;
+	const auto scale = Math::Mat3x3f(diagonal.x, diagonal.y, diagonal.z);
 
 	//Compute the tristimulus values scaling them by the scaling factor
 	return chromaticities * scale;

@@ -11,6 +11,8 @@
 
 	#include <cstdint>
 
+	using mat4 = Zuazo::Math::Mat4x4f;
+
 #else
 	#define ZUAZO_IF_CPP(x, y) y
 #endif
@@ -54,8 +56,8 @@ ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_PRIMARIES_UNKNOWN = -1;
 /*Using mat4 as glm does not have the 4N alignment*/
 
 struct ct_read_data {
-	ZUAZO_IF_CPP(glm::mat4, mat4) 		mtxRGB2XYZ; 
-	ZUAZO_IF_CPP(glm::mat4, mat4) 		mtxYCbCr2RGB;
+	ZUAZO_IF_CPP(mat4, mat4) 			mtxRGB2XYZ; 
+	ZUAZO_IF_CPP(mat4, mat4) 			mtxYCbCr2RGB;
 	ZUAZO_IF_CPP(int32_t, int) 			colorPrimaries;
 	ZUAZO_IF_CPP(int32_t, int) 			colorTransferFunction;
 	ZUAZO_IF_CPP(int32_t, int) 			colorModel;
@@ -64,8 +66,8 @@ struct ct_read_data {
 };
 
 struct ct_write_data {
-	ZUAZO_IF_CPP(glm::mat4, mat4) 		mtxXYZ2RGB;
-	ZUAZO_IF_CPP(glm::mat4, mat4) 		mtxRGB2YCbCr;
+	ZUAZO_IF_CPP(mat4, mat4) 			mtxXYZ2RGB;
+	ZUAZO_IF_CPP(mat4, mat4) 			mtxRGB2YCbCr;
 	ZUAZO_IF_CPP(int32_t, int) 			colorPrimaries;
 	ZUAZO_IF_CPP(int32_t, int) 			colorTransferFunction;
 	ZUAZO_IF_CPP(int32_t, int) 			colorModel;

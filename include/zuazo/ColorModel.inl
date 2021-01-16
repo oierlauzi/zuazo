@@ -19,14 +19,11 @@ constexpr Math::Mat3x3<T> constructRGB2YCbCrConversionMatrix(	const T y_r,  cons
 																const T cb_r, const T cb_g, const T cb_b,
 																const T cr_r, const T cr_g, const T cr_b ) noexcept
 {
-	//Transpose the matrix as it is specified in row major order whilst glm uses colum major ordering
 	//		R		G		B		A
-	return Math::transpose(
-		Math::Mat3x3<T>(
-			cr_r,	cr_g,	cr_b,	//Cr (R)
-			y_r,	y_g,	y_b, 	//Y  (G)
-			cb_r,	cb_g,	cb_b 	//Cb (B)
-		)
+	return Math::Mat3x3<T>(
+		cr_r,	cr_g,	cr_b,	//Cr (R)
+		y_r,	y_g,	y_b, 	//Y  (G)
+		cb_r,	cb_g,	cb_b 	//Cb (B)
 	);
 }
 
@@ -50,7 +47,7 @@ constexpr Math::Mat3x3f getRGB2YCbCrConversionMatrix(ColorModel colorModel) noex
 	case ColorModel::BT709: return constructRGB2YCbCrConversionMatrix(0.2126f, 0.0722f);
 	case ColorModel::BT2020: return constructRGB2YCbCrConversionMatrix(0.2627f, 0.0593f);
 	case ColorModel::SMPTE240M: return constructRGB2YCbCrConversionMatrix(0.212f, 0.087f);
-	default: return {};
+	default: return Math::Mat3x3f(0.0f);
 	}
 }
 

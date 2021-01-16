@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstdint>
-
 namespace Zuazo::Math {
 
 template<typename T>

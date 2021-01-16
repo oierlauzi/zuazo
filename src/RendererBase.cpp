@@ -6,8 +6,6 @@
 
 #include <algorithm>
 
-#include <glm/gtc/matrix_access.hpp> 
-
 namespace Zuazo {
 
 struct RendererBase::Impl {
@@ -326,11 +324,11 @@ private:
 			const auto hasAlpha = a.hasAlpha();
 
 			//Calculate the average depth 
-			constexpr int zRowIndex = 2; //0: x, 1: y, 2: z, 3: w
-			const auto zProjection = glm::row(projectionMatrix, zRowIndex);
+			constexpr size_t zRowIndex = 2; //0: x, 1: y, 2: z, 3: w
+			const auto zProjection = projectionMatrix.getRow(zRowIndex);
 
-			const auto aDepth = glm::dot(zProjection, Math::Vec4f(a.getTransform().getPosition(), 1.0f));
-			const auto bDepth = glm::dot(zProjection, Math::Vec4f(b.getTransform().getPosition(), 1.0f));
+			const auto aDepth = Math::dot(zProjection, Math::Vec4f(a.getTransform().getPosition(), 1.0f));
+			const auto bDepth = Math::dot(zProjection, Math::Vec4f(b.getTransform().getPosition(), 1.0f));
 
 			return !hasAlpha
 				? aDepth < bDepth

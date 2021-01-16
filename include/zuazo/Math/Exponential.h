@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstdint>
-
 namespace Zuazo::Math {
 
 float exp(float x) noexcept;

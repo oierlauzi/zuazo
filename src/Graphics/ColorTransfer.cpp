@@ -4,6 +4,8 @@
 
 #include <zuazo/shaders/color_transfer.h>
 
+#include <iostream> //TODO
+
 namespace Zuazo::Graphics {
 
 /*
@@ -49,7 +51,7 @@ inline Math::Mat4x4f getRGB2YCbCrMatrix(ColorModel model) noexcept {
 		//If it is YCbCr a displacement needs to be applied from [-0.5, 0.5] to [0.0, 1.0]
 		//							Cr		Y		Cb
 		constexpr Math::Vec3f delta(0.5f, 	0.0f, 	0.5f );
-		result[result.length() - 1] = Math::Vec4f(delta, 1.0f);
+		result[result.columns() - 1] = Math::Vec4f(delta, 1.0f);
 	}
 
 	return result;
@@ -160,7 +162,7 @@ struct InputColorTransfer::Impl {
 	Impl() noexcept = default;
 	Impl(const Frame::Descriptor& desc, const Chromaticities& chromaticities) noexcept
 		: transferData {
-			chromaticities.calculateRGB2XYZConversionMatrix(),
+			Math::Mat4x4f(chromaticities.calculateRGB2XYZConversionMatrix()),
 			Math::inv(ColorTransfer::getRGB2YCbCrMatrix(desc.getColorModel())),
 			ColorTransfer::getColorPrimaries(desc.getColorPrimaries(), chromaticities),
 			ColorTransfer::getColorTransferFunction(desc.getColorTransferFunction()),
@@ -334,7 +336,7 @@ struct OutputColorTransfer::Impl {
 	Impl() noexcept = default;
 	Impl(const Frame::Descriptor& desc, const Chromaticities& chromaticities) noexcept
 		: transferData {
-			chromaticities.calculateXYZ2RGBConversionMatrix(),
+			Math::Mat4x4f(chromaticities.calculateXYZ2RGBConversionMatrix()),
 			ColorTransfer::getRGB2YCbCrMatrix(desc.getColorModel()),
 			ColorTransfer::getColorPrimaries(desc.getColorPrimaries(), chromaticities),
 			ColorTransfer::getColorTransferFunction(desc.getColorTransferFunction()),

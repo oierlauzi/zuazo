@@ -3,8 +3,6 @@
 #include <zuazo/Math/Transformations.h>
 #include <zuazo/Math/Trigonometry.h>
 
-#include <tuple>
-
 namespace Zuazo {
 
 RendererBase::Camera::Camera(	const Math::Transformf& trf,

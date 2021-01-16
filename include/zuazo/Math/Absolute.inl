@@ -17,5 +17,4 @@ inline double abs(double x) noexcept {
 	return std::abs(x);	
 }
 
-
 }
