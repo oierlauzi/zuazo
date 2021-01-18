@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Polynomial.h"
 #include "../Utils/BufferView.h"
 
 #include <array>
@@ -30,9 +31,6 @@ public:
 
 	template<typename Q>
 	constexpr value_type 					sample(Q t) const;
-
-	std::array<value_type, Deg+1>			getPolynomialCoefficients() const;
-
 
 	constexpr value_type&					front() noexcept;
 	constexpr const value_type&				front() const noexcept;
@@ -67,11 +65,14 @@ template<typename T>
 using CubicBezier = Spline<T, 3>;
 
 
-template<typename T, size_t N>
-constexpr Spline<T, N-1> derivate(const Spline<T, N>& s);
+template<typename T, size_t Deg>
+constexpr Spline<T, Deg-1> derivate(const Spline<T, Deg>& s);
 
-template<typename T, size_t N>
-std::array<typename Spline<T, N>::value_type, 2> getBoundaries(const Spline<T, N>& s);
+template<typename T, size_t Deg>
+constexpr Polynomial<typename Spline<T, Deg>::value_type, Spline<T, Deg>::degree()> toPolynomial(const Spline<T, Deg>& s);
+
+template<typename T, size_t Deg>
+constexpr std::array<typename Spline<T, Deg>::value_type, 2> getBoundaries(const Spline<T, Deg>& s);
 
 
 template<typename T, size_t Deg>

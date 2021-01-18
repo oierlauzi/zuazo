@@ -76,60 +76,6 @@ constexpr typename Spline<T, Deg>::value_type Spline<T, Deg>::sample(Q t) const 
 	return result;
 }
 
-template<typename T, size_t Deg>
-std::array<typename Spline<T, Deg>::value_type, Deg+1> Spline<T, Deg>::getPolynomialCoefficients() const {
-	std::array<value_type, size()> result = {};
-
-	//FIXME this algorithm has been obtained and tested based on the pattern 
-	//of coefficients upto degree 3. I haven't done any further testing, so
-	//results for higher orders might be wrong
-
-	/* Non recursive way:
-	for(size_t i = 0; i < result.size(); ++i) {
-		const value_type w0(binomialCoefficient(degree(), i));
-		for(size_t j = 0; j <= i; ++j) {
-			const value_type sign(((i+j) % 2) ? +1 : -1);
-			const value_type w1(binomialCoefficient(i, j));
-			result[i] += sign * w0 * w1 * (*this)[j];
-		}
-	}
-	*/
-
-	if constexpr (degree() > 0) {
-		//Obtain the lower degree result and coefficients
-		const auto& prevSpline = reinterpret_cast<const Spline<value_type, degree()-1>&>(*this);
-		auto& prevResult = reinterpret_cast<std::array<value_type, prevSpline.size()>&>(result);
-		
-		//Obtain the lower degree coefficients
-		prevResult = prevSpline.getPolynomialCoefficients();
-
-		//Previous results have been multiplied by binomialCoefficient(n-1, k), we need them 
-		//multiplied by binomialCoefficient(n, k)
-		//
-		//  n!         (n-1)!           n(n-1)!      (n-1)!             n
-		//-------- = ---------- x => ------------- = --------x => x = ----
-		//k!(n-k)!   k!(n-1-k)!      (n-k)(n-k-1)!   (n-k-1)!          n-k
-		//
-		// So, multiply the previous result by n/(n-k) to get the actual value. With higher
-		//degrees this might lead to numerical inestability, but it is expected to use 3rd
-		//order at most.
-
-		for(size_t i = 0; i < prevResult.size(); ++i) {
-			prevResult[i] *= value_type(degree()) / value_type(degree() - i);
-		}	
-	}
-
-	//Statically generate the binomial coefficients
-	constexpr auto coefficients = generateBinomialCoefficients<size_t, degree()>();
-	static_assert(coefficients.size() == size(), "Binomial coefficients must have the same size as this");
-
-	//Set the last row of the resulting coefficients
-	for(size_t i = 0; i < size(); ++i) {
-		//binomialCoefficients(n, n) = 1, so it is not considered
-		const value_type sign(((degree()+i) % 2) ? +1 : -1);
-		result.back() += sign * value_type(coefficients[i]) * back();
-	}
-}
 
 
 template<typename T, size_t Deg>
@@ -206,11 +152,12 @@ constexpr size_t Spline<T, Deg>::degree() noexcept {
 }
 
 
-template<typename T, size_t N>
-constexpr Spline<T, N-1> derivate(const Spline<T, N>& s) {
+
+template<typename T, size_t Deg>
+constexpr Spline<T, Deg-1> derivate(const Spline<T, Deg>& s) {
 	//Based on:
 	//https://pages.mtu.edu/~shene/COURSES/cs3621/NOTES/spline/Bezier/bezier-der.html
-	Spline<T, N-1> result;
+	Spline<T, s.degree()-1> result;
 
 	for(size_t i = 0; i < result.size(); ++i) {
 		result[i] = s.degree() * (s[i+1] - s[i]);
@@ -219,10 +166,42 @@ constexpr Spline<T, N-1> derivate(const Spline<T, N>& s) {
 	return result;
 }
 
-template<typename T, size_t N>
-std::array<typename Spline<T, N>::value_type, 2> getBoundaries(const Spline<T, N>& s) {
+
+template<typename T, size_t Deg>
+constexpr Polynomial<typename Spline<T, Deg>::value_type, Spline<T, Deg>::degree()> toPolynomial(const Spline<T, Deg>& s) {
+	Polynomial<typename Spline<T, Deg>::value_type, s.degree()> result;
+
+	//FIXME this algorithm has been obtained and tested based on the pattern 
+	//of coefficients upto degree 3. I haven't done any further testing, so
+	//results for higher orders might be wrong
+
+	constexpr auto binomialCoefficientTree = generateBinomialCoefficientTree<size_t, s.degree()>();
+	static_assert(binomialCoefficientTree.size() == s.size(), "Binomial coefficients must have the same size as this");
+	static_assert(binomialCoefficientTree.back().size() == s.size(), "Binomial coefficients must have the same size as this");
+
+	for(size_t i = 0; i < result.size(); ++i) {
+		//Last row in the tree is equivalent to generateBinomialCoefficients()
+		const typename Spline<T, Deg>::value_type w0(binomialCoefficientTree.back()[i]);
+
+		for(size_t j = 0; j <= i; ++j) {
+			//Equivalent to binomialCoefficient(i ,j)
+			const typename Spline<T, Deg>::value_type w1(binomialCoefficientTree[i][j]);
+
+			//Alternate sign between columns and rows
+			const typename Spline<T, Deg>::value_type sign(((i+j) % 2) ? +1 : -1);
+
+			//Accumulate the result
+			result[i] += sign * w0 * w1 * s[j];
+		}
+	}
+
+	return result;
+}
+
+template<typename T, size_t Deg>
+constexpr std::array<typename Spline<T, Deg>::value_type, 2> getBoundaries(const Spline<T, Deg>& s) {
 	//Start with the minimum and maximum edge values
-	std::array<typename Spline<T, N>::value_type, 2> result = {
+	std::array<typename Spline<T, Deg>::value_type, 2> result = {
 		min(s.front(), s.back()), //front
 		max(s.front(), s.back()) //back
 	};
@@ -231,7 +210,7 @@ std::array<typename Spline<T, N>::value_type, 2> getBoundaries(const Spline<T, N
 	const auto ddt = derivate(s);
 
 	//Obtain the roots of the derivate
-	const auto roots = polynomialSolve(ddt.getCoefficients());
+	const auto roots = solve(toPolynomial(ddt));
 
 	//Update the minimum. Don't consider if solutions are
 	//valid, as invalid solutions are set to zero, which when
@@ -245,7 +224,7 @@ std::array<typename Spline<T, N>::value_type, 2> getBoundaries(const Spline<T, N
 		result.back() = max(result.back(), relativeMaxMin);
 	}
 
-	result result;
+	return result;
 }
 
 

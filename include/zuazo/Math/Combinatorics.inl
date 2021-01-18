@@ -44,4 +44,18 @@ constexpr std::array<T, N+1> generateBinomialCoefficients() noexcept {
 	return result;
 }
 
+template<typename T, size_t N>
+constexpr std::array<std::array<T, N+1>, N+1> generateBinomialCoefficientTree() noexcept {
+	std::array<std::array<T, N+1>, N+1> result = {};
+
+	for(size_t i = 0; i < result.size(); ++i) {
+		for(size_t j = 0; j<= i; ++j) {
+			result[i][j] = binomialCoefficient(i, j);
+		}
+	}
+
+
+	return result;
+}
+
 }

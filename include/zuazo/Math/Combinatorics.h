@@ -14,6 +14,9 @@ constexpr T binomialCoefficient(const T& n, const T& k) noexcept;
 template<typename T, size_t N>
 constexpr std::array<T, N+1> generateBinomialCoefficients() noexcept;
 
+template<typename T, size_t N>
+constexpr std::array<std::array<T, N+1>, N+1> generateBinomialCoefficientTree() noexcept;
+
 }
 
 #include "Combinatorics.inl"
