@@ -232,6 +232,10 @@ template<typename T, size_t N>
 constexpr T length2(const Vec<T, N>& a) noexcept;
 template<typename T, size_t N>
 constexpr Vec<T, N> normalize(const Vec<T, N>& a) noexcept;
+template<typename T, size_t N>
+constexpr Vec<T, N> proj(const Vec<T, N>& dir, const Vec<T, N>& p) noexcept;
+template<typename T>
+constexpr typename Vec2<T>::value_type signedDistance(const Vec2<T>& origin, const Vec2<T>& direction, const Vec2<T>& point);
 
 
 template<typename T, size_t N>
@@ -294,7 +298,6 @@ template<typename T, size_t N>
 constexpr Vec<T, N> atan(const Vec<T, N>& y, const Vec<T, N>& x) noexcept;
 template<typename T, size_t N>
 constexpr Vec<T, N> atanh(const Vec<T, N>& x) noexcept;
-
 
 template<typename T, size_t N>
 std::ostream& operator<<(std::ostream& os, const Vec<T, N>& m);

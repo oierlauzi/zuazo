@@ -10,7 +10,6 @@ namespace Zuazo::Math {
 template<typename T, size_t Deg>
 class Spline {
 public:
-	static_assert(Deg > 0, "Degree must be 1 or greater");
 	using value_type = T;
 
 	template<typename... Values>
@@ -21,37 +20,40 @@ public:
 	constexpr Spline(const Spline<Q, Deg>& other);	
 	~Spline() = default;
 
-	constexpr Spline&					operator=(const Spline& other) = default;
-	constexpr Spline&					operator=(Spline&& other) = default;
+	constexpr Spline&						operator=(const Spline& other) = default;
+	constexpr Spline&						operator=(Spline&& other) = default;
 	template<typename Q>
-	constexpr Spline&					operator=(const Spline<Q, Deg>& other);	
+	constexpr Spline&						operator=(const Spline<Q, Deg>& other);	
 
-	constexpr value_type&				operator[](size_t i) noexcept;
-	constexpr const value_type&			operator[](size_t i) const noexcept;
+	constexpr value_type&					operator[](size_t i) noexcept;
+	constexpr const value_type&				operator[](size_t i) const noexcept;
 
 	template<typename Q>
-	constexpr value_type 				sample(Q t) const;
+	constexpr value_type 					sample(Q t) const;
 
-	constexpr value_type&				front() noexcept;
-	constexpr const value_type&			front() const noexcept;
-	constexpr value_type&				back() noexcept;
-	constexpr const value_type&			back() const noexcept;
+	std::array<value_type, Deg+1>			getPolynomialCoefficients() const;
 
-	constexpr value_type*				begin() noexcept;
-	constexpr const value_type*			begin() const noexcept;
-	constexpr const value_type*			cbegin() const noexcept;
-	constexpr value_type*				end() noexcept;
-	constexpr const value_type*			end() const noexcept;
-	constexpr const value_type*			cend() const noexcept;
 
-	constexpr value_type*				data() noexcept;
-	constexpr const value_type*			data() const noexcept;
+	constexpr value_type&					front() noexcept;
+	constexpr const value_type&				front() const noexcept;
+	constexpr value_type&					back() noexcept;
+	constexpr const value_type&				back() const noexcept;
 
-	static constexpr size_t				size() noexcept;
-	static constexpr size_t				degree() noexcept;
+	constexpr value_type*					begin() noexcept;
+	constexpr const value_type*				begin() const noexcept;
+	constexpr const value_type*				cbegin() const noexcept;
+	constexpr value_type*					end() noexcept;
+	constexpr const value_type*				end() const noexcept;
+	constexpr const value_type*				cend() const noexcept;
+
+	constexpr value_type*					data() noexcept;
+	constexpr const value_type*				data() const noexcept;
+
+	static constexpr size_t					size() noexcept;
+	static constexpr size_t					degree() noexcept;
 
 private:
-	std::array<value_type, Deg+1>		m_values;
+	std::array<value_type, Deg+1>			m_values;
 
 };
 
@@ -65,10 +67,18 @@ template<typename T>
 using CubicBezier = Spline<T, 3>;
 
 
+template<typename T, size_t N>
+constexpr Spline<T, N-1> derivate(const Spline<T, N>& s);
+
+template<typename T, size_t N>
+std::array<typename Spline<T, N>::value_type, 2> getBoundaries(const Spline<T, N>& s);
+
 
 template<typename T, size_t Deg>
 class SplineLoop {
 public:
+	static_assert(Deg > 0, "Degree must be 1 or greater");
+	
 	using Spline = Math::Spline<T, Deg>;
 	using value_type = typename Spline::value_type;
 

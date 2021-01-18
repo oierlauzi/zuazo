@@ -584,6 +584,17 @@ constexpr Vec<T, N> normalize(const Vec<T, N>& a) noexcept {
 	return a / length(a);
 }
 
+template<typename T, size_t N>
+constexpr Vec<T, N> proj(const Vec<T, N>& dir, const Vec<T, N>& p) noexcept {
+	return dot(p, normalize(dir)) * dir;
+}
+
+template<typename T>
+constexpr typename Vec2<T>::value_type signedDistance(const Vec2<T>& origin, const Vec2<T>& direction, const Vec2<T>& point) {
+	const auto perpendicular = normalize(Vec2<T>(-direction.y, direction.x));
+	return dot(perpendicular, point - origin);
+}
+
 /*
  * Absolute
  */
