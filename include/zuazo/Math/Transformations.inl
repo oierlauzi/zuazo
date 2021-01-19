@@ -130,25 +130,22 @@ constexpr Mat4x4<T> lookAt(	const Vec3<T>& eye,
 
 
 
-template<typename T>
-constexpr Mat4x4<T> translate(const Mat4x4<T>& m, const Vec3<T>& delta) noexcept {
-	Mat4x4<T> result(m);
+template<typename T, size_t N>
+constexpr Mat<T, N+1, N+1> translate(Mat<T, N+1, N+1> m, const Vec<T, N>& delta) noexcept {
+	for(size_t i = 0; i < delta.size(); ++i) {
+		m[m.columns()-1] += m[i]*delta[i];
+	}
 
-	result[3] = m[0]*delta[0] + m[1]*delta[1] + m[2]*delta[2] + m[3];
-
-	return result;
+	return m;
 }
 
-template<typename T>
-constexpr Mat4x4<T> scale(const Mat4x4<T>& m, const Vec3<T>& scale) noexcept {
-	Mat4x4<T> result;
+template<typename T, size_t N>
+constexpr Mat<T, N+1, N+1> scale(Mat<T, N+1, N+1> m, const Vec<T, N>& scale) noexcept {
+	for(size_t i = 0; i < scale.size(); ++i) {
+		m[i] *= scale[i];
+	}
 
-	result[0] = m[0] * scale[0];
-	result[1] = m[1] * scale[1];
-	result[2] = m[2] * scale[2];
-	result[3] = m[3];
-
-	return result;
+	return m;
 }
 
 template<typename T>
@@ -157,16 +154,35 @@ constexpr Mat4x4<T> rotate(const Mat4x4<T>& m, const Quaternion<T>& quat) noexce
 }
 
 template<typename T>
+constexpr Mat3x3<T> rotate(const Mat3x3<T>& m, T angle) noexcept {
+	Mat3x3<T> result;
+	const auto c = cos(a);
+	const auto s = sin(a);
+
+	Mat2x2<T> rotate;
+	rotate[0][0] = c;
+	rotate[0][1] = s;
+	rotate[1][0] = -s;
+	rotate[1][1] = c; 
+
+	//Multiply the rotation matrix with the input matrix. Manually done to improve performance
+	result[0] = m[0]*rotate[0][0] + m[1]*rotate[0][1];
+	result[1] = m[0]*rotate[1][0] + m[1]*rotate[1][1];
+	result[2] = m[2];
+
+	return result;
+}
+
+template<typename T>
 constexpr Mat4x4<T> rotate(const Mat4x4<T>& m, T angle, const Vec3<T>& v) noexcept {
 	Mat4x4<T> result;
-	const T a = angle;
-	const T c = cos(a);
-	const T s = sin(a);
-
+	const auto a = angle;
+	const auto c = cos(a);
+	const auto s = sin(a);
 	const auto axis = normalize(v);
 	const auto temp = (static_cast<T>(1) - c) * axis;
 
-	Mat4x4<T> rotate;
+	Mat3x3<T> rotate;
 	rotate[0][0] = c + temp[0] * axis[0];
 	rotate[0][1] = temp[0] * axis[1] + s * axis[2];
 	rotate[0][2] = temp[0] * axis[2] - s * axis[1];
@@ -177,9 +193,10 @@ constexpr Mat4x4<T> rotate(const Mat4x4<T>& m, T angle, const Vec3<T>& v) noexce
 	rotate[2][1] = temp[2] * axis[1] - s * axis[0];
 	rotate[2][2] = c + temp[2] * axis[2];
 
-	result[0] = m[0] * rotate[0][0] + m[1] * rotate[0][1] + m[2] * rotate[0][2];
-	result[1] = m[0] * rotate[1][0] + m[1] * rotate[1][1] + m[2] * rotate[1][2];
-	result[2] = m[0] * rotate[2][0] + m[1] * rotate[2][1] + m[2] * rotate[2][2];
+	//Multiply the rotation matrix with the input matrix. Manually done to improve performance
+	result[0] = m[0]*rotate[0][0] + m[1]*rotate[0][1] + m[2]*rotate[0][2];
+	result[1] = m[0]*rotate[1][0] + m[1]*rotate[1][1] + m[2]*rotate[1][2];
+	result[2] = m[0]*rotate[2][0] + m[1]*rotate[2][1] + m[2]*rotate[2][2];
 	result[3] = m[3];
 
 	return result;
