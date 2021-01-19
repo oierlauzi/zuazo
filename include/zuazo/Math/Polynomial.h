@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Vector.h"
+#include "../Macros.h"
 
 #include <array>
 #include <cstddef>
-#include <limits>
 
 namespace Zuazo::Math {
 
@@ -28,6 +28,9 @@ public:
 
 	constexpr value_type&					operator[](size_t i) noexcept;
 	constexpr const value_type&				operator[](size_t i) const noexcept;
+
+	template<typename Q>
+	constexpr value_type 					operator()(Q t) const;
 
 	constexpr value_type&					front() noexcept;
 	constexpr const value_type&				front() const noexcept;
@@ -53,9 +56,18 @@ private:
 };
 
 enum class PolynomialSolutionCount {
+	INFINITE = -1,
 	NONE = 0,
-	INFINITE = std::numeric_limits<int>::max()
 };
+
+ZUAZO_ENUM_COMP_OPERATORS(PolynomialSolutionCount)
+ZUAZO_ENUM_ADD_OPERATORS(PolynomialSolutionCount)
+ZUAZO_ENUM_SUB_OPERATORS(PolynomialSolutionCount)
+
+
+
+template<typename T, size_t Deg>
+constexpr Polynomial<T, Deg-1> derivate(const Polynomial<T, Deg>& p);
 
 
 template<typename T>

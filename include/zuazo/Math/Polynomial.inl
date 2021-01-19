@@ -46,6 +46,21 @@ constexpr const typename Polynomial<T, Deg>::value_type& Polynomial<T, Deg>::ope
 
 
 template<typename T, size_t Deg>
+template<typename Q>
+constexpr typename Polynomial<T, Deg>::value_type Polynomial<T, Deg>::operator()(Q t) const {
+	value_type result(0);
+
+	for(size_t i = 0; < size(); ++i) {
+		result += (*this)[i] * pow(t, Q(i));
+	}
+
+	return result;
+}
+
+
+
+
+template<typename T, size_t Deg>
 constexpr typename Polynomial<T, Deg>::value_type& Polynomial<T, Deg>::front() noexcept {
 	return m_values.front();
 }
@@ -120,6 +135,20 @@ constexpr size_t Polynomial<T, Deg>::degree() noexcept {
 
 
 
+template<typename T, size_t Deg>
+constexpr Polynomial<T, Deg-1> derivate(const Polynomial<T, Deg>& p) {
+	Polynomial<T, Deg-1> result;
+
+	//Copy the coefficients to the destination polynomial, lowering their exponent
+	//by one and multiplying them by their exponent
+	for(size_t i = 1; i < p.size(); ++i) {
+		result[i-1] = typename Polynomial<T, Deg>::value_type(i) * p[i];
+	}
+
+	return result;
+}
+
+
 template<typename T>
 constexpr std::array<T, 0> solve(const Polynomial<T, 0>& poly, PolynomialSolutionCount* cnt) {
 	std::array<T, 0> result = {};
@@ -142,7 +171,7 @@ constexpr std::array<T, 1> solve(const Polynomial<T, 1>& poly, PolynomialSolutio
 		if(cnt)	*cnt = static_cast<PolynomialSolutionCount>(1);
 	} else {
 		//Highest order coefficient is zero. Fall back into a lower order solver
-		Polynomial<T, poly.degree()-1> prevPoly = {};
+		Polynomial<T, poly.degree()-1> prevPoly;
 		for(size_t i = 0; i < prevPoly.size(); ++i) {
 			prevPoly[i] = poly[i];
 		}
@@ -185,7 +214,7 @@ constexpr std::array<T, 2> solve(const Polynomial<T, 2>& poly, PolynomialSolutio
 		}
 	} else {
 		//Highest order coefficient is zero. Fall back into a lower order solver
-		Polynomial<T, poly.degree()-1> prevPoly = {};
+		Polynomial<T, poly.degree()-1> prevPoly;
 		for(size_t i = 0; i < prevPoly.size(); ++i) {
 			prevPoly[i] = poly[i];
 		}
@@ -215,7 +244,7 @@ constexpr std::array<Vec<T, N>, Deg> solve(const Polynomial<Vec<T, N>, Deg>& pol
 		}
 
 		//Obtain a row of results and copy it to the destination array
-		const auto scalarResult = solve(scalarPoly, cnt ? &(*cnt[i]) : nullptr);
+		const auto scalarResult = solve(scalarPoly, cnt ? &((*cnt)[i]) : nullptr);
 		static_assert(scalarResult.size() == result.size(), "Sizes must match");
 		for(size_t j = 0; j < result.size(); ++j) {
 			result[j][i] = scalarResult[j];
