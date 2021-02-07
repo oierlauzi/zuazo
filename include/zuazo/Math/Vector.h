@@ -1,8 +1,12 @@
 #pragma once
 
+#include "../Utils/BufferView.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <ostream>
+#include <type_traits>
+#include <functional>
 
 namespace Zuazo::Math {
 
@@ -187,117 +191,163 @@ constexpr bool operator==(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept;
 template<typename T, size_t N>
 constexpr bool operator!=(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept;
 
+
 template<typename T, size_t N>
 constexpr Vec<T, N> operator+(const Vec<T, N>& a);
-template<typename T, size_t N>
-constexpr Vec<T, N> operator-(const Vec<T, N>& a);
 
 template<typename T, size_t N>
-constexpr Vec<T, N> operator+(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> operator-(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> operator*(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> operator*(const Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> operator*(const typename Vec<T, N>::value_type& lhs, const Vec<T, N>& rhs) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> operator/(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> operator/(const Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> operator/(const typename Vec<T, N>::value_type& lhs, const Vec<T, N>& rhs) noexcept;
+constexpr Vec<typename std::invoke_result<std::negate<void>, T>::type, N>
+operator-(const Vec<T, N>& a);
 
 template<typename T, size_t N>
-constexpr Vec<T, N>& operator+=(Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept;
+constexpr Vec<typename std::invoke_result<std::bit_not<void>, T>::type, N>
+operator~(const Vec<T, N>& a);
+
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::plus<void>, T, Q>::type, N>
+operator+(const Vec<T, N>& lhs, const Vec<Q, N>& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::minus<void>, T, Q>::type, N>
+operator-(const Vec<T, N>& lhs, const Vec<Q, N>& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::multiplies<void>, T, Q>::type, N> 
+operator*(const Vec<T, N>& lhs, const Vec<Q, N>& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::multiplies<void>, T, Q>::type, N> 
+operator*(const Vec<T, N>& lhs, const Q& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::multiplies<void>, T, Q>::type, N> 
+operator*(const T& lhs, const Vec<Q, N>& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::divides<void>, T, Q>::type, N> 
+operator/(const Vec<T, N>& lhs, const Vec<Q, N>& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::divides<void>, T, Q>::type, N> 
+operator/(const Vec<T, N>& lhs, const Q& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::divides<void>, T, Q>::type, N>
+operator/(const T& lhs, const Vec<Q, N>& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::modulus<void>, T, Q>::type, N> 
+operator%(const Vec<T, N>& lhs, const Vec<Q, N>& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::modulus<void>, T, Q>::type, N> 
+operator%(const Vec<T, N>& lhs, const Q& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::modulus<void>, T, Q>::type, N>
+operator%(const T& lhs, const Vec<Q, N>& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::bit_and<void>, T, Q>::type, N> 
+operator&(const Vec<T, N>& lhs, const Vec<Q, N>& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::bit_and<void>, T, Q>::type, N> 
+operator&(const Vec<T, N>& lhs, const Q& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::bit_and<void>, T, Q>::type, N>
+operator&(const T& lhs, const Vec<Q, N>& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::bit_or<void>, T, Q>::type, N> 
+operator|(const Vec<T, N>& lhs, const Vec<Q, N>& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::bit_or<void>, T, Q>::type, N> 
+operator|(const Vec<T, N>& lhs, const Q& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::bit_or<void>, T, Q>::type, N>
+operator|(const T& lhs, const Vec<Q, N>& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::bit_xor<void>, T, Q>::type, N> 
+operator^(const Vec<T, N>& lhs, const Vec<Q, N>& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::bit_xor<void>, T, Q>::type, N> 
+operator^(const Vec<T, N>& lhs, const Q& rhs);
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::bit_xor<void>, T, Q>::type, N>
+operator^(const T& lhs, const Vec<Q, N>& rhs);
+
+//TODO operator << and >>
+
+
 template<typename T, size_t N>
-constexpr Vec<T, N>& operator-=(Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept;
+constexpr Vec<T, N>& operator+=(Vec<T, N>& lhs, const Vec<T, N>& rhs);
 template<typename T, size_t N>
-constexpr Vec<T, N>& operator*=(Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept;
+constexpr Vec<T, N>& operator-=(Vec<T, N>& lhs, const Vec<T, N>& rhs);
 template<typename T, size_t N>
-constexpr Vec<T, N>& operator*=(Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs) noexcept;
+constexpr Vec<T, N>& operator*=(Vec<T, N>& lhs, const Vec<T, N>& rhs);
 template<typename T, size_t N>
-constexpr Vec<T, N>& operator/=(Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept;
+constexpr Vec<T, N>& operator*=(Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs);
 template<typename T, size_t N>
-constexpr Vec<T, N>& operator/=(Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs) noexcept;
+constexpr Vec<T, N>& operator/=(Vec<T, N>& lhs, const Vec<T, N>& rhs);
+template<typename T, size_t N>
+constexpr Vec<T, N>& operator/=(Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs);
+template<typename T, size_t N>
+constexpr Vec<T, N>& operator%=(Vec<T, N>& lhs, const Vec<T, N>& rhs);
+template<typename T, size_t N>
+constexpr Vec<T, N>& operator%=(Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs);
+template<typename T, size_t N>
+constexpr Vec<T, N>& operator&=(Vec<T, N>& lhs, const Vec<T, N>& rhs);
+template<typename T, size_t N>
+constexpr Vec<T, N>& operator&=(Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs);
+template<typename T, size_t N>
+constexpr Vec<T, N>& operator|=(Vec<T, N>& lhs, const Vec<T, N>& rhs);
+template<typename T, size_t N>
+constexpr Vec<T, N>& operator|=(Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs);
+template<typename T, size_t N>
+constexpr Vec<T, N>& operator^=(Vec<T, N>& lhs, const Vec<T, N>& rhs);
+template<typename T, size_t N>
+constexpr Vec<T, N>& operator^=(Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs);
+
+//TODO operator <<= and >>=
+
+
+template<typename Func, typename... T, size_t N>
+constexpr Vec<typename std::invoke_result<Func, const typename Vec<T, N>::value_type&...>::type, N> 
+transform(Func f, const Vec<T, N>&... v);
 
 template<typename T, size_t N>
 constexpr T dot(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept;
+
 template<typename T>
 constexpr Vec<T, 3> cross(const Vec<T, 3>& lhs, const Vec<T, 3>& rhs) noexcept;
+
 template<typename T, size_t N>
 constexpr T length(const Vec<T, N>& a) noexcept;
+
 template<typename T, size_t N>
 constexpr T length2(const Vec<T, N>& a) noexcept;
+
 template<typename T, size_t N>
 constexpr Vec<T, N> normalize(const Vec<T, N>& a) noexcept;
+
 template<typename T, size_t N>
 constexpr Vec<T, N> proj(const Vec<T, N>& dir, const Vec<T, N>& p) noexcept;
+
 template<typename T>
 constexpr typename Vec2<T>::value_type signedDistance(const Vec2<T>& origin, const Vec2<T>& direction, const Vec2<T>& point);
 
+template<typename T>
+constexpr void align(Utils::BufferView<Vec<T, 2>> points);
 
-template<typename T, size_t N>
-constexpr Vec<T, N> abs(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> min(const Vec<T, N>& a, const Vec<T, N>& b) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> max(const Vec<T, N>& a, const Vec<T, N>& b) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> exp(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> exp2(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> exp10(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> log(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> log2(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> log10(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> pow(const Vec<T, N>& base, const Vec<T, N>& power) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> sqrt(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> mod(const Vec<T, N>& num, const Vec<T, N>& den) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> floor(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> trunc(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> ceil(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> round(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> fract(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> cos(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> cosh(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> sin(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> sinh(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> tan(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> tanh(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> acos(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> acosh(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> asin(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> asinh(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> atan(const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> atan(const Vec<T, N>& y, const Vec<T, N>& x) noexcept;
-template<typename T, size_t N>
-constexpr Vec<T, N> atanh(const Vec<T, N>& x) noexcept;
+
 
 template<typename T, size_t N>
 std::ostream& operator<<(std::ostream& os, const Vec<T, N>& m);

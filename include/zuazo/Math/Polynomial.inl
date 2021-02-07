@@ -136,6 +136,181 @@ constexpr size_t Polynomial<T, Deg>::degree() noexcept {
 
 
 template<typename T, size_t Deg>
+constexpr bool operator==(const Polynomial<T, Deg>& lhs, const Polynomial<T, Deg>& rhs) noexcept {
+	return std::equal(lhs.cbegin(), lhs.cend(), rhs.cbegin());
+}
+
+template<typename T, size_t Deg>
+constexpr bool operator!=(const Polynomial<T, Deg>& lhs, const Polynomial<T, Deg>& rhs) noexcept {
+	return !(lhs == rhs);
+}
+
+
+template<typename T, size_t Deg>
+constexpr Polynomial<T, Deg> operator+(const Polynomial<T, Deg>& b) {
+	return a;
+}
+
+template<typename T, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<std::negate<void>, T>::type, Deg>
+operator-(const Polynomial<T, Deg>& b) {
+	return transform(
+		std::negate<void>(),
+		b
+	);
+}
+
+
+template<typename T, typename Q, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<std::plus<void>, T, Q>::type, Deg>
+operator+(const Polynomial<T, Deg>& lhs, const Polynomial<Q, Deg>& rhs) {
+	return transform(
+		std::plus<void>(),
+		lhs, rhs
+	);
+}
+
+template<typename T, typename Q, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<std::minus<void>, T, Q>::type, Deg>
+operator-(const Polynomial<T, Deg>& lhs, const Polynomial<Q, Deg>& rhs) {
+	return transform(
+		std::minus<void>(),
+		lhs, rhs
+	);
+}
+
+template<typename T, typename Q, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<std::multiplies<void>, T, Q>::type, Deg> 
+operator*(const Polynomial<T, Deg>& lhs, const Polynomial<Q, Deg>& rhs) {
+	return transform(
+		std::multiplies<void>(),
+		lhs, rhs
+	);
+}
+
+template<typename T, typename Q, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<std::multiplies<void>, T, Q>::type, Deg> 
+operator*(const Polynomial<T, Deg>& lhs, const Q& rhs) {
+	return transform(
+		[&rhs] (const auto& lhs) -> auto {
+			return std::multiplies<void>()(lhs, rhs);
+		},
+		lhs
+	);
+}
+
+template<typename T, typename Q, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<std::multiplies<void>, T, Q>::type, Deg> 
+operator*(const T& lhs, const Polynomial<Q, Deg>& rhs) {
+	return transform(
+		[&lhs] (const auto& rhs) -> auto {
+			return std::multiplies<void>()(lhs, rhs);
+		},
+		rhs
+	);
+}
+
+template<typename T, typename Q, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<std::divides<void>, T, Q>::type, Deg> 
+operator/(const Polynomial<T, Deg>& lhs, const Polynomial<Q, Deg>& rhs) {
+	return transform(
+		std::divides<void>(),
+		lhs, rhs
+	);
+}
+
+template<typename T, typename Q, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<std::divides<void>, T, Q>::type, Deg> 
+operator/(const Polynomial<T, Deg>& lhs, const Q& rhs) {
+	return transform(
+		[&rhs] (const auto& lhs) -> auto {
+			return std::divides<void>()(lhs, rhs);
+		},
+		lhs
+	);
+}
+
+template<typename T, typename Q, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<std::divides<void>, T, Q>::type, Deg>
+operator/(const T& lhs, const Polynomial<Q, Deg>& rhs) {
+	return transform(
+		[&lhs] (const auto& rhs) -> auto {
+			return std::divides<void>()(lhs, rhs);
+		},
+		rhs
+	);
+}
+
+
+template<typename T, size_t Deg>
+constexpr Polynomial<T, Deg>& operator+=(Polynomial<T, Deg>& lhs, const Polynomial<T, Deg>& rhs) {
+	return lhs = lhs + rhs;
+}
+
+template<typename T, size_t Deg>
+constexpr Polynomial<T, Deg>& operator-=(Polynomial<T, Deg>& lhs, const Polynomial<T, Deg>& rhs) {
+	return lhs = lhs - rhs;
+}
+
+template<typename T, size_t Deg>
+constexpr Polynomial<T, Deg>& operator*=(Polynomial<T, Deg>& lhs, const Polynomial<T, Deg>& rhs) {
+	return lhs = lhs * rhs;
+}
+
+template<typename T, size_t Deg>
+constexpr Polynomial<T, Deg>& operator*=(Polynomial<T, Deg>& lhs, const typename Polynomial<T, Deg>::value_type& rhs) {
+	return lhs = lhs * rhs;
+}
+
+template<typename T, size_t Deg>
+constexpr Polynomial<T, Deg>& operator/=(Polynomial<T, Deg>& lhs, const Polynomial<T, Deg>& rhs) {
+	return lhs = lhs / rhs;
+}
+
+template<typename T, size_t Deg>
+constexpr Polynomial<T, Deg>& operator/=(Polynomial<T, Deg>& lhs, const typename Polynomial<T, Deg>::value_type& rhs) {
+	return lhs = lhs / rhs;
+}
+
+
+
+template<typename Func, typename... T, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<Func, const typename Polynomial<T, Deg>::value_type&...>::type, Deg> 
+transform(Func f, const Polynomial<T, Deg>&... v) {
+	Polynomial<typename std::invoke_result<Func, const typename Polynomial<T, N>::value_type&...>::type, Deg> result;
+
+	for(size_t i = 0; i < result.size(); ++i) {
+		result[i] = f(v[i]...);
+	}
+
+	return result;
+}
+
+
+
+template<typename T, size_t N, size_t Deg>
+constexpr void setComponent(Polynomial<Vec<T, N>, Deg>& p, size_t i, const Polynomial<typename Vec<T, N>::value_type, Deg>& c) {
+	static_assert(p.size() == c.size(), "Sizes must match");
+	for(size_t j = 0; j < c.size(); ++j) {
+		p[j][i] = c[j];
+	}
+}
+
+template<typename T, size_t N, size_t Deg>
+constexpr Polynomial<typename Vec<T, N>::value_type, Deg> getComponent(const Polynomial<Vec<T, N>, Deg>& p, size_t i) {
+	Polynomial<typename Vec<T, N>::value_type, p.degree()> result;
+	static_assert(p.size() == result.size(), "Sizes must match");
+
+	for(size_t j = 0; j < c.size(); ++j) {
+		result[j] = p[i][j];
+	}
+
+	return result;
+}
+
+
+
+template<typename T, size_t Deg>
 constexpr Polynomial<T, Deg-1> derivate(const Polynomial<T, Deg>& p) {
 	Polynomial<T, Deg-1> result;
 
@@ -170,7 +345,7 @@ constexpr std::array<T, 1> solve(const Polynomial<T, 1>& poly, PolynomialSolutio
 		result[0] = -poly[0] / poly[1];
 		if(cnt)	*cnt = static_cast<PolynomialSolutionCount>(1);
 	} else {
-		//Highest order coefficient is zero. Fall back into a lower order solver
+		//Highest order coefficient is zero. Fall back into a lower degree solver
 		Polynomial<T, poly.degree()-1> prevPoly;
 		for(size_t i = 0; i < prevPoly.size(); ++i) {
 			prevPoly[i] = poly[i];
@@ -213,7 +388,7 @@ constexpr std::array<T, 2> solve(const Polynomial<T, 2>& poly, PolynomialSolutio
 			}
 		}
 	} else {
-		//Highest order coefficient is zero. Fall back into a lower order solver
+		//Highest order coefficient is zero. Fall back into a lower degree solver
 		Polynomial<T, poly.degree()-1> prevPoly;
 		for(size_t i = 0; i < prevPoly.size(); ++i) {
 			prevPoly[i] = poly[i];
@@ -237,18 +412,11 @@ constexpr std::array<Vec<T, N>, Deg> solve(const Polynomial<Vec<T, N>, Deg>& pol
 	//Majorness needs to be modified
 	for(size_t i = 0; i < Vec<T, N>::size(); ++i) {
 		//Obtain a row of coefficients
-		Polynomial<typename Vec<T, N>::value_type, poly.degree()> scalarPoly = {};
-		static_assert(scalarPoly.size() == poly.size(), "Sizes must match");
-		for(size_t j = 0; j < scalarPoly.size(); ++j) {
-			scalarPoly[j] = poly[j][i];
-		}
+		const auto scalarPoly = getComponent(poly, i);
 
 		//Obtain a row of results and copy it to the destination array
 		const auto scalarResult = solve(scalarPoly, cnt ? &((*cnt)[i]) : nullptr);
-		static_assert(scalarResult.size() == result.size(), "Sizes must match");
-		for(size_t j = 0; j < result.size(); ++j) {
-			result[j][i] = scalarResult[j];
-		}
+		setComponent(result, i, scalarResult);
 	}
 
 	return result;

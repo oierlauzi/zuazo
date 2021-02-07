@@ -138,6 +138,155 @@ static int32_t optimizeColorTransferFunction(	int32_t colorRange,
 	return colorTransferFunction;
 }
 
+static uint32_t optimizePlanes(	Utils::BufferView<Image::PlaneDescriptor> planes,
+								Utils::BufferView<const vk::Format> supportedFormats )
+{
+	const size_t planeCount = planes.size();
+	int32_t planeFormat = ct_PLANE_FORMAT_RGBA;
+
+	if(planeCount > 1) {
+		//It is a multiplanar format. Try to use Vulkan's multiplanar formats if supported
+		//Obtain the chroma subsampling. Always between the 1st and 2nd planes
+		const auto subsampling = 
+			Math::Vec2f(planes[0].extent.width, planes[0].extent.height) / 
+			Math::Vec2f(planes[1].extent.width, planes[1].extent.height) ;
+
+		constexpr Math::Vec2f SUBSAMPLING_444(1U, 1U);
+		constexpr Math::Vec2f SUBSAMPLING_422(2U, 1U);
+		constexpr Math::Vec2f SUBSAMPLING_420(2U, 2U);
+
+		//Try to optimize the format
+		vk::Format optimizedFormat = vk::Format::eUndefined;
+
+		if(planeCount == 4) {
+			//4 Plane format. Not supported natively. //TODO fall back to a combination of 3plane + alpha
+			planeFormat = ct_PLANE_FORMAT_G_B_R_A;
+		} else if (planeCount == 3) {
+			//3 Plane format
+			planeFormat = ct_PLANE_FORMAT_G_B_R;
+
+			switch (planes.front().format) {
+			case vk::Format::eR8Unorm:
+				//8bpp
+				if(subsampling == SUBSAMPLING_444) {
+					optimizedFormat = vk::Format::eG8B8R83Plane444Unorm;
+				} else if (subsampling == SUBSAMPLING_422) {
+					optimizedFormat = vk::Format::eG8B8R83Plane422Unorm;
+				} else if (subsampling == SUBSAMPLING_420) {
+					optimizedFormat = vk::Format::eG8B8R83Plane420Unorm;
+				}
+				break;
+
+			case vk::Format::eR10X6UnormPack16:
+				//10bpp
+				if(subsampling == SUBSAMPLING_444) {
+					optimizedFormat = vk::Format::eG10X6B10X6R10X63Plane444Unorm3Pack16;
+				} else if (subsampling == SUBSAMPLING_422) {
+					optimizedFormat = vk::Format::eG10X6B10X6R10X63Plane422Unorm3Pack16;
+				} else if (subsampling == SUBSAMPLING_420) {
+					optimizedFormat = vk::Format::eG10X6B10X6R10X63Plane420Unorm3Pack16;
+				}
+				break;
+
+			case vk::Format::eR12X4UnormPack16:
+				//10bpp
+				if(subsampling == SUBSAMPLING_444) {
+					optimizedFormat = vk::Format::eG12X4B12X4R12X43Plane444Unorm3Pack16;
+				} else if (subsampling == SUBSAMPLING_422) {
+					optimizedFormat = vk::Format::eG12X4B12X4R12X43Plane422Unorm3Pack16;
+				} else if (subsampling == SUBSAMPLING_420) {
+					optimizedFormat = vk::Format::eG12X4B12X4R12X43Plane420Unorm3Pack16;
+				}
+				break;
+
+			case vk::Format::eR16Unorm:
+				//8bpp
+				if(subsampling == SUBSAMPLING_444) {
+					optimizedFormat = vk::Format::eG16B16R163Plane444Unorm;
+				} else if (subsampling == SUBSAMPLING_422) {
+					optimizedFormat = vk::Format::eG16B16R163Plane422Unorm;
+				} else if (subsampling == SUBSAMPLING_420) {
+					optimizedFormat = vk::Format::eG16B16R163Plane420Unorm;
+				}
+				break;
+
+			default:
+				//Unknown, leave it as it is
+				break;
+			}
+
+		} else if (planeCount == 2) {
+			//2 Plane format
+			planeFormat = ct_PLANE_FORMAT_G_B_R;
+
+			switch (planes.front().format) {
+			case vk::Format::eR8Unorm:
+				//8bpp
+				if (subsampling == SUBSAMPLING_422) {
+					optimizedFormat = vk::Format::eG8B8R82Plane422Unorm;
+				} else if (subsampling == SUBSAMPLING_420) {
+					optimizedFormat = vk::Format::eG8B8R82Plane420Unorm;
+				}
+				break;
+
+			case vk::Format::eR10X6UnormPack16:
+				//10bpp
+				if (subsampling == SUBSAMPLING_422) {
+					optimizedFormat = vk::Format::eG10X6B10X6R10X62Plane422Unorm3Pack16;
+				} else if (subsampling == SUBSAMPLING_420) {
+					optimizedFormat = vk::Format::eG10X6B10X6R10X62Plane420Unorm3Pack16;
+				}
+				break;
+
+			case vk::Format::eR12X4UnormPack16:
+				//10bpp
+				if (subsampling == SUBSAMPLING_422) {
+					optimizedFormat = vk::Format::eG12X4B12X4R12X42Plane422Unorm3Pack16;
+				} else if (subsampling == SUBSAMPLING_420) {
+					optimizedFormat = vk::Format::eG12X4B12X4R12X42Plane420Unorm3Pack16;
+				}
+				break;
+
+			case vk::Format::eR16Unorm:
+				//8bpp
+				if (subsampling == SUBSAMPLING_422) {
+					optimizedFormat = vk::Format::eG16B16R162Plane422Unorm;
+				} else if (subsampling == SUBSAMPLING_420) {
+					optimizedFormat = vk::Format::eG16B16R162Plane420Unorm;
+				}
+				break;
+			
+			default:
+				//Unknown, leave it as it is
+				break;
+			}
+
+		}
+
+		//Check for support
+		if(optimizedFormat != vk::Format::eUndefined) {
+			//For binary search:
+			assert(std::is_sorted(supportedFormats.cbegin(), supportedFormats.cend()));
+
+			if(std::binary_search(supportedFormats.cbegin(), supportedFormats.cend(), optimizedFormat)) {
+				//Format is supported
+				planeFormat = ct_PLANE_FORMAT_RGBA; //Just a passthough
+				planes.front().format = optimizedFormat;
+
+				//Consider if the 2 plane have their 2nd plane components inverted (Swap R and B)
+				planes.front().swizzle = (planes[1].swizzle == swizzle("GR")) ? swizzle("BIRI") : vk::ComponentMapping(); 
+
+				//Reset the rest of the planes
+				for(size_t i = 1; i < planes.size(); ++i) {
+					planes[i] = {};
+				}
+			}
+		}
+	}
+
+	return planeFormat;
+}
+
 static ct_write_data convert2Output(const ct_read_data& read) noexcept {
 	return ct_write_data {
 		Math::inv(read.mtxRGB2XYZ),

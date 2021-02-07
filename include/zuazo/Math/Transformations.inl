@@ -131,75 +131,136 @@ constexpr Mat4x4<T> lookAt(	const Vec3<T>& eye,
 
 
 template<typename T, size_t N>
-constexpr Mat<T, N+1, N+1> translate(Mat<T, N+1, N+1> m, const Vec<T, N>& delta) noexcept {
-	for(size_t i = 0; i < delta.size(); ++i) {
-		m[m.columns()-1] += m[i]*delta[i];
-	}
+constexpr Mat<T, N+1, N+1> translate(const Vec<T, N>& delta) noexcept {
+	Mat<T, N+1, N+1> result(T(1));
 
-	return m;
+	result[result.columns()-1] = Vec<T, N+1>(delta, T(1));
 }
 
 template<typename T, size_t N>
-constexpr Mat<T, N+1, N+1> scale(Mat<T, N+1, N+1> m, const Vec<T, N>& scale) noexcept {
-	for(size_t i = 0; i < scale.size(); ++i) {
-		m[i] *= scale[i];
+constexpr Mat<T, N+1, N+1> translate(const Mat<T, N+1, N+1>& m, const Vec<T, N>& delta) noexcept {
+	auto result = m;
+
+	for(size_t i = 0; i < delta.size(); ++i) {
+		result[m.columns()-1] += m[i]*delta[i];
 	}
 
-	return m;
+	return result;
+}
+
+
+
+template<typename T, size_t N>
+constexpr Mat<T, N, N> scale(const Vec<T, N>& s) noexcept {
+	return Mat<T, N, N>(s); //Sets the diagonal to s
+}
+
+template<typename T, size_t N>
+constexpr Mat<T, N, N> scale(const Mat<T, N, N>& m, const Vec<T, N>& s) noexcept {
+	auto result = m;
+
+	for(size_t i = 0; i < s.size(); ++i) {
+		result[i] *= s[i];
+	}
+
+	return result;
+}
+
+template<typename T, size_t N>
+constexpr Mat<T, N+1, N+1> scale(const Mat<T, N+1, N+1>& m, const Vec<T, N>& s) noexcept {
+	auto result = m;
+
+	for(size_t i = 0; i < s.size(); ++i) {
+		result[i] *= s[i];
+	}
+
+	return result;
+}
+
+
+
+template<typename T>
+constexpr Mat2x2<T> rotate(const T& angle) noexcept {
+	const auto c = cos(angle);
+	const auto s = sin(angle);
+
+	//Create a 2D rotation matrix
+	return Mat2x2<T>(
+		+c, -s,
+		+s,	+c
+	);
+}
+
+template<typename T>
+constexpr Mat2x2<T> rotate(const Mat2x2<T>& m, const T& angle) noexcept {
+	return rotate(angle) * m;
+}
+
+template<typename T>
+constexpr Mat3x3<T> rotate(const Mat3x3<T>& m, const T& angle) noexcept {
+	const auto r = rotate(angle);
+
+	//Multiply the rotation matrix with the input matrix. Manually done to improve performance
+	return Mat3x3<T>(
+		m[0]*r[0][0] + m[1]*r[0][1],
+		m[0]*r[1][0] + m[1]*r[1][1],
+		m[2]
+	);
+}
+
+template<typename T>
+constexpr Mat3x3<T> rotate(const Vec3<T>& axis, const T& angle) noexcept {
+	const auto c = cos(angle);
+	const auto s = sin(angle);
+	const auto v = normalize(axis);
+	const auto temp = (static_cast<T>(1) - c) * axis;
+
+	return Mat3x3<T>(
+		c + temp[0] * v[0], 		/**/ temp[1] * v[0] - s * v[2],	/**/ temp[2] * v[0] + s * v[1],
+		temp[0] * v[1] + s * v[2],	/**/ c + temp[1] * v[1], 		/**/ temp[2] * v[1] - s * v[0],
+		temp[0] * v[2] - s * v[1],	/**/ temp[1] * v[2] + s * v[0],	/**/ c + temp[2] * v[2]
+	);
+}
+
+template<typename T>
+constexpr Mat3x3<T> rotate(const Mat3x3<T>& m, const Vec3<T>& axis, const T& angle) noexcept {
+	return rotate(axis, angle) * m;
+}
+
+template<typename T>
+constexpr Mat4x4<T> rotate(const Mat4x4<T>& m, const Vec3<T>& axis, const T& angle) noexcept {
+	const auto r = rotate(axis, angle);
+
+	//Multiply the rotation matrix with the input matrix. Manually done to improve performance
+	return Mat4x4<T>( 
+		m[0]*r[0][0] + m[1]*r[0][1] + m[2]*r[0][2],
+		m[0]*r[1][0] + m[1]*r[1][1] + m[2]*r[1][2],
+		m[0]*r[2][0] + m[1]*r[2][1] + m[2]*r[2][2],
+		m[3]
+	);
+}
+
+template<typename T>
+constexpr Mat3x3<T> rotate(const Quaternion<T>& quat) noexcept {
+	return toMatrix(quat);
+}
+
+template<typename T>
+constexpr Mat3x3<T> rotate(const Mat3x3<T>& m, const Quaternion<T>& quat) noexcept {
+	return rotate(quat) * m;
 }
 
 template<typename T>
 constexpr Mat4x4<T> rotate(const Mat4x4<T>& m, const Quaternion<T>& quat) noexcept {
-	return Mat4x4<T>(toMatrix(quat)) * m;
-}
-
-template<typename T>
-constexpr Mat3x3<T> rotate(const Mat3x3<T>& m, T angle) noexcept {
-	Mat3x3<T> result;
-	const auto c = cos(a);
-	const auto s = sin(a);
-
-	Mat2x2<T> rotate;
-	rotate[0][0] = c;
-	rotate[0][1] = s;
-	rotate[1][0] = -s;
-	rotate[1][1] = c; 
+	const auto r = rotate(quat);
 
 	//Multiply the rotation matrix with the input matrix. Manually done to improve performance
-	result[0] = m[0]*rotate[0][0] + m[1]*rotate[0][1];
-	result[1] = m[0]*rotate[1][0] + m[1]*rotate[1][1];
-	result[2] = m[2];
-
-	return result;
-}
-
-template<typename T>
-constexpr Mat4x4<T> rotate(const Mat4x4<T>& m, T angle, const Vec3<T>& v) noexcept {
-	Mat4x4<T> result;
-	const auto a = angle;
-	const auto c = cos(a);
-	const auto s = sin(a);
-	const auto axis = normalize(v);
-	const auto temp = (static_cast<T>(1) - c) * axis;
-
-	Mat3x3<T> rotate;
-	rotate[0][0] = c + temp[0] * axis[0];
-	rotate[0][1] = temp[0] * axis[1] + s * axis[2];
-	rotate[0][2] = temp[0] * axis[2] - s * axis[1];
-	rotate[1][0] = temp[1] * axis[0] - s * axis[2];
-	rotate[1][1] = c + temp[1] * axis[1];
-	rotate[1][2] = temp[1] * axis[2] + s * axis[0];
-	rotate[2][0] = temp[2] * axis[0] + s * axis[1];
-	rotate[2][1] = temp[2] * axis[1] - s * axis[0];
-	rotate[2][2] = c + temp[2] * axis[2];
-
-	//Multiply the rotation matrix with the input matrix. Manually done to improve performance
-	result[0] = m[0]*rotate[0][0] + m[1]*rotate[0][1] + m[2]*rotate[0][2];
-	result[1] = m[0]*rotate[1][0] + m[1]*rotate[1][1] + m[2]*rotate[1][2];
-	result[2] = m[0]*rotate[2][0] + m[1]*rotate[2][1] + m[2]*rotate[2][2];
-	result[3] = m[3];
-
-	return result;
+	return Mat4x4<T>( 
+		m[0]*r[0][0] + m[1]*r[0][1] + m[2]*r[0][2],
+		m[0]*r[1][0] + m[1]*r[1][1] + m[2]*r[1][2],
+		m[0]*r[2][0] + m[1]*r[2][1] + m[2]*r[2][2],
+		m[3]
+	);
 }
 
 }

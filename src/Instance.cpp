@@ -2,6 +2,7 @@
 
 #include "Timing/MainLoop.h"
 #include "Timing/Scheduler.h"
+#include "Timing/EventQueue.h"
 
 #include <zuazo/Zuazo.h>
 #include <zuazo/ZuazoBase.h>
@@ -16,20 +17,22 @@
 namespace Zuazo {
 
 struct Instance::Impl {
-	Instance&					instance;
+	Instance&						instance;
 
-	ApplicationInfo				applicationInfo;
+	ApplicationInfo					applicationInfo;
 
-	Graphics::Vulkan			vulkan;
+	Graphics::Vulkan				vulkan;
 
-	std::mutex					mutex;
-	Timing::Scheduler			scheduler;
-	Timing::MainLoop			loop;
+	std::mutex						mutex;
+	Timing::Scheduler				scheduler;
+	Timing::EventQueue				eventQueue;
+	Timing::MainLoop				loop;
 
 	Utils::Discrete<ColorFormat>	formatSupport;
 	Utils::Range<Resolution>		resolutionSupport;
 
-	std::shared_ptr<ScheduledCallback> presentImages;
+	ScheduledCallback 				processEventsCallback;
+	ScheduledCallback 				presentImagesCallback;
 
 	Impl(	Instance& instance,
 			ApplicationInfo appInfo,
@@ -48,13 +51,16 @@ struct Instance::Impl {
 		)
 		, mutex()
 		, scheduler()
+		, eventQueue()
 		, loop(scheduler, mutex)
 		, formatSupport(queryFormatSupport(vulkan))
 		, resolutionSupport(queryResolutionSupport(vulkan))
-		, presentImages(createPresentCallback(vulkan))
+		, processEventsCallback(createEventProcessingCallback(eventQueue))
+		, presentImagesCallback(createPresentCallback(vulkan))
 	{
 		std::lock_guard<Impl> lock(*this);
-		addRegularCallback(presentImages, PRESENT_PRIORITY);
+		addRegularCallback(processEventsCallback, EVENT_HANDLING_PRIORITY);
+		addRegularCallback(presentImagesCallback, PRESENT_PRIORITY);
 
 		for(const Module& module : applicationInfo.getModules()) {
 			module.initialize(instance);
@@ -68,7 +74,8 @@ struct Instance::Impl {
 			module.terminate(instance);
 		}
 
-		removeRegularCallback(presentImages);
+		removeRegularCallback(presentImagesCallback);
+		removeRegularCallback(processEventsCallback);
 	}
 
 	const Instance::ApplicationInfo& getApplicationInfo() const noexcept {
@@ -88,28 +95,33 @@ struct Instance::Impl {
 	}
 
 
-	void addRegularCallback(std::shared_ptr<const ScheduledCallback> cbk, Priority prior) {
-		scheduler.addRegularCallback(std::move(cbk), prior);
+	void addRegularCallback(const ScheduledCallback& cbk, Priority prior) {
+		scheduler.addRegularCallback(cbk, prior);
 		loop.interrupt();
 		ZUAZO_LOG(instance, Severity::VERBOSE, generateAddRegularEventMessage(cbk, prior));
 	}
 
-	void removeRegularCallback(const std::shared_ptr<const ScheduledCallback>& cbk) {
+	void removeRegularCallback(const ScheduledCallback& cbk) {
 		scheduler.removeRegularCallback(cbk);
 		loop.interrupt();
 		ZUAZO_LOG(instance, Severity::VERBOSE, generateRemoveRegularEventMessage(cbk));
 	}
 
-	void addPeriodicCallback(std::shared_ptr<const ScheduledCallback> cbk, Priority prior, Duration period) {
-		scheduler.addPeriodicCallback(std::move(cbk), prior, period);
+	void addPeriodicCallback(const ScheduledCallback& cbk, Priority prior, Duration period) {
+		scheduler.addPeriodicCallback(cbk, prior, period);
 		loop.interrupt();
 		ZUAZO_LOG(instance, Severity::VERBOSE, generateAddPeriodicEventMessage(cbk, prior, period));
 	}
 
-	void removePeriodicCallback(const std::shared_ptr<const ScheduledCallback>& cbk) {
+	void removePeriodicCallback(const ScheduledCallback& cbk) {
 		scheduler.removePeriodicCallback(cbk);
 		loop.interrupt();
 		ZUAZO_LOG(instance, Severity::VERBOSE, generateRemovePeriodicEventMessage(cbk));
+	}
+
+	void addEvent(ScheduledCallback cbk) {
+		eventQueue.addEvent(std::move(cbk));
+		loop.interrupt();
 	}
 
 
@@ -170,37 +182,37 @@ struct Instance::Impl {
 		return message.str();
 	}
 
-	std::string generateAddRegularEventMessage(const std::shared_ptr<const ScheduledCallback>& cbk, Priority prior) const {
+	std::string generateAddRegularEventMessage(const ScheduledCallback& cbk, Priority prior) const {
 		std::ostringstream message;
 
-		message << "Regular event added: " << cbk << " ";
+		message << "Regular event added: " << &cbk << " ";
 		message << "(Priority: " << prior << ")";
 
 		return message.str();
 	}
 	
-	std::string generateRemoveRegularEventMessage(const std::shared_ptr<const ScheduledCallback>& cbk) const {
+	std::string generateRemoveRegularEventMessage(const ScheduledCallback& cbk) const {
 		std::ostringstream message;
 
-		message << "Regular event removed: " << cbk << " ";
+		message << "Regular event removed: " << &cbk << " ";
 
 		return message.str();
 	}
 
-	std::string generateAddPeriodicEventMessage(const std::shared_ptr<const ScheduledCallback>& cbk, Priority prior, Duration period) const {
+	std::string generateAddPeriodicEventMessage(const ScheduledCallback& cbk, Priority prior, Duration period) const {
 		std::ostringstream message;
 
-		message << "Periodic event added: " << cbk << " ";
+		message << "Periodic event added: " << &cbk << " ";
 		message << "(Priority: " << prior << ", ";
 		message << "Rate: " << getRate(period) << " Hz)";
 
 		return message.str();
 	}
 
-	std::string generateRemovePeriodicEventMessage(const std::shared_ptr<const ScheduledCallback>& cbk) const {
+	std::string generateRemovePeriodicEventMessage(const ScheduledCallback& cbk) const {
 		std::ostringstream message;
 
-		message << "Periodic event removed: " << cbk << " ";
+		message << "Periodic event removed: " << &cbk << " ";
 
 		return message.str();
 	}
@@ -304,8 +316,12 @@ private:
 		);
 	}
 
-	static std::shared_ptr<ScheduledCallback> createPresentCallback(const Graphics::Vulkan& vulkan) {
-		return std::make_shared<ScheduledCallback>(std::bind(&Graphics::Vulkan::presentAll, std::cref(vulkan)));
+	static ScheduledCallback createEventProcessingCallback(Timing::EventQueue& eventQueue) {
+		return std::bind(&Timing::EventQueue::process, std::ref(eventQueue));
+	}
+
+	static ScheduledCallback createPresentCallback(const Graphics::Vulkan& vulkan) {
+		return std::bind(&Graphics::Vulkan::presentAll, std::cref(vulkan));
 	}
 
 };
@@ -339,25 +355,29 @@ const Utils::Range<Resolution>& Instance::getResolutionSupport() const noexcept 
 }
 
 
-void Instance::addRegularCallback(	std::shared_ptr<const ScheduledCallback> cbk, 
+void Instance::addRegularCallback(	const ScheduledCallback& cbk, 
 									Priority prior )
 {
-	m_impl->addRegularCallback(std::move(cbk), prior);
+	m_impl->addRegularCallback(cbk, prior);
 }
 
-void Instance::removeRegularCallback(const std::shared_ptr<const ScheduledCallback>& cbk) {
+void Instance::removeRegularCallback(const ScheduledCallback& cbk) {
 	m_impl->removeRegularCallback(cbk);
 }
 
-void Instance::addPeriodicCallback(	std::shared_ptr<const ScheduledCallback> cbk, 
+void Instance::addPeriodicCallback(	const ScheduledCallback& cbk, 
 									Priority prior, 
 									Duration period )
 {
-	m_impl->addPeriodicCallback(std::move(cbk), prior, period);
+	m_impl->addPeriodicCallback(cbk, prior, period);
 }
 
-void Instance::removePeriodicCallback(const std::shared_ptr<const ScheduledCallback>& cbk) {
+void Instance::removePeriodicCallback(const ScheduledCallback& cbk) {
 	m_impl->removePeriodicCallback(cbk);
+}
+
+void Instance::addEvent(ScheduledCallback cbk) {
+	m_impl->addEvent(std::move(cbk));
 }
 
 

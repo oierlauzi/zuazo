@@ -41,19 +41,48 @@ constexpr Mat4x4<T> lookAt(	const Vec3<T>& eye,
 
 
 template<typename T, size_t N>
-constexpr Mat<T, N+1, N+1> translate(Mat<T, N+1, N+1> m, const Vec<T, N>& delta) noexcept;
+constexpr Mat<T, N+1, N+1> translate(const Vec<T, N>& delta) noexcept;
 
 template<typename T, size_t N>
-constexpr Mat<T, N+1, N+1> scale(Mat<T, N+1, N+1> m, const Vec<T, N>& scale) noexcept;
+constexpr Mat<T, N+1, N+1> translate(const Mat<T, N+1, N+1>& m, const Vec<T, N>& delta) noexcept;
+
+
+template<typename T, size_t N>
+constexpr Mat<T, N, N> scale(const Vec<T, N>& s) noexcept;
+
+template<typename T, size_t N>
+constexpr Mat<T, N, N> scale(const Mat<T, N, N>& m, const Vec<T, N>& s) noexcept;
+
+template<typename T, size_t N>
+constexpr Mat<T, N+1, N+1> scale(const Mat<T, N+1, N+1>& m, const Vec<T, N>& s) noexcept;
+
+
+template<typename T>
+constexpr Mat2x2<T> rotate(const T& angle) noexcept;
+
+template<typename T>
+constexpr Mat2x2<T> rotate(const Mat2x2<T>& m, const T& angle) noexcept;
+
+template<typename T>
+constexpr Mat3x3<T> rotate(const Mat3x3<T>& m, const T& angle) noexcept;
+
+template<typename T>
+constexpr Mat3x3<T> rotate(const Vec3<T>& axis, const T& angle) noexcept;
+
+template<typename T>
+constexpr Mat3x3<T> rotate(const Mat3x3<T>& m, const Vec3<T>& axis, const T& angle) noexcept;
+
+template<typename T>
+constexpr Mat4x4<T> rotate(const Mat4x4<T>& m, const Vec3<T>& axis, const T& angle) noexcept;
+
+template<typename T>
+constexpr Mat3x3<T> rotate(const Quaternion<T>& quat) noexcept;
+
+template<typename T>
+constexpr Mat3x3<T> rotate(const Mat3x3<T>& m, const Quaternion<T>& quat) noexcept;
 
 template<typename T>
 constexpr Mat4x4<T> rotate(const Mat4x4<T>& m, const Quaternion<T>& quat) noexcept;
-
-template<typename T>
-constexpr Mat3x3<T> rotate(const Mat3x3<T>& m, T angle) noexcept;
-
-template<typename T>
-constexpr Mat4x4<T> rotate(const Mat4x4<T>& m, T angle, const Vec3<T>& axis) noexcept;
 
 }
 

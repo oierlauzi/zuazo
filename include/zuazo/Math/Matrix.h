@@ -252,6 +252,9 @@ constexpr Mat<T, M, N>& operator/=(Mat<T, M, N>& lhs, const typename Mat<T, M, N
 
 
 template<typename T, size_t M, size_t N>
+constexpr typename Mat<T, M, N>::column_type transform(const Mat<T, M, N>& m, const typename Mat<T, M, N>::row_type& v);
+
+template<typename T, size_t M, size_t N>
 constexpr Mat<T, N, M> transpose(const Mat<T, M, N>& m);
 
 template<typename T, size_t M, size_t N>

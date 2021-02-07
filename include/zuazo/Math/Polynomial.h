@@ -65,6 +65,78 @@ ZUAZO_ENUM_ADD_OPERATORS(PolynomialSolutionCount)
 ZUAZO_ENUM_SUB_OPERATORS(PolynomialSolutionCount)
 
 
+template<typename T, size_t Deg>
+constexpr bool operator==(const Polynomial<T, Deg>& lhs, const Polynomial<T, Deg>& rhs) noexcept;
+template<typename T, size_t Deg>
+constexpr bool operator!=(const Polynomial<T, Deg>& lhs, const Polynomial<T, Deg>& rhs) noexcept;
+
+
+template<typename T, size_t Deg>
+constexpr Polynomial<T, Deg> operator+(const Polynomial<T, Deg>& b);
+
+template<typename T, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<std::negate<void>, T>::type, Deg>
+operator-(const Polynomial<T, Deg>& b);
+
+
+template<typename T, typename Q, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<std::plus<void>, T, Q>::type, Deg>
+operator+(const Polynomial<T, Deg>& lhs, const Polynomial<Q, Deg>& rhs);
+
+template<typename T, typename Q, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<std::minus<void>, T, Q>::type, Deg>
+operator-(const Polynomial<T, Deg>& lhs, const Polynomial<Q, Deg>& rhs);
+
+template<typename T, typename Q, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<std::multiplies<void>, T, Q>::type, Deg> 
+operator*(const Polynomial<T, Deg>& lhs, const Polynomial<Q, Deg>& rhs);
+
+template<typename T, typename Q, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<std::multiplies<void>, T, Q>::type, Deg> 
+operator*(const Polynomial<T, Deg>& lhs, const Q& rhs);
+
+template<typename T, typename Q, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<std::multiplies<void>, T, Q>::type, Deg> 
+operator*(const T& lhs, const Polynomial<Q, Deg>& rhs);
+
+template<typename T, typename Q, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<std::divides<void>, T, Q>::type, Deg> 
+operator/(const Polynomial<T, Deg>& lhs, const Polynomial<Q, Deg>& rhs);
+
+template<typename T, typename Q, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<std::divides<void>, T, Q>::type, Deg> 
+operator/(const Polynomial<T, Deg>& lhs, const Q& rhs);
+
+template<typename T, typename Q, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<std::divides<void>, T, Q>::type, Deg>
+operator/(const T& lhs, const Polynomial<Q, Deg>& rhs);
+
+
+template<typename T, size_t Deg>
+constexpr Polynomial<T, Deg>& operator+=(Polynomial<T, Deg>& lhs, const Polynomial<T, Deg>& rhs);
+template<typename T, size_t Deg>
+constexpr Polynomial<T, Deg>& operator-=(Polynomial<T, Deg>& lhs, const Polynomial<T, Deg>& rhs);
+template<typename T, size_t Deg>
+constexpr Polynomial<T, Deg>& operator*=(Polynomial<T, Deg>& lhs, const Polynomial<T, Deg>& rhs);
+template<typename T, size_t Deg>
+constexpr Polynomial<T, Deg>& operator*=(Polynomial<T, Deg>& lhs, const typename Polynomial<T, Deg>::value_type& rhs);
+template<typename T, size_t Deg>
+constexpr Polynomial<T, Deg>& operator/=(Polynomial<T, Deg>& lhs, const Polynomial<T, Deg>& rhs);
+template<typename T, size_t Deg>
+constexpr Polynomial<T, Deg>& operator/=(Polynomial<T, Deg>& lhs, const typename Polynomial<T, Deg>::value_type& rhs);
+
+
+
+template<typename Func, typename... T, size_t Deg>
+constexpr Polynomial<typename std::invoke_result<Func, const typename Polynomial<T, Deg>::value_type&...>::type, Deg> 
+transform(Func f, const Polynomial<T, Deg>&... v);
+
+
+template<typename T, size_t N, size_t Deg>
+constexpr void setComponent(Polynomial<Vec<T, N>, Deg>& p, size_t i, const Polynomial<typename Vec<T, N>::value_type, Deg>& c);
+
+template<typename T, size_t N, size_t Deg>
+constexpr Polynomial<typename Vec<T, N>::value_type, Deg> getComponent(const Polynomial<Vec<T, N>, Deg>& p, size_t i);
 
 template<typename T, size_t Deg>
 constexpr Polynomial<T, Deg-1> derivate(const Polynomial<T, Deg>& p);

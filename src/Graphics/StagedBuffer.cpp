@@ -139,10 +139,9 @@ vk::CommandBuffer StagedBuffer::createCommandBuffer(const Vulkan& vulkan,
 
 	vulkan.begin(*cmdBuffer, beginInfo);
 	{
+		//Insert a memory barrier in the mapped buffer
 		{
-			//Insert a memory barrier
-			
-			constexpr vk::AccessFlags srcAccess = {};
+			constexpr vk::AccessFlags srcAccess = vk::AccessFlagBits::eHostWrite;
 			constexpr vk::AccessFlags dstAccess = vk::AccessFlagBits::eTransferWrite;
 
 			//We don't mind about the previous contents, so skip the ownership transfer
@@ -154,12 +153,12 @@ vk::CommandBuffer StagedBuffer::createCommandBuffer(const Vulkan& vulkan,
 				dstAccess,						//New access mask
 				srcFamily,						//Old queue family
 				dstFamily, 						//New queue family
-				getBuffer(),					//Buffer
+				m_stagingBuffer.getBuffer(),	//Buffer
 				area.offset(), area.size()		//Range
 			);
 
 			constexpr vk::PipelineStageFlags srcStages = 
-				vk::PipelineStageFlagBits::eTopOfPipe;
+				vk::PipelineStageFlagBits::eHost;
 
 			constexpr vk::PipelineStageFlags dstStages = 
 				vk::PipelineStageFlagBits::eTransfer;

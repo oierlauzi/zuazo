@@ -61,8 +61,10 @@ void Image::createImageViews(	const Vulkan& vulkan,
 	if(usage & IMAGE_VIEW_USAGE_FLAGS) {
 		for(size_t i = 0; i < m_imagePlanes.size(); ++i) {
 			const auto image = (i < planes.size()) ? planes[i] : *m_imagePlanes[i].image;
-			assert(image);
-			m_imagePlanes[i].imageView = createImageView(vulkan, planeDescriptors[i], image);
+			
+			if(image) {
+				m_imagePlanes[i].imageView = createImageView(vulkan, planeDescriptors[i], image);
+			}
 		}
 	}
 }
@@ -137,7 +139,9 @@ std::vector<Image::Plane> Image::createPlanes(	const Vulkan& vulkan,
 	result.reserve(planeDescriptors.size());
 
 	for(const auto& d : planeDescriptors) {
-		result.emplace_back(Plane{ createImage(vulkan, d, usage, tiling), vk::UniqueImageView() });
+		if(d.extent.width > 0 && d.extent.height > 0 && d.format != vk::Format::eUndefined) {
+			result.emplace_back(Plane{ createImage(vulkan, d, usage, tiling), vk::UniqueImageView() });
+		}
 	}
 
 	assert(result.size() == planeDescriptors.size());

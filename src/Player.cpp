@@ -6,7 +6,8 @@ struct Player::Impl {
 	Instance& 										instance;
 	ClipBase* 										clip;
 	Instance::Priority 								priority;
-	std::shared_ptr<Instance::ScheduledCallback>	callback;
+	Instance::ScheduledCallback						callback;
+	bool											enabled;
 
 	Impl(	Instance& instance, 
 			ClipBase* clip,
@@ -14,10 +15,11 @@ struct Player::Impl {
 		: instance(instance)
 		, clip(clip)
 		, priority(prior)
-		, callback(Utils::makeShared<Instance::ScheduledCallback>())
+		, callback()
+		, enabled(false)
 	{
 		if(clip) {
-			*callback = std::bind(&Impl::updateFunc, std::cref(*this));
+			callback = std::bind(&Impl::updateFunc, std::cref(*this));
 		}
 	}
 
@@ -29,12 +31,11 @@ struct Player::Impl {
 	void setClip(ClipBase* c) noexcept {
 		clip = c;
 
-		assert(callback);
-		if(*callback && !clip) {
+		if(callback && !clip) {
 			//It has become invalid
-			*callback = {};
-		} else if(!(*callback) && clip) {
-			*callback = std::bind(&Impl::updateFunc, std::cref(*this));
+			callback = {};
+		} else if(!callback && clip) {
+			callback = std::bind(&Impl::updateFunc, std::cref(*this));
 		}
 	}
 
@@ -58,24 +59,30 @@ struct Player::Impl {
 
 
 	void enable() {
-		if(!isEnabled()) {
+		if(!enabled) {
 			instance.addRegularCallback(callback, priority);
+			enabled = true;
 		}
+
+		assert(enabled == true);
 	}
 
 	void disable() {
-		if(isEnabled()) {
+		if(enabled) {
 			instance.removeRegularCallback(callback);
+			enabled = false;
 		}
+
+		assert(enabled == false);
 	}
 
 	bool isEnabled() const noexcept {
-		return callback.use_count() > 1;
+		return enabled;
 	}
 
 private:
 	void updateFunc() const {
-		assert(clip);
+		assert(clip); //Only called if a clip was set
 		clip->advance(instance.getDeltaT());
 	}
 

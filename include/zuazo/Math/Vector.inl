@@ -378,14 +378,7 @@ constexpr size_t Vec<T, 4>::size() {
 
 template<typename T, size_t N>
 constexpr bool operator==(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept {
-	bool result = true;
-
-	//Iterate until it becomes false
-	for(size_t i = 0; (i < Vec<T, N>::size()) && result; ++i) {
-		result = (lhs[i] == rhs[i]);
-	}
-
-	return result;
+	return std::equal(lhs.cbegin(), lhs.cend(), rhs.cbegin());
 }
 
 template<typename T, size_t N>
@@ -400,154 +393,288 @@ constexpr Vec<T, N> operator+(const Vec<T, N>& a) {
 	return a;
 }
 
-
 template<typename T, size_t N>
-constexpr Vec<T, N> operator-(const Vec<T, N>& a) {
-	Vec<T, N> result;
-
-	for(size_t i = 0; i < Vec<T, N>::size(); ++i) {
-		result[i] = -a[i];
-	}
-
-	return result;
-}
-
-
-template<typename T, size_t N>
-constexpr Vec<T, N> operator+(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept {
-	Vec<T, N> result;
-
-	for(size_t i = 0; i < Vec<T, N>::size(); ++i) {
-		result[i] = lhs[i] + rhs[i];
-	}
-
-	return result;
+constexpr Vec<typename std::invoke_result<std::negate<void>, T>::type, N>
+operator-(const Vec<T, N>& a) {
+	return transform(std::negate<void>(), a);
 }
 
 template<typename T, size_t N>
-constexpr Vec<T, N> operator-(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept {
-	Vec<T, N> result;
-
-	for(size_t i = 0; i < Vec<T, N>::size(); ++i) {
-		result[i] = lhs[i] - rhs[i];
-	}
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> operator*(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept {
-	Vec<T, N> result;
-
-	for(size_t i = 0; i < Vec<T, N>::size(); ++i) {
-		result[i] = lhs[i] * rhs[i];
-	}
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> operator*(const Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs) noexcept {
-	Vec<T, N> result;
-
-	for(size_t i = 0; i < Vec<T, N>::size(); ++i) {
-		result[i] = lhs[i] * rhs;
-	}
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> operator*(const typename Vec<T, N>::value_type& lhs, const Vec<T, N>& rhs) noexcept {
-	return rhs * lhs; //Defined above
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> operator/(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept {
-	Vec<T, N> result;
-
-	for(size_t i = 0; i < Vec<T, N>::size(); ++i) {
-		result[i] = lhs[i] / rhs[i];
-	}
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> operator/(const Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs) noexcept {
-	Vec<T, N> result;
-
-	for(size_t i = 0; i < Vec<T, N>::size(); ++i) {
-		result[i] = lhs[i] / rhs;
-	}
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> operator/(const typename Vec<T, N>::value_type& lhs, const Vec<T, N>& rhs) noexcept {
-	return Vec<T, N>(rhs) / lhs;
+constexpr Vec<typename std::invoke_result<std::bit_not<void>, T>::type, N>
+operator~(const Vec<T, N>& a) {
+	return transform(std::bit_not<void>(), a);
 }
 
 
-template<typename T, size_t N>
-constexpr Vec<T, N>& operator+=(Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept {
-	for(size_t i = 0; i < Vec<T, N>::size(); ++i) {
-		lhs[i] += rhs[i];
-	}
 
-	return lhs;
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::plus<void>, T, Q>::type, N>
+operator+(const Vec<T, N>& lhs, const Vec<Q, N>& rhs) {
+	return transform(std::plus<void>(), lhs, rhs);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::minus<void>, T, Q>::type, N>
+operator-(const Vec<T, N>& lhs, const Vec<Q, N>& rhs) {
+	return transform(std::minus<void>(), lhs, rhs);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::multiplies<void>, T, Q>::type, N> 
+operator*(const Vec<T, N>& lhs, const Vec<Q, N>& rhs) {
+	return transform(std::multiplies<void>(), lhs, rhs);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::multiplies<void>, T, Q>::type, N> 
+operator*(const Vec<T, N>& lhs, const Q& rhs) {
+	return transform(
+		[&rhs] (const auto& lhs) -> auto {
+			return std::multiplies<void>()(lhs, rhs);
+		},
+		lhs
+	);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::multiplies<void>, T, Q>::type, N> 
+operator*(const T& lhs, const Vec<Q, N>& rhs) {
+	return transform(
+		[&lhs] (const auto& rhs) -> auto {
+			return std::multiplies<void>()(lhs, rhs);
+		},
+		rhs
+	);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::divides<void>, T, Q>::type, N> 
+operator/(const Vec<T, N>& lhs, const Vec<Q, N>& rhs) {
+	return transform(std::divides<void>(), lhs, rhs);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::divides<void>, T, Q>::type, N> 
+operator/(const Vec<T, N>& lhs, const Q& rhs) {
+	return transform(
+		[&rhs] (const auto& lhs) -> auto {
+			return std::divides<void>()(lhs, rhs);
+		},
+		lhs
+	);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::divides<void>, T, Q>::type, N>
+operator/(const T& lhs, const Vec<Q, N>& rhs) {
+	return transform(
+		[&lhs] (const auto& rhs) -> auto {
+			return std::divides<void>()(lhs, rhs);
+		},
+		rhs
+	);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::modulus<void>, T, Q>::type, N> 
+operator%(const Vec<T, N>& lhs, const Vec<Q, N>& rhs) {
+	return transform(std::modulus<void>(), lhs, rhs);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::modulus<void>, T, Q>::type, N> 
+operator%(const Vec<T, N>& lhs, const Q& rhs) {
+	return transform(
+		[&rhs] (const auto& lhs) -> auto {
+			return std::modulus<void>()(lhs, rhs);
+		},
+		lhs
+	);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::modulus<void>, T, Q>::type, N>
+operator%(const T& lhs, const Vec<Q, N>& rhs) {
+	return transform(
+		[&lhs] (const auto& rhs) -> auto {
+			return std::modulus<void>()(lhs, rhs);
+		},
+		rhs 
+	);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::bit_and<void>, T, Q>::type, N> 
+operator&(const Vec<T, N>& lhs, const Vec<Q, N>& rhs) {
+	return transform(std::bit_and<void>(), lhs, rhs);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::bit_and<void>, T, Q>::type, N> 
+operator&(const Vec<T, N>& lhs, const Q& rhs) {
+	return transform(
+		[&rhs] (const auto& lhs) -> auto {
+			return std::bit_and<void>()(lhs, rhs);
+		},
+		lhs
+	);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::bit_and<void>, T, Q>::type, N>
+operator&(const T& lhs, const Vec<Q, N>& rhs) {
+	return transform(
+		[&lhs] (const auto& rhs) -> auto {
+			return std::bit_and<void>()(lhs, rhs);
+		},
+		rhs
+	);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::bit_or<void>, T, Q>::type, N> 
+operator|(const Vec<T, N>& lhs, const Vec<Q, N>& rhs) {
+	return transform(std::bit_or<void>(), lhs, rhs);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::bit_or<void>, T, Q>::type, N> 
+operator|(const Vec<T, N>& lhs, const Q& rhs) {
+	return transform(
+		[&rhs] (const auto& lhs) -> auto {
+			return std::bit_or<void>()(lhs, rhs);
+		},
+		lhs
+	);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::bit_or<void>, T, Q>::type, N>
+operator|(const T& lhs, const Vec<Q, N>& rhs) {
+	return transform(
+		[&lhs] (const auto& rhs) -> auto {
+			return std::bit_or<void>()(lhs, rhs);
+		},
+		rhs
+	);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::bit_xor<void>, T, Q>::type, N> 
+operator^(const Vec<T, N>& lhs, const Vec<Q, N>& rhs) {
+	return transform(std::bit_xor<void>(), lhs, rhs);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::bit_xor<void>, T, Q>::type, N> 
+operator^(const Vec<T, N>& lhs, const Q& rhs) {
+	return transform(
+		[&rhs] (const auto& lhs) -> auto {
+			return std::bit_xor<void>()(lhs, rhs);
+		},
+		lhs
+	);
+}
+
+template<typename T, typename Q, size_t N>
+constexpr Vec<typename std::invoke_result<std::bit_xor<void>, T, Q>::type, N>
+operator^(const T& lhs, const Vec<Q, N>& rhs) {
+	return transform(
+		[&lhs] (const auto& rhs) -> auto {
+			return std::bit_xor<void>()(lhs, rhs);
+		},
+		rhs
+	);
+}
+
+
+
+template<typename T, size_t N>
+constexpr Vec<T, N>& operator+=(Vec<T, N>& lhs, const Vec<T, N>& rhs) {
+	return lhs = lhs + rhs;
 }
 
 template<typename T, size_t N>
-constexpr Vec<T, N>& operator-=(Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept {
-	for(size_t i = 0; i < Vec<T, N>::size(); ++i) {
-		lhs[i] -= rhs[i];
-	}
-
-	return lhs;
+constexpr Vec<T, N>& operator-=(Vec<T, N>& lhs, const Vec<T, N>& rhs) {
+	return lhs = lhs - rhs;
 }
 
 template<typename T, size_t N>
-constexpr Vec<T, N>& operator*=(Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept {
-	for(size_t i = 0; i < Vec<T, N>::size(); ++i) {
-		lhs[i] *= rhs[i];
-	}
-
-	return lhs;
+constexpr Vec<T, N>& operator*=(Vec<T, N>& lhs, const Vec<T, N>& rhs) {
+	return lhs = lhs * rhs;
 }
 
 template<typename T, size_t N>
-constexpr Vec<T, N>& operator*=(Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs) noexcept {
-	for(size_t i = 0; i < Vec<T, N>::size(); ++i) {
-		lhs[i] *= rhs;
-	}
-
-	return lhs;
+constexpr Vec<T, N>& operator*=(Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs) {
+	return lhs = lhs * rhs;
 }
 
 template<typename T, size_t N>
-constexpr Vec<T, N>& operator/=(Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept {
-	for(size_t i = 0; i < Vec<T, N>::size(); ++i) {
-		lhs[i] /= rhs[i];
-	}
-
-	return lhs;
+constexpr Vec<T, N>& operator/=(Vec<T, N>& lhs, const Vec<T, N>& rhs) {
+	return lhs = lhs / rhs;
 }
 
 template<typename T, size_t N>
-constexpr Vec<T, N>& operator/=(Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs) noexcept {
-	for(size_t i = 0; i < Vec<T, N>::size(); ++i) {
-		lhs[i] /= rhs;
-	}
+constexpr Vec<T, N>& operator/=(Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs) {
+	return lhs = lhs / rhs;
+}
 
-	return lhs;
+template<typename T, size_t N>
+constexpr Vec<T, N>& operator%=(Vec<T, N>& lhs, const Vec<T, N>& rhs) {
+	return lhs = lhs % rhs;
+}
+
+template<typename T, size_t N>
+constexpr Vec<T, N>& operator%=(Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs) {
+	return lhs = lhs % rhs;
+}
+
+template<typename T, size_t N>
+constexpr Vec<T, N>& operator&=(Vec<T, N>& lhs, const Vec<T, N>& rhs) {
+	return lhs = lhs & rhs;
+}
+
+template<typename T, size_t N>
+constexpr Vec<T, N>& operator&=(Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs) {
+	return lhs = lhs & rhs;
+}
+
+template<typename T, size_t N>
+constexpr Vec<T, N>& operator|=(Vec<T, N>& lhs, const Vec<T, N>& rhs) {
+	return lhs = rhs | rhs;
+}
+
+template<typename T, size_t N>
+constexpr Vec<T, N>& operator|=(Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs) {
+	return lhs = lhs | rhs;
+}
+
+template<typename T, size_t N>
+constexpr Vec<T, N>& operator^=(Vec<T, N>& lhs, const Vec<T, N>& rhs) {
+	return lhs = lhs ^ rhs;
+}
+
+template<typename T, size_t N>
+constexpr Vec<T, N>& operator^=(Vec<T, N>& lhs, const typename Vec<T, N>::value_type& rhs) {
+	return lhs = lhs ^ rhs;
 }
 
 
 /*
  * Vector operations
  */
+
+template<typename Func, typename... T, size_t N>
+constexpr Vec<typename std::invoke_result<Func, const typename Vec<T, N>::value_type&...>::type, N> 
+transform(Func f, const Vec<T, N>&... v) {
+	Vec<typename std::invoke_result<Func, const typename Vec<T, N>::value_type&...>::type, N> result;
+
+	for(size_t i = 0; i < result.size(); ++i) {
+		result[i] = f(v[i]...);
+	}
+
+	return result;
+}
 
 template<typename T, size_t N>
 constexpr T dot(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept {
@@ -591,453 +718,39 @@ constexpr Vec<T, N> proj(const Vec<T, N>& dir, const Vec<T, N>& p) noexcept {
 
 template<typename T>
 constexpr typename Vec2<T>::value_type signedDistance(const Vec2<T>& origin, const Vec2<T>& direction, const Vec2<T>& point) {
-	const auto perpendicular = normalize(Vec2<T>(-direction.y, direction.x));
+	const auto perpendicular = Vec2<T>(-direction.y, direction.x);
 	return dot(perpendicular, point - origin);
 }
 
-/*
- * Absolute
- */
-
-template<typename T, size_t N>
-constexpr Vec<T, N> abs(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return abs(x);
-		}
-	);
-
-	return result;
-}
-
-
-
-/*
- * min/max
- */
-
-
-template<typename T, size_t N>
-constexpr Vec<T, N> min(const Vec<T, N>& a, const Vec<T, N>& b) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		a.cbegin(), a.cend(), b.cbegin(), result.begin(),
-		[] (const auto& a, const auto& b) -> auto {
-			return min(a, b);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> max(const Vec<T, N>& a, const Vec<T, N>& b) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		a.cbegin(), a.cend(), b.cbegin(), result.begin(),
-		[] (const auto& a, const auto& b) -> auto {
-			return max(a, b);
-		}
-	);
-
-	return result;
-}
-
-
-/*
- * Exponential
- */
-
-template<typename T, size_t N>
-constexpr Vec<T, N> exp(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return exp(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> exp2(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return exp2(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> exp10(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return exp10(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> log(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return log(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> log2(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return log2(x);
-		}
-	);
-
-	return result;
-}
-template<typename T, size_t N>
-constexpr Vec<T, N> log10(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return log10(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> pow(const Vec<T, N>& base, const Vec<T, N>& power) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		base.cbegin(), base.cend(), power.cbegin(), result.begin(),
-		[] (const auto& base, const auto& power) -> auto {
-			return pow(base, power);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> sqrt(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return sqrt(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> mod(const Vec<T, N>& num, const Vec<T, N>& den) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		num.cbegin(), num.cend(), den.cbegin(), result.begin(),
-		[] (const auto& num, const auto& den) -> auto {
-			return mod(num, den);
-		}
-	);
-
-	return result;
-}
-
-/*
- * Rounding
- */
-
-template<typename T, size_t N>
-constexpr Vec<T, N> floor(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return floor(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> trunc(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return trunc(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> ceil(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return ceil(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> round(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return round(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> fract(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return fract(x);
-		}
-	);
-
-	return result;
-}
-
-
-
-/*
- * Trigonometric
- */
-
-template<typename T, size_t N>
-constexpr Vec<T, N> cos(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return cos(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> cosh(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return cosh(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> sin(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return sin(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> sinh(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return sinh(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> tan(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return tan(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> tanh(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return tanh(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> acos(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return acos(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> acosh(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return acosh(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> asin(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return asin(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> asinh(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return asinh(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> atan(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return atan(x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> atan(const Vec<T, N>& y, const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		y.cbegin(), y.cend(), x.cbegin(), result.begin(),
-		[] (const auto& y, const auto& x) -> auto {
-			return atan(y, x);
-		}
-	);
-
-	return result;
-}
-
-template<typename T, size_t N>
-constexpr Vec<T, N> atanh(const Vec<T, N>& x) noexcept {
-	Vec<T, N> result;
-
-	std::transform(
-		x.cbegin(), x.cend(), result.begin(),
-		[] (const auto& x) -> auto {
-			return atanh(x);
-		}
-	);
-
-	return result;
+template<typename T>
+constexpr void align(Utils::BufferView<Vec<T, 2>> points) {
+	//Set the origin in points[0]
+	for(size_t i = 1; i < points.size(); ++i) {
+		points[i] -= points[0];
+	}
+	points[0] = Vec<T, 2>(); //points[0] -= points[0] will result in 0
+
+	//Apply the rotatation to it
+	const auto dir = points.back(); //-points.front()
+	const auto len = length(dir);
+	const auto c = dir[0] / len; //cos: x
+	const auto s = dir[1] / len; //sin: y
+
+	//Rotate all the points. the first and last ones are
+	//trivial.
+	for(size_t i = 1; i < points.size() - 1; ++i) {
+		//This is equivalent to multiplying by a 2x2 rotation
+		//matrix. However, as the matrix class has not been declared
+		//yet, well manually implement it. Note that the rotation 
+		//matrix is defined as the following:
+		// [cos(O), -sin(O); sin(O), cos(O)]
+		// As we want to rotate in the opposite direction of the direction
+		//vector, substituting O by -O inverts the sign of the sines.
+		points[i][0] =  points[i][0]*c + points[i][1]*s;
+		points[i][1] = -points[i][1]*s + points[i][1]*c;
+	}
+	//points.front() = Vec<T, 2>(); //Already set
+	points.back() = Vec<T, 2>(len, 0);
 }
 
 

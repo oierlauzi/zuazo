@@ -155,8 +155,182 @@ constexpr size_t Bezier<T, Deg>::degree() noexcept {
 
 
 template<typename T, size_t Deg>
-constexpr Polynomial<typename Bezier<T, Deg>::value_type, Bezier<T, Deg>::degree()> toPolynomial(const Bezier<T, Deg>& s) {
-	Polynomial<typename Bezier<T, Deg>::value_type, s.degree()> result;
+constexpr bool operator==(const Bezier<T, Deg>& lhs, const Bezier<T, Deg>& rhs) noexcept {
+	return std::equal(lhs.cbegin(), lhs.cend(), rhs.cbegin());
+}
+
+template<typename T, size_t Deg>
+constexpr bool operator!=(const Bezier<T, Deg>& lhs, const Bezier<T, Deg>& rhs) noexcept {
+	return !(lhs == rhs);
+}
+
+
+template<typename T, size_t Deg>
+constexpr Bezier<T, Deg> operator+(const Bezier<T, Deg>& b) {
+	return a;
+}
+
+template<typename T, size_t Deg>
+constexpr Bezier<typename std::invoke_result<std::negate<void>, T>::type, Deg>
+operator-(const Bezier<T, Deg>& b) {
+	return transform(
+		std::negate<void>(),
+		b
+	);
+}
+
+
+template<typename T, typename Q, size_t Deg>
+constexpr Bezier<typename std::invoke_result<std::plus<void>, T, Q>::type, Deg>
+operator+(const Bezier<T, Deg>& lhs, const Bezier<Q, Deg>& rhs) {
+	return transform(
+		std::plus<void>(),
+		lhs, rhs
+	);
+}
+
+template<typename T, typename Q, size_t Deg>
+constexpr Bezier<typename std::invoke_result<std::minus<void>, T, Q>::type, Deg>
+operator-(const Bezier<T, Deg>& lhs, const Bezier<Q, Deg>& rhs) {
+	return transform(
+		std::minus<void>(),
+		lhs, rhs
+	);
+}
+
+template<typename T, typename Q, size_t Deg>
+constexpr Bezier<typename std::invoke_result<std::multiplies<void>, T, Q>::type, Deg> 
+operator*(const Bezier<T, Deg>& lhs, const Bezier<Q, Deg>& rhs) {
+	return transform(
+		std::multiplies<void>(),
+		lhs, rhs
+	);
+}
+
+template<typename T, typename Q, size_t Deg>
+constexpr Bezier<typename std::invoke_result<std::multiplies<void>, T, Q>::type, Deg> 
+operator*(const Bezier<T, Deg>& lhs, const Q& rhs) {
+	return transform(
+		[&rhs] (const auto& lhs) -> auto {
+			return std::multiplies<void>()(lhs, rhs);
+		},
+		lhs
+	);
+}
+
+template<typename T, typename Q, size_t Deg>
+constexpr Bezier<typename std::invoke_result<std::multiplies<void>, T, Q>::type, Deg> 
+operator*(const T& lhs, const Bezier<Q, Deg>& rhs) {
+	return transform(
+		[&lhs] (const auto& rhs) -> auto {
+			return std::multiplies<void>()(lhs, rhs);
+		},
+		rhs
+	);
+}
+
+template<typename T, typename Q, size_t Deg>
+constexpr Bezier<typename std::invoke_result<std::divides<void>, T, Q>::type, Deg> 
+operator/(const Bezier<T, Deg>& lhs, const Bezier<Q, Deg>& rhs) {
+	return transform(
+		std::divides<void>(),
+		lhs, rhs
+	);
+}
+
+template<typename T, typename Q, size_t Deg>
+constexpr Bezier<typename std::invoke_result<std::divides<void>, T, Q>::type, Deg> 
+operator/(const Bezier<T, Deg>& lhs, const Q& rhs) {
+	return transform(
+		[&rhs] (const auto& lhs) -> auto {
+			return std::divides<void>()(lhs, rhs);
+		},
+		lhs
+	);
+}
+
+template<typename T, typename Q, size_t Deg>
+constexpr Bezier<typename std::invoke_result<std::divides<void>, T, Q>::type, Deg>
+operator/(const T& lhs, const Bezier<Q, Deg>& rhs) {
+	return transform(
+		[&lhs] (const auto& rhs) -> auto {
+			return std::divides<void>()(lhs, rhs);
+		},
+		rhs
+	);
+}
+
+
+template<typename T, size_t Deg>
+constexpr Bezier<T, Deg>& operator+=(Bezier<T, Deg>& lhs, const Bezier<T, Deg>& rhs) {
+	return lhs = lhs + rhs;
+}
+
+template<typename T, size_t Deg>
+constexpr Bezier<T, Deg>& operator-=(Bezier<T, Deg>& lhs, const Bezier<T, Deg>& rhs) {
+	return lhs = lhs - rhs;
+}
+
+template<typename T, size_t Deg>
+constexpr Bezier<T, Deg>& operator*=(Bezier<T, Deg>& lhs, const Bezier<T, Deg>& rhs) {
+	return lhs = lhs * rhs;
+}
+
+template<typename T, size_t Deg>
+constexpr Bezier<T, Deg>& operator*=(Bezier<T, Deg>& lhs, const typename Bezier<T, Deg>::value_type& rhs) {
+	return lhs = lhs * rhs;
+}
+
+template<typename T, size_t Deg>
+constexpr Bezier<T, Deg>& operator/=(Bezier<T, Deg>& lhs, const Bezier<T, Deg>& rhs) {
+	return lhs = lhs / rhs;
+}
+
+template<typename T, size_t Deg>
+constexpr Bezier<T, Deg>& operator/=(Bezier<T, Deg>& lhs, const typename Bezier<T, Deg>::value_type& rhs) {
+	return lhs = lhs / rhs;
+}
+
+
+
+template<typename Func, typename... T, size_t Deg>
+constexpr Bezier<typename std::invoke_result<Func, const typename Bezier<T, Deg>::value_type&...>::type, Deg> 
+transform(Func f, const Bezier<T, Deg>&... v) {
+	Bezier<typename std::invoke_result<Func, const typename Bezier<T, N>::value_type&...>::type, Deg> result;
+
+	for(size_t i = 0; i < result.size(); ++i) {
+		result[i] = f(v[i]...);
+	}
+
+	return result;
+}
+
+
+
+template<typename T, size_t N, size_t Deg>
+constexpr void setComponent(Bezier<Vec<T, N>, Deg>& s, size_t i, const Bezier<typename Vec<T, N>::value_type, Deg>& c) {
+	static_assert(p.size() == c.size(), "Sizes must match");
+	for(size_t j = 0; j < c.size(); ++j) {
+		s[j][i] = c[j];
+	}
+}
+
+template<typename T, size_t N, size_t Deg>
+constexpr Bezier<typename Vec<T, N>::value_type, Deg> getComponent(const Bezier<Vec<T, N>, Deg>& s, size_t i) {
+	Bezier<typename Vec<T, N>::value_type, Deg> result;
+	static_assert(s.size() == result.size(), "Sizes must match");
+
+	for(size_t j = 0; j < c.size(); ++j) {
+		result[j] = s[j][i];
+	}
+
+	return result;
+}
+
+
+template<typename T, size_t Deg>
+constexpr Polynomial<typename Bezier<T, Deg>::value_type, Deg> toPolynomial(const Bezier<T, Deg>& s) {
+	Polynomial<typename Bezier<T, Deg>::value_type, Deg> result;
 
 	//FIXME this algorithm has been obtained and tested based on the pattern 
 	//of coefficients upto degree 3. I haven't done any further testing, so
@@ -199,8 +373,8 @@ constexpr Bezier<T, Deg-1> derivate(const Bezier<T, Deg>& s) {
 }
 
 template<typename T, size_t Deg>
-constexpr std::array<typename Bezier<T, Deg>::value_type, Bezier<T, Deg>::degree()> solve(	const Bezier<T, Deg>& s, 
-																							PolynomialSolutionCount* cnt) 
+constexpr std::array<typename Bezier<T, Deg>::value_type, Deg> solve(	const Bezier<T, Deg>& s, 
+																		PolynomialSolutionCount* cnt) 
 {
 	const auto polynomial = toPolynomial(s);
 	const auto solution = solve(polynomial, cnt);
@@ -221,25 +395,18 @@ constexpr std::array<typename Bezier<T, Deg>::value_type, Bezier<T, Deg>::degree
 }
 
 template<typename T, size_t N, size_t Deg>
-constexpr std::array<typename Bezier<Vec<T, N>, Deg>::value_type, Bezier<Vec<T, N>, Deg>::degree()> solve(	const Bezier<Vec<T, N>, Deg>& s, 
-																											Vec<PolynomialSolutionCount, N>* cnt )
+constexpr std::array<typename Bezier<Vec<T, N>, Deg>::value_type, Deg> solve(	const Bezier<Vec<T, N>, Deg>& s, 
+																				Vec<PolynomialSolutionCount, N>* cnt )
 {
-	std::array<typename Bezier<Vec<T, N>, Deg>::value_type, s.degree()> result;
+	std::array<typename Bezier<Vec<T, N>, Deg>::value_type, Deg> result;
 
 	for(size_t i = 0; i < Vec<T, N>::size(); ++i) {
 		//Obtain the bezier functions for each component
-		Bezier<typename Vec<T, N>::value_type, s.degree()> scalarBezier;
-		static_assert(scalarBezier.size() == s.size(), "Sizes must match");
-		for(size_t j = 0; j < scalarBezier.size(); ++j) {
-			scalarBezier[j] = s[i][j];
-		}
+		const auto scalarBezier = getComponent(s, i);
 
 		//Solve the scalar bezier and copy the solution to the result array
 		const auto scalarResult = solve(scalarBezier, cnt ? &((*cnt)[i]) : nullptr);
-		static_assert(scalarResult.size() == result.size(), "Sizes must match");
-		for(size_t j = 0; j < scalarBezier.size(); ++j) {
-			result[i][j] = s[j];
-		}
+		setComponent(result, i, scalarResult);
 	}
 
 	return result;
@@ -277,11 +444,7 @@ constexpr Utils::Range<typename Bezier<Vec<T, N>, Deg>::value_type> getBoundarie
 
 	for(size_t i = 0; i < Vec<T, N>::size(); ++i) {
 		//Obtain the bezier functions for each component
-		Bezier<typename Vec<T, N>::value_type, s.degree()> scalarBezier;
-		static_assert(scalarBezier.size() == s.size(), "Sizes must match");
-		for(size_t j = 0; j < scalarBezier.size(); ++j) {
-			scalarBezier[j] = s[i][j];
-		}
+		const auto scalarBezier = getComponent(s, i);
 
 		//Solve the scalar bezier and copy the solution to the result array
 		const auto scalarResult = getBoundaries(scalarBezier);

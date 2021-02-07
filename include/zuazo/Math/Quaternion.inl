@@ -98,10 +98,6 @@ constexpr size_t Quaternion<T>::size() {
 
 
 
-using Quaternionf = Quaternion<float>;
-using Quaterniond = Quaternion<double>;
-
-
 template<typename T>
 constexpr bool operator==(const Quaternion<T>& lhs, const Quaternion<T>& rhs) noexcept {
 	bool result = true;

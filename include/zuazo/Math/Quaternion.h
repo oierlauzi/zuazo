@@ -15,7 +15,10 @@ public:
 	constexpr Quaternion(const Quaternion& other) = default;
 	constexpr Quaternion(Quaternion&& other) = default;
 
-	constexpr Quaternion(value_type w, value_type x, value_type y, value_type z);
+	constexpr Quaternion(	value_type w = value_type(1), 
+							value_type x = value_type(0), 
+							value_type y = value_type(0), 
+							value_type z = value_type(0) );
 	template<typename Q>
 	constexpr Quaternion(const Quaternion<Q>& other);
 	template<typename Q>

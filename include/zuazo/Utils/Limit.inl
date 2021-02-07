@@ -429,7 +429,7 @@ constexpr Limit<T> DiscreteRange<T>::simplify() const {
 	} else if(getMin() == getMax()) {
 		return MustBe<T>(getMin()); //Single value;
 	} else if(getStep() == T()) {
-		return Range<T>(getMin(), getMax()); //Continous range
+		return Range<T>(getMin(), getMax()); //Continuos range
 	} else {
 		return *this;
 	}
@@ -456,7 +456,7 @@ constexpr Limit<T> DiscreteRange<T>::intersect(const DiscreteRange<T>& other) co
 		Math::lcm(getStep(), other.getStep())
 	);
 
-	//When the value retuned by upperBound becomes invariant, it means that it is coincident with the step.
+	//When the value returned by upperBound becomes invariant, it means that it is coincident with the step.
 	//Therefore, if the upperBound of both discreteRanges for is the same, it means that that value 
 	//is part of both ranges. Repeating this process until this condition is met will result in the first value
 	//that is part of both DiscreteRange-s. However, this condition might never be met. In order to stop an 

@@ -67,18 +67,92 @@ using CubicBezier = Bezier<T, 3>;
 
 
 template<typename T, size_t Deg>
-constexpr Polynomial<typename Bezier<T, Deg>::value_type, Bezier<T, Deg>::degree()> toPolynomial(const Bezier<T, Deg>& s);
+constexpr bool operator==(const Bezier<T, Deg>& lhs, const Bezier<T, Deg>& rhs) noexcept;
+template<typename T, size_t Deg>
+constexpr bool operator!=(const Bezier<T, Deg>& lhs, const Bezier<T, Deg>& rhs) noexcept;
+
+
+template<typename T, size_t Deg>
+constexpr Bezier<T, Deg> operator+(const Bezier<T, Deg>& b);
+
+template<typename T, size_t Deg>
+constexpr Bezier<typename std::invoke_result<std::negate<void>, T>::type, Deg>
+operator-(const Bezier<T, Deg>& b);
+
+
+template<typename T, typename Q, size_t Deg>
+constexpr Bezier<typename std::invoke_result<std::plus<void>, T, Q>::type, Deg>
+operator+(const Bezier<T, Deg>& lhs, const Bezier<Q, Deg>& rhs);
+
+template<typename T, typename Q, size_t Deg>
+constexpr Bezier<typename std::invoke_result<std::minus<void>, T, Q>::type, Deg>
+operator-(const Bezier<T, Deg>& lhs, const Bezier<Q, Deg>& rhs);
+
+template<typename T, typename Q, size_t Deg>
+constexpr Bezier<typename std::invoke_result<std::multiplies<void>, T, Q>::type, Deg> 
+operator*(const Bezier<T, Deg>& lhs, const Bezier<Q, Deg>& rhs);
+
+template<typename T, typename Q, size_t Deg>
+constexpr Bezier<typename std::invoke_result<std::multiplies<void>, T, Q>::type, Deg> 
+operator*(const Bezier<T, Deg>& lhs, const Q& rhs);
+
+template<typename T, typename Q, size_t Deg>
+constexpr Bezier<typename std::invoke_result<std::multiplies<void>, T, Q>::type, Deg> 
+operator*(const T& lhs, const Bezier<Q, Deg>& rhs);
+
+template<typename T, typename Q, size_t Deg>
+constexpr Bezier<typename std::invoke_result<std::divides<void>, T, Q>::type, Deg> 
+operator/(const Bezier<T, Deg>& lhs, const Bezier<Q, Deg>& rhs);
+
+template<typename T, typename Q, size_t Deg>
+constexpr Bezier<typename std::invoke_result<std::divides<void>, T, Q>::type, Deg> 
+operator/(const Bezier<T, Deg>& lhs, const Q& rhs);
+
+template<typename T, typename Q, size_t Deg>
+constexpr Bezier<typename std::invoke_result<std::divides<void>, T, Q>::type, Deg>
+operator/(const T& lhs, const Bezier<Q, Deg>& rhs);
+
+
+template<typename T, size_t Deg>
+constexpr Bezier<T, Deg>& operator+=(Bezier<T, Deg>& lhs, const Bezier<T, Deg>& rhs);
+template<typename T, size_t Deg>
+constexpr Bezier<T, Deg>& operator-=(Bezier<T, Deg>& lhs, const Bezier<T, Deg>& rhs);
+template<typename T, size_t Deg>
+constexpr Bezier<T, Deg>& operator*=(Bezier<T, Deg>& lhs, const Bezier<T, Deg>& rhs);
+template<typename T, size_t Deg>
+constexpr Bezier<T, Deg>& operator*=(Bezier<T, Deg>& lhs, const typename Bezier<T, Deg>::value_type& rhs);
+template<typename T, size_t Deg>
+constexpr Bezier<T, Deg>& operator/=(Bezier<T, Deg>& lhs, const Bezier<T, Deg>& rhs);
+template<typename T, size_t Deg>
+constexpr Bezier<T, Deg>& operator/=(Bezier<T, Deg>& lhs, const typename Bezier<T, Deg>::value_type& rhs);
+
+
+
+template<typename Func, typename... T, size_t Deg>
+constexpr Bezier<typename std::invoke_result<Func, const typename Bezier<T, Deg>::value_type&...>::type, Deg> 
+transform(Func f, const Bezier<T, Deg>&... v);
+
+
+template<typename T, size_t N, size_t Deg>
+constexpr void setComponent(Bezier<Vec<T, N>, Deg>& s, size_t i, const Bezier<typename Vec<T, N>::value_type, Deg>& c);
+
+template<typename T, size_t N, size_t Deg>
+constexpr Bezier<typename Vec<T, N>::value_type, Deg> getComponent(const Bezier<Vec<T, N>, Deg>& s, size_t i);
+
+
+template<typename T, size_t Deg>
+constexpr Polynomial<typename Bezier<T, Deg>::value_type, Deg> toPolynomial(const Bezier<T, Deg>& s);
 
 template<typename T, size_t Deg>
 constexpr Bezier<T, Deg-1> derivate(const Bezier<T, Deg>& s);
 
 template<typename T, size_t Deg>
-constexpr std::array<typename Bezier<T, Deg>::value_type, Bezier<T, Deg>::degree()> solve(	const Bezier<T, Deg>& s, 
-																							PolynomialSolutionCount* cnt);
+constexpr std::array<typename Bezier<T, Deg>::value_type, Deg> solve(	const Bezier<T, Deg>& s, 
+																		PolynomialSolutionCount* cnt);
 
 template<typename T, size_t N, size_t Deg>
-constexpr std::array<typename Bezier<Vec<T, N>, Deg>::value_type, Bezier<Vec<T, N>, Deg>::degree()> solve(	const Bezier<Vec<T, N>, Deg>& s, 
-																											Vec<PolynomialSolutionCount, N>* cnt );
+constexpr std::array<typename Bezier<Vec<T, N>, Deg>::value_type, Deg> solve(	const Bezier<Vec<T, N>, Deg>& s, 
+																				Vec<PolynomialSolutionCount, N>* cnt );
 
 template<typename T, size_t Deg>
 constexpr Utils::Range<typename Bezier<T, Deg>::value_type> getBoundaries(const Bezier<T, Deg>& s);

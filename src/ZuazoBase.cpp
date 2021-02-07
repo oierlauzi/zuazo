@@ -19,7 +19,7 @@ struct ZuazoBase::Impl {
 		COUNT
 	};
 
-	using UpdateCallbacks = std::array<std::shared_ptr<UpdateCallback>, COUNT>;
+	using UpdateCallbacks = std::array<UpdateCallback, COUNT>;
 
 	Instance& 						instance;
 
@@ -47,10 +47,7 @@ struct ZuazoBase::Impl {
 		, asyncOpenCallback(std::move(asyncOpenCbk))
 		, closeCallback(std::move(closeCbk))
 		, asyncCloseCallback(std::move(asyncCloseCbk))
-		, updateCallbacks{ 
-			Utils::makeShared<UpdateCallback>(),
-			Utils::makeShared<UpdateCallback>(std::move(updateCbk)),
-			Utils::makeShared<UpdateCallback>() }
+		, updateCallbacks{ UpdateCallback(), std::move(updateCbk), UpdateCallback() }
 	{
 	}
 
@@ -144,27 +141,27 @@ struct ZuazoBase::Impl {
 
 
 	void setPreUpdateCallback(UpdateCallback cbk) noexcept {
-		*(updateCallbacks[PRE_UPDATE]) = std::move(cbk);
+		updateCallbacks[PRE_UPDATE] = std::move(cbk);
 	}
 
 	const UpdateCallback& getPreUpdateCallback() const noexcept {
-		return *(updateCallbacks[PRE_UPDATE]);
+		return updateCallbacks[PRE_UPDATE];
 	}
 
 	void setUpdateCallback(UpdateCallback cbk) noexcept {
-		*(updateCallbacks[UPDATE]) = std::move(cbk);
+		updateCallbacks[UPDATE] = std::move(cbk);
 	}
 
 	const UpdateCallback& getUpdateCallback() const noexcept {
-		return *(updateCallbacks[UPDATE]) ;
+		return updateCallbacks[UPDATE];
 	}
 
 	void setPostUpdateCallback(UpdateCallback cbk) noexcept {
-		*(updateCallbacks[POST_UPDATE]) = std::move(cbk);
+		updateCallbacks[POST_UPDATE] = std::move(cbk);
 	}
 
 	const UpdateCallback& getPostUpdateCallback() const noexcept {
-		return *(updateCallbacks[POST_UPDATE]);
+		return updateCallbacks[POST_UPDATE];
 	}
 
 
@@ -199,8 +196,7 @@ struct ZuazoBase::Impl {
 
 	void update() const noexcept {
 		for(const auto& cbk : updateCallbacks) {
-			assert(cbk);
-			Utils::invokeIf(*cbk);
+			Utils::invokeIf(cbk);
 		}
 	}
 

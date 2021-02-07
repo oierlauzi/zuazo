@@ -629,13 +629,7 @@ constexpr Mat<T, M, P> operator*(const Mat<T, M, N>& lhs, const Mat<T, N, P>& rh
 
 template<typename T, size_t M, size_t N>
 constexpr typename Mat<T, M, N>::column_type operator*(const Mat<T, M, N>& lhs, const typename Mat<T, M, N>::row_type& rhs) noexcept {
-	typename Mat<T, M, N>::column_type result;
-	
-	for(size_t i = 0; i < result.size(); ++i) {
-		result[i] = dot(lhs.getRow(i), rhs);
-	}
-
-	return result;
+	return transform(lhs, rhs);
 }
 
 template<typename T, size_t M, size_t N>
@@ -705,6 +699,18 @@ constexpr Mat<T, M, N>& operator/=(Mat<T, M, N>& lhs, const typename Mat<T, M, N
 /*
  * Matrix operations
  */
+
+template<typename T, size_t M, size_t N>
+constexpr typename Mat<T, M, N>::column_type transform(const Mat<T, M, N>& m, const typename Mat<T, M, N>::row_type& v) {
+	typename Mat<T, M, N>::column_type result;
+	
+	for(size_t i = 0; i < result.size(); ++i) {
+		result[i] = dot(m.getRow(i), v);
+	}
+
+	return result;
+}
+
 
 template<typename T, size_t M, size_t N>
 constexpr Mat<T, N, M> transpose(const Mat<T, M, N>& m) {
