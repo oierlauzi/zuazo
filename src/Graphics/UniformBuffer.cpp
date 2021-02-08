@@ -165,7 +165,7 @@ void UniformBuffer::flush(const Vulkan& vulkan) {
 
 	//Clear the flags
 	m_uniformFlushArea = {};
-	m_uniformFlushStages = {};
+	//m_uniformFlushStages = {}; //TODO
 }
 
 bool UniformBuffer::waitCompletion(	const Vulkan& vulkan,
