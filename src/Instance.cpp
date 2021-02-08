@@ -119,9 +119,13 @@ struct Instance::Impl {
 		ZUAZO_LOG(instance, Severity::VERBOSE, generateRemovePeriodicEventMessage(cbk));
 	}
 
-	void addEvent(ScheduledCallback cbk) {
-		eventQueue.addEvent(std::move(cbk));
+	void addEvent(size_t emitterId, ScheduledCallback cbk) {
+		eventQueue.addEvent(emitterId, std::move(cbk));
 		loop.interrupt();
+	}
+
+	void removeEvent(size_t emitterId) {
+		eventQueue.removeEvent(emitterId);
 	}
 
 
@@ -376,9 +380,14 @@ void Instance::removePeriodicCallback(const ScheduledCallback& cbk) {
 	m_impl->removePeriodicCallback(cbk);
 }
 
-void Instance::addEvent(ScheduledCallback cbk) {
-	m_impl->addEvent(std::move(cbk));
+void Instance::addEvent(size_t emitterId, ScheduledCallback cbk) {
+	m_impl->addEvent(emitterId, std::move(cbk));
 }
+
+void Instance::removeEvent(size_t emitterId) {
+	m_impl->removeEvent(emitterId);
+}
+
 
 
 TimePoint Instance::getTime() const noexcept {

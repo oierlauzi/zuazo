@@ -13,13 +13,16 @@ public:
 	EventQueue() = default;
 	~EventQueue() = default;
 
-	void 						addEvent(EventCallback event);
+	void 						addEvent(size_t emitterId, EventCallback event);
+	void						removeEvent(size_t emitterId);
 	void 						process();
 
 private:
+	using Event = std::pair<size_t, EventCallback>;
+
 	std::mutex					m_mutex;
-	std::vector<EventCallback>	m_pendingEvents;
-	std::vector<EventCallback>	m_processingEvents;
+	std::vector<Event>			m_pendingEvents;
+	std::vector<Event>			m_processingEvents;
 
 };
 

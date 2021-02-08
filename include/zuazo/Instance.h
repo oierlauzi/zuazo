@@ -71,7 +71,8 @@ public:
 																Duration period );
 	void								removePeriodicCallback(const ScheduledCallback& cbk);
 
-	void								addEvent(ScheduledCallback cbk);
+	void								addEvent(size_t emitterId, ScheduledCallback cbk);
+	void								removeEvent(size_t emitterId);
 
 	TimePoint							getTime() const noexcept;
 	TimePoint							getEpoch() const noexcept;

@@ -3,12 +3,26 @@
 #include <zuazo/Utils/Functions.h>
 
 #include <cassert>
+#include <algorithm>
 
 namespace Zuazo::Timing {
 
-void EventQueue::addEvent(EventCallback event) {
+void EventQueue::addEvent(size_t emitterId, EventCallback event) {
 	std::lock_guard<std::mutex> lock(m_mutex);
-	m_pendingEvents.push_back(std::move(event));
+	m_pendingEvents.emplace_back(emitterId, std::move(event));
+}
+
+void EventQueue::removeEvent(size_t emitterId) {
+	std::lock_guard<std::mutex> lock(m_mutex);
+
+	const auto ite = std::remove_if(
+		m_pendingEvents.begin(), m_pendingEvents.end(),
+		[emitterId] (const auto& event) -> bool {
+			return event.first == emitterId;
+		}
+	);
+
+	m_pendingEvents.erase(ite, m_pendingEvents.cend());
 }
 
 void EventQueue::process() {
@@ -21,7 +35,7 @@ void EventQueue::process() {
 
 	//Call all events. In order to avoid deadlocks we'll work on a copy
 	for(const auto& event : m_processingEvents) {
-		Utils::invokeIf(event);
+		Utils::invokeIf(event.second);
 	}
 	m_processingEvents.clear();
 }
