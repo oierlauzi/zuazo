@@ -34,6 +34,12 @@ constexpr Severity fromVulkan(vk::DebugUtilsMessageSeverityFlagBitsEXT sev) noex
 constexpr vk::Extent2D toVulkan(Resolution res) noexcept;
 constexpr Resolution fromVulkan(vk::Extent2D res) noexcept;
 
+constexpr vk::SamplerYcbcrModelConversion toVulkan(ColorModel colorModel) noexcept;
+constexpr ColorModel fromVulkan(vk::SamplerYcbcrModelConversion model) noexcept;
+
+constexpr vk::SamplerYcbcrRange toVulkan(ColorRange colorRange) noexcept;
+constexpr ColorRange fromVulkan(vk::SamplerYcbcrRange range) noexcept;
+
 constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COUNT> toVulkan(ColorFormat fmt) noexcept;
 constexpr std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format fmt) noexcept;
 

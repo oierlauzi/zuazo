@@ -82,6 +82,47 @@ constexpr Resolution fromVulkan(vk::Extent2D res) noexcept {
 	);
 }
 
+
+
+constexpr vk::SamplerYcbcrModelConversion toVulkan(ColorModel colorModel) noexcept {
+	switch(colorModel) {
+	case ColorModel::RGB:		return vk::SamplerYcbcrModelConversion::eRgbIdentity;
+	case ColorModel::BT601:		return vk::SamplerYcbcrModelConversion::eYcbcr601;
+	case ColorModel::BT709:		return vk::SamplerYcbcrModelConversion::eYcbcr709;
+	case ColorModel::BT2020:	return vk::SamplerYcbcrModelConversion::eYcbcr2020;
+	default:					return static_cast<vk::SamplerYcbcrModelConversion>(-1);
+	}
+}
+
+constexpr ColorModel fromVulkan(vk::SamplerYcbcrModelConversion model) noexcept {
+	switch(model) {
+	case vk::SamplerYcbcrModelConversion::eRgbIdentity:	return ColorModel::RGB;
+	case vk::SamplerYcbcrModelConversion::eYcbcr601:	return ColorModel::BT601;
+	case vk::SamplerYcbcrModelConversion::eYcbcr709:	return ColorModel::BT709;
+	case vk::SamplerYcbcrModelConversion::eYcbcr2020:	return ColorModel::BT2020;
+	default:											return ColorModel::NONE;
+	}
+}
+
+
+constexpr vk::SamplerYcbcrRange toVulkan(ColorRange colorRange) noexcept {
+	switch(colorRange) {
+	case ColorRange::FULL:			return vk::SamplerYcbcrRange::eItuFull;
+	case ColorRange::ITU_NARROW:	return vk::SamplerYcbcrRange::eItuNarrow;
+	default:						return static_cast<vk::SamplerYcbcrRange>(-1);
+	}
+}
+
+constexpr ColorRange fromVulkan(vk::SamplerYcbcrRange range) noexcept {
+	switch(range) {
+	case vk::SamplerYcbcrRange::eItuFull:	return ColorRange::FULL;
+	case vk::SamplerYcbcrRange::eItuNarrow:	return ColorRange::ITU_NARROW;
+	default:								return ColorRange::NONE;
+	}
+}
+
+
+
 constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COUNT> toVulkan(ColorFormat fmt) noexcept {
 	switch(fmt){
 	//4 bit compoents
