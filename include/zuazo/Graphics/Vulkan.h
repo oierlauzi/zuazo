@@ -27,6 +27,9 @@ public:
 
 	using FormatSupport = std::unordered_map<vk::Format, vk::FormatProperties>;
 
+	using DeviceFeatures = vk::StructureChain<	vk::PhysicalDeviceFeatures2, 
+												vk::PhysicalDeviceSamplerYcbcrConversionFeatures >;
+
 	struct AggregatedAllocation {
 		vk::UniqueDeviceMemory memory;
 		std::vector<Utils::Area> areas;
@@ -75,6 +78,7 @@ public:
 
 	const vk::PhysicalDeviceProperties&	getPhysicalDeviceProperties() const noexcept;
 	const FormatSupport&				getFormatSupport() const noexcept;
+	const DeviceFeatures&				getDeviceFeatures() const noexcept;
 	const std::vector<vk::Format>&		listSupportedFormatsOptimal(vk::FormatFeatureFlags flags) const;
 	const std::vector<vk::Format>&		listSupportedFormatsLinear(vk::FormatFeatureFlags flags) const;
 
@@ -111,6 +115,11 @@ public:
 	vk::DescriptorSetLayout				createDescriptorSetLayout(size_t id) const;
 	vk::DescriptorSetLayout				createDescriptorSetLayout(	size_t id,
 																	const vk::DescriptorSetLayoutCreateInfo& createInfo ) const;
+
+	vk::UniqueSamplerYcbcrConversion	createSamplerYcbcrConversion(const vk::SamplerYcbcrConversionCreateInfo& createInfo) const;
+	vk::SamplerYcbcrConversion 			createSamplerYcbcrConversion(size_t id) const;
+	vk::SamplerYcbcrConversion 			createSamplerYcbcrConversion(	size_t id,
+																		const vk::SamplerYcbcrConversionCreateInfo& createInfo ) const;
 
 	vk::UniqueSampler					createSampler(const vk::SamplerCreateInfo& createInfo) const;
 	vk::Sampler							createSampler(size_t id) const;

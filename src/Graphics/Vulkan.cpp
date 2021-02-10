@@ -37,6 +37,7 @@ struct Vulkan::Impl {
 	vk::UniqueDebugUtilsMessengerEXT				messenger;
 	vk::PhysicalDevice								physicalDevice;
 	std::array<uint32_t, QUEUE_NUM>					queueIndices;
+	DeviceFeatures									deviceFeatures;
 	vk::UniqueDevice								device;
 	std::array<vk::Queue, QUEUE_NUM>				queues;
 	vk::UniquePipelineCache							pipelineCache;
@@ -59,6 +60,7 @@ struct Vulkan::Impl {
 	mutable HashMap<vk::UniquePipelineLayout>		pipelineLayouts;
 	mutable HashMap<vk::UniquePipeline>				graphicsPipelines;
 	mutable HashMap<vk::UniqueDescriptorSetLayout>	descriptorSetLayouts;
+	mutable HashMap<vk::UniqueSamplerYcbcrConversion>	samplerYCbCrConversions;
 	mutable HashMap<vk::UniqueSampler>				samplers;
 
 	/*
@@ -88,7 +90,8 @@ struct Vulkan::Impl {
 		, messenger(createMessenger(dispatcher, *instance, verbosity, this))
 		, physicalDevice(getBestPhysicalDevice(dispatcher, *instance, requiredDeviceExtensions, presentationSupportCbk, scoreFunc))
 		, queueIndices(getQueueIndices(dispatcher, *instance, physicalDevice, presentationSupportCbk))
-		, device(createDevice(dispatcher, physicalDevice, queueIndices, std::move(requiredDeviceExtensions)))
+		, deviceFeatures(createDeviceFeatures(dispatcher, physicalDevice))
+		, device(createDevice(dispatcher, physicalDevice, queueIndices, deviceFeatures, std::move(requiredDeviceExtensions)))
 		, queues(getQueues(dispatcher, *device, queueIndices))
 		, physicalDeviceProperties(getPhysicalDeviceProperties(dispatcher, physicalDevice))
 		, formatSupport(getFormatSupport(dispatcher, physicalDevice))
@@ -161,6 +164,10 @@ struct Vulkan::Impl {
 
 	const FormatSupport& getFormatSupport() const noexcept {
 		return formatSupport;
+	}
+
+	const DeviceFeatures& getDeviceFeatures() const noexcept {
+		return deviceFeatures;
 	}
 
 	const std::vector<vk::Format>& listSupportedFormatsOptimal(vk::FormatFeatureFlags flags) const {
@@ -382,6 +389,28 @@ struct Vulkan::Impl {
 
 		assert(result);
 		assert(ite != descriptorSetLayouts.cend());
+		return *(ite->second);
+	}
+
+	vk::UniqueSamplerYcbcrConversion createSamplerYcbcrConversion(const vk::SamplerYcbcrConversionCreateInfo& createInfo) const {
+		return device->createSamplerYcbcrConversionUnique(createInfo, nullptr, dispatcher);
+	}
+
+	vk::SamplerYcbcrConversion createSamplerYcbcrConversion(size_t id) const {
+		auto ite = samplerYCbCrConversions.find(id);
+		return ite != samplerYCbCrConversions.cend() ? *(ite->second) : vk::SamplerYcbcrConversion();
+	}
+
+	vk::SamplerYcbcrConversion createSamplerYcbcrConversion(	size_t id,
+																const vk::SamplerYcbcrConversionCreateInfo& createInfo ) const 
+	{
+		auto [ite, result] = samplerYCbCrConversions.emplace(
+			id,
+			createSamplerYcbcrConversion(createInfo)
+		);
+
+		assert(result);
+		assert(ite != samplerYCbCrConversions.cend());
 		return *(ite->second);
 	}
 
@@ -1006,8 +1035,8 @@ private:
 		);
 
 		//Get the validation layers
-		auto requiredLayers = getRequiredLayers();
 		const auto availableLayers = vk::enumerateInstanceLayerProperties(disp);
+		auto requiredLayers = getRequiredLayers();
 		const auto usedLayers = getUsedLayers(availableLayers, requiredLayers);
 
 		if(requiredLayers.size()){
@@ -1026,8 +1055,8 @@ private:
 
 
 		//Get the extensions
-		auto requiredExtensions = getRequiredInstanceExtensions(std::move(ext));
 		const auto availableExtensions = vk::enumerateInstanceExtensionProperties(nullptr, disp);
+		auto requiredExtensions = getRequiredInstanceExtensions(availableExtensions, std::move(ext));
 		const auto usedExtensions = getUsedExtensions(availableExtensions, requiredExtensions);
 
 		if(requiredExtensions.size()){
@@ -1103,24 +1132,24 @@ private:
 
 		for(const auto& device : devices){
 			//Check validation layer support
-			auto requiredLayers = getRequiredLayers();
 			const auto supportedLayers = device.enumerateDeviceLayerProperties(disp);
+			auto requiredLayers = getRequiredLayers();
 			getUsedLayers(supportedLayers, requiredLayers);
 			if(requiredLayers.size()){
 				continue;
 			}
 
 			//Check device extension support
-			auto requiredExtensions = getRequiredDeviceExtensions(std::move(ext));
 			const auto availableExtensions = device.enumerateDeviceExtensionProperties(nullptr, disp);
+			auto requiredExtensions = getRequiredDeviceExtensions(availableExtensions, std::move(ext));
 			getUsedExtensions(availableExtensions, requiredExtensions);
 			if(requiredExtensions.size()){
 				continue;
 			}
 
 			//Check device queue family support
-			auto requiredQueueFamilies = getRequiredQueueFamilies();
 			const auto availableQueueFamilies = device.getQueueFamilyProperties(disp);
+			auto requiredQueueFamilies = getRequiredQueueFamilies();
 			getUsedQueueFamilies(availableQueueFamilies, requiredQueueFamilies);
 			if(requiredQueueFamilies.size()){
 				continue;
@@ -1180,9 +1209,31 @@ private:
 		return queues;
 	}
 
+	static DeviceFeatures createDeviceFeatures(	const vk::DispatchLoaderDynamic& disp,
+												vk::PhysicalDevice physicalDevice )
+	{
+		DeviceFeatures result;
+
+		//List the supported features
+		DeviceFeatures supported;
+		if(disp.vkGetPhysicalDeviceFeatures2KHR) {
+			physicalDevice.getFeatures2KHR(&supported.get(), disp);
+		} else {
+			physicalDevice.getFeatures(&supported.get().features, disp);
+		}
+
+		//Add the YCbCr sampler feature if possible
+		if(supported.get<vk::PhysicalDeviceSamplerYcbcrConversionFeatures>().samplerYcbcrConversion) {
+			result.get<vk::PhysicalDeviceSamplerYcbcrConversionFeatures>().samplerYcbcrConversion = true;
+		}
+
+		return result;
+	}
+
 	static vk::UniqueDevice	createDevice(	vk::DispatchLoaderDynamic& disp, 
 											vk::PhysicalDevice physicalDevice, 
 											const std::array<uint32_t, QUEUE_NUM>& queueIndices,
+											const DeviceFeatures& features,
 											std::vector<vk::ExtensionProperties> ext )
 	{
 		//Get the validation layers and extensions.
@@ -1190,7 +1241,8 @@ private:
 		//choosing the physical device
 		const auto& layers = getRequiredLayers();
 		const auto layerNames = getNames(layers);
-		const auto extensions = getRequiredDeviceExtensions(std::move(ext));
+		const auto availableExtensions = physicalDevice.enumerateDeviceExtensionProperties(nullptr, disp);
+		const auto extensions = getRequiredDeviceExtensions(availableExtensions, std::move(ext));
 		const auto extensionNames = getNames(extensions);
 
 		//Fill the queue create infos
@@ -1208,12 +1260,13 @@ private:
 		}
 
 		//Create it
-		const vk::DeviceCreateInfo createInfo(
+		const auto createInfo = vk::DeviceCreateInfo(
 			{},
 			queueCreateInfos.size(), queueCreateInfos.data(),			//Queue families
 			layerNames.size(), layerNames.data(),						//Validation layers
-			extensionNames.size(), extensionNames.data()				//Extensions
-		);
+			extensionNames.size(), extensionNames.data(),				//Extensions
+			nullptr														//Features will be specified with pNext
+		).setPNext(&features.get());
 
 		auto dev = physicalDevice.createDeviceUnique(createInfo, nullptr, disp);
 
@@ -1274,19 +1327,72 @@ private:
 		return validationLayers;
 	}
 
-	static std::vector<vk::ExtensionProperties> getRequiredInstanceExtensions(std::vector<vk::ExtensionProperties> ext) {
+	static std::vector<vk::ExtensionProperties> getRequiredInstanceExtensions(	const std::vector<vk::ExtensionProperties>& supported,
+																				std::vector<vk::ExtensionProperties> extensions ) 
+	{
 		#ifndef ZUAZO_DISABLE_VALIDATION_LAYERS
 			//Add debug utils extension requirement
-			ext.push_back(vk::ExtensionProperties(std::array<char, VK_MAX_EXTENSION_NAME_SIZE>{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}));
+			extensions.push_back(vk::ExtensionProperties(std::array<char, VK_MAX_EXTENSION_NAME_SIZE>{VK_EXT_DEBUG_UTILS_EXTENSION_NAME}));
 		#endif
 
-		removeDuplicated(ext);
-		return ext;
+		//Add get_physical_device_properties2 if supported
+		const auto physicalDeviceProperties2Supported = std::find_if(
+			supported.cbegin(), supported.cend(),
+			[] (const vk::ExtensionProperties& ext) -> bool {
+				return !std::strncmp(
+					VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 
+					ext.extensionName.data(), 
+					ext.extensionName.size()
+				);
+			}
+		);
+		if(physicalDeviceProperties2Supported != supported.cend()) {
+			extensions.push_back(*physicalDeviceProperties2Supported);
+		}
+
+		removeDuplicated(extensions);
+		return extensions;
 	}
 
-	static std::vector<vk::ExtensionProperties> getRequiredDeviceExtensions(std::vector<vk::ExtensionProperties> ext) {
-		removeDuplicated(ext);
-		return ext;
+	static std::vector<vk::ExtensionProperties> getRequiredDeviceExtensions(const std::vector<vk::ExtensionProperties>& supported,
+																			std::vector<vk::ExtensionProperties> extensions) 
+	{
+		//Add YCbCr sampler extension if possible
+		const auto ycbcrSamplerSupported = std::find_if(
+			supported.cbegin(), supported.cend(),
+			[] (const vk::ExtensionProperties& ext) -> bool {
+				return !std::strncmp(
+					VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME, 
+					ext.extensionName.data(), 
+					ext.extensionName.size()
+				);
+			}
+		);
+		if(ycbcrSamplerSupported != supported.cend()) {
+			//YCbCr sampler has some dependencies. Assert they are supported and add them to the list
+			extensions.emplace_back(std::array<char, VK_MAX_EXTENSION_NAME_SIZE>{VK_KHR_MAINTENANCE1_EXTENSION_NAME});
+			extensions.emplace_back(std::array<char, VK_MAX_EXTENSION_NAME_SIZE>{VK_KHR_BIND_MEMORY_2_EXTENSION_NAME});
+			extensions.emplace_back(std::array<char, VK_MAX_EXTENSION_NAME_SIZE>{VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME});
+			extensions.push_back(*ycbcrSamplerSupported);
+		}
+
+		//Add cubic filter extension if possible
+		const auto cubicFilterSupported = std::find_if(
+			supported.cbegin(), supported.cend(),
+			[] (const vk::ExtensionProperties& ext) -> bool {
+				return !std::strncmp(
+					VK_IMG_FILTER_CUBIC_EXTENSION_NAME, 
+					ext.extensionName.data(), 
+					ext.extensionName.size()
+				);
+			}
+		);
+		if(cubicFilterSupported != supported.cend()) {
+			extensions.push_back(*cubicFilterSupported);
+		}
+
+		removeDuplicated(extensions);
+		return extensions;
 	}
 
 	static std::vector<vk::QueueFamilyProperties> getRequiredQueueFamilies() {
@@ -1637,6 +1743,10 @@ const Vulkan::FormatSupport& Vulkan::getFormatSupport() const noexcept {
 	return m_impl->getFormatSupport();
 }
 
+const Vulkan::DeviceFeatures& Vulkan::getDeviceFeatures() const noexcept {
+	return m_impl->getDeviceFeatures();
+}
+
 const std::vector<vk::Format>& Vulkan::listSupportedFormatsOptimal(vk::FormatFeatureFlags flags) const {
 	return m_impl->listSupportedFormatsOptimal(flags);
 }
@@ -1752,6 +1862,20 @@ vk::DescriptorSetLayout Vulkan::createDescriptorSetLayout(	size_t id,
 															const vk::DescriptorSetLayoutCreateInfo& createInfo ) const
 {
 	return m_impl->createDescriptorSetLayout(id, createInfo);
+}
+
+vk::UniqueSamplerYcbcrConversion Vulkan::createSamplerYcbcrConversion(const vk::SamplerYcbcrConversionCreateInfo& createInfo) const {
+	return m_impl->createSamplerYcbcrConversion(createInfo);
+}
+
+vk::SamplerYcbcrConversion Vulkan::createSamplerYcbcrConversion(size_t id) const {
+	return m_impl->createSamplerYcbcrConversion(id);
+}
+
+vk::SamplerYcbcrConversion Vulkan::createSamplerYcbcrConversion(size_t id,
+																const vk::SamplerYcbcrConversionCreateInfo& createInfo ) const
+{
+	return m_impl->createSamplerYcbcrConversion(id, createInfo);
 }
 
 vk::UniqueSampler Vulkan::createSampler(const vk::SamplerCreateInfo& createInfo) const {
