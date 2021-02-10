@@ -40,8 +40,13 @@ const Vulkan::AggregatedAllocation& Image::getMemory() const {
 
 void Image::bindMemory(const Vulkan& vulkan) {
 	for(size_t i = 0; i < m_imagePlanes.size(); ++i) {
-		const auto image = *m_imagePlanes[i].image;
-		vulkan.bindMemory(image, *m_memory.memory, m_memory.areas[i].offset());
+		if(m_imagePlanes[i].image) {
+			vulkan.bindMemory(
+				*m_imagePlanes[i].image, 
+				*m_memory.memory, 
+				m_memory.areas[i].offset()
+			);
+		}
 	}
 }
 
@@ -61,10 +66,8 @@ void Image::createImageViews(	const Vulkan& vulkan,
 	if(usage & IMAGE_VIEW_USAGE_FLAGS) {
 		for(size_t i = 0; i < m_imagePlanes.size(); ++i) {
 			const auto image = (i < planes.size()) ? planes[i] : *m_imagePlanes[i].image;
-			
-			if(image) {
-				m_imagePlanes[i].imageView = createImageView(vulkan, planeDescriptors[i], image);
-			}
+			assert(image);
+			m_imagePlanes[i].imageView = createImageView(vulkan, planeDescriptors[i], image);
 		}
 	}
 }
@@ -139,9 +142,8 @@ std::vector<Image::Plane> Image::createPlanes(	const Vulkan& vulkan,
 	result.reserve(planeDescriptors.size());
 
 	for(const auto& d : planeDescriptors) {
-		if(d.extent.width > 0 && d.extent.height > 0 && d.format != vk::Format::eUndefined) {
-			result.emplace_back(Plane{ createImage(vulkan, d, usage, tiling), vk::UniqueImageView() });
-		}
+		assert(d.extent.width > 0 && d.extent.height > 0 && d.format != vk::Format::eUndefined);
+		result.push_back(Plane{ createImage(vulkan, d, usage, tiling), vk::UniqueImageView() });
 	}
 
 	assert(result.size() == planeDescriptors.size());
@@ -156,6 +158,7 @@ Vulkan::AggregatedAllocation Image::createMemory(	const Vulkan& vulkan,
 	requirements.reserve(planes.size());
 
 	for(const auto& plane : planes) {
+		assert(plane.image);
 		requirements.push_back(vulkan.getMemoryRequirements(*plane.image));
 	}
 	assert(requirements.size() == planes.size());
