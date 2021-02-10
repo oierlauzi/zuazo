@@ -393,7 +393,9 @@ struct Vulkan::Impl {
 	}
 
 	vk::UniqueSamplerYcbcrConversion createSamplerYcbcrConversion(const vk::SamplerYcbcrConversionCreateInfo& createInfo) const {
-		return device->createSamplerYcbcrConversionUnique(createInfo, nullptr, dispatcher);
+		//It is a extension so support should have been checked before calling
+		assert(dispatcher.vkCreateSamplerYcbcrConversionKHR);
+		return device->createSamplerYcbcrConversionKHRUnique(createInfo, nullptr, dispatcher);
 	}
 
 	vk::SamplerYcbcrConversion createSamplerYcbcrConversion(size_t id) const {
