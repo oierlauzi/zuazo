@@ -588,6 +588,28 @@ struct Vulkan::Impl {
 		return device->getImageMemoryRequirements(img, dispatcher);
 	}
 
+	vk::MemoryRequirements2 getMemoryRequirements(const vk::BufferMemoryRequirementsInfo2& reqInfo) const
+	{
+		if(dispatcher.vkGetBufferMemoryRequirements2KHR) {
+			return device->getBufferMemoryRequirements2KHR(reqInfo, dispatcher);
+		} else {
+			//Extension not supported, manually implement if possible
+			assert(!reqInfo.pNext);
+			return vk::MemoryRequirements2(getMemoryRequirements(reqInfo.buffer));
+		}
+	}
+
+	vk::MemoryRequirements2 getMemoryRequirements(const vk::ImageMemoryRequirementsInfo2& reqInfo) const
+	{
+		if(dispatcher.vkGetImageMemoryRequirements2KHR) {
+			return device->getImageMemoryRequirements2KHR(reqInfo, dispatcher);
+		} else {
+			//Extension not supported, manually implement if possible
+			assert(!reqInfo.pNext);
+			return vk::MemoryRequirements2(getMemoryRequirements(reqInfo.image));
+		}
+	}
+
 
 
 	void bindMemory(vk::Buffer buf, vk::DeviceMemory mem, size_t off) const {
@@ -598,6 +620,29 @@ struct Vulkan::Impl {
 		device->bindImageMemory(img, mem, off, dispatcher);
 	}
 
+	void bindMemory(Utils::BufferView<const vk::BindBufferMemoryInfo> bindInfos) const {
+		if(dispatcher.vkBindBufferMemory2KHR) {
+			device->bindBufferMemory2KHR(toVulkan(bindInfos), dispatcher);
+		} else {
+			//Extension not supported, manually implement if possible
+			for(const auto& bindInfo : bindInfos) {
+				assert(!bindInfo.pNext);
+				bindMemory(bindInfo.buffer, bindInfo.memory, bindInfo.memoryOffset);
+			}
+		}
+	}
+
+	void bindMemory(Utils::BufferView<const vk::BindImageMemoryInfo> bindInfos) const {
+		if(dispatcher.vkBindImageMemory2KHR) {
+			device->bindImageMemory2KHR(toVulkan(bindInfos), dispatcher);
+		} else {
+			//Extension not supported, manually implement if possible
+			for(const auto& bindInfo : bindInfos) {
+				assert(!bindInfo.pNext);
+				bindMemory(bindInfo.image, bindInfo.memory, bindInfo.memoryOffset);
+			}
+		}
+	}
 
 
 	std::byte* mapMemory(const vk::MappedMemoryRange& range) const{
@@ -1423,7 +1468,7 @@ private:
 
 	static void removeDuplicated(std::vector<vk::ExtensionProperties>& ext) {
 		for(auto ite1 = ext.begin(); ite1 != ext.end(); ++ite1) {
-			auto ite2 = ite1 + 1;
+			auto ite2 = std::next(ite1);
 			while(ite2 != ext.end()) {
 				const auto comp = std::strncmp(
 					ite1->extensionName.data(), 
@@ -1949,6 +1994,15 @@ vk::MemoryRequirements Vulkan::getMemoryRequirements(vk::Image img) const {
 	return m_impl->getMemoryRequirements(img);
 }
 
+vk::MemoryRequirements2	Vulkan::getMemoryRequirements(const vk::BufferMemoryRequirementsInfo2& reqInfo) const {
+	return m_impl->getMemoryRequirements(reqInfo);
+}
+
+vk::MemoryRequirements2	Vulkan::getMemoryRequirements(const vk::ImageMemoryRequirementsInfo2& reqInfo) const {
+	return m_impl->getMemoryRequirements(reqInfo);
+}
+
+
 
 void Vulkan::bindMemory(vk::Buffer buf, vk::DeviceMemory mem, size_t off) const {
 	m_impl->bindMemory(buf, mem, off);
@@ -1956,6 +2010,14 @@ void Vulkan::bindMemory(vk::Buffer buf, vk::DeviceMemory mem, size_t off) const 
 
 void Vulkan::bindMemory(vk::Image img, vk::DeviceMemory mem, size_t off) const {
 	m_impl->bindMemory(img, mem, off);
+}
+
+void Vulkan::bindMemory(Utils::BufferView<const vk::BindBufferMemoryInfo> bindInfos) const {
+	m_impl->bindMemory(bindInfos);
+}
+
+void Vulkan::bindMemory(Utils::BufferView<const vk::BindImageMemoryInfo> bindInfos) const {
+	m_impl->bindMemory(bindInfos);
 }
 
 

@@ -144,6 +144,9 @@ public:
 
 	vk::MemoryRequirements				getMemoryRequirements(vk::Buffer buf) const;
 	vk::MemoryRequirements				getMemoryRequirements(vk::Image img) const;
+	vk::MemoryRequirements2				getMemoryRequirements(const vk::BufferMemoryRequirementsInfo2& reqInfo) const;
+	vk::MemoryRequirements2				getMemoryRequirements(const vk::ImageMemoryRequirementsInfo2& reqInfo) const;
+
 
 	void								bindMemory(	vk::Buffer buf, 
 													vk::DeviceMemory mem,
@@ -151,6 +154,8 @@ public:
 	void								bindMemory(	vk::Image img, 
 													vk::DeviceMemory mem, 
 													size_t off = 0) const;
+	void								bindMemory(Utils::BufferView<const vk::BindBufferMemoryInfo> bindInfos) const;
+	void								bindMemory(Utils::BufferView<const vk::BindImageMemoryInfo> bindInfos) const;
 
 	std::byte*							mapMemory(const vk::MappedMemoryRange& range) const;
 	std::byte*							mapMemory(	vk::DeviceMemory memory, 

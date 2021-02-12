@@ -11,7 +11,6 @@ namespace Zuazo::Graphics {
 /*
  * Conversions
  */
-namespace ColorTransfer {
 
 constexpr int32_t getColorPrimaries(ColorPrimaries primaries, const Chromaticities& chroma) noexcept {
 	int32_t result = 0;
@@ -299,7 +298,6 @@ static ct_write_data convert2Output(const ct_read_data& read) noexcept {
 	};
 }
 
-}
 
 
 /*
@@ -312,12 +310,12 @@ struct InputColorTransfer::Impl {
 	Impl(const Frame::Descriptor& desc, const Chromaticities& chromaticities) noexcept
 		: transferData {
 			Math::Mat4x4f(chromaticities.calculateRGB2XYZConversionMatrix()),
-			Math::inv(ColorTransfer::getRGB2YCbCrMatrix(desc.getColorModel())),
-			ColorTransfer::getColorPrimaries(desc.getColorPrimaries(), chromaticities),
-			ColorTransfer::getColorTransferFunction(desc.getColorTransferFunction()),
-			ColorTransfer::getColorModel(desc.getColorModel()),
-			ColorTransfer::getColorRange(desc.getColorRange(), desc.getColorModel()),
-			ColorTransfer::getPlaneFormat(desc.getColorFormat())
+			Math::inv(getRGB2YCbCrMatrix(desc.getColorModel())),
+			getColorPrimaries(desc.getColorPrimaries(), chromaticities),
+			getColorTransferFunction(desc.getColorTransferFunction()),
+			getColorModel(desc.getColorModel()),
+			getColorRange(desc.getColorRange(), desc.getColorModel()),
+			getPlaneFormat(desc.getColorFormat())
 		}
 	{
 	}
@@ -329,7 +327,7 @@ struct InputColorTransfer::Impl {
 	void optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
 					Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 	{
-		transferData.colorTransferFunction = ColorTransfer::optimizeColorTransferFunction(
+		transferData.colorTransferFunction = optimizeColorTransferFunction(
 			transferData.colorRange,
 			transferData.colorModel,
 			transferData.colorTransferFunction,
@@ -486,18 +484,18 @@ struct OutputColorTransfer::Impl {
 	Impl(const Frame::Descriptor& desc, const Chromaticities& chromaticities) noexcept
 		: transferData {
 			Math::Mat4x4f(chromaticities.calculateXYZ2RGBConversionMatrix()),
-			ColorTransfer::getRGB2YCbCrMatrix(desc.getColorModel()),
-			ColorTransfer::getColorPrimaries(desc.getColorPrimaries(), chromaticities),
-			ColorTransfer::getColorTransferFunction(desc.getColorTransferFunction()),
-			ColorTransfer::getColorModel(desc.getColorModel()),
-			ColorTransfer::getColorRange(desc.getColorRange(), desc.getColorModel()),
-			ColorTransfer::getPlaneFormat(desc.getColorFormat())
+			getRGB2YCbCrMatrix(desc.getColorModel()),
+			getColorPrimaries(desc.getColorPrimaries(), chromaticities),
+			getColorTransferFunction(desc.getColorTransferFunction()),
+			getColorModel(desc.getColorModel()),
+			getColorRange(desc.getColorRange(), desc.getColorModel()),
+			getPlaneFormat(desc.getColorFormat())
 		}
 	{
 	}
 
 	Impl(const InputColorTransfer::Impl& input) noexcept
-		: transferData(ColorTransfer::convert2Output(input.transferData))
+		: transferData(convert2Output(input.transferData))
 	{
 	}
 
@@ -509,7 +507,7 @@ struct OutputColorTransfer::Impl {
 	void optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
 					Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 	{
-		transferData.colorTransferFunction = ColorTransfer::optimizeColorTransferFunction(
+		transferData.colorTransferFunction = optimizeColorTransferFunction(
 			transferData.colorRange,
 			transferData.colorModel,
 			transferData.colorTransferFunction,
