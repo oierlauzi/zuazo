@@ -394,7 +394,7 @@ struct Vulkan::Impl {
 
 	vk::UniqueSamplerYcbcrConversion createSamplerYcbcrConversion(const vk::SamplerYcbcrConversionCreateInfo& createInfo) const {
 		//It is a extension so support should have been checked before calling
-		assert(dispatcher.vkCreateSamplerYcbcrConversionKHR);
+		if(!dispatcher.vkCreateSamplerYcbcrConversionKHR) throw Exception("Unsupported Vulkan function call: vkCreateSamplerYcbcrConversionKHR");
 		return device->createSamplerYcbcrConversionKHRUnique(createInfo, nullptr, dispatcher);
 	}
 
@@ -594,7 +594,7 @@ struct Vulkan::Impl {
 			return device->getBufferMemoryRequirements2KHR(reqInfo, dispatcher);
 		} else {
 			//Extension not supported, manually implement if possible
-			assert(!reqInfo.pNext);
+			if(reqInfo.pNext) throw Exception("Unsupported Vulkan function call: getBufferMemoryRequirements2KHR");
 			return vk::MemoryRequirements2(getMemoryRequirements(reqInfo.buffer));
 		}
 	}
@@ -605,7 +605,7 @@ struct Vulkan::Impl {
 			return device->getImageMemoryRequirements2KHR(reqInfo, dispatcher);
 		} else {
 			//Extension not supported, manually implement if possible
-			assert(!reqInfo.pNext);
+			if(reqInfo.pNext) throw Exception("Unsupported Vulkan function call: vkGetImageMemoryRequirements2KHR");
 			return vk::MemoryRequirements2(getMemoryRequirements(reqInfo.image));
 		}
 	}
@@ -626,7 +626,7 @@ struct Vulkan::Impl {
 		} else {
 			//Extension not supported, manually implement if possible
 			for(const auto& bindInfo : bindInfos) {
-				assert(!bindInfo.pNext);
+				if(bindInfo.pNext) throw Exception("Unsupported Vulkan function call: vkBindBufferMemory2KHR");
 				bindMemory(bindInfo.buffer, bindInfo.memory, bindInfo.memoryOffset);
 			}
 		}
@@ -638,7 +638,7 @@ struct Vulkan::Impl {
 		} else {
 			//Extension not supported, manually implement if possible
 			for(const auto& bindInfo : bindInfos) {
-				assert(!bindInfo.pNext);
+				if(bindInfo.pNext) throw Exception("Unsupported Vulkan function call: vkBindImageMemory2KHR");
 				bindMemory(bindInfo.image, bindInfo.memory, bindInfo.memoryOffset);
 			}
 		}
