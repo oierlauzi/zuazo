@@ -11,7 +11,6 @@ class Framebuffer {
 public:
 	Framebuffer() = default;
 	Framebuffer(const Vulkan& vulkan,
-				Resolution resolution,
 				const Image& image,
 				const Image* intermediaryImage,
 				const DepthStencil* depthStencil,
@@ -29,7 +28,6 @@ private:
 	vk::UniqueFramebuffer			m_framebuffer;
 
 	static vk::UniqueFramebuffer	createFramebuffer(	const Vulkan& vulkan,
-														Resolution resolution,
 														const Image& image,
 														const Image* intermediaryImage,
 														const DepthStencil* depthStencil,

@@ -87,7 +87,7 @@ constexpr int32_t getPlaneFormat(ColorFormat format) noexcept {
 static int32_t optimizeColorTransferFunction(	int32_t colorRange,
 												int32_t colorModel,
 												int32_t colorTransferFunction,
-												Utils::BufferView<Image::PlaneDescriptor> planes,
+												Utils::BufferView<Image::Plane> planes,
 												Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 {
 	//For binary search:
@@ -102,8 +102,8 @@ static int32_t optimizeColorTransferFunction(	int32_t colorRange,
 		colorTransferFunction = ct_COLOR_TRANSFER_FUNCTION_LINEAR; //Suppose it is supported
 		for(size_t i = 0; i < planes.size(); i++) {
 			//Evaluate if it can be optimized
-			const auto optimized = toSrgb(planes[i].format);
-			if(optimized == planes[i].format){ //toSrgb returns the format itself in case of failure
+			const auto optimized = toSrgb(planes[i].getFormat());
+			if(optimized == planes[i].getFormat()){ //toSrgb returns the format itself in case of failure
 				//Optimization not available
 				colorTransferFunction = ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_1;
 				break; 
@@ -120,7 +120,7 @@ static int32_t optimizeColorTransferFunction(	int32_t colorRange,
 			}
 
 			//This plane can be optimized
-			planes[i].format = optimized; //Write
+			planes[i].setFormat(optimized); //Write
 		}
 
 		//Test for failure
@@ -129,7 +129,7 @@ static int32_t optimizeColorTransferFunction(	int32_t colorRange,
 			for(size_t i = 0; i < planes.size(); i++) {
 				//Reset all changes
 				//Note that fromSrgb returns the format itself it is not sRGB, so that unchanged formats will remain unchanged
-				planes[i].format = fromSrgb(planes[i].format);
+				planes[i].setFormat(fromSrgb(planes[i].getFormat()));
 			}
 		}
 	}
@@ -137,7 +137,7 @@ static int32_t optimizeColorTransferFunction(	int32_t colorRange,
 	return colorTransferFunction;
 }
 
-static uint32_t optimizePlanes(	Utils::BufferView<Image::PlaneDescriptor> planes,
+static uint32_t optimizePlanes(	Utils::BufferView<Image::Plane> planes,
 								Utils::BufferView<const vk::Format> supportedFormats )
 {
 	const size_t planeCount = planes.size();
@@ -147,8 +147,8 @@ static uint32_t optimizePlanes(	Utils::BufferView<Image::PlaneDescriptor> planes
 		//It is a multiplanar format. Try to use Vulkan's multiplanar formats if supported
 		//Obtain the chroma subsampling. Always between the 1st and 2nd planes
 		const auto subsampling = 
-			Math::Vec2f(planes[0].extent.width, planes[0].extent.height) / 
-			Math::Vec2f(planes[1].extent.width, planes[1].extent.height) ;
+			Math::Vec2f(planes[0].getExtent().width, planes[0].getExtent().height) / 
+			Math::Vec2f(planes[1].getExtent().width, planes[1].getExtent().height) ;
 
 		constexpr Math::Vec2f SUBSAMPLING_444(1U, 1U);
 		constexpr Math::Vec2f SUBSAMPLING_422(2U, 1U);
@@ -164,7 +164,7 @@ static uint32_t optimizePlanes(	Utils::BufferView<Image::PlaneDescriptor> planes
 			//3 Plane format
 			planeFormat = ct_PLANE_FORMAT_G_B_R;
 
-			switch (planes.front().format) {
+			switch (planes.front().getFormat()) {
 			case vk::Format::eR8Unorm:
 				//8bpp
 				if(subsampling == SUBSAMPLING_444) {
@@ -218,7 +218,7 @@ static uint32_t optimizePlanes(	Utils::BufferView<Image::PlaneDescriptor> planes
 			//2 Plane format
 			planeFormat = ct_PLANE_FORMAT_G_B_R;
 
-			switch (planes.front().format) {
+			switch (planes.front().getFormat()) {
 			case vk::Format::eR8Unorm:
 				//8bpp
 				if (subsampling == SUBSAMPLING_422) {
@@ -262,6 +262,7 @@ static uint32_t optimizePlanes(	Utils::BufferView<Image::PlaneDescriptor> planes
 
 		}
 
+
 		//Check for support
 		if(optimizedFormat != vk::Format::eUndefined) {
 			//For binary search:
@@ -270,14 +271,14 @@ static uint32_t optimizePlanes(	Utils::BufferView<Image::PlaneDescriptor> planes
 			if(std::binary_search(supportedFormats.cbegin(), supportedFormats.cend(), optimizedFormat)) {
 				//Format is supported
 				planeFormat = ct_PLANE_FORMAT_RGBA; //Just a passthough
-				planes.front().format = optimizedFormat;
+				planes.front().setFormat(optimizedFormat);
 
 				//Consider if the 2 plane have their 2nd plane components inverted (Swap R and B)
-				planes.front().swizzle = (planes[1].swizzle == swizzle("GR")) ? swizzle("BIRI") : vk::ComponentMapping(); 
+				planes.front().setSwizzle((planes[1].getSwizzle() == swizzle("GR")) ? swizzle("BIRI") : vk::ComponentMapping()); 
 
 				//Reset the rest of the planes
 				for(size_t i = 1; i < planes.size(); ++i) {
-					planes[i] = {};
+					planes[i] = Image::Plane(vk::Extent3D(), vk::Format::eUndefined);
 				}
 			}
 		}
@@ -324,7 +325,7 @@ struct InputColorTransfer::Impl {
 		return std::memcmp(data(), other.data(), size()) == 0;
 	}
 
-	void optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
+	void optimize(	Utils::BufferView<Image::Plane> planes,
 					Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 	{
 		transferData.colorTransferFunction = optimizeColorTransferFunction(
@@ -435,7 +436,7 @@ bool InputColorTransfer::operator!=(const InputColorTransfer& other) const noexc
 
 
 
-void InputColorTransfer::optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
+void InputColorTransfer::optimize(	Utils::BufferView<Image::Plane> planes,
 									Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 {
 	m_impl->optimize(planes, supportedFormats);
@@ -504,7 +505,7 @@ struct OutputColorTransfer::Impl {
 		return std::memcmp(data(), other.data(), size()) == 0;
 	}
 
-	void optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
+	void optimize(	Utils::BufferView<Image::Plane> planes,
 					Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 	{
 		transferData.colorTransferFunction = optimizeColorTransferFunction(
@@ -571,7 +572,7 @@ bool OutputColorTransfer::operator!=(const OutputColorTransfer& other) const noe
 
 
 
-void OutputColorTransfer::optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
+void OutputColorTransfer::optimize(	Utils::BufferView<Image::Plane> planes,
 									Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 {
 	m_impl->optimize(planes, supportedFormats);

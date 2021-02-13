@@ -22,7 +22,7 @@ public:
 
 	RenderPass() = default;
 	RenderPass(	const Vulkan& vulkan, 
-				Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
+				Utils::BufferView<const Image::Plane> planeDescriptors,
 				DepthStencilFormat depthStencilFmt,
 				vk::Format intermediaryFmt,
 				vk::ImageLayout finalLayout );
@@ -42,7 +42,7 @@ public:
 													vk::DescriptorSet descriptorSet) const noexcept;
 
 	static vk::Format					getIntermediateFormat(	const Vulkan& vulkan, 
-																Utils::BufferView<const Image::PlaneDescriptor> planes,
+																Utils::BufferView<const Image::Plane> planes,
 																const OutputColorTransfer& colorTransfer );
 	static std::vector<vk::ClearValue>	getClearValues(DepthStencilFormat depthStencilFmt);
 	static UniformBufferSizes			getFinalizationUniformBufferSizes() noexcept;
@@ -58,7 +58,7 @@ private:
 	vk::Pipeline						m_finalizationPipeline;
 
 	static vk::RenderPass				createRenderPass(	const Vulkan& vulkan, 
-															Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
+															Utils::BufferView<const Image::Plane> planeDescriptors,
 															vk::Format intermediaryFmt,
 															vk::Format depthStencilFmt,
 															vk::ImageLayout finalLayout );

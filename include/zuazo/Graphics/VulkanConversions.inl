@@ -82,6 +82,15 @@ constexpr Resolution fromVulkan(vk::Extent2D res) noexcept {
 	);
 }
 
+constexpr vk::Extent2D to2D(vk::Extent3D ext) noexcept {
+	return vk::Extent2D(ext.width, ext.height);
+}
+
+constexpr vk::Extent3D to3D(vk::Extent2D ext) noexcept {
+	return vk::Extent3D(ext.width, ext.height, 1);
+}
+
+
 
 
 constexpr vk::SamplerYcbcrModelConversion toVulkan(ColorModel colorModel) noexcept {
@@ -640,6 +649,212 @@ inline std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(	const std::t
 
 
 
+constexpr vk::Format toSrgb(vk::Format format) noexcept {
+	switch(format){
+	case vk::Format::eR8Unorm: 			return vk::Format::eR8Srgb;
+	case vk::Format::eR8G8Unorm:		return vk::Format::eR8G8Srgb;
+	case vk::Format::eR8G8B8Unorm:		return vk::Format::eR8G8B8Srgb;
+	case vk::Format::eB8G8R8Unorm:		return vk::Format::eB8G8R8Srgb;
+	case vk::Format::eR8G8B8A8Unorm:	return vk::Format::eR8G8B8A8Srgb;
+	case vk::Format::eB8G8R8A8Unorm:	return vk::Format::eB8G8R8A8Srgb;
+	default: return format;
+	}
+}
+
+constexpr vk::Format fromSrgb(vk::Format format) noexcept {
+	switch(format){
+	case vk::Format::eR8Srgb: 			return vk::Format::eR8Unorm;
+	case vk::Format::eR8G8Srgb:			return vk::Format::eR8G8Unorm;
+	case vk::Format::eR8G8B8Srgb:		return vk::Format::eR8G8B8Unorm;
+	case vk::Format::eB8G8R8Srgb:		return vk::Format::eB8G8R8Unorm;
+	case vk::Format::eR8G8B8A8Srgb:		return vk::Format::eR8G8B8A8Unorm;
+	case vk::Format::eB8G8R8A8Srgb:		return vk::Format::eB8G8R8A8Unorm;
+	default: return format;
+	}
+}
+
+
+
+constexpr bool hasDepth(vk::Format format) noexcept {
+	switch(format) {
+	case vk::Format::eD16Unorm:
+	case vk::Format::eX8D24UnormPack32:
+	case vk::Format::eD32Sfloat:
+	case vk::Format::eD16UnormS8Uint:
+	case vk::Format::eD24UnormS8Uint:
+	case vk::Format::eD32SfloatS8Uint:
+		return true;
+	
+	default:
+		return false;
+	}
+}
+
+constexpr bool hasStencil(vk::Format format) noexcept {
+	switch(format) {
+	case vk::Format::eS8Uint:
+	case vk::Format::eD16UnormS8Uint:
+	case vk::Format::eD24UnormS8Uint:
+	case vk::Format::eD32SfloatS8Uint:
+		return true;
+	
+	default:
+		return false;
+	}
+}
+
+
+
+constexpr size_t getPlaneCount(vk::Format format) noexcept {
+	//Obtained from:
+	//https://www.khronos.org/registry/vulkan/specs/1.1/html/chap34.html#formats-requiring-sampler-ycbcr-conversion
+	switch(format) {
+	case vk::Format::eUndefined: 
+		return 0;
+
+	//2 plane
+	case vk::Format::eG8B8R82Plane420Unorm:
+	case vk::Format::eG8B8R82Plane422Unorm:
+	case vk::Format::eG10X6B10X6R10X62Plane420Unorm3Pack16:
+	case vk::Format::eG10X6B10X6R10X62Plane422Unorm3Pack16:
+	case vk::Format::eG12X4B12X4R12X42Plane420Unorm3Pack16:
+	case vk::Format::eG12X4B12X4R12X42Plane422Unorm3Pack16:
+	case vk::Format::eG16B16R162Plane420Unorm:
+	case vk::Format::eG16B16R162Plane422Unorm:
+		return 2;
+
+	//3 plane
+	case vk::Format::eG8B8R83Plane420Unorm:
+	case vk::Format::eG8B8R83Plane422Unorm:
+	case vk::Format::eG8B8R83Plane444Unorm:
+	case vk::Format::eG10X6B10X6R10X63Plane420Unorm3Pack16:
+	case vk::Format::eG10X6B10X6R10X63Plane422Unorm3Pack16:
+	case vk::Format::eG10X6B10X6R10X63Plane444Unorm3Pack16:
+	case vk::Format::eG12X4B12X4R12X43Plane420Unorm3Pack16:
+	case vk::Format::eG12X4B12X4R12X43Plane422Unorm3Pack16:
+	case vk::Format::eG12X4B12X4R12X43Plane444Unorm3Pack16:
+	case vk::Format::eG16B16R163Plane420Unorm:
+	case vk::Format::eG16B16R163Plane422Unorm:
+	case vk::Format::eG16B16R163Plane444Unorm:
+		return 3;
+
+	default:
+		return 1;
+	}
+}
+
+constexpr bool requiresYCbCrSamplerConversion(vk::Format format) noexcept {
+	//Obtained from:
+	//https://www.khronos.org/registry/vulkan/specs/1.1/html/chap34.html#formats-requiring-sampler-ycbcr-conversion
+	switch (format) {
+	//8bit
+	case vk::Format::eG8B8G8R8422Unorm:
+	case vk::Format::eB8G8R8G8422Unorm:
+	case vk::Format::eG8B8R83Plane420Unorm:
+	case vk::Format::eG8B8R82Plane420Unorm:
+	case vk::Format::eG8B8R83Plane422Unorm:
+	case vk::Format::eG8B8R82Plane422Unorm:
+	case vk::Format::eG8B8R83Plane444Unorm:
+
+	//10bit
+	case vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16:
+	case vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16:
+	case vk::Format::eB10X6G10X6R10X6G10X6422Unorm4Pack16:
+	case vk::Format::eG10X6B10X6R10X63Plane420Unorm3Pack16:
+	case vk::Format::eG10X6B10X6R10X62Plane420Unorm3Pack16:
+	case vk::Format::eG10X6B10X6R10X63Plane422Unorm3Pack16:
+	case vk::Format::eG10X6B10X6R10X62Plane422Unorm3Pack16:
+	case vk::Format::eG10X6B10X6R10X63Plane444Unorm3Pack16:
+
+	//12bit
+	case vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16:
+	case vk::Format::eG12X4B12X4G12X4R12X4422Unorm4Pack16:
+	case vk::Format::eB12X4G12X4R12X4G12X4422Unorm4Pack16:
+	case vk::Format::eG12X4B12X4R12X43Plane420Unorm3Pack16:
+	case vk::Format::eG12X4B12X4R12X42Plane420Unorm3Pack16:
+	case vk::Format::eG12X4B12X4R12X43Plane422Unorm3Pack16:
+	case vk::Format::eG12X4B12X4R12X42Plane422Unorm3Pack16:
+	case vk::Format::eG12X4B12X4R12X43Plane444Unorm3Pack16:
+
+	//16bit
+	case vk::Format::eG16B16G16R16422Unorm:
+	case vk::Format::eB16G16R16G16422Unorm:
+	case vk::Format::eG16B16R163Plane420Unorm:
+	case vk::Format::eG16B16R162Plane420Unorm:
+	case vk::Format::eG16B16R163Plane422Unorm:
+	case vk::Format::eG16B16R162Plane422Unorm:
+	case vk::Format::eG16B16R163Plane444Unorm:
+		return true;
+
+	default:
+		return false;
+	}
+}
+
+
+
+constexpr vk::ImageAspectFlagBits getPlaneAspectBit(size_t plane) noexcept {
+	switch(plane) {
+	case 0: 	return vk::ImageAspectFlagBits::ePlane0;
+	case 1: 	return vk::ImageAspectFlagBits::ePlane1;
+	case 2: 	return vk::ImageAspectFlagBits::ePlane2;
+	default: 	return static_cast<vk::ImageAspectFlagBits>(0);
+	}
+}
+
+
+
+constexpr vk::ComponentSwizzle getComponentDefaultValue(char component) noexcept {
+	switch (component) {
+	case 'a': case 'A': return vk::ComponentSwizzle::eOne;
+	default: return vk::ComponentSwizzle::eZero;
+	}
+}
+
+constexpr vk::ComponentSwizzle getComponentSwizzle(char swizzle) noexcept {
+	switch (swizzle) {
+	case 'r': case 'R': return vk::ComponentSwizzle::eR;
+	case 'g': case 'G': return vk::ComponentSwizzle::eG;
+	case 'b': case 'B': return vk::ComponentSwizzle::eB;
+	case 'a': case 'A': return vk::ComponentSwizzle::eA;
+	case '0': return vk::ComponentSwizzle::eOne;
+	case '1': return vk::ComponentSwizzle::eZero;
+	default: return vk::ComponentSwizzle::eIdentity;
+	}
+}
+
+constexpr vk::ComponentSwizzle getComponentSwizzle(char component, std::string_view vulkanFromat, std::string_view memoryFormat) noexcept {
+	//Find its position
+	size_t i = 0;
+	while(i < memoryFormat.size() && memoryFormat[i] != component) ++i;
+
+	if(i >= memoryFormat.size()) return getComponentDefaultValue(component); //Not defined
+	if(memoryFormat[i] == vulkanFromat[i]) return vk::ComponentSwizzle::eIdentity; //Not modified
+	return getComponentSwizzle(vulkanFromat[i]); //Neeeds swizzle
+}
+
+constexpr vk::ComponentMapping swizzle(std::string_view swizzle) noexcept {
+	const auto n = swizzle.size();
+
+	return vk::ComponentMapping(
+		(n > 0) ? getComponentSwizzle(swizzle[0]) : vk::ComponentSwizzle::eIdentity,
+		(n > 1) ? getComponentSwizzle(swizzle[1]) : vk::ComponentSwizzle::eIdentity,
+		(n > 2) ? getComponentSwizzle(swizzle[2]) : vk::ComponentSwizzle::eIdentity,
+		(n > 3) ? getComponentSwizzle(swizzle[3]) : vk::ComponentSwizzle::eIdentity
+	);
+}
+
+constexpr vk::ComponentMapping swizzle(std::string_view vulkanFromat, std::string_view memoryFormat) noexcept {
+	return vk::ComponentMapping(
+		getComponentSwizzle('R', vulkanFromat, memoryFormat),
+		getComponentSwizzle('G', vulkanFromat, memoryFormat),
+		getComponentSwizzle('B', vulkanFromat, memoryFormat),
+		getComponentSwizzle('A', vulkanFromat, memoryFormat)
+	);
+}
+
+
+
 constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction enc) noexcept {
 	switch(enc){
 	case ColorTransferFunction::LINEAR:
@@ -710,113 +925,6 @@ constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::Color
 	//case vk::ColorSpaceKHR::eVkColorspaceSrgbNonlinear:return { ColorPrimaries::BT709, 	ColorTransferFunction::IEC61966_2_1 };	
 	//case vk::ColorSpaceKHR::eDciP3LinearEXT:			return {}; /*NOT SUPPORTED wrongly named as DisplayP3*/
 	default: 											return {};
-	}
-}
-
-
-constexpr vk::ComponentSwizzle getComponentDefaultValue(char component) noexcept {
-	switch (component) {
-	case 'a': case 'A': return vk::ComponentSwizzle::eOne;
-	default: return vk::ComponentSwizzle::eZero;
-	}
-}
-
-constexpr vk::ComponentSwizzle getComponentSwizzle(char swizzle) noexcept {
-	switch (swizzle) {
-	case 'r': case 'R': return vk::ComponentSwizzle::eR;
-	case 'g': case 'G': return vk::ComponentSwizzle::eG;
-	case 'b': case 'B': return vk::ComponentSwizzle::eB;
-	case 'a': case 'A': return vk::ComponentSwizzle::eA;
-	case '0': return vk::ComponentSwizzle::eOne;
-	case '1': return vk::ComponentSwizzle::eZero;
-	default: return vk::ComponentSwizzle::eIdentity;
-	}
-}
-
-constexpr vk::ComponentSwizzle getComponentSwizzle(char component, std::string_view vulkanFromat, std::string_view memoryFormat) noexcept {
-	//Find its position
-	size_t i = 0;
-	while(i < memoryFormat.size() && memoryFormat[i] != component) ++i;
-
-	if(i >= memoryFormat.size()) return getComponentDefaultValue(component); //Not defined
-	if(memoryFormat[i] == vulkanFromat[i]) return vk::ComponentSwizzle::eIdentity; //Not modified
-	return getComponentSwizzle(vulkanFromat[i]); //Neeeds swizzle
-}
-
-constexpr vk::ComponentMapping swizzle(std::string_view swizzle) noexcept {
-	const auto n = swizzle.size();
-
-	return vk::ComponentMapping(
-		(n > 0) ? getComponentSwizzle(swizzle[0]) : vk::ComponentSwizzle::eIdentity,
-		(n > 1) ? getComponentSwizzle(swizzle[1]) : vk::ComponentSwizzle::eIdentity,
-		(n > 2) ? getComponentSwizzle(swizzle[2]) : vk::ComponentSwizzle::eIdentity,
-		(n > 3) ? getComponentSwizzle(swizzle[3]) : vk::ComponentSwizzle::eIdentity
-	);
-}
-
-constexpr vk::ComponentMapping swizzle(std::string_view vulkanFromat, std::string_view memoryFormat) noexcept {
-	return vk::ComponentMapping(
-		getComponentSwizzle('R', vulkanFromat, memoryFormat),
-		getComponentSwizzle('G', vulkanFromat, memoryFormat),
-		getComponentSwizzle('B', vulkanFromat, memoryFormat),
-		getComponentSwizzle('A', vulkanFromat, memoryFormat)
-	);
-}
-
-
-
-
-constexpr vk::Format toSrgb(vk::Format format) noexcept {
-	switch(format){
-	case vk::Format::eR8Unorm: 			return vk::Format::eR8Srgb;
-	case vk::Format::eR8G8Unorm:		return vk::Format::eR8G8Srgb;
-	case vk::Format::eR8G8B8Unorm:		return vk::Format::eR8G8B8Srgb;
-	case vk::Format::eB8G8R8Unorm:		return vk::Format::eB8G8R8Srgb;
-	case vk::Format::eR8G8B8A8Unorm:	return vk::Format::eR8G8B8A8Srgb;
-	case vk::Format::eB8G8R8A8Unorm:	return vk::Format::eB8G8R8A8Srgb;
-	default: return format;
-	}
-}
-
-constexpr vk::Format fromSrgb(vk::Format format) noexcept {
-	switch(format){
-	case vk::Format::eR8Srgb: 			return vk::Format::eR8Unorm;
-	case vk::Format::eR8G8Srgb:			return vk::Format::eR8G8Unorm;
-	case vk::Format::eR8G8B8Srgb:		return vk::Format::eR8G8B8Unorm;
-	case vk::Format::eB8G8R8Srgb:		return vk::Format::eB8G8R8Unorm;
-	case vk::Format::eR8G8B8A8Srgb:		return vk::Format::eR8G8B8A8Unorm;
-	case vk::Format::eB8G8R8A8Srgb:		return vk::Format::eB8G8R8A8Unorm;
-	default: return format;
-	}
-}
-
-
-
-constexpr bool hasDepth(vk::Format format) noexcept {
-	switch(format) {
-	case vk::Format::eD16Unorm:
-	case vk::Format::eX8D24UnormPack32:
-	case vk::Format::eD32Sfloat:
-	case vk::Format::eD16UnormS8Uint:
-	case vk::Format::eD24UnormS8Uint:
-	case vk::Format::eD32SfloatS8Uint:
-		return true;
-	
-	default:
-		return false;
-	}
-}
-
-constexpr bool hasStencil(vk::Format format) noexcept {
-	switch(format) {
-	case vk::Format::eS8Uint:
-	case vk::Format::eD16UnormS8Uint:
-	case vk::Format::eD24UnormS8Uint:
-	case vk::Format::eD32SfloatS8Uint:
-		return true;
-	
-	default:
-		return false;
 	}
 }
 

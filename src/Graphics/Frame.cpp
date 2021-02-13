@@ -25,7 +25,7 @@ struct Frame::Impl {
 			std::shared_ptr<const Descriptor> desc,
 			std::shared_ptr<const InputColorTransfer> colorTransfer,
 			std::shared_ptr<const Buffer> colorTransferBuffer,
-			Utils::BufferView<const Image::PlaneDescriptor> planes,
+			Utils::BufferView<const Image::Plane> planes,
 			vk::ImageUsageFlags usage )
 		: vulkan(vulkan)
 		, descriptor(std::move(desc))
@@ -96,14 +96,14 @@ private:
 			for(const auto& plane : planes) {
 				images.emplace_back(
 					nullptr,												//Sampler
-					*plane.imageView,										//Image views
+					plane.getImageView(),									//Image views
 					vk::ImageLayout::eShaderReadOnlyOptimal					//Layout
 				);
 			}
 			while(images.size() < InputColorTransfer::getSamplerCount()) {
 				images.emplace_back(
 					nullptr,												//Sampler
-					*planes.front().imageView,								//Image views
+					planes.front().getImageView(),							//Image views
 					vk::ImageLayout::eShaderReadOnlyOptimal					//Layout
 				);
 			}
@@ -144,7 +144,7 @@ private:
 	}
 
 	static Image createImage(	const Vulkan& vulkan,
-								Utils::BufferView<const Image::PlaneDescriptor> planes,
+								Utils::BufferView<const Image::Plane> planes,
 								vk::ImageUsageFlags usage )
 	{
 		usage |= vk::ImageUsageFlagBits::eSampled;
@@ -224,7 +224,7 @@ Frame::Frame(	const Vulkan& vulkan,
 				std::shared_ptr<const Descriptor> desc,
 				std::shared_ptr<const InputColorTransfer> colorTransfer,
 				std::shared_ptr<const Buffer> colorTransferBuffer,
-				Utils::BufferView<const Image::PlaneDescriptor> planes,
+				Utils::BufferView<const Image::Plane> planes,
 				vk::ImageUsageFlags usage )
 	: m_impl({}, vulkan, std::move(desc), std::move(colorTransfer), std::move(colorTransferBuffer), planes, usage)
 {
@@ -289,13 +289,13 @@ std::shared_ptr<StagedBuffer> Frame::createColorTransferBuffer(	const Vulkan& vu
 	return result;
 }
 
-std::vector<Image::PlaneDescriptor> Frame::getPlaneDescriptors(const Descriptor& desc) {
+std::vector<Image::Plane> Frame::getPlaneDescriptors(const Descriptor& desc) {
 	const Resolution resolution = desc.getResolution();
 	const ColorSubsampling subsampling = desc.getColorSubsampling();
 	const ColorFormat format = desc.getColorFormat();
 
 	const auto planeCount = getPlaneCount(format);
-	std::vector<Image::PlaneDescriptor> result;
+	std::vector<Image::Plane> result;
 	result.reserve(planeCount);
 
 	const auto formats = toVulkan(format);
@@ -305,12 +305,10 @@ std::vector<Image::PlaneDescriptor> Frame::getPlaneDescriptors(const Descriptor&
 	assert(planeCount <= formats.size());
 
 	for(size_t i = 0; i < planeCount; i++) {
-		result.push_back(
-			Image::PlaneDescriptor {
-				(i == 0) ? extent : subsampledExtent, //FIXME G_B_R_A planar format
-				std::get<vk::Format>(formats[i]),
-				std::get<vk::ComponentMapping>(formats[i])
-			}
+		result.emplace_back(
+			to3D((i == 0 || i == 3) ? extent : subsampledExtent),
+			std::get<vk::Format>(formats[i]),
+			std::get<vk::ComponentMapping>(formats[i])
 		);
 	}
 

@@ -56,7 +56,7 @@ struct Drawtable::Impl {
 	std::shared_ptr<Frame::Descriptor>				frameDescriptor;
 	std::shared_ptr<InputColorTransfer>				colorTransfer;
 	std::shared_ptr<StagedBuffer>					colorTransferBuffer;
-	std::vector<Image::PlaneDescriptor>				planeDescriptors;
+	std::vector<Image::Plane>						planeDescriptors;
 
 	std::shared_ptr<DepthStencil>					depthStencil;
 
@@ -254,7 +254,7 @@ struct Drawtable::Impl {
 
 private:
 	static RenderPass getRenderPass(const Vulkan& vulkan, 
-									Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
+									Utils::BufferView<const Image::Plane> planeDescriptors,
 									DepthStencilFormat depthStencilFmt )
 	{
 		return RenderPass(vulkan, planeDescriptors, depthStencilFmt, vk::Format::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
@@ -276,22 +276,24 @@ private:
 		return vulkan.listSupportedFormatsOptimal(DESIRED_FLAGS);
 	}
 
-	static std::vector<Image::PlaneDescriptor> createPlaneDescriptors(	const Vulkan& vulkan, 
-																		const Frame::Descriptor& desc,
-																		InputColorTransfer& colorTransfer )
+	static std::vector<Image::Plane> createPlaneDescriptors(const Vulkan& vulkan, 
+															const Frame::Descriptor& desc,
+															InputColorTransfer& colorTransfer )
 	{
-		std::vector<Image::PlaneDescriptor> result = Frame::getPlaneDescriptors(desc);
+		auto result = Frame::getPlaneDescriptors(desc);
 
 		//Try to optimize it
 		const auto& supportedFormats = getVulkanFormatSupport(vulkan);
 		assert(std::is_sorted(supportedFormats.cbegin(), supportedFormats.cend())); //In order to use binary search
 
 		for(auto& plane : result) {
-			std::tie(plane.format, plane.swizzle) = optimizeFormat(std::make_tuple(plane.format, plane.swizzle));
+			const auto[format, swizzle] = optimizeFormat(std::make_tuple(plane.getFormat(), plane.getSwizzle()));
+			plane.setFormat(format);
+			plane.setSwizzle(swizzle);
 
 			//Ensure that the format is supported
-			assert(plane.swizzle == vk::ComponentMapping());
-			assert(std::binary_search(supportedFormats.cbegin(), supportedFormats.cend(), plane.format));
+			assert(plane.getSwizzle() == vk::ComponentMapping());
+			assert(std::binary_search(supportedFormats.cbegin(), supportedFormats.cend(), plane.getFormat()));
 		}
 
 		colorTransfer.optimize(result, supportedFormats);
@@ -301,7 +303,7 @@ private:
 
 	static std::shared_ptr<DepthStencil> createDepthStencil(const Vulkan& vulkan,
 															vk::Format format,
-															const std::vector<Image::PlaneDescriptor>& desc)
+															const std::vector<Image::Plane>& desc)
 	{
 		std::shared_ptr<DepthStencil> result;
 
@@ -316,7 +318,7 @@ private:
 
 			result = Utils::makeShared<DepthStencil>(
 				vulkan,
-				desc.front().extent,
+				to2D(desc.front().getExtent()),
 				format
 			);
 		}

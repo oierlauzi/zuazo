@@ -17,7 +17,7 @@ public:
 				std::shared_ptr<const Descriptor> desc,
 				std::shared_ptr<const InputColorTransfer> colorTransfer,
 				std::shared_ptr<const Buffer> colorTransferBuffer,
-				Utils::BufferView<const Image::PlaneDescriptor> planes,
+				Utils::BufferView<const Image::Plane> planes,
 				std::shared_ptr<const vk::UniqueCommandPool> cmdPool );
 	StagedFrame(const StagedFrame& other) = delete;
 	StagedFrame(StagedFrame&& other) noexcept = default;
@@ -42,10 +42,10 @@ private:
 	vk::UniqueFence								m_uploadComplete;
 
 	void										transitionStagingimageLayout();
-	void										recordCommandBuffer(Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors);
+	void										recordCommandBuffer();
 
 	static Image								createStagingImage(	const Vulkan& vulkan,
-																	Utils::BufferView<const Image::PlaneDescriptor> planes );
+																	Utils::BufferView<const Image::Plane> planes );
 	static std::vector<Utils::BufferView<std::byte>> getPixelData(	const Vulkan& vulkan,
 																	const Image& stagingImage );
 	static vk::UniqueCommandBuffer				createCommandBuffer(const Vulkan& vulkan,

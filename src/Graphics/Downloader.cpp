@@ -23,7 +23,7 @@ struct Downloader::Impl {
 	const Vulkan&									vulkan;
 	std::shared_ptr<Frame::Descriptor>				frameDescriptor;
 	OutputColorTransfer								colorTransfer;
-	std::vector<Image::PlaneDescriptor>				planeDescriptors;
+	std::vector<Image::Plane>						planeDescriptors;
 	vk::Format										intermediaryFormat;
 
 	std::unique_ptr<DepthStencil>					depthStencil;
@@ -50,11 +50,11 @@ struct Downloader::Impl {
 		, colorTransfer(*frameDescriptor)
 		, planeDescriptors(createPlaneDescriptors(vulkan, frameDesc, colorTransfer))
 		, intermediaryFormat(RenderPass::getIntermediateFormat(vulkan, planeDescriptors, colorTransfer))
-		, depthStencil(createDepthStencil(vulkan, toVulkan(depthStencilFmt), planeDescriptors.front().extent))
+		, depthStencil(createDepthStencil(vulkan, toVulkan(depthStencilFmt), planeDescriptors.front().getExtent()))
 		, renderPass(getRenderPass(vulkan, planeDescriptors, depthStencilFmt))
-		, intermediaryTargetImage(createIntermediaryTargetImage(vulkan, intermediaryFormat, planeDescriptors.front().extent))
+		, intermediaryTargetImage(createIntermediaryTargetImage(vulkan, intermediaryFormat, planeDescriptors.front().getExtent()))
 		, targetImage(createTargetImage(vulkan, planeDescriptors))
-		, framebuffer(createFramebuffer(vulkan, fromVulkan(planeDescriptors.front().extent), targetImage, intermediaryTargetImage.get(), depthStencil.get(), renderPass))
+		, framebuffer(createFramebuffer(vulkan, targetImage, intermediaryTargetImage.get(), depthStencil.get(), renderPass))
 		, stagingImage(createStagingImage(vulkan, planeDescriptors))
 		, stagingImageData(getPixelData(vulkan, stagingImage))
 		, commandPool(createCommandPool(vulkan))
@@ -301,11 +301,7 @@ private:
 		const auto cmd = downloadCommand;
 
 		const bool queueOwnershipTransfer = vulkan.getGraphicsQueueIndex() != vulkan.getTransferQueueIndex();
-		const size_t planeCount = planeDescriptors.size();
-		const size_t barrierCount = 2*planeCount;
-
-		assert(planeCount == srcImage.getPlanes().size());
-		assert(planeCount == dstImage.getPlanes().size());
+		const size_t barrierCount = srcImage.getPlanes().size() + dstImage.getPlanes().size();
 		
 		//Record the command buffer
 		const vk::CommandBufferBeginInfo beginInfo(
@@ -345,7 +341,7 @@ private:
 						dstLayout,								//New layout
 						srcFamily,								//Old queue family
 						dstFamily,								//New queue family
-						*plane.image,							//Image
+						plane.getImage(),						//Image
 						imageSubresourceRange					//Image subresource
 					);
 				}
@@ -367,7 +363,7 @@ private:
 						dstLayout,								//New layout
 						srcFamily,								//Old queue family
 						dstFamily,								//New queue family
-						*plane.image,							//Image
+						plane.getImage(),						//Image
 						imageSubresourceRange					//Image subresource
 					);
 				}
@@ -388,32 +384,7 @@ private:
 				);
 			}
 
-			//Copy the image to the image
-			for(size_t i = 0; i < planeCount; i++){
-				constexpr vk::ImageSubresourceLayers imageSubresourceLayers(
-					imageSubresourceRange.aspectMask,					//Aspect mask
-					imageSubresourceRange.baseMipLevel,					//Mip level
-					imageSubresourceRange.baseArrayLayer,				//Array layer offset
-					imageSubresourceRange.layerCount 					//Array layers
-				);
-
-				const vk::ImageCopy region(
-					imageSubresourceLayers,								//Src subresource
-					vk::Offset3D(),										//Src offset
-					imageSubresourceLayers,								//Dst subresource
-					vk::Offset3D(),										//Dst offset
-					vk::Extent3D(planeDescriptors[i].extent, 1)			//Image extent
-				);
-
-				vulkan.copy(
-					cmd,
-					*(srcImage.getPlanes()[i].image),
-					vk::ImageLayout::eTransferSrcOptimal,
-					*(dstImage.getPlanes()[i].image),
-					vk::ImageLayout::eTransferDstOptimal,
-					region
-				);
-			}
+			copy(vulkan, cmd, srcImage, const_cast<Image&>(dstImage)); //FIXME ugly const cast
 
 			//Transition the layout of the images (again)
 			{
@@ -437,7 +408,7 @@ private:
 						dstLayout,								//New layout
 						srcFamily,								//Old queue family
 						dstFamily,								//New queue family
-						*plane.image,							//Image
+						plane.getImage(),						//Image
 						imageSubresourceRange					//Image subresource
 					);
 				}
@@ -459,7 +430,7 @@ private:
 						dstLayout,								//New layout
 						srcFamily,								//Old queue family
 						dstFamily,								//New queue family
-						*plane.image,							//Image
+						plane.getImage(),						//Image
 						imageSubresourceRange					//Image subresource
 					);
 				}
@@ -485,22 +456,24 @@ private:
 		vulkan.end(cmd);
 	}
 
-	static std::vector<Image::PlaneDescriptor> createPlaneDescriptors(	const Vulkan& vulkan, 
-																		const Frame::Descriptor& desc,
-																		OutputColorTransfer& colorTransfer )
+	static std::vector<Image::Plane> createPlaneDescriptors(const Vulkan& vulkan, 
+															const Frame::Descriptor& desc,
+															OutputColorTransfer& colorTransfer )
 	{
-		std::vector<Image::PlaneDescriptor> result = Frame::getPlaneDescriptors(desc);
+		std::vector<Image::Plane> result = Frame::getPlaneDescriptors(desc);
 
 		//Try to optimize it
 		const auto& supportedFormats = getVulkanFormatSupport(vulkan);
 		assert(std::is_sorted(supportedFormats.cbegin(), supportedFormats.cend())); //In order to use binary search
 
 		for(auto& plane : result) {
-			std::tie(plane.format, plane.swizzle) = optimizeFormat(std::make_tuple(plane.format, plane.swizzle));
+			const auto[format, swizzle] = optimizeFormat(std::make_tuple(plane.getFormat(), plane.getSwizzle()));
+			plane.setFormat(format);
+			plane.setSwizzle(swizzle);
 
 			//Ensure that the format is supported
-			assert(plane.swizzle == vk::ComponentMapping());
-			assert(std::binary_search(supportedFormats.cbegin(), supportedFormats.cend(), plane.format));
+			assert(plane.getSwizzle() == vk::ComponentMapping());
+			assert(std::binary_search(supportedFormats.cbegin(), supportedFormats.cend(), plane.getFormat()));
 		}
 
 		colorTransfer.optimize(result, supportedFormats);
@@ -510,7 +483,7 @@ private:
 
 	static std::unique_ptr<DepthStencil> createDepthStencil(const Vulkan& vulkan,
 															vk::Format format,
-															vk::Extent2D extent )
+															vk::Extent3D extent )
 	{
 		std::unique_ptr<DepthStencil> result;
 
@@ -523,7 +496,7 @@ private:
 			//We need to create a depth buffer
 			result = Utils::makeUnique<DepthStencil>(
 				vulkan,
-				extent,
+				to2D(extent),
 				format
 			);
 		}
@@ -533,14 +506,14 @@ private:
 
 	static std::unique_ptr<Image> createIntermediaryTargetImage(const Vulkan& vulkan,
 																vk::Format format,
-																vk::Extent2D extent )
+																vk::Extent3D extent )
 	{
 		std::unique_ptr<Image> result;
 
 		//Check if a intermediary image is required
 		if(format != vk::Format::eUndefined) {
 			const std::array planes = { 
-				Image::PlaneDescriptor{ extent, format, vk::ComponentMapping() } 
+				Image::Plane(extent, format)
 			};
 
 			constexpr vk::ImageUsageFlags usage = 
@@ -567,7 +540,7 @@ private:
 	}
 
 	Image createTargetImage(const Vulkan& vulkan,
-							Utils::BufferView<const Image::PlaneDescriptor> planes )
+							Utils::BufferView<const Image::Plane> planes )
 	{
 		constexpr vk::ImageUsageFlags usage =
 			vk::ImageUsageFlagBits::eColorAttachment |
@@ -589,7 +562,6 @@ private:
 	}
 
 	static Framebuffer createFramebuffer(	const Vulkan& vulkan,
-											Resolution resolution,
 											const Image& image,
 											const Image* intermediaryImage,
 											const DepthStencil* depthStencil,
@@ -597,7 +569,6 @@ private:
 	{
 		return Framebuffer(
 			vulkan,
-			resolution,
 			image,
 			intermediaryImage,
 			depthStencil,
@@ -606,7 +577,7 @@ private:
 	}
 
 	Image createStagingImage(	const Vulkan& vulkan,
-								Utils::BufferView<const Image::PlaneDescriptor> planes )
+								Utils::BufferView<const Image::Plane> planes )
 	{
 		constexpr vk::ImageUsageFlags usage =
 			vk::ImageUsageFlagBits::eTransferDst;
@@ -652,7 +623,7 @@ private:
 	}
 
 	static RenderPass getRenderPass(const Vulkan& vulkan, 
-									Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
+									Utils::BufferView<const Image::Plane> planeDescriptors,
 									DepthStencilFormat depthStencilFmt )
 	{
 		return RenderPass(vulkan, planeDescriptors, depthStencilFmt, vk::Format::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal); //TODO

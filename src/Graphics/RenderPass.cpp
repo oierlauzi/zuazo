@@ -9,7 +9,7 @@
 namespace Zuazo::Graphics {
 
 RenderPass::RenderPass(	const Vulkan& vulkan, 
-						Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
+						Utils::BufferView<const Image::Plane> planeDescriptors,
 						DepthStencilFormat depthStencilFmt,
 						vk::Format intermediaryFmt,
 						vk::ImageLayout finalLayout )
@@ -62,11 +62,11 @@ void RenderPass::finalize(	const Vulkan& vulkan,
 }
 
 vk::Format RenderPass::getIntermediateFormat(	const Vulkan& vulkan, 
-												Utils::BufferView<const Image::PlaneDescriptor> planes,
+												Utils::BufferView<const Image::Plane> planes,
 												const OutputColorTransfer& colorTransfer )
 {
 	auto result = vk::Format::eUndefined;
-	const auto referenceFormat = planes.front().format;
+	const auto referenceFormat = planes.front().getFormat();
 
 	if(!colorTransfer.isPassthough() && referenceFormat != vk::Format::eUndefined) {
 		enum IntermediateFormatPrecision {
@@ -260,7 +260,7 @@ void RenderPass::writeFinalizationDescriptorSet(const Graphics::Vulkan& vulkan,
 												const Image& intermediaryImage )
 {
 	assert(intermediaryImage.getPlanes().size() == 1);
-	const auto imageView = *(intermediaryImage.getPlanes().front().imageView);
+	const auto imageView = intermediaryImage.getPlanes().front().getImageView();
 
 	const vk::DescriptorImageInfo descriptorImageInfo(
 		nullptr,											//Sampler
@@ -285,7 +285,7 @@ void RenderPass::writeFinalizationDescriptorSet(const Graphics::Vulkan& vulkan,
 
 
 vk::RenderPass RenderPass::createRenderPass(const Vulkan& vulkan, 
-											Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors,
+											Utils::BufferView<const Image::Plane> planeDescriptors,
 											vk::Format depthStencilFmt,
 											vk::Format intermediaryFmt,
 											vk::ImageLayout finalLayout )
@@ -301,10 +301,10 @@ vk::RenderPass RenderPass::createRenderPass(const Vulkan& vulkan,
 
 	//Add all the plane formats
 	for(const auto& plane : planeDescriptors) {
-		assert(plane.swizzle == vk::ComponentMapping());
+		assert(plane.getSwizzle() == vk::ComponentMapping());
 
 		index <<= INDEX_FIELD_OFFSET;
-		index |= static_cast<Field>(plane.format);
+		index |= static_cast<Field>(plane.getFormat());
 	}
 
 	//Pad upto 4 plane formats and add the depth stencil format
@@ -390,7 +390,7 @@ vk::RenderPass RenderPass::createRenderPass(const Vulkan& vulkan,
 
 			attachments.emplace_back(
 				vk::AttachmentDescriptionFlags(),				//Flags
-				plane.format,									//Attachemnt format
+				plane.getFormat(),								//Attachemnt format
 				vk::SampleCountFlagBits::e1,					//Sample count
 				loadOp,											//Color attachment load operation
 				vk::AttachmentStoreOp::eStore,					//Color attachemnt store operation

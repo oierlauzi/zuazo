@@ -20,7 +20,7 @@ public:
 				std::shared_ptr<const Descriptor> desc,
 				std::shared_ptr<const InputColorTransfer> colorTransfer,
 				std::shared_ptr<const Buffer> colorTransferBuffer,
-				Utils::BufferView<const Image::PlaneDescriptor> planes,
+				Utils::BufferView<const Image::Plane> planes,
 				std::shared_ptr<const DepthStencil> depthStencil,
 				RenderPass renderPass );
 	TargetFrame(const TargetFrame& other) = delete;
@@ -47,7 +47,6 @@ private:
 
 
 	static Framebuffer							createFramebuffer(	const Vulkan& vulkan,
-																	Resolution resolution,
 																	const Image& image,
 																	const DepthStencil* depthStencil,
 																	RenderPass renderPass );

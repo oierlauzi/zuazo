@@ -8,7 +8,7 @@ TargetFrame::TargetFrame(	const Vulkan& vulkan,
 							std::shared_ptr<const Descriptor> desc,
 							std::shared_ptr<const InputColorTransfer> colorTransfer,
 							std::shared_ptr<const Buffer> colorTransferBuffer,
-							Utils::BufferView<const Image::PlaneDescriptor> planes,
+							Utils::BufferView<const Image::Plane> planes,
 							std::shared_ptr<const DepthStencil> depthStencil,
 							RenderPass renderPass )
 	: Frame(
@@ -20,7 +20,7 @@ TargetFrame::TargetFrame(	const Vulkan& vulkan,
 		vk::ImageUsageFlagBits::eColorAttachment )
 	, m_depthStencil(std::move(depthStencil))
 	, m_renderPass(renderPass)
-	, m_framebuffer(createFramebuffer(vulkan, fromVulkan(planes.front().extent), getImage(), m_depthStencil.get(), m_renderPass))
+	, m_framebuffer(createFramebuffer(vulkan, getImage(), m_depthStencil.get(), m_renderPass))
 	, m_renderComplete(vulkan.createFence(true))
 {
 }
@@ -87,14 +87,12 @@ void TargetFrame::draw(std::shared_ptr<const CommandBuffer> cmd) {
 
 
 Framebuffer TargetFrame::createFramebuffer(	const Vulkan& vulkan,
-											Resolution resolution,
 											const Image& image,
 											const DepthStencil* depthStencil,
 											RenderPass renderPass )
 {
 	return Framebuffer(
 		vulkan,
-		resolution,
 		image,
 		nullptr,
 		depthStencil,

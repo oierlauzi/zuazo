@@ -34,6 +34,9 @@ constexpr Severity fromVulkan(vk::DebugUtilsMessageSeverityFlagBitsEXT sev) noex
 constexpr vk::Extent2D toVulkan(Resolution res) noexcept;
 constexpr Resolution fromVulkan(vk::Extent2D res) noexcept;
 
+constexpr vk::Extent2D to2D(vk::Extent3D ext) noexcept;
+constexpr vk::Extent3D to3D(vk::Extent2D ext) noexcept;
+
 constexpr vk::SamplerYcbcrModelConversion toVulkan(ColorModel colorModel) noexcept;
 constexpr ColorModel fromVulkan(vk::SamplerYcbcrModelConversion model) noexcept;
 
@@ -50,8 +53,16 @@ constexpr std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std:
 std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std::tuple<vk::Format, vk::ComponentMapping>& fmt,
 															Utils::BufferView<const vk::Format> supportedFormats ) noexcept;
 
-constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction enc) noexcept;
-constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::ColorSpaceKHR space) noexcept;
+constexpr vk::Format toSrgb(vk::Format format) noexcept;
+constexpr vk::Format fromSrgb(vk::Format format) noexcept;
+
+constexpr bool hasDepth(vk::Format format) noexcept;
+constexpr bool hasStencil(vk::Format format) noexcept;
+
+constexpr size_t getPlaneCount(vk::Format format) noexcept;
+constexpr bool requiresYCbCrSamplerConversion(vk::Format format) noexcept;
+
+constexpr vk::ImageAspectFlagBits getPlaneAspectBit(size_t plane) noexcept;
 
 constexpr vk::ComponentSwizzle getComponentDefaultValue(char component) noexcept;
 constexpr vk::ComponentSwizzle getComponentSwizzle(char swizzle) noexcept;
@@ -60,11 +71,8 @@ constexpr vk::ComponentSwizzle getComponentSwizzle(char component, std::string_v
 constexpr vk::ComponentMapping swizzle(std::string_view swizzle) noexcept;
 constexpr vk::ComponentMapping swizzle(std::string_view src, std::string_view dst) noexcept;
 
-constexpr vk::Format toSrgb(vk::Format format) noexcept;
-constexpr vk::Format fromSrgb(vk::Format format) noexcept;
-
-constexpr bool hasDepth(vk::Format format) noexcept;
-constexpr bool hasStencil(vk::Format format) noexcept;
+constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction enc) noexcept;
+constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::ColorSpaceKHR space) noexcept;
 
 constexpr vk::Filter toVulkan(ScalingFilter filt) noexcept;
 constexpr ScalingFilter fromVulkan(vk::Filter filt) noexcept;

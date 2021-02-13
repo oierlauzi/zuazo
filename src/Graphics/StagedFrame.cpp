@@ -6,7 +6,7 @@ StagedFrame::StagedFrame(	const Vulkan& vulkan,
 							std::shared_ptr<const Descriptor> desc,
 							std::shared_ptr<const InputColorTransfer> colorTransfer,
 							std::shared_ptr<const Buffer> colorTransferBuffer,
-							Utils::BufferView<const Image::PlaneDescriptor> planes,
+							Utils::BufferView<const Image::Plane> planes,
 							std::shared_ptr<const vk::UniqueCommandPool> cmdPool )
 	: Frame(
 		vulkan,
@@ -23,7 +23,7 @@ StagedFrame::StagedFrame(	const Vulkan& vulkan,
 	, m_uploadComplete(vulkan.createFence(false))
 {
 	transitionStagingimageLayout();
-	recordCommandBuffer(planes);
+	recordCommandBuffer();
 }
 
 StagedFrame::~StagedFrame() {
@@ -119,7 +119,7 @@ void StagedFrame::transitionStagingimageLayout() {
 			dstLayout,								//New layout
 			srcFamily,								//Old queue family
 			dstFamily,								//New queue family
-			*plane.image,							//Image
+			plane.getImage(),						//Image
 			imageSubresourceRange					//Image subresource
 		);
 	}
@@ -146,19 +146,15 @@ void StagedFrame::transitionStagingimageLayout() {
 	waitCompletion(Vulkan::NO_TIMEOUT);
 }
 
-void StagedFrame::recordCommandBuffer(Utils::BufferView<const Image::PlaneDescriptor> planeDescriptors) {
+void StagedFrame::recordCommandBuffer() {
 	const auto& vulkan = getVulkan();
 	const auto& srcImage = m_stagingImage;
 	const auto& dstImage = getImage();
 	const auto cmd = *m_commandBuffer;
 
 	const bool queueOwnershipTransfer = vulkan.getGraphicsQueueIndex() != vulkan.getTransferQueueIndex();
-	const size_t planeCount = planeDescriptors.size();
-	const size_t barrierCount = 2*planeCount;
+	const size_t barrierCount = srcImage.getPlanes().size() + dstImage.getPlanes().size();
 
-	assert(planeCount == srcImage.getPlanes().size());
-	assert(planeCount == dstImage.getPlanes().size());
-	
 	//Record the command buffer
 	const vk::CommandBufferBeginInfo beginInfo(
 		{},
@@ -196,7 +192,7 @@ void StagedFrame::recordCommandBuffer(Utils::BufferView<const Image::PlaneDescri
 					dstLayout,								//New layout
 					srcFamily,								//Old queue family
 					dstFamily,								//New queue family
-					*plane.image,							//Image
+					plane.getImage(),						//Image
 					imageSubresourceRange					//Image subresource
 				);
 			}
@@ -218,7 +214,7 @@ void StagedFrame::recordCommandBuffer(Utils::BufferView<const Image::PlaneDescri
 					dstLayout,								//New layout
 					srcFamily,								//Old queue family
 					dstFamily,								//New queue family
-					*plane.image,							//Image
+					plane.getImage(),						//Image
 					imageSubresourceRange					//Image subresource
 				);
 			}
@@ -241,31 +237,7 @@ void StagedFrame::recordCommandBuffer(Utils::BufferView<const Image::PlaneDescri
 		}
 
 		//Copy the image to the image
-		for(size_t i = 0; i < planeCount; i++){
-			constexpr vk::ImageSubresourceLayers imageSubresourceLayers(
-				imageSubresourceRange.aspectMask,					//Aspect mask
-				imageSubresourceRange.baseMipLevel,					//Mip level
-				imageSubresourceRange.baseArrayLayer,				//Array layer offset
-				imageSubresourceRange.layerCount 					//Array layers
-			);
-
-			const vk::ImageCopy region(
-				imageSubresourceLayers,								//Src subresource
-				vk::Offset3D(),										//Src offset
-				imageSubresourceLayers,								//Dst subresource
-				vk::Offset3D(),										//Dst offset
-				vk::Extent3D(planeDescriptors[i].extent, 1)			//Image extent
-			);
-
-			vulkan.copy(
-				cmd,
-				*(srcImage.getPlanes()[i].image),
-				vk::ImageLayout::eTransferSrcOptimal,
-				*(dstImage.getPlanes()[i].image),
-				vk::ImageLayout::eTransferDstOptimal,
-				region
-			);
-		}
+		copy(vulkan, cmd, srcImage, const_cast<Image&>(dstImage)); //FIXME ugly const_cast
 
 		//Transition the layout of the images (again)
 		{
@@ -288,7 +260,7 @@ void StagedFrame::recordCommandBuffer(Utils::BufferView<const Image::PlaneDescri
 					dstLayout,								//New layout
 					srcFamily,								//Old queue family
 					dstFamily,								//New queue family
-					*plane.image,							//Image
+					plane.getImage(),						//Image
 					imageSubresourceRange					//Image subresource
 				);
 			}
@@ -310,7 +282,7 @@ void StagedFrame::recordCommandBuffer(Utils::BufferView<const Image::PlaneDescri
 					dstLayout,								//New layout
 					srcFamily,								//Old queue family
 					dstFamily,								//New queue family
-					*plane.image,							//Image
+					plane.getImage(),						//Image
 					imageSubresourceRange					//Image subresource
 				);
 			}
@@ -339,7 +311,7 @@ void StagedFrame::recordCommandBuffer(Utils::BufferView<const Image::PlaneDescri
 
 
 Image StagedFrame::createStagingImage(	const Vulkan& vulkan,
-										Utils::BufferView<const Image::PlaneDescriptor> planes )
+										Utils::BufferView<const Image::Plane> planes )
 {
 	constexpr vk::ImageUsageFlags usage =
 		vk::ImageUsageFlagBits::eTransferSrc;

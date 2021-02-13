@@ -51,7 +51,7 @@ struct Uploader::Impl {
 	std::reference_wrapper<const Vulkan>			vulkan;
 	std::shared_ptr<Frame::Descriptor>				frameDescriptor;
 	std::shared_ptr<InputColorTransfer>				colorTransfer;
-	std::vector<Image::PlaneDescriptor>				planeDescriptors;
+	std::vector<Image::Plane>						planeDescriptors;
 
 	std::shared_ptr<StagedBuffer>					colorTransferBuffer;
 	std::shared_ptr<vk::UniqueCommandPool>			commandPool;
@@ -164,11 +164,11 @@ private:
 		return vulkan.listSupportedFormatsOptimal(DESIRED_FLAGS);
 	}
 
-	static std::vector<Image::PlaneDescriptor> createPlaneDescriptors(	const Vulkan& vulkan, 
-																		const Frame::Descriptor& desc,
-																		InputColorTransfer& colorTransfer )
+	static std::vector<Image::Plane> createPlaneDescriptors(const Vulkan& vulkan, 
+															const Frame::Descriptor& desc,
+															InputColorTransfer& colorTransfer )
 	{
-		std::vector<Image::PlaneDescriptor> result = Frame::getPlaneDescriptors(desc);
+		std::vector<Image::Plane> result = Frame::getPlaneDescriptors(desc);
 
 		//Try to optimize it
 		const auto supportedFormats = getVulkanFormatSupport(vulkan);
@@ -176,7 +176,9 @@ private:
 
 		colorTransfer.optimize(result, supportedFormats);
 		for(auto& plane : result) {
-			std::tie(plane.format, plane.swizzle) = optimizeFormat(std::make_tuple(plane.format, plane.swizzle));
+			const auto [format, swizzle] = optimizeFormat(std::make_tuple(plane.getFormat(), plane.getSwizzle()));
+			plane.setFormat(format);
+			plane.setSwizzle(swizzle);
 		}
 
 		return result;

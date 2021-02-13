@@ -14,12 +14,12 @@ DepthStencil::DepthStencil(	const Vulkan& vulkan,
 
 vk::Image DepthStencil::getImage() const noexcept {
 	assert(m_image.getPlanes().size());
-	return *(m_image.getPlanes().front().image);
+	return m_image.getPlanes().front().getImage();
 }
 
 vk::ImageView DepthStencil::getImageView() const noexcept {
 	assert(m_image.getPlanes().size());
-	return *(m_image.getPlanes().front().imageView);
+	return m_image.getPlanes().front().getImageView();
 }
 
 vk::DeviceMemory DepthStencil::getDeviceMemory() const noexcept {
@@ -33,11 +33,7 @@ Image DepthStencil::createImage(const Vulkan& vulkan,
 {
 	assert(hasDepth(fmt) || hasStencil(fmt));
 
-	const Image::PlaneDescriptor imagePlane = {
-		ext,
-		fmt,
-		vk::ComponentMapping()
-	};
+	const Image::Plane imagePlane(vk::Extent3D(ext), fmt);
 
 	constexpr vk::ImageUsageFlags usage =
 		vk::ImageUsageFlagBits::eDepthStencilAttachment |

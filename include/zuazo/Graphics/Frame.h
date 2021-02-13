@@ -37,7 +37,7 @@ public:
 			std::shared_ptr<const Descriptor> desc,
 			std::shared_ptr<const InputColorTransfer> colorTransfer,
 			std::shared_ptr<const Buffer> colorTransferBuffer,
-			Utils::BufferView<const Image::PlaneDescriptor> planes,
+			Utils::BufferView<const Image::Plane> planes,
 			vk::ImageUsageFlags usage );
 	Frame(const Frame& other) = delete;
 	Frame(Frame&& other) noexcept;
@@ -59,7 +59,7 @@ public:
 
 	static std::shared_ptr<StagedBuffer>	createColorTransferBuffer(	const Vulkan& vulkan,
 																		const InputColorTransfer& colorTransfer );
-	static std::vector<Image::PlaneDescriptor> getPlaneDescriptors(const Descriptor& desc);
+	static std::vector<Image::Plane> 		getPlaneDescriptors(const Descriptor& desc);
 	static vk::DescriptorSetLayout			getDescriptorSetLayout(	const Vulkan& vulkan,
 																	vk::Filter filt );
 

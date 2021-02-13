@@ -6,12 +6,11 @@
 namespace Zuazo::Graphics {
 
 Framebuffer::Framebuffer(	const Vulkan& vulkan,
-							Resolution resolution,
 							const Image& image,
 							const Image* intermediaryImage,
 							const DepthStencil* depthStencil,
 							RenderPass renderPass )
-	: m_framebuffer(createFramebuffer(vulkan, resolution, image, intermediaryImage, depthStencil, renderPass))
+	: m_framebuffer(createFramebuffer(vulkan, image, intermediaryImage, depthStencil, renderPass))
 {
 }
 
@@ -22,13 +21,13 @@ vk::Framebuffer Framebuffer::get() const noexcept {
 
 
 vk::UniqueFramebuffer Framebuffer::createFramebuffer(	const Vulkan& vulkan,
-														Resolution resolution,
 														const Image& image,
 														const Image* intermediaryImage,
 														const DepthStencil* depthStencil,
 														RenderPass renderPass )
 {
 	const auto attachmentCount = image.getPlanes().size() + (intermediaryImage ? 1 : 0) + (depthStencil ? 1 : 0);
+	const auto extent = image.getPlanes().front().getExtent();
 
 	//Enumerate all attachments
 	std::vector<vk::ImageView> attachments;
@@ -42,7 +41,7 @@ vk::UniqueFramebuffer Framebuffer::createFramebuffer(	const Vulkan& vulkan,
 	//Then comes the intermediary image, if present
 	if(intermediaryImage) {
 		assert(intermediaryImage->getPlanes().size() == 1);
-		attachments.emplace_back(*(intermediaryImage->getPlanes().front().imageView));
+		attachments.emplace_back(intermediaryImage->getPlanes().front().getImageView());
 	}
 
 	//Finally comes the result image
@@ -50,7 +49,7 @@ vk::UniqueFramebuffer Framebuffer::createFramebuffer(	const Vulkan& vulkan,
 		image.getPlanes().cbegin(), image.getPlanes().cend(),
 		std::back_inserter(attachments),
 		[] (const Image::Plane& plane) -> vk::ImageView {
-			return *(plane.imageView);
+			return plane.getImageView();
 		}
 	);
 
@@ -61,7 +60,7 @@ vk::UniqueFramebuffer Framebuffer::createFramebuffer(	const Vulkan& vulkan,
 		renderPass.get(),
 		attachments.size(),
 		attachments.data(),
-		resolution.width, resolution.height,
+		extent.width, extent.height,
 		1
 	);
 

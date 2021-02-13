@@ -38,7 +38,7 @@ public:
 	bool								operator==(const InputColorTransfer& other) const noexcept;
 	bool								operator!=(const InputColorTransfer& other) const noexcept;
 
-	void								optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
+	void								optimize(	Utils::BufferView<Image::Plane> planes,
 													Utils::BufferView<const vk::Format> supportedFormats ) noexcept;
 
 	const std::byte*					data() const noexcept;
@@ -74,7 +74,7 @@ public:
 	bool								operator==(const OutputColorTransfer& other) const noexcept;
 	bool								operator!=(const OutputColorTransfer& other) const noexcept;
 
-	void								optimize(	Utils::BufferView<Image::PlaneDescriptor> planes,
+	void								optimize(	Utils::BufferView<Image::Plane> planes,
 													Utils::BufferView<const vk::Format> supportedFormats ) noexcept;
 
 	const std::byte*					data() const noexcept;
