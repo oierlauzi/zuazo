@@ -346,9 +346,17 @@ struct InputColorTransfer::Impl {
 	}
 
 
+	bool isPassthough() const noexcept {
+		return	transferData.colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_LINEAR &&
+				transferData.colorModel == ct_COLOR_MODEL_RGB &&
+				transferData.colorRange == ct_COLOR_RANGE_FULL &&
+				transferData.planeFormat == ct_PLANE_FORMAT_RGBA ;
+	}
 
-	int32_t getSamplingMode(ScalingFilter filter,
-							vk::Filter samplerFilter ) const noexcept
+	
+
+	static int32_t getSamplingMode(	ScalingFilter filter,
+									vk::Filter samplerFilter ) noexcept
 	{
 		int32_t result;
 
@@ -385,14 +393,6 @@ struct InputColorTransfer::Impl {
 		}
 
 		return result;
-	}
-
-
-	bool isPassthough() const noexcept {
-		return	transferData.colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_LINEAR &&
-				transferData.colorModel == ct_COLOR_MODEL_RGB &&
-				transferData.colorRange == ct_COLOR_RANGE_FULL &&
-				transferData.planeFormat == ct_PLANE_FORMAT_RGBA ;
 	}
 };
 
@@ -445,27 +445,14 @@ const std::byte* InputColorTransfer::data() const noexcept {
 	return m_impl->data();
 }
 
-int32_t InputColorTransfer::getSamplingMode(ScalingFilter filter,
-											vk::Filter samplerFilter ) const noexcept
-{
-	return m_impl->getSamplingMode(filter, samplerFilter);
-}
-
 bool InputColorTransfer::isPassthough() const noexcept {
 	return m_impl->isPassthough();
 }
 
-
-uint32_t InputColorTransfer::getSamplerCount() noexcept {
-	return ct_SAMPLER_COUNT;
-}
-
-uint32_t InputColorTransfer::getSamplerBinding() noexcept {
-	return ct_SAMPLER_BINDING;
-}
-
-uint32_t InputColorTransfer::getDataBinding() noexcept {
-	return ct_DATA_BINDING;
+int32_t InputColorTransfer::getSamplingMode(ScalingFilter filter,
+											vk::Filter samplerFilter ) noexcept
+{
+	return Impl::getSamplingMode(filter, samplerFilter);
 }
 
 size_t InputColorTransfer::size() noexcept {
@@ -584,11 +571,6 @@ const std::byte* OutputColorTransfer::data() const noexcept {
 
 bool OutputColorTransfer::isPassthough() const noexcept {
 	return m_impl->isPassthough();
-}
-
-
-uint32_t OutputColorTransfer::getAttachmentCount() noexcept {
-	return ct_OUTPUT_COUNT;
 }
 
 size_t OutputColorTransfer::size() noexcept {

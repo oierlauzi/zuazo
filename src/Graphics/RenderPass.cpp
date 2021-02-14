@@ -8,6 +8,8 @@
 
 namespace Zuazo::Graphics {
 
+constexpr size_t ATTACHMENT_COUNT = 4;
+
 RenderPass::RenderPass(	const Vulkan& vulkan, 
 						Utils::BufferView<const Image::Plane> planeDescriptors,
 						DepthStencilFormat depthStencilFmt,
@@ -404,7 +406,7 @@ vk::RenderPass RenderPass::createRenderPass(const Vulkan& vulkan,
 
 		//Create the color attachment references for the result
 		std::vector<vk::AttachmentReference> colorAttachmentReferences;
-		colorAttachmentReferences.reserve(OutputColorTransfer::getAttachmentCount()); //Worst case scenario
+		colorAttachmentReferences.reserve(ATTACHMENT_COUNT); //Worst case scenario
 		for(size_t i = 0; i < colorAttachmentCount; ++i) {
 			colorAttachmentReferences.emplace_back(
 				depthStencilAttachmentCount + intermediaryAttachmentCount + i,	//Attachments index
@@ -427,13 +429,13 @@ vk::RenderPass RenderPass::createRenderPass(const Vulkan& vulkan,
 
 			//Color attachment needs to be padded, as there will be 4 color outputs from
 			//the finalization shader:
-			for(size_t i = colorAttachmentCount; i < OutputColorTransfer::getAttachmentCount(); ++i) {
+			for(size_t i = colorAttachmentCount; i < ATTACHMENT_COUNT; ++i) {
 				colorAttachmentReferences.emplace_back(
 					VK_ATTACHMENT_UNUSED, 							//Attachments index
 					vk::ImageLayout::eColorAttachmentOptimal 		//Attachemnt layout
 				);	
 			}
-			assert(colorAttachmentReferences.size() == OutputColorTransfer::getAttachmentCount());
+			assert(colorAttachmentReferences.size() == ATTACHMENT_COUNT);
 
 			//Create the color attachment references for intermediary color attachment
 			const std::array intermediaryColorAttachmentReferences0 = {
@@ -651,7 +653,7 @@ vk::Pipeline RenderPass::createFinalizationPipeline(const Graphics::Vulkan& vulk
 		);
 
 		const std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachments(
-			OutputColorTransfer::getAttachmentCount(),
+			ATTACHMENT_COUNT,
 			Graphics::toVulkan(BlendingMode::WRITE)
 		);
 

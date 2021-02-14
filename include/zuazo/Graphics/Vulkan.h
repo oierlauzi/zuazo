@@ -324,6 +324,10 @@ public:
 
 	void								presentAll() const;
 
+
+	void								setUserPointer(size_t id, std::shared_ptr<void> usrPtr);
+	const std::shared_ptr<void>&		getUserPointer(size_t id) const noexcept;
+
 private:
 	struct Impl;
 	Utils::Pimpl<Impl>					m_impl;

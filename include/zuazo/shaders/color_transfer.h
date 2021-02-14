@@ -17,10 +17,8 @@
 	#define ZUAZO_IF_CPP(x, y) y
 #endif
 
-ZUAZO_IF_CPP(constexpr uint32_t, const uint) ct_OUTPUT_COUNT = 4;
 ZUAZO_IF_CPP(constexpr uint32_t, const uint) ct_SAMPLER_COUNT = 4;
-ZUAZO_IF_CPP(constexpr uint32_t, const uint) ct_SAMPLER_BINDING = 0;
-ZUAZO_IF_CPP(constexpr uint32_t, const uint) ct_DATA_BINDING = 1;
+ZUAZO_IF_CPP(constexpr uint32_t, const uint) ct_OUTPUT_COUNT = 4;
 
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_SAMPLE_MODE_PASSTHOUGH = 0;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_SAMPLE_MODE_BILINEAR = 1;

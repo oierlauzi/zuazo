@@ -71,6 +71,10 @@ struct Vulkan::Impl {
 	mutable std::vector<uint32_t>					presentIndices;
 	mutable std::vector<vk::Semaphore>				presentSemaphores;
 
+	/*
+	 * User pointers
+	 */
+	HashMap<std::shared_ptr<void>>					userPointers;
 
 	/*
 	 * Methods
@@ -1051,6 +1055,18 @@ struct Vulkan::Impl {
 			assert(presentSwapchains.size() == 0);
 			assert(presentIndices.size() == 0);
 		}
+	}
+
+
+
+	void setUserPointer(size_t id, std::shared_ptr<void> usrPtr) {
+		userPointers[id] = std::move(usrPtr);
+	}
+
+	const std::shared_ptr<void>& getUserPointer(size_t id) const noexcept {
+		static const std::shared_ptr<void> NOT_FOUND;
+		const auto ite = userPointers.find(id);
+		return (ite != userPointers.cend()) ? ite->second : NOT_FOUND;
 	}
 
 private:
@@ -2357,6 +2373,16 @@ void Vulkan::present(	vk::SwapchainKHR swapchain,
 
 void Vulkan::presentAll() const {
 	m_impl->presentAll();
+}
+
+
+
+void Vulkan::setUserPointer(size_t id, std::shared_ptr<void> usrPtr) {
+	m_impl->setUserPointer(id, std::move(usrPtr));
+}
+
+const std::shared_ptr<void>& Vulkan::getUserPointer(size_t id) const noexcept {
+	return m_impl->getUserPointer(id);
 }
 
 }

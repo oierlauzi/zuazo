@@ -37,14 +37,12 @@ public:
 													Utils::BufferView<const vk::Format> supportedFormats ) noexcept;
 
 	const std::byte*					data() const noexcept;
-	int32_t								getSamplingMode(ScalingFilter filter,
-														vk::Filter samplerFilter ) const noexcept;
 
 	bool								isPassthough() const noexcept;
 
-	static uint32_t 					getSamplerCount() noexcept;
-	static uint32_t 					getSamplerBinding() noexcept;
-	static uint32_t 					getDataBinding() noexcept;
+	static int32_t						getSamplingMode(ScalingFilter filter,
+														vk::Filter samplerFilter ) noexcept;
+
 	static size_t						size() noexcept;
 
 private:
@@ -77,7 +75,6 @@ public:
 
 	bool								isPassthough() const noexcept;
 
-	static uint32_t 					getAttachmentCount() noexcept;
 	static size_t						size() noexcept;
 
 private:

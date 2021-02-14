@@ -5,7 +5,10 @@
 #include <zuazo/Graphics/ColorTransfer.h>
 #include <zuazo/Graphics/StagedBuffer.h>
 
+#include <zuazo/shaders/frame.h>
+
 #include <vector>
+#include <bitset>
 
 namespace Zuazo::Graphics {
 
@@ -90,7 +93,7 @@ private:
 			//Update all images. As nullptr images can't be passed, repeat available images		
 			const auto planes = image.getPlanes();
 			std::vector<vk::DescriptorImageInfo> images;
-			images.reserve(InputColorTransfer::getSamplerCount());
+			images.reserve(frame_SAMPLER_COUNT);
 			for(const auto& plane : planes) {
 				images.emplace_back(
 					nullptr,												//Sampler
@@ -98,15 +101,33 @@ private:
 					vk::ImageLayout::eShaderReadOnlyOptimal					//Layout
 				);
 			}
-			while(images.size() < InputColorTransfer::getSamplerCount()) {
+			while(images.size() < frame_SAMPLER_COUNT) {
 				images.emplace_back(
 					nullptr,												//Sampler
 					planes.front().getImageView(),							//Image views
 					vk::ImageLayout::eShaderReadOnlyOptimal					//Layout
 				);
 			}
+			assert(images.size() == frame_SAMPLER_COUNT);
 
-			const std::array buffers = {
+			//Obtain the sample mode buffer for this sampling mode
+			const auto& samplingModeBuffer = createSampleModeBuffer(
+				vulkan,
+				(*samplers)[i],
+				static_cast<ScalingFilter>(i)
+			);
+
+
+			//Create write descriptor
+			const std::array sampleModeUniformBuffers = {
+				vk::DescriptorBufferInfo(
+					samplingModeBuffer.getBuffer(),							//Buffer
+					0,														//Offset
+					sizeof(int)											//Size
+				)
+			};
+
+			const std::array colorTransferUniformBuffers = {
 				vk::DescriptorBufferInfo(
 					colorTransferBuffer->getBuffer(),						//Buffer
 					0,														//Offset
@@ -117,7 +138,7 @@ private:
 			const std::array writeDescriptorSets ={
 				vk::WriteDescriptorSet( //Image descriptor
 					descriptorSets[i],										//Descriptor set
-					InputColorTransfer::getSamplerBinding(),				//Binding
+					frame_SAMPLER_BINDING,									//Binding
 					0, 														//Index
 					images.size(), 											//Descriptor count
 					vk::DescriptorType::eCombinedImageSampler,				//Descriptor type
@@ -127,12 +148,22 @@ private:
 				),
 				vk::WriteDescriptorSet( //Ubo descriptor set
 					descriptorSets[i],										//Descriptor set
-					InputColorTransfer::getDataBinding(),					//Binding
+					frame_SAMPLE_MODE_BINDING,								//Binding
 					0, 														//Index
-					buffers.size(),											//Descriptor count		
+					sampleModeUniformBuffers.size(),						//Descriptor count	
 					vk::DescriptorType::eUniformBuffer,						//Descriptor type
 					nullptr, 												//Images 
-					buffers.data(), 										//Buffers
+					sampleModeUniformBuffers.data(), 						//Buffers
+					nullptr													//Texel buffers
+				),
+				vk::WriteDescriptorSet( //Ubo descriptor set
+					descriptorSets[i],										//Descriptor set
+					frame_COLOR_TRANSFER_BINDING,							//Binding
+					0, 														//Index
+					colorTransferUniformBuffers.size(),						//Descriptor count		
+					vk::DescriptorType::eUniformBuffer,						//Descriptor type
+					nullptr, 												//Images 
+					colorTransferUniformBuffers.data(), 					//Buffers
 					nullptr													//Texel buffers
 				)
 			};
@@ -168,16 +199,14 @@ private:
 		//A descriptor pool is created, from which 2 descriptor sets, each one with 
 		//one combined image sampler and one uniform buffer. Threrefore, 2 descriptors
 		//of each type will be required.
-		static const auto SAMPLER_COUNT = InputColorTransfer::getSamplerCount();
-
 		const std::array poolSizes = {
 			vk::DescriptorPoolSize(
 				vk::DescriptorType::eCombinedImageSampler,			//Descriptor type
-				SAMPLER_COUNT * FILTER_COUNT						//Descriptor count
+				frame_SAMPLER_COUNT * FILTER_COUNT					//Descriptor count
 			),
 			vk::DescriptorPoolSize(
 				vk::DescriptorType::eUniformBuffer,					//Descriptor type
-				FILTER_COUNT										//Descriptor count
+				2UL*FILTER_COUNT									//Descriptor count
 			)
 		};
 
@@ -205,19 +234,26 @@ private:
 			if(!result[i]) {
 				//No luck, need to create it
 				//Create the sampler array
-				const std::vector<vk::Sampler> immutableSamplers(InputColorTransfer::getSamplerCount(), sampler);
+				const std::vector<vk::Sampler> immutableSamplers(frame_SAMPLER_COUNT, sampler);
 
 				//Create the bindings
 				const std::array bindings = {
 					vk::DescriptorSetLayoutBinding( //Sampled image binding
-						InputColorTransfer::getSamplerBinding(),		//Binding
+						frame_SAMPLER_BINDING,							//Binding
 						vk::DescriptorType::eCombinedImageSampler,		//Type
 						immutableSamplers.size(),						//Count
 						vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
 						immutableSamplers.data()						//Immutable samplers
 					), 
+					vk::DescriptorSetLayoutBinding(	//Sample mode binding
+						frame_SAMPLE_MODE_BINDING,						//Binding
+						vk::DescriptorType::eUniformBuffer,				//Type
+						1,												//Count
+						vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
+						nullptr											//Immutable samplers
+					), 
 					vk::DescriptorSetLayoutBinding(	//Color transfer binding
-						InputColorTransfer::getDataBinding(),			//Binding
+						frame_COLOR_TRANSFER_BINDING,					//Binding
 						vk::DescriptorType::eUniformBuffer,				//Type
 						1,												//Count
 						vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
@@ -263,6 +299,58 @@ private:
 		);
 
 		return result;
+	}
+
+	static const Buffer& createSampleModeBuffer(const Vulkan& vulkan,
+												const Sampler& sampler,
+												ScalingFilter filter )
+	{
+		using Index = std::bitset<2*sizeof(size_t)>;
+		static std::unordered_map<Index, const Utils::StaticId> ids; //TODO concurrent access
+
+		//Obtain the desired sample mode
+		int32_t sampleMode = InputColorTransfer::getSamplingMode(filter, sampler.getFilter());
+
+		//Create a index for retrieving it from cache
+		Index index;
+		index |= reinterpret_cast<uintptr_t>(&vulkan);
+		index <<= sizeof(uintptr_t) * Utils::getByteSize();
+		index |= sampleMode;
+		const auto& id = ids[index];
+
+		//Check if the buffer exists in cache
+		auto result = std::static_pointer_cast<StagedBuffer>(vulkan.getUserPointer(id));
+		if(!result.get()) {
+			constexpr auto BUFFER_SIZE = sizeof(int);
+
+			//Create a new staging buffer
+			result = Utils::makeShared<StagedBuffer>(
+				vulkan,
+				vk::BufferUsageFlagBits::eUniformBuffer,
+				BUFFER_SIZE
+			);
+
+			//Copy the data onto it
+			assert(result);
+			std::memcpy(
+				result->data(),
+				&sampleMode,
+				BUFFER_SIZE
+			);
+			result->flushData(
+				vulkan, 
+				vulkan.getTransferQueueIndex(),
+				vk::AccessFlagBits::eShaderRead,
+				vk::PipelineStageFlagBits::eAllCommands
+			);
+
+			//Store the buffer in cache
+			const_cast<Vulkan&>(vulkan).setUserPointer(id, result); //TODO ugly const_cast
+		}
+
+		assert(result);
+		assert(result.use_count() > 1); //Should be backed somewhere else
+		return *result;
 	}
 };
 
