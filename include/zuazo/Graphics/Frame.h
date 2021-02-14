@@ -2,6 +2,7 @@
 
 #include "Vulkan.h"
 #include "Image.h"
+#include "Sampler.h"
 #include "Buffer.h"
 #include "StagedBuffer.h"
 #include "VulkanConversions.h"
@@ -31,12 +32,13 @@ public:
 	class Descriptor;
 	class Geometry;
 
-	static constexpr size_t FILTER_COUNT = VK_FILTER_LINEAR - VK_FILTER_NEAREST + 1;
+	using Samplers =std::array<Sampler, static_cast<size_t>(ScalingFilter::COUNT)>;
+
 
 	Frame(	const Vulkan& vulkan,
 			std::shared_ptr<const Descriptor> desc,
-			std::shared_ptr<const InputColorTransfer> colorTransfer,
 			std::shared_ptr<const Buffer> colorTransferBuffer,
+			std::shared_ptr<const Samplers> samplers,
 			Utils::BufferView<const Image::Plane> planes,
 			vk::ImageUsageFlags usage );
 	Frame(const Frame& other) = delete;
@@ -44,24 +46,24 @@ public:
 	virtual ~Frame();
 
 	Frame& 									operator=(const Frame& other) = delete;
-	Frame&									operator=(Frame&& other) noexcept;
-
-	void									bind(	vk::CommandBuffer cmd,
-													vk::PipelineLayout layout,
-													uint32_t index,
-													vk::Filter filter ) const noexcept;
+	Frame&									operator=(Frame&& other) noexcept;													
 
 	const Vulkan&							getVulkan() const noexcept;
 	const Descriptor&						getDescriptor() const noexcept;
-	const Math::Vec2f&						getSize() const noexcept;
-	const InputColorTransfer&				getColorTransfer() const noexcept;
 	const Image&							getImage() const noexcept;
+
+	vk::DescriptorSetLayout					getDescriptorSetLayout(ScalingFilter filter) const noexcept;
+	void									bind(	vk::CommandBuffer cmd,
+													vk::PipelineLayout layout,
+													uint32_t index,
+													ScalingFilter filter ) const noexcept;
 
 	static std::shared_ptr<StagedBuffer>	createColorTransferBuffer(	const Vulkan& vulkan,
 																		const InputColorTransfer& colorTransfer );
+	static std::shared_ptr<Samplers>		createSamplers(	const Vulkan& vulkan,
+															const InputColorTransfer& colorTransfer,
+															Utils::BufferView<const Image::Plane> planes );
 	static std::vector<Image::Plane> 		getPlaneDescriptors(const Descriptor& desc);
-	static vk::DescriptorSetLayout			getDescriptorSetLayout(	const Vulkan& vulkan,
-																	vk::Filter filt );
 
 private:
 	struct Impl;

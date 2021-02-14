@@ -39,8 +39,10 @@ const Math::Vec2f& Frame::Geometry::getTargetSize() const noexcept {
 
 
 bool Frame::Geometry::useFrame(const Frame& frame) {
-	if(m_sourceSize != frame.getSize()) {
-		m_sourceSize = frame.getSize();
+	const auto frameSize = frame.getDescriptor().calculateSize();
+
+	if(m_sourceSize != frameSize) {
+		m_sourceSize = frameSize;
 		updateBuffer();
 		return true;
 	} else {

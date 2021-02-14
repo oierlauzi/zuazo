@@ -20,11 +20,6 @@ namespace Zuazo::Graphics {
 class InputColorTransfer {
 	friend class OutputColorTransfer;
 public:
-	struct SamplerDescriptor {
-		vk::Filter								filter;
-		int32_t									samplingMode;
-	};
-
 	InputColorTransfer();
 	explicit InputColorTransfer(const Frame::Descriptor& desc);
 	InputColorTransfer(const Frame::Descriptor& desc, const Chromaticities& customPrimaries);
@@ -42,7 +37,8 @@ public:
 													Utils::BufferView<const vk::Format> supportedFormats ) noexcept;
 
 	const std::byte*					data() const noexcept;
-	SamplerDescriptor					getSamplerDescriptor(ScalingFilter filter) const noexcept;
+	int32_t								getSamplingMode(ScalingFilter filter,
+														vk::Filter samplerFilter ) const noexcept;
 
 	bool								isPassthough() const noexcept;
 

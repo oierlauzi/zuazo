@@ -1,5 +1,6 @@
 #include <zuazo/Graphics/Image.h>
 
+#include <zuazo/Graphics/Sampler.h>
 #include <zuazo/Graphics/VulkanConversions.h>
 
 #include <algorithm>
@@ -10,11 +11,12 @@ Image::Image(	const Vulkan& vulkan,
 				Utils::BufferView<const Plane> planes,
 				vk::ImageUsageFlags usage,
 				vk::ImageTiling tiling,
-				vk::MemoryPropertyFlags memoryProp )
+				vk::MemoryPropertyFlags memoryProp,
+				const Sampler* sampler )
 	: m_planes(planes.cbegin(), planes.cend())
 {
 	createImages(vulkan, usage, tiling, memoryProp);
-	createImageViews(vulkan, usage);
+	createImageViews(vulkan, usage, sampler);
 }
 
 
@@ -80,7 +82,8 @@ void Image::createImages(	const Vulkan& vulkan,
 }
 
 void Image::createImageViews(	const Vulkan& vulkan, 
-								vk::ImageUsageFlags usage ) 
+								vk::ImageUsageFlags usage,
+								const Sampler* sampler ) 
 {
 	constexpr vk::ImageUsageFlags IMAGE_VIEW_USAGE_FLAGS =
 		vk::ImageUsageFlagBits::eSampled |
@@ -94,7 +97,7 @@ void Image::createImageViews(	const Vulkan& vulkan,
 		for(auto& plane : m_planes) {
 			if(!plane.getImageView()) {
 				//This plane does not have an image view
-				m_imageViews.push_back(createImageView(vulkan, plane));
+				m_imageViews.push_back(createImageView(vulkan, plane, sampler));
 			}
 		}
 	}
@@ -127,7 +130,8 @@ vk::UniqueImage Image::createImage(	const Vulkan& vulkan,
 }
 
 vk::UniqueImageView Image::createImageView(	const Vulkan& vulkan,
-											Plane& plane )
+											Plane& plane,
+											const Sampler* sampler )
 {
 	//Decide the aspect mask of the image view
 	vk::ImageAspectFlags aspectMask;
@@ -150,15 +154,18 @@ vk::UniqueImageView Image::createImageView(	const Vulkan& vulkan,
 		0, 1, 0, 1										//Base mipmap level, mipmap levels, base array layer, layers
 	);
 
+	//We'll might need to know about the YCbCr sampler
+	const vk::SamplerYcbcrConversionInfo samplerYCbCrConversionInfo(sampler ? sampler->getSamplerYCbCrConversion() : nullptr);
+
 	assert(plane.getImage());
-	const vk::ImageViewCreateInfo createInfo(
+	const auto createInfo = vk::ImageViewCreateInfo(
 		{},												//Flags
 		plane.getImage(),								//Image
 		vk::ImageViewType::e2D,							//ImageView type
 		plane.getFormat(),								//Image format
 		plane.getSwizzle(),								//Swizzle
 		subresourceRange								//Image subresources
-	);
+	).setPNext(samplerYCbCrConversionInfo.conversion ? &samplerYCbCrConversionInfo : nullptr);
 
 	auto result = vulkan.createImageView(createInfo);
 	plane.setImageView(*result);
@@ -179,13 +186,15 @@ void copy(	const Vulkan& vulkan,
 	//In order to work, it must either have the same plane count
 	assert(srcPlaneCnt == planeCount || getPlaneCount(src.getPlanes().front().getFormat()) == planeCount);
 	assert(dstPlaneCnt == planeCount || getPlaneCount(dst.getPlanes().front().getFormat()) == planeCount);
-
+	
 	//Copy plane by plane
 	for(size_t i = 0; i < planeCount; ++i) {
 		const vk::Image srcImage = srcPlaneCnt < planeCount ? src.getPlanes().front().getImage() : src.getPlanes()[i].getImage();
 		const vk::Image dstImage = dstPlaneCnt < planeCount ? dst.getPlanes().front().getImage() : dst.getPlanes()[i].getImage();
 		const vk::ImageAspectFlags srcAspectMask = srcPlaneCnt < planeCount ? getPlaneAspectBit(i) : vk::ImageAspectFlagBits::eColor;
 		const vk::ImageAspectFlags dstAspectMask = dstPlaneCnt < planeCount ? getPlaneAspectBit(i) : vk::ImageAspectFlagBits::eColor;
+		//const vk::ImageAspectFlags dstAspectMask = (i == 0) ? vk::ImageAspectFlagBits::ePlane0 : vk::ImageAspectFlagBits::ePlane1;
+		const auto extent = (srcPlaneCnt == planeCount) ? src.getPlanes()[i].getExtent() : dst.getPlanes()[i].getExtent();
 		constexpr uint32_t baseMipLevel = 0;
 		constexpr uint32_t baseArrayLevel = 0;
 		constexpr uint32_t layerCount = 1;
@@ -201,7 +210,7 @@ void copy(	const Vulkan& vulkan,
 			vk::Offset3D(),																					//Src offset
 			vk::ImageSubresourceLayers(dstAspectMask, baseMipLevel, baseArrayLevel, layerCount),			//Dst subresource
 			vk::Offset3D(),																					//Dst offset
-			(srcPlaneCnt == planeCount) ? src.getPlanes()[i].getExtent() : dst.getPlanes()[i].getExtent()	//Image extent
+			extent																							//Image extent
 		);
 
 		//Issue the copy command

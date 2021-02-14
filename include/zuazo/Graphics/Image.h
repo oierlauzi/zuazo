@@ -7,6 +7,8 @@
 
 namespace Zuazo::Graphics {
 
+class Sampler;
+
 class Image {
 public:
 	class Plane;
@@ -16,7 +18,8 @@ public:
 			Utils::BufferView<const Plane> planes,
 			vk::ImageUsageFlags usage,
 			vk::ImageTiling tiling,
-			vk::MemoryPropertyFlags memoryProp );
+			vk::MemoryPropertyFlags memoryProp,
+			const Sampler* sampler = nullptr );
 	Image(const Image& other) = delete;
 	Image(Image&& other) = default;
 	~Image() = default;
@@ -39,14 +42,16 @@ private:
 														vk::ImageTiling tiling,
 														vk::MemoryPropertyFlags memoryProp );
 	void								createImageViews(	const Vulkan& vulkan,
-															vk::ImageUsageFlags usage );
+															vk::ImageUsageFlags usage,
+															const Sampler* sampler );
 
 	static vk::UniqueImage				createImage(const Vulkan& vulkan,
 													Plane& plane, 
 													vk::ImageUsageFlags usage,
 													vk::ImageTiling tiling );
 	static vk::UniqueImageView			createImageView(const Vulkan& vulkan,
-														Plane& plane );
+														Plane& plane,
+														const Sampler* sampler );
 
 };
 

@@ -10,47 +10,67 @@
 namespace Zuazo::Graphics {
 
 struct Frame::Impl {
-	const Vulkan&						vulkan;
+	static constexpr auto FILTER_COUNT = std::tuple_size<Samplers>::value;
 
-	std::shared_ptr<const Descriptor> 	descriptor;
-	Math::Vec2f 						size;
-	std::shared_ptr<const InputColorTransfer> colorTransfer;
-	std::shared_ptr<const Buffer> 		colorTransferBuffer;
-	Image								image;
+	const Vulkan&										vulkan;
 
-	vk::UniqueDescriptorPool			descriptorPool;
-	std::vector<vk::DescriptorSet>		descriptorSets;
+	std::shared_ptr<const Descriptor> 					descriptor;
+	std::shared_ptr<const Buffer> 						colorTransferBuffer;
+	std::shared_ptr<const Samplers> 					samplers;
+	Image												image;
+
+	vk::UniqueDescriptorPool							descriptorPool;
+	std::array<vk::DescriptorSetLayout, FILTER_COUNT>	descriptorSetLayouts;
+	std::array<vk::DescriptorSet, FILTER_COUNT>			descriptorSets;
 
 	Impl(	const Vulkan& vulkan,
 			std::shared_ptr<const Descriptor> desc,
-			std::shared_ptr<const InputColorTransfer> colorTransfer,
 			std::shared_ptr<const Buffer> colorTransferBuffer,
+			std::shared_ptr<const Samplers> smp,
 			Utils::BufferView<const Image::Plane> planes,
 			vk::ImageUsageFlags usage )
 		: vulkan(vulkan)
 		, descriptor(std::move(desc))
-		, size(descriptor->calculateSize())
-		, colorTransfer(std::move(colorTransfer))
 		, colorTransferBuffer(std::move(colorTransferBuffer))
-		, image(createImage(vulkan, planes, usage))
+		, samplers(std::move(smp))
+		, image(createImage(vulkan, planes, usage, *samplers))
 		, descriptorPool(createDescriptorPool(vulkan))
-		, descriptorSets(allocateDescriptorSets(vulkan, *descriptorPool))
+		, descriptorSetLayouts(createDescriptorSetLayouts(vulkan, *samplers))
+		, descriptorSets(allocateDescriptorSets(vulkan, *descriptorPool, descriptorSetLayouts))
 	{
-		assert(this->descriptor);
-		assert(this->colorTransfer);
-		assert(this->colorTransferBuffer);
-
 		writeDescriptorSets();
 	}
 
 	~Impl() = default;
 
 
-	void bind(	vk::CommandBuffer cmd,
-					vk::PipelineLayout layout,
-					uint32_t index,
-					vk::Filter filter ) const noexcept
+
+	const Vulkan& getVulkan() const noexcept { 
+		return vulkan;
+	}
+
+	const Descriptor& getDescriptor() const noexcept {
+		assert(descriptor);
+		return *descriptor;
+	}
+
+	const Image& getImage() const noexcept {
+		return image;
+	}
+
+
+	vk::DescriptorSetLayout	getDescriptorSetLayout(ScalingFilter filter) const noexcept
 	{
+		assert(Math::isInRangeExclusive(filter, ScalingFilter::NONE, ScalingFilter::COUNT));
+		return descriptorSetLayouts[static_cast<size_t>(filter)];
+	}
+
+	void bind(	vk::CommandBuffer cmd,
+				vk::PipelineLayout layout,
+				uint32_t index,
+				ScalingFilter filter ) const noexcept
+	{
+		assert(Math::isInRangeExclusive(filter, ScalingFilter::NONE, ScalingFilter::COUNT));
 		const auto descriptorSet = descriptorSets[static_cast<size_t>(filter)];
 
 		cmd.bindDescriptorSets(
@@ -61,28 +81,6 @@ struct Frame::Impl {
 			{},									//Dynamic offsets
 			vulkan.getDispatcher()
 		);
-	}
-
-
-
-	const Vulkan& getVulkan() const noexcept { 
-		return vulkan;
-	}
-
-	const Descriptor& getDescriptor() const noexcept {
-		return *descriptor;
-	}
-
-	const Math::Vec2f& getSize() const noexcept {
-		return size;
-	}
-
-	const InputColorTransfer& getColorTransfer() const noexcept {
-		return *colorTransfer;
-	}
-
-	const Image& getImage() const noexcept {
-		return image;
 	}
 
 
@@ -145,7 +143,8 @@ private:
 
 	static Image createImage(	const Vulkan& vulkan,
 								Utils::BufferView<const Image::Plane> planes,
-								vk::ImageUsageFlags usage )
+								vk::ImageUsageFlags usage,
+								const Samplers& samplers )
 	{
 		usage |= vk::ImageUsageFlagBits::eSampled;
 
@@ -160,7 +159,8 @@ private:
 			planes,
 			usage,
 			tiling,
-			memory
+			memory,
+			&samplers.front()
 		);
 	}
 
@@ -168,10 +168,12 @@ private:
 		//A descriptor pool is created, from which 2 descriptor sets, each one with 
 		//one combined image sampler and one uniform buffer. Threrefore, 2 descriptors
 		//of each type will be required.
+		static const auto SAMPLER_COUNT = InputColorTransfer::getSamplerCount();
+
 		const std::array poolSizes = {
 			vk::DescriptorPoolSize(
 				vk::DescriptorType::eCombinedImageSampler,			//Descriptor type
-				FILTER_COUNT * InputColorTransfer::getSamplerCount()//Descriptor count
+				SAMPLER_COUNT * FILTER_COUNT						//Descriptor count
 			),
 			vk::DescriptorPoolSize(
 				vk::DescriptorType::eUniformBuffer,					//Descriptor type
@@ -188,16 +190,61 @@ private:
 		return vulkan.createDescriptorPool(createInfo);
 	}
 
-	static std::vector<vk::DescriptorSet> allocateDescriptorSets(	const Vulkan& vulkan,
-																	vk::DescriptorPool pool )
+	static std::array<vk::DescriptorSetLayout, FILTER_COUNT> createDescriptorSetLayouts(const Vulkan& vulkan,
+																						const Samplers& samplers )
 	{
-		std::vector<vk::DescriptorSet> result;
+		std::array<vk::DescriptorSetLayout, FILTER_COUNT> result;
+		assert(samplers.size() == result.size());
 
-		std::array<vk::DescriptorSetLayout, FILTER_COUNT> layouts;
-		for(size_t i = 0; i < layouts.size(); i++){
-			const auto filter = static_cast<vk::Filter>(i);
-			layouts[i] = getDescriptorSetLayout(vulkan, filter);
+		for(size_t i = 0; i < result.size(); ++i) {
+			const auto sampler = samplers[i].getSampler();
+			const size_t id = reinterpret_cast<const uintptr_t&>(sampler); //TODO dont use the sampler as id, as it may be repeated somewhere else
+
+			//Try to retrieve the descriptor from cache
+			result[i] = vulkan.createDescriptorSetLayout(id);
+			if(!result[i]) {
+				//No luck, need to create it
+				//Create the sampler array
+				const std::vector<vk::Sampler> immutableSamplers(InputColorTransfer::getSamplerCount(), sampler);
+
+				//Create the bindings
+				const std::array bindings = {
+					vk::DescriptorSetLayoutBinding( //Sampled image binding
+						InputColorTransfer::getSamplerBinding(),		//Binding
+						vk::DescriptorType::eCombinedImageSampler,		//Type
+						immutableSamplers.size(),						//Count
+						vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
+						immutableSamplers.data()						//Immutable samplers
+					), 
+					vk::DescriptorSetLayoutBinding(	//Color transfer binding
+						InputColorTransfer::getDataBinding(),			//Binding
+						vk::DescriptorType::eUniformBuffer,				//Type
+						1,												//Count
+						vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
+						nullptr											//Immutable samplers
+					), 
+				};
+
+				const vk::DescriptorSetLayoutCreateInfo createInfo(
+					{},
+					bindings.size(), bindings.data()
+				);
+
+				result[i] = vulkan.createDescriptorSetLayout(id, createInfo);
+			}
+
+			//Ensure that all positions are filled
+			assert(result[i]);
 		}
+
+		return result;
+	}
+
+	static std::array<vk::DescriptorSet, FILTER_COUNT> allocateDescriptorSets(	const Vulkan& vulkan,
+																				vk::DescriptorPool pool,
+																				const std::array<vk::DescriptorSetLayout, FILTER_COUNT>& layouts )
+	{
+		std::array<vk::DescriptorSet, FILTER_COUNT> result;
 
 		const vk::DescriptorSetAllocateInfo allocInfo(
 			pool,													//Pool
@@ -206,12 +253,12 @@ private:
 
 		//Allocate descriptor sets
 		auto uniqueDescriptorSets = vulkan.allocateDescriptorSets(allocInfo);
+		assert(uniqueDescriptorSets.size() == result.size());
 
 		//Copy them into the result buffer releasing them
-		result.reserve(uniqueDescriptorSets.size());
 		std::transform(
 			uniqueDescriptorSets.begin(), uniqueDescriptorSets.end(),
-			std::back_inserter(result),
+			result.begin(),
 			std::mem_fn(&vk::UniqueDescriptorSet::release)
 		);
 
@@ -222,11 +269,11 @@ private:
 
 Frame::Frame(	const Vulkan& vulkan,
 				std::shared_ptr<const Descriptor> desc,
-				std::shared_ptr<const InputColorTransfer> colorTransfer,
 				std::shared_ptr<const Buffer> colorTransferBuffer,
+				std::shared_ptr<const Samplers> samplers,
 				Utils::BufferView<const Image::Plane> planes,
 				vk::ImageUsageFlags usage )
-	: m_impl({}, vulkan, std::move(desc), std::move(colorTransfer), std::move(colorTransferBuffer), planes, usage)
+	: m_impl({}, vulkan, std::move(desc), std::move(colorTransferBuffer), std::move(samplers), planes, usage)
 {
 }
 
@@ -238,16 +285,6 @@ Frame& Frame::operator=(Frame&& other) noexcept = default;
 
 
 
-void Frame::bind( 	vk::CommandBuffer cmd,
-					vk::PipelineLayout layout,
-					uint32_t index,
-					vk::Filter filter ) const noexcept
-{
-	m_impl->bind(cmd, layout, index, filter);
-}
-
-
-
 const Vulkan& Frame::getVulkan() const noexcept { 
 	return m_impl->getVulkan();
 }
@@ -256,17 +293,25 @@ const Frame::Descriptor& Frame::getDescriptor() const noexcept {
 	return m_impl->getDescriptor();
 }
 
-const Math::Vec2f& Frame::getSize() const noexcept {
-	return m_impl->getSize();
-}
-
-const InputColorTransfer& Frame::getColorTransfer() const noexcept {
-	return m_impl->getColorTransfer();
-}
-
 const Image& Frame::getImage() const noexcept {
 	return m_impl->getImage();
 }
+
+
+
+vk::DescriptorSetLayout Frame::getDescriptorSetLayout(ScalingFilter filter) const noexcept
+{
+	return m_impl->getDescriptorSetLayout(filter);
+}
+
+void Frame::bind( 	vk::CommandBuffer cmd,
+					vk::PipelineLayout layout,
+					uint32_t index,
+					ScalingFilter filter ) const noexcept
+{
+	m_impl->bind(cmd, layout, index, filter);
+}
+
 
 
 std::shared_ptr<StagedBuffer> Frame::createColorTransferBuffer(	const Vulkan& vulkan,
@@ -285,6 +330,26 @@ std::shared_ptr<StagedBuffer> Frame::createColorTransferBuffer(	const Vulkan& vu
 		vk::AccessFlagBits::eUniformRead,
 		vk::PipelineStageFlagBits::eAllGraphics
 	);
+
+	return result;
+}
+
+std::shared_ptr<Frame::Samplers> Frame::createSamplers(	const Vulkan& vulkan,
+														const InputColorTransfer& colorTransfer,
+														Utils::BufferView<const Image::Plane> planes )
+{
+	std::shared_ptr<Samplers> result = Utils::makeShared<Samplers>();
+	assert(result);
+	auto& samplers = *result;
+
+	for(size_t i = 0; i < samplers.size(); ++i) {
+		samplers[i] = Sampler(
+			vulkan,
+			planes.front(),
+			colorTransfer,
+			static_cast<ScalingFilter>(i)
+		);
+	}
 
 	return result;
 }
@@ -310,71 +375,6 @@ std::vector<Image::Plane> Frame::getPlaneDescriptors(const Descriptor& desc) {
 			std::get<vk::Format>(formats[i]),
 			std::get<vk::ComponentMapping>(formats[i])
 		);
-	}
-
-	return result;
-}
-
-vk::DescriptorSetLayout	Frame::getDescriptorSetLayout(	const Vulkan& vulkan,
-														vk::Filter filter) 
-{
-	static const std::array<Utils::StaticId, FILTER_COUNT> ids;
-	const size_t id = ids[static_cast<size_t>(filter)];
-
-	auto result = vulkan.createDescriptorSetLayout(id);
-
-	if(!result) {
-		//Descriptor set was not previously created. Create it
-		auto sampler = vulkan.createSampler(id);
-		if(!sampler) {
-			//Sampler does not exist, create it
-			const vk::SamplerCreateInfo createInfo(
-				{},														//Flags
-				filter, filter,											//Min/Mag filter
-				vk::SamplerMipmapMode::eNearest,						//Mipmap mode
-				vk::SamplerAddressMode::eClampToEdge,					//U address mode
-				vk::SamplerAddressMode::eClampToEdge,					//V address mode
-				vk::SamplerAddressMode::eClampToEdge,					//W address mode
-				0.0f,													//Mip LOD bias
-				false,													//Enable anisotropy
-				0.0f,													//Max anisotropy
-				false,													//Compare enable
-				vk::CompareOp::eNever,									//Compare operation
-				0.0f, 0.0f,												//Min/Max LOD
-				vk::BorderColor::eFloatTransparentBlack,				//Boreder color
-				false													//Unormalized coords
-			);
-
-			sampler = vulkan.createSampler(id, createInfo);
-		}
-
-		//Create the sampler array
-		const std::vector<vk::Sampler> inmutableSamplers(InputColorTransfer::getSamplerCount(), sampler);
-
-		//Create the bindings
-		const std::array bindings = {
-			vk::DescriptorSetLayoutBinding( //Sampled image binding
-				InputColorTransfer::getSamplerBinding(),		//Binding
-				vk::DescriptorType::eCombinedImageSampler,		//Type
-				inmutableSamplers.size(),						//Count
-				vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
-				inmutableSamplers.data()						//Inmutable samplers
-			), 
-			vk::DescriptorSetLayoutBinding(	//Color transfer binding
-				InputColorTransfer::getDataBinding(),			//Binding
-				vk::DescriptorType::eUniformBuffer,				//Type
-				1,												//Count
-				vk::ShaderStageFlagBits::eAllGraphics,			//Shader stage
-				nullptr											//Inmutable samplers
-			), 
-		};
-
-		const vk::DescriptorSetLayoutCreateInfo createInfo(
-			{},
-			bindings.size(), bindings.data()
-		);
-
-		result = vulkan.createDescriptorSetLayout(id, createInfo);
 	}
 
 	return result;

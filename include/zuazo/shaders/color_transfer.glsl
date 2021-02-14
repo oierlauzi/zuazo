@@ -571,9 +571,6 @@ vec4 ct_read(in ct_read_data inputProp, in vec4 color) {
 }
 
 vec4 ct_write(in ct_write_data outputProp, in vec4 color) {
-	//Premultiply the color with the alpha channel
-	color = vec4(color.rgb, 1.0f) * color.a;
-
 	//Apply a gamma-like compression
 	color.rgb = ct_OETF(outputProp.colorTransferFunction, color.rgb); 
 
@@ -639,7 +636,7 @@ vec4 ct_cubic(in float v) {
     return vec4(x, y, z, w) * (1.0f/6.0f);
 }
 
-vec4 ct_bicubic(in ct_read_data inputProp, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords) {
+vec4 ct_bicubic(in bool bilinearSampler, in ct_read_data inputProp, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords) {
 	//From https://stackoverflow.com/questions/13501081/efficient-bicubic-filtering-code-in-glsl
 	//Convert the texture coordinates into image coordinates
 	const ivec2 texSize = textureSize(images[0], 0);
@@ -664,7 +661,7 @@ vec4 ct_bicubic(in ct_read_data inputProp, in sampler2D images[ct_SAMPLER_COUNT]
 	vec4 sample2;
 	vec4 sample3;
 
-	if(inputProp.colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_LINEAR) {
+	if(bilinearSampler) {
 		//Sampler configured as bilinear
 		sample0 = ct_passthrough(inputProp, images, offset.xz);
 		sample1 = ct_passthrough(inputProp, images, offset.yz);
@@ -694,7 +691,10 @@ vec4 ct_texture(in int mode, in ct_read_data inputProp, in sampler2D images[ct_S
 		result = ct_bilinear(inputProp, images, texCoords);
 		break;
 	case ct_SAMPLE_MODE_BICUBIC:
-		result = ct_bicubic(inputProp, images, texCoords);
+		result = ct_bicubic(false, inputProp, images, texCoords);
+		break;
+	case ct_SAMPLE_MODE_BILINEAR_TO_BICUBIC:
+		result = ct_bicubic(true, inputProp, images, texCoords);
 		break;
 	default: //ct_SAMPLE_MODE_PASSTHOUGH
 		result = ct_passthrough(inputProp, images, texCoords);
@@ -715,7 +715,10 @@ void ct_output(in ct_write_data outputProp, in vec4 color, out vec4 plane0, out 
 	ct_store(outputProp.planeFormat, color, plane0, plane1, plane2, plane3);
 }
 
-
+vec4 ct_premultiply_alpha(in vec4 color) {
+	color.rgb *= color.a;
+	return color;
+}
 
 /*
  * Color space conversion

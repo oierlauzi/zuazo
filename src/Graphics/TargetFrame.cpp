@@ -6,16 +6,16 @@ namespace Zuazo::Graphics {
 
 TargetFrame::TargetFrame(	const Vulkan& vulkan,
 							std::shared_ptr<const Descriptor> desc,
-							std::shared_ptr<const InputColorTransfer> colorTransfer,
 							std::shared_ptr<const Buffer> colorTransferBuffer,
+							std::shared_ptr<const Samplers> samplers,
 							Utils::BufferView<const Image::Plane> planes,
 							std::shared_ptr<const DepthStencil> depthStencil,
 							RenderPass renderPass )
 	: Frame(
 		vulkan,
 		std::move(desc),
-		std::move(colorTransfer),
 		std::move(colorTransferBuffer),
+		std::move(samplers),
 		planes,
 		vk::ImageUsageFlagBits::eColorAttachment )
 	, m_depthStencil(std::move(depthStencil))

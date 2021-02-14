@@ -5,8 +5,6 @@
 #define ZUAZO_MACRO_EXPAND(x) (x)
 #define ZUAZO_TO_STRING(x) #x
 
-#define ZUAZO_IGNORE_PARAM(x) (void)(x)
-
 #ifdef NDEBUG
 	#define ZUAZO_IS_DEBUG (false)
 #else
@@ -17,6 +15,22 @@
 #define ZUAZO_IS_CPP11 (ZUAZO_CPP_VER >= 201103L)
 #define ZUAZO_IS_CPP14 (ZUAZO_CPP_VER >= 201402L)
 #define ZUAZO_IS_CPP17 (ZUAZO_CPP_VER >= 201703L)
+
+#if defined(__has_cpp_attribute)
+    #if __has_cpp_attribute(fallthrough)
+        #define ZUAZO_fallthrough [[fallthrough]]
+    #else
+        #define ZUAZO_fallthrough
+    #endif
+#else
+    #define ZUAZO_fallthrough
+#endif
+
+
+
+/*
+ * Enum related:
+ */
 
 #define ZUAZO_ENUM_BIT_OPERATORS2(T, Q)																																				\
 	constexpr T operator| (T a, Q b) { return static_cast<T>( static_cast<std::underlying_type<T>::type>(a) | static_cast<std::underlying_type<T>::type>(b) ); }					\
@@ -94,6 +108,12 @@
 	ZUAZO_ENUM_MOD_OPERATORS(T)
 
 #define ZUAZO_ENUM2STR_CASE(ns, e) case ns::e: return ZUAZO_TO_STRING(e);
+
+
+
+/*
+ * Default assignment
+ */
 
 #define ZUAZO_DEFAULT_ASSIGMENT_OPERATORS(T)																																		\
 	T& operator=(const T& other) = default; 																																		\

@@ -15,9 +15,10 @@ public:
 
 	StagedFrame(const Vulkan& vulkan,
 				std::shared_ptr<const Descriptor> desc,
-				std::shared_ptr<const InputColorTransfer> colorTransfer,
 				std::shared_ptr<const Buffer> colorTransferBuffer,
+				std::shared_ptr<const Samplers> samplers,
 				Utils::BufferView<const Image::Plane> planes,
+				Utils::BufferView<const Image::Plane> optimizedPlanes,
 				std::shared_ptr<const vk::UniqueCommandPool> cmdPool );
 	StagedFrame(const StagedFrame& other) = delete;
 	StagedFrame(StagedFrame&& other) noexcept = default;

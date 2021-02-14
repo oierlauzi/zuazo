@@ -36,9 +36,10 @@ struct Uploader::Impl {
 			new (x) StagedFrame(
 				uplo.vulkan,
 				uplo.frameDescriptor,
-				uplo.colorTransfer,
 				uplo.colorTransferBuffer,
+				uplo.samplers,
 				uplo.planeDescriptors,
+				uplo.optimizedPlaneDescriptors,
 				uplo.commandPool
 			);
 		}
@@ -49,38 +50,42 @@ struct Uploader::Impl {
 	};
 
 	std::reference_wrapper<const Vulkan>			vulkan;
-	std::shared_ptr<Frame::Descriptor>				frameDescriptor;
-	std::shared_ptr<InputColorTransfer>				colorTransfer;
-	std::vector<Image::Plane>						planeDescriptors;
+	InputColorTransfer								colorTransfer;
 
+	std::shared_ptr<Frame::Descriptor>				frameDescriptor;
+	std::vector<Image::Plane>						planeDescriptors;
+	std::vector<Image::Plane>						optimizedPlaneDescriptors;
+	std::shared_ptr<Frame::Samplers>				samplers;
 	std::shared_ptr<StagedBuffer>					colorTransferBuffer;
 	std::shared_ptr<vk::UniqueCommandPool>			commandPool;
 
 	mutable Utils::Pool<StagedFrame, Allocator>		framePool;
 
-
 	Impl(	const Vulkan& vulkan, 
-			const Frame::Descriptor& desc )
+			const Frame::Descriptor& desc,
+			InputColorTransfer colorTrf )
 		: vulkan(vulkan)
+		, colorTransfer(std::move(colorTrf))
 		, frameDescriptor(Utils::makeShared<Frame::Descriptor>(desc))
-		, colorTransfer(Utils::makeShared<InputColorTransfer>(*frameDescriptor))
-		, planeDescriptors(createPlaneDescriptors(vulkan, desc, *colorTransfer))
-		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, *colorTransfer))
+		, planeDescriptors(createPlaneDescriptors(desc))
+		, optimizedPlaneDescriptors(createOptimizedPlaneDescriptors(vulkan, planeDescriptors, colorTransfer))
+		, samplers(Frame::createSamplers(vulkan, colorTransfer, optimizedPlaneDescriptors))
+		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, colorTransfer))
 		, commandPool(StagedFrame::createCommandPool(vulkan))
 		, framePool(1, Allocator(*this))
 	{
 	}
 
 	Impl(	const Vulkan& vulkan, 
+			const Frame::Descriptor& desc )
+		: Impl(vulkan, desc, InputColorTransfer(desc))
+	{
+	}
+
+	Impl(	const Vulkan& vulkan, 
 			const Frame::Descriptor& desc,
 			const Chromaticities& customPrimaries )
-		: vulkan(vulkan)
-		, frameDescriptor(Utils::makeShared<Frame::Descriptor>(desc))
-		, colorTransfer(Utils::makeShared<InputColorTransfer>(*frameDescriptor, customPrimaries))
-		, planeDescriptors(createPlaneDescriptors(vulkan, desc, *colorTransfer))
-		, colorTransferBuffer(Frame::createColorTransferBuffer(vulkan, *colorTransfer))
-		, commandPool(StagedFrame::createCommandPool(vulkan))
-		, framePool(1, Allocator(*this))
+		: Impl(vulkan, desc, InputColorTransfer(desc, customPrimaries))
 	{
 	}
 
@@ -164,21 +169,43 @@ private:
 		return vulkan.listSupportedFormatsOptimal(DESIRED_FLAGS);
 	}
 
-	static std::vector<Image::Plane> createPlaneDescriptors(const Vulkan& vulkan, 
-															const Frame::Descriptor& desc,
-															InputColorTransfer& colorTransfer )
+	static std::vector<Image::Plane> createPlaneDescriptors(const Frame::Descriptor& desc) {
+		return Frame::getPlaneDescriptors(desc);
+	}
+
+	static std::vector<Image::Plane> createOptimizedPlaneDescriptors(	const Vulkan& vulkan, 
+																		const std::vector<Image::Plane>& planeDescriptors,
+																		InputColorTransfer& colorTransfer )
 	{
-		std::vector<Image::Plane> result = Frame::getPlaneDescriptors(desc);
+		std::vector<Image::Plane> result = planeDescriptors;
 
 		//Try to optimize it
 		const auto supportedFormats = getVulkanFormatSupport(vulkan);
+		colorTransfer.optimize(result, supportedFormats);
+
+		//There may be less planes after the optimization. Erase the excess ones
+		const auto ite = std::remove_if(
+			result.begin(), result.end(),
+			[] (const Image::Plane& plane) -> bool {
+				return plane.getFormat() == vk::Format::eUndefined;
+			}
+		);
+		result.erase(ite, result.end());
+
+		//In order to use binary_search:
 		assert(std::is_sorted(supportedFormats.cbegin(), supportedFormats.cend()));
 
-		colorTransfer.optimize(result, supportedFormats);
+		//Try to remove the swizzle from each plane
 		for(auto& plane : result) {
 			const auto [format, swizzle] = optimizeFormat(std::make_tuple(plane.getFormat(), plane.getSwizzle()));
-			plane.setFormat(format);
-			plane.setSwizzle(swizzle);
+			
+			if(std::binary_search(supportedFormats.cbegin(), supportedFormats.cend(), format)) {
+				plane.setFormat(format);
+				plane.setSwizzle(swizzle);
+			}
+
+			//Ensure that the format is supporter wether or not it has been optimized:
+			assert(std::binary_search(supportedFormats.cbegin(), supportedFormats.cend(), plane.getFormat()));
 		}
 
 		return result;

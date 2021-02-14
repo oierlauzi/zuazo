@@ -4,16 +4,17 @@ namespace Zuazo::Graphics {
 
 StagedFrame::StagedFrame(	const Vulkan& vulkan,
 							std::shared_ptr<const Descriptor> desc,
-							std::shared_ptr<const InputColorTransfer> colorTransfer,
 							std::shared_ptr<const Buffer> colorTransferBuffer,
+							std::shared_ptr<const Samplers> samplers,
 							Utils::BufferView<const Image::Plane> planes,
+							Utils::BufferView<const Image::Plane> optimizedPlanes,
 							std::shared_ptr<const vk::UniqueCommandPool> cmdPool )
 	: Frame(
 		vulkan,
 		std::move(desc),
-		std::move(colorTransfer),
 		std::move(colorTransferBuffer),
-		planes,
+		std::move(samplers),
+		optimizedPlanes,
 		vk::ImageUsageFlagBits::eTransferDst )
 	, m_stagingImage(createStagingImage(vulkan, planes))
 	, m_pixelData(getPixelData(vulkan, m_stagingImage))

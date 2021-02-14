@@ -137,18 +137,17 @@ static int32_t optimizeColorTransferFunction(	int32_t colorRange,
 	return colorTransferFunction;
 }
 
-static uint32_t optimizePlanes(	Utils::BufferView<Image::Plane> planes,
+static int32_t optimizePlanes(	int32_t planeFormat,
+								Utils::BufferView<Image::Plane> planes,
 								Utils::BufferView<const vk::Format> supportedFormats )
 {
-	const size_t planeCount = planes.size();
-	int32_t planeFormat = ct_PLANE_FORMAT_RGBA;
-
-	if(planeCount > 1) {
+	if(planeFormat > ct_PLANE_FORMAT_RGBA) {
 		//It is a multiplanar format. Try to use Vulkan's multiplanar formats if supported
 		//Obtain the chroma subsampling. Always between the 1st and 2nd planes
-		const auto subsampling = 
-			Math::Vec2f(planes[0].getExtent().width, planes[0].getExtent().height) / 
-			Math::Vec2f(planes[1].getExtent().width, planes[1].getExtent().height) ;
+		const auto subsampling = static_cast<Math::Vec2f>(
+			fromVulkan(to2D(planes[0].getExtent())) / 
+			fromVulkan(to2D(planes[1].getExtent()))
+		);
 
 		constexpr Math::Vec2f SUBSAMPLING_444(1U, 1U);
 		constexpr Math::Vec2f SUBSAMPLING_422(2U, 1U);
@@ -157,13 +156,9 @@ static uint32_t optimizePlanes(	Utils::BufferView<Image::Plane> planes,
 		//Try to optimize the format
 		vk::Format optimizedFormat = vk::Format::eUndefined;
 
-		if(planeCount == 4) {
-			//4 Plane format. Not supported natively. //TODO fall back to a combination of 3plane + alpha
-			planeFormat = ct_PLANE_FORMAT_G_B_R_A;
-		} else if (planeCount == 3) {
+		switch(planeFormat) {
+		case ct_PLANE_FORMAT_G_B_R:
 			//3 Plane format
-			planeFormat = ct_PLANE_FORMAT_G_B_R;
-
 			switch (planes.front().getFormat()) {
 			case vk::Format::eR8Unorm:
 				//8bpp
@@ -213,11 +208,10 @@ static uint32_t optimizePlanes(	Utils::BufferView<Image::Plane> planes,
 				//Unknown, leave it as it is
 				break;
 			}
+			break;
 
-		} else if (planeCount == 2) {
+		case ct_PLANE_FORMAT_G_BR:
 			//2 Plane format
-			planeFormat = ct_PLANE_FORMAT_G_B_R;
-
 			switch (planes.front().getFormat()) {
 			case vk::Format::eR8Unorm:
 				//8bpp
@@ -259,6 +253,10 @@ static uint32_t optimizePlanes(	Utils::BufferView<Image::Plane> planes,
 				//Unknown, leave it as it is
 				break;
 			}
+			break;
+
+		default:
+			break;
 
 		}
 
@@ -328,6 +326,12 @@ struct InputColorTransfer::Impl {
 	void optimize(	Utils::BufferView<Image::Plane> planes,
 					Utils::BufferView<const vk::Format> supportedFormats ) noexcept
 	{
+		transferData.planeFormat = optimizePlanes(
+			transferData.planeFormat,
+			planes,
+			supportedFormats
+		);
+
 		transferData.colorTransferFunction = optimizeColorTransferFunction(
 			transferData.colorRange,
 			transferData.colorModel,
@@ -341,54 +345,48 @@ struct InputColorTransfer::Impl {
 		return reinterpret_cast<const std::byte*>(&transferData);
 	}
 
-	SamplerDescriptor getSamplerDescriptor(ScalingFilter filter) const noexcept {
-		SamplerDescriptor result;
+
+
+	int32_t getSamplingMode(ScalingFilter filter,
+							vk::Filter samplerFilter ) const noexcept
+	{
+		int32_t result;
 
 		switch(filter) {
 		case ScalingFilter::LINEAR:
-			if(transferData.colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_LINEAR) {
+			if(samplerFilter == vk::Filter::eLinear) {
 				//Perform bilinear sampling using bilinear samplers
-				result = {
-					vk::Filter::eLinear,
-					ct_SAMPLE_MODE_PASSTHOUGH
-				};
+				result = ct_SAMPLE_MODE_PASSTHOUGH;
 			} else {
-				//Perform bilinear sampling using nearest samplers as gamma correction needs to 
-				//be done prior to interpolating
-				result = {
-					vk::Filter::eNearest,
-					ct_SAMPLE_MODE_BILINEAR
-				};
+				//Perform bilinear sampling using nearest samplers
+				assert(samplerFilter == vk::Filter::eNearest);
+				result = ct_SAMPLE_MODE_BILINEAR;
 			}
 			break;
 		
 		case ScalingFilter::CUBIC:
-			if(transferData.colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_LINEAR) {
+			if(samplerFilter == vk::Filter::eCubicEXT) {
+				//Perform bicubic sampling using bicubic samplers
+				result = ct_SAMPLE_MODE_PASSTHOUGH;
+			} else if(samplerFilter == vk::Filter::eLinear) {
 				//Perform bicubic sampling using linear samplers
-				result = {
-					vk::Filter::eLinear,
-					ct_SAMPLE_MODE_BICUBIC
-				};
+				result = ct_SAMPLE_MODE_BILINEAR_TO_BICUBIC;
 			} else {
-				//Perform bicubic sampling using nearest samplers as gamma correction needs to 
-				//be done prior to interpolating
-				result = {
-					vk::Filter::eNearest,
-					ct_SAMPLE_MODE_BICUBIC
-				};
+				//Perform bicubic sampling using nearest samplers
+				assert(samplerFilter == vk::Filter::eNearest);
+				result = ct_SAMPLE_MODE_BICUBIC;
 			}
 			break;
 
 		default: //ScalingFilter::NEAREST
-			result = {
-				vk::Filter::eNearest,
-				ct_SAMPLE_MODE_PASSTHOUGH
-			};
+			assert(samplerFilter == vk::Filter::eNearest);
+			result = ct_SAMPLE_MODE_PASSTHOUGH;
 			break;
 		}
 
 		return result;
 	}
+
 
 	bool isPassthough() const noexcept {
 		return	transferData.colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_LINEAR &&
@@ -447,10 +445,11 @@ const std::byte* InputColorTransfer::data() const noexcept {
 	return m_impl->data();
 }
 
-InputColorTransfer::SamplerDescriptor InputColorTransfer::getSamplerDescriptor(ScalingFilter filter) const noexcept {
-	return m_impl->getSamplerDescriptor(filter);
+int32_t InputColorTransfer::getSamplingMode(ScalingFilter filter,
+											vk::Filter samplerFilter ) const noexcept
+{
+	return m_impl->getSamplingMode(filter, samplerFilter);
 }
-
 
 bool InputColorTransfer::isPassthough() const noexcept {
 	return m_impl->isPassthough();

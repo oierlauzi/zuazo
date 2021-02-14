@@ -18,8 +18,8 @@ class TargetFrame
 public:
 	TargetFrame(const Vulkan& vulkan,
 				std::shared_ptr<const Descriptor> desc,
-				std::shared_ptr<const InputColorTransfer> colorTransfer,
 				std::shared_ptr<const Buffer> colorTransferBuffer,
+				std::shared_ptr<const Samplers> samplers,
 				Utils::BufferView<const Image::Plane> planes,
 				std::shared_ptr<const DepthStencil> depthStencil,
 				RenderPass renderPass );
