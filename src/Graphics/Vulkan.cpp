@@ -237,8 +237,13 @@ struct Vulkan::Impl {
 	}
 
 
-	vk::UniqueSwapchainKHR createSwapchain(const vk::SwapchainCreateInfoKHR& createInfo) const{
-		return device->createSwapchainKHRUnique(createInfo, nullptr, dispatcher);
+	vk::UniqueSwapchainKHR createSwapchain(const vk::SwapchainCreateInfoKHR& createInfo) const {
+		//It is a extension so support should have been checked before calling
+		if(dispatcher.vkCreateSwapchainKHR) {
+			return device->createSwapchainKHRUnique(createInfo, nullptr, dispatcher);
+		} else {
+			throw Exception("Unsupported Vulkan function call: vkCreateSwapchainKHR");
+		}
 	}
 
 	vk::UniqueImage createImage(const vk::ImageCreateInfo& createInfo) const{
@@ -398,8 +403,13 @@ struct Vulkan::Impl {
 
 	vk::UniqueSamplerYcbcrConversion createSamplerYcbcrConversion(const vk::SamplerYcbcrConversionCreateInfo& createInfo) const {
 		//It is a extension so support should have been checked before calling
-		if(!dispatcher.vkCreateSamplerYcbcrConversionKHR) throw Exception("Unsupported Vulkan function call: vkCreateSamplerYcbcrConversionKHR");
-		return device->createSamplerYcbcrConversionKHRUnique(createInfo, nullptr, dispatcher);
+		if(dispatcher.vkCreateSamplerYcbcrConversion) {
+			return device->createSamplerYcbcrConversionUnique(createInfo, nullptr, dispatcher);
+		} else if(dispatcher.vkCreateSamplerYcbcrConversionKHR) {
+			return device->createSamplerYcbcrConversionKHRUnique(createInfo, nullptr, dispatcher);
+		} else {
+			throw Exception("Unsupported Vulkan function call: vkCreateSamplerYcbcrConversion");
+		}		
 	}
 
 	vk::SamplerYcbcrConversion createSamplerYcbcrConversion(size_t id) const {
@@ -592,24 +602,26 @@ struct Vulkan::Impl {
 		return device->getImageMemoryRequirements(img, dispatcher);
 	}
 
-	vk::MemoryRequirements2 getMemoryRequirements(const vk::BufferMemoryRequirementsInfo2& reqInfo) const
-	{
-		if(dispatcher.vkGetBufferMemoryRequirements2KHR) {
+	vk::MemoryRequirements2 getMemoryRequirements(const vk::BufferMemoryRequirementsInfo2& reqInfo) const {
+		if(dispatcher.vkGetBufferMemoryRequirements2) {
+			return device->getBufferMemoryRequirements2(reqInfo, dispatcher);
+		} else if(dispatcher.vkGetBufferMemoryRequirements2KHR) {
 			return device->getBufferMemoryRequirements2KHR(reqInfo, dispatcher);
 		} else {
 			//Extension not supported, manually implement if possible
-			if(reqInfo.pNext) throw Exception("Unsupported Vulkan function call: getBufferMemoryRequirements2KHR");
+			if(reqInfo.pNext) throw Exception("Unsupported Vulkan function call: getBufferMemoryRequirements2");
 			return vk::MemoryRequirements2(getMemoryRequirements(reqInfo.buffer));
 		}
 	}
 
-	vk::MemoryRequirements2 getMemoryRequirements(const vk::ImageMemoryRequirementsInfo2& reqInfo) const
-	{
-		if(dispatcher.vkGetImageMemoryRequirements2KHR) {
+	vk::MemoryRequirements2 getMemoryRequirements(const vk::ImageMemoryRequirementsInfo2& reqInfo) const {
+		if(dispatcher.vkGetImageMemoryRequirements2) {
+			return device->getImageMemoryRequirements2(reqInfo, dispatcher);
+		} else if(dispatcher.vkGetImageMemoryRequirements2KHR) {
 			return device->getImageMemoryRequirements2KHR(reqInfo, dispatcher);
 		} else {
 			//Extension not supported, manually implement if possible
-			if(reqInfo.pNext) throw Exception("Unsupported Vulkan function call: vkGetImageMemoryRequirements2KHR");
+			if(reqInfo.pNext) throw Exception("Unsupported Vulkan function call: vkGetImageMemoryRequirements2");
 			return vk::MemoryRequirements2(getMemoryRequirements(reqInfo.image));
 		}
 	}
@@ -625,24 +637,28 @@ struct Vulkan::Impl {
 	}
 
 	void bindMemory(Utils::BufferView<const vk::BindBufferMemoryInfo> bindInfos) const {
-		if(dispatcher.vkBindBufferMemory2KHR) {
+		if(dispatcher.vkBindBufferMemory2) {
+			device->bindBufferMemory2(toVulkan(bindInfos), dispatcher);
+		} else if(dispatcher.vkBindBufferMemory2KHR) {
 			device->bindBufferMemory2KHR(toVulkan(bindInfos), dispatcher);
 		} else {
 			//Extension not supported, manually implement if possible
 			for(const auto& bindInfo : bindInfos) {
-				if(bindInfo.pNext) throw Exception("Unsupported Vulkan function call: vkBindBufferMemory2KHR");
+				if(bindInfo.pNext) throw Exception("Unsupported Vulkan function call: vkBindBufferMemory2");
 				bindMemory(bindInfo.buffer, bindInfo.memory, bindInfo.memoryOffset);
 			}
 		}
 	}
 
 	void bindMemory(Utils::BufferView<const vk::BindImageMemoryInfo> bindInfos) const {
-		if(dispatcher.vkBindImageMemory2KHR) {
+		if(dispatcher.vkBindImageMemory2) {
+			device->bindImageMemory2(toVulkan(bindInfos), dispatcher);
+		} else if(dispatcher.vkBindImageMemory2KHR) {
 			device->bindImageMemory2KHR(toVulkan(bindInfos), dispatcher);
 		} else {
 			//Extension not supported, manually implement if possible
 			for(const auto& bindInfo : bindInfos) {
-				if(bindInfo.pNext) throw Exception("Unsupported Vulkan function call: vkBindImageMemory2KHR");
+				if(bindInfo.pNext) throw Exception("Unsupported Vulkan function call: vkBindImageMemory2");
 				bindMemory(bindInfo.image, bindInfo.memory, bindInfo.memoryOffset);
 			}
 		}
@@ -1039,12 +1055,16 @@ struct Vulkan::Impl {
 				nullptr																//Results								
 			);
 
-			switch(getPresentationQueue().presentKHR(&presentInfo, dispatcher)){
-			case vk::Result::eSuccess: 
-			case vk::Result::eErrorOutOfDateKHR: 
-				break;
-			default:
-				throw Exception("Error presentting images");
+			if(dispatcher.vkQueuePresentKHR) {
+				switch(getPresentationQueue().presentKHR(&presentInfo, dispatcher)){
+				case vk::Result::eSuccess: 
+				case vk::Result::eErrorOutOfDateKHR: 
+					break;
+				default:
+					throw Exception("Error presentting images");
+				}
+			} else {
+				throw Exception("Unsupported Vulkan function call: vkQueuePresentKHR");
 			}
 
 			presentSemaphores.clear();
@@ -1094,7 +1114,7 @@ private:
 			appVersion,
 			"Zuazo",
 			toVulkan(runtimeVersion),
-			VK_API_VERSION_1_0
+			VK_API_VERSION_1_1
 		);
 
 		//Get the validation layers
@@ -1279,7 +1299,9 @@ private:
 
 		//List the supported features
 		DeviceFeatures supported;
-		if(disp.vkGetPhysicalDeviceFeatures2KHR) {
+		if(disp.vkGetPhysicalDeviceFeatures2) {
+			physicalDevice.getFeatures2(&supported.get(), disp);
+		} else if(disp.vkGetPhysicalDeviceFeatures2KHR) {
 			physicalDevice.getFeatures2KHR(&supported.get(), disp);
 		} else {
 			physicalDevice.getFeatures(&supported.get().features, disp);
