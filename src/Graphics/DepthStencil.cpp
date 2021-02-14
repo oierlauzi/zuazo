@@ -33,7 +33,7 @@ Image DepthStencil::createImage(const Vulkan& vulkan,
 {
 	assert(hasDepth(fmt) || hasStencil(fmt));
 
-	const Image::Plane imagePlane(vk::Extent3D(ext), fmt);
+	const Image::Plane imagePlane(to3D(ext), fmt);
 
 	constexpr vk::ImageUsageFlags usage =
 		vk::ImageUsageFlagBits::eDepthStencilAttachment |
