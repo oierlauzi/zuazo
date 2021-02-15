@@ -156,6 +156,8 @@ vk::UniqueImageView Image::createImageView(	const Vulkan& vulkan,
 
 	//We'll might need to know about the YCbCr sampler
 	const vk::SamplerYcbcrConversionInfo samplerYCbCrConversionInfo(sampler ? sampler->getSamplerYCbCrConversion() : nullptr);
+	const void* pNext = samplerYCbCrConversionInfo.conversion ? &samplerYCbCrConversionInfo : nullptr;
+	const auto swizzle = pNext ? vk::ComponentMapping() : plane.getSwizzle(); //Only set swizzle if not set by pNext
 
 	assert(plane.getImage());
 	const auto createInfo = vk::ImageViewCreateInfo(
@@ -163,9 +165,9 @@ vk::UniqueImageView Image::createImageView(	const Vulkan& vulkan,
 		plane.getImage(),								//Image
 		vk::ImageViewType::e2D,							//ImageView type
 		plane.getFormat(),								//Image format
-		plane.getSwizzle(),								//Swizzle
+		swizzle,										//Swizzle
 		subresourceRange								//Image subresources
-	).setPNext(samplerYCbCrConversionInfo.conversion ? &samplerYCbCrConversionInfo : nullptr);
+	).setPNext(pNext);
 
 	auto result = vulkan.createImageView(createInfo);
 	plane.setImageView(*result);
