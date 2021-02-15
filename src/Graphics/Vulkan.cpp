@@ -1345,13 +1345,15 @@ private:
 		}
 
 		//Create it
+		const auto* pNext = &features.get();
+		const bool pNextSupported = disp.vkGetPhysicalDeviceFeatures2 || disp.vkGetPhysicalDeviceFeatures2KHR;
 		const auto createInfo = vk::DeviceCreateInfo(
 			{},
 			queueCreateInfos.size(), queueCreateInfos.data(),			//Queue families
 			layerNames.size(), layerNames.data(),						//Validation layers
 			extensionNames.size(), extensionNames.data(),				//Extensions
-			nullptr														//Features will be specified with pNext
-		).setPNext(&features.get());
+			pNextSupported ? nullptr : &pNext->features					//Features will be specified with pNext
+		).setPNext(pNextSupported ? pNext : nullptr);
 
 		auto dev = physicalDevice.createDeviceUnique(createInfo, nullptr, disp);
 

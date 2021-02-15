@@ -379,11 +379,14 @@ struct InputColorTransfer::Impl {
 	
 
 	vk::SamplerYcbcrRange getYCbCrSamplerRange() const noexcept {
-		return toVulkan(colorRange);
+		const auto result = toVulkan(colorRange);
+		return Math::max(result, vk::SamplerYcbcrRange::eItuFull); //Do not return invalid values
 	}
 
 	vk::SamplerYcbcrModelConversion getYCbCrSamplerModel() const noexcept {
-		return toVulkan(colorModel);
+		const auto result = toVulkan(colorModel);
+		const auto identity = isYCbCr(colorModel) ? vk::SamplerYcbcrModelConversion::eYcbcrIdentity : vk::SamplerYcbcrModelConversion::eRgbIdentity;
+		return Math::max(result, identity); //Do not return invalid values
 	}
 	
 

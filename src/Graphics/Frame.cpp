@@ -92,23 +92,22 @@ private:
 		for(size_t i = 0; i < descriptorSets.size(); i++){
 			//Update all images. As nullptr images can't be passed, repeat available images		
 			const auto planes = image.getPlanes();
-			std::vector<vk::DescriptorImageInfo> images;
-			images.reserve(frame_SAMPLER_COUNT);
-			for(const auto& plane : planes) {
-				images.emplace_back(
+			std::array<vk::DescriptorImageInfo, frame_SAMPLER_COUNT> images;
+			for(size_t i = 0; i < planes.size(); ++i) {
+				images[i] = vk::DescriptorImageInfo(
 					nullptr,												//Sampler
-					plane.getImageView(),									//Image views
+					planes[i].getImageView(),								//Image views
 					vk::ImageLayout::eShaderReadOnlyOptimal					//Layout
 				);
 			}
-			while(images.size() < frame_SAMPLER_COUNT) {
-				images.emplace_back(
+			for(size_t i = planes.size(); i < images.size(); ++i) {
+				images[i] = vk::DescriptorImageInfo(
 					nullptr,												//Sampler
 					planes.front().getImageView(),							//Image views
 					vk::ImageLayout::eShaderReadOnlyOptimal					//Layout
 				);
 			}
-			assert(images.size() == frame_SAMPLER_COUNT);
+			static_assert(images.size() == frame_SAMPLER_COUNT, "Sampler count must match");
 
 			//Obtain the sample mode buffer for this sampling mode
 			const auto& samplingModeBuffer = createSampleModeBuffer(
