@@ -225,7 +225,7 @@ private:
 		assert(samplers.size() == result.size());
 
 		for(size_t i = 0; i < result.size(); ++i) {
-			const auto sampler = samplers[i].getSampler();
+			const auto& sampler = samplers[i].getSampler();
 			const size_t id = reinterpret_cast<const uintptr_t&>(sampler); //TODO dont use the sampler as id, as it may be repeated somewhere else
 
 			//Try to retrieve the descriptor from cache
@@ -233,7 +233,11 @@ private:
 			if(!result[i]) {
 				//No luck, need to create it
 				//Create the sampler array
-				const std::vector<vk::Sampler> immutableSamplers(frame_SAMPLER_COUNT, sampler);
+				std::array<vk::Sampler, frame_SAMPLER_COUNT> immutableSamplers;
+				for(size_t i = 0; i < immutableSamplers.size(); ++i) {
+					immutableSamplers[i] = sampler;
+				}
+				static_assert(immutableSamplers.size() == frame_SAMPLER_COUNT, "Sampler count does not match");
 
 				//Create the bindings
 				const std::array bindings = {
