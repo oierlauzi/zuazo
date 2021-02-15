@@ -14,7 +14,7 @@ Sampler::Sampler(	const Vulkan& vulkan,
 					const InputColorTransfer& colorTransfer,
 					ScalingFilter filter )
 	: m_filter(getScalingFilter(vulkan, plane, colorTransfer, filter))
-	, m_samplerYCbCrConversion(createSamplerYCbCrConversion(vulkan, plane, colorTransfer))
+	, m_samplerYCbCrConversion(createSamplerYCbCrConversion(vulkan, plane, colorTransfer, m_filter))
 	, m_sampler(createSampler(vulkan, m_filter, m_samplerYCbCrConversion))
 {
 	if(m_samplerYCbCrConversion) {
@@ -49,24 +49,34 @@ vk::Filter Sampler::getScalingFilter(	const Vulkan& vulkan,
 {
 	vk::Filter result = vk::Filter::eNearest;
 
-	if(colorTransfer.isPassthough()) {
+	//We'll only be able to use a HW filter if there is no transfer function, as
+	//otherwise we'll need to linearize before interpolating
+	if(colorTransfer.isLinear()) {
 		//There is a chance to optimize this
 		const auto& formatSupport = vulkan.getFormatSupport().at(plane.getFormat());
 		const auto optimalFeatures = formatSupport.optimalTilingFeatures;
 
-		constexpr vk::FormatFeatureFlags CUBIC_FLAGS = vk::FormatFeatureFlagBits::eSampledImageFilterCubicIMG;
-		constexpr vk::FormatFeatureFlags LINEAR_FLAGS = vk::FormatFeatureFlagBits::eSampledImageFilterLinear;
+		//Decide which flags are required in order to sample with a HW filter
+		const bool isYcbCr = requiresYCbCrSamplerConversion(plane.getFormat());
+		const vk::FormatFeatureFlags CUBIC_FLAG = 
+			isYcbCr ?
+			vk::FormatFeatureFlagBits{} :
+			vk::FormatFeatureFlagBits::eSampledImageFilterCubicIMG ;
+		const vk::FormatFeatureFlags LINEAR_FLAG = 
+			isYcbCr ?
+			vk::FormatFeatureFlagBits::eSampledImageYcbcrConversionLinearFilter :
+			vk::FormatFeatureFlagBits::eSampledImageFilterLinear ;
 
 		switch (filter) {
 		case ScalingFilter::CUBIC:
-			if(optimalFeatures | CUBIC_FLAGS){
+			if(optimalFeatures & CUBIC_FLAG){
 				result = vk::Filter::eCubicIMG;
 				break;
 			} 
 			ZUAZO_fallthrough; //else fall back into linear
 		
 		case ScalingFilter::LINEAR:
-			if(optimalFeatures | LINEAR_FLAGS) {
+			if(optimalFeatures & LINEAR_FLAG) {
 				result = vk::Filter::eLinear;
 				break;
 			}
@@ -84,70 +94,64 @@ vk::Filter Sampler::getScalingFilter(	const Vulkan& vulkan,
 
 vk::SamplerYcbcrConversion Sampler::createSamplerYCbCrConversion(	const Vulkan& vulkan,
 																	const Image::Plane& plane,
-																	const InputColorTransfer& colorTransfer )
+																	const InputColorTransfer& colorTransfer,
+																	vk::Filter filter )
 {
 	vk::SamplerYcbcrConversion result;
-
 	const vk::Format format = plane.getFormat();
-	const vk::ComponentMapping swizzle = plane.getSwizzle();
-	const auto model = toVulkan(ColorModel::RGB); //TODO
-	const auto range = toVulkan(ColorRange::FULL); //TODO
 
 	//Determine if it will be required
-	if(	model > vk::SamplerYcbcrModelConversion::eRgbIdentity || 
-		range > vk::SamplerYcbcrRange::eItuFull || 
-		requiresYCbCrSamplerConversion(format) ) 
-	{
-		constexpr vk::FormatFeatureFlags DESIRED_FLAGS =
-			vk::FormatFeatureFlagBits::eSampledImage |			//Well sample the image from the shader
-			vk::FormatFeatureFlagBits::eCositedChromaSamples ;	//We only support cosited chroma samples
+	if(requiresYCbCrSamplerConversion(format)) {
+		using Index = std::bitset<sizeof(uint32_t)*Utils::getByteSize()*8>;
+		static std::unordered_map<Index, const Utils::StaticId> ids; 
 
-		const auto formatFeatures = vulkan.getFormatSupport().at(format).optimalTilingFeatures;
+		const vk::ComponentMapping swizzle = plane.getSwizzle();
+		const auto model = colorTransfer.getYCbCrSamplerModel();
+		const auto range = colorTransfer.getYCbCrSamplerRange();
 
-		//Check if the format is supported for ycbcr sampling
-		if((formatFeatures & DESIRED_FLAGS) == DESIRED_FLAGS) {
-			using Index = std::bitset<sizeof(uint32_t)*Utils::getByteSize()*8>;
-			static std::unordered_map<Index, const Utils::StaticId> ids; 
-
-			//Create an index to try to retrieve it from cache
-			Index index;
-			index |= static_cast<uint32_t>(format);
-			std::for_each(
-				reinterpret_cast<const vk::ComponentSwizzle*>(&swizzle),
-				reinterpret_cast<const vk::ComponentSwizzle*>(&swizzle + 1),
-				[&index] (vk::ComponentSwizzle componentSwizzle) {
-					index <<= sizeof(uint32_t)*Utils::getByteSize();
-					index |= static_cast<uint32_t>(componentSwizzle);
-				}
-			);
-			index <<= sizeof(uint32_t)*Utils::getByteSize();
-			index |= static_cast<uint32_t>(model);
-			index <<= sizeof(uint32_t)*Utils::getByteSize();
-			index |= static_cast<uint32_t>(range);
-			const auto& id = ids[index]; //TODO concurrent access
-
-			//Try to obtain it from cache
-			result = vulkan.createSamplerYcbcrConversion(id);
-			if(!result) {
-				//No luck, create it
-				constexpr vk::ChromaLocation xChromaLocation = vk::ChromaLocation::eCositedEven;
-				constexpr vk::ChromaLocation yChromaLocation = vk::ChromaLocation::eCositedEven;
-				constexpr vk::Filter chromaReconstructionFilter = vk::Filter::eNearest; //We'll always interpolate manually
-				constexpr bool forceExplicitReconstruction = false;
-
-				const vk::SamplerYcbcrConversionCreateInfo createInfo(
-					format,						//Image format
-					model,						//Model
-					range,						//Range
-					swizzle,					//Component swizzle
-					xChromaLocation,			//X Chroma location
-					yChromaLocation,			//Y Chroma location
-					chromaReconstructionFilter,	//Chrominance reconstruction filter
-					forceExplicitReconstruction	//Force explicit chroma reconstruction
-				);
-
-				result = vulkan.createSamplerYcbcrConversion(id, createInfo);
+		//Create an index to try to retrieve it from cache
+		Index index;
+		index |= static_cast<uint32_t>(filter);
+		index <<= sizeof(uint32_t)*Utils::getByteSize();
+		index |= static_cast<uint32_t>(format);
+		std::for_each(
+			reinterpret_cast<const vk::ComponentSwizzle*>(&swizzle),
+			reinterpret_cast<const vk::ComponentSwizzle*>(&swizzle + 1),
+			[&index] (vk::ComponentSwizzle componentSwizzle) {
+				index <<= sizeof(uint32_t)*Utils::getByteSize();
+				index |= static_cast<uint32_t>(componentSwizzle);
 			}
+		);
+		index <<= sizeof(uint32_t)*Utils::getByteSize();
+		index |= static_cast<uint32_t>(model);
+		index <<= sizeof(uint32_t)*Utils::getByteSize();
+		index |= static_cast<uint32_t>(range);
+		const auto& id = ids[index]; //TODO concurrent access
+
+		//Try to obtain it from cache
+		result = vulkan.createSamplerYcbcrConversion(id);
+		if(!result) {
+			//No luck, create it
+			constexpr vk::ChromaLocation xChromaLocation = vk::ChromaLocation::eCositedEven;
+			constexpr vk::ChromaLocation yChromaLocation = vk::ChromaLocation::eCositedEven;
+			constexpr bool forceExplicitReconstruction = false;
+
+			//Ensure that the format is supported
+			assert(vulkan.getFormatSupport().at(format).optimalTilingFeatures & vk::FormatFeatureFlagBits::eCositedChromaSamples);
+			//FIXME only one of cosited or midpoint samples is *required* to be supported, although both should be
+
+			const vk::SamplerYcbcrConversionCreateInfo createInfo(
+				format,						//Image format
+				model,						//Model
+				range,						//Range
+				swizzle,					//Component swizzle
+				xChromaLocation,			//X Chroma location
+				yChromaLocation,			//Y Chroma location
+				filter,						//Chrominance reconstruction filter
+				forceExplicitReconstruction	//Force explicit chroma reconstruction
+			);
+
+			result = vulkan.createSamplerYcbcrConversion(id, createInfo);
 		}
 	}
 

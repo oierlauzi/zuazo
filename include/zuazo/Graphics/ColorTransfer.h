@@ -35,10 +35,15 @@ public:
 
 	void								optimize(	Utils::BufferView<Image::Plane> planes,
 													Utils::BufferView<const vk::Format> supportedFormats ) noexcept;
+	void								optimize(const Sampler& sampler) noexcept;
 
 	const std::byte*					data() const noexcept;
 
 	bool								isPassthough() const noexcept;
+	bool								isLinear() const noexcept;
+
+	vk::SamplerYcbcrRange				getYCbCrSamplerRange() const noexcept;
+	vk::SamplerYcbcrModelConversion		getYCbCrSamplerModel() const noexcept;
 
 	static int32_t						getSamplingMode(ScalingFilter filter,
 														vk::Filter samplerFilter ) noexcept;
@@ -74,6 +79,7 @@ public:
 	const std::byte*					data() const noexcept;
 
 	bool								isPassthough() const noexcept;
+	bool								isLinear() const noexcept;
 
 	static size_t						size() noexcept;
 

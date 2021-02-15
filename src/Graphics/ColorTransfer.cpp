@@ -1,4 +1,5 @@
 #include <zuazo/Graphics/ColorTransfer.h>
+
 #include <zuazo/Graphics/VulkanConversions.h>
 #include <zuazo/Math/Transformations.h>
 
@@ -303,17 +304,21 @@ static ct_write_data convert2Output(const ct_read_data& read) noexcept {
  * InputColorTransfer::Impl
  */
 struct InputColorTransfer::Impl {
+	ColorRange colorRange;
+	ColorModel colorModel;
 	ct_read_data transferData;
 
 	Impl() noexcept = default;
 	Impl(const Frame::Descriptor& desc, const Chromaticities& chromaticities) noexcept
-		: transferData {
+		: colorRange(desc.getColorRange())
+		, colorModel(desc.getColorModel())
+		, transferData {
 			Math::Mat4x4f(chromaticities.calculateRGB2XYZConversionMatrix()),
-			Math::inv(getRGB2YCbCrMatrix(desc.getColorModel())),
+			Math::inv(getRGB2YCbCrMatrix(colorModel)),
 			getColorPrimaries(desc.getColorPrimaries(), chromaticities),
 			getColorTransferFunction(desc.getColorTransferFunction()),
-			getColorModel(desc.getColorModel()),
-			getColorRange(desc.getColorRange(), desc.getColorModel()),
+			getColorModel(colorModel),
+			getColorRange(colorRange, colorModel),
 			getPlaneFormat(desc.getColorFormat())
 		}
 	{
@@ -341,6 +346,21 @@ struct InputColorTransfer::Impl {
 		);
 	}
 
+	void optimize(const Sampler& sampler) noexcept {
+		//Check if a HW conversion has been set-up
+		if(sampler.getSamplerYCbCrConversion()) {
+			if(getYCbCrSamplerRange() > vk::SamplerYcbcrRange::eItuFull) {
+				//Remove shader range extension
+				transferData.colorRange = ct_COLOR_RANGE_FULL;
+			}
+
+			if(getYCbCrSamplerModel() > vk::SamplerYcbcrModelConversion::eYcbcrIdentity) {
+				//Remove shader color model conversion
+				transferData.colorModel = ct_COLOR_MODEL_RGB;
+			}
+		}
+	}
+
 	const std::byte* data() const noexcept {
 		return reinterpret_cast<const std::byte*>(&transferData);
 	}
@@ -353,6 +373,18 @@ struct InputColorTransfer::Impl {
 				transferData.planeFormat == ct_PLANE_FORMAT_RGBA ;
 	}
 
+	bool isLinear() const noexcept {
+		return transferData.colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_LINEAR;
+	}
+	
+
+	vk::SamplerYcbcrRange getYCbCrSamplerRange() const noexcept {
+		return toVulkan(colorRange);
+	}
+
+	vk::SamplerYcbcrModelConversion getYCbCrSamplerModel() const noexcept {
+		return toVulkan(colorModel);
+	}
 	
 
 	static int32_t getSamplingMode(	ScalingFilter filter,
@@ -440,6 +472,10 @@ void InputColorTransfer::optimize(	Utils::BufferView<Image::Plane> planes,
 	m_impl->optimize(planes, supportedFormats);
 }
 
+void InputColorTransfer::optimize(const Sampler& sampler) noexcept {
+	m_impl->optimize(sampler);
+}
+
 
 const std::byte* InputColorTransfer::data() const noexcept {
 	return m_impl->data();
@@ -448,6 +484,20 @@ const std::byte* InputColorTransfer::data() const noexcept {
 bool InputColorTransfer::isPassthough() const noexcept {
 	return m_impl->isPassthough();
 }
+
+bool InputColorTransfer::isLinear() const noexcept {
+	return m_impl->isLinear();
+}
+
+
+vk::SamplerYcbcrRange InputColorTransfer::getYCbCrSamplerRange() const noexcept {
+	return m_impl->getYCbCrSamplerRange();
+}
+
+vk::SamplerYcbcrModelConversion InputColorTransfer::getYCbCrSamplerModel() const noexcept {
+	return m_impl->getYCbCrSamplerModel();
+}
+
 
 int32_t InputColorTransfer::getSamplingMode(ScalingFilter filter,
 											vk::Filter samplerFilter ) noexcept
@@ -513,6 +563,10 @@ struct OutputColorTransfer::Impl {
 				transferData.colorRange == ct_COLOR_RANGE_FULL &&
 				transferData.planeFormat == ct_PLANE_FORMAT_RGBA ;
 	}
+
+	bool isLinear() const noexcept {
+		return transferData.colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_LINEAR;
+	}
 };
 
 
@@ -572,6 +626,11 @@ const std::byte* OutputColorTransfer::data() const noexcept {
 bool OutputColorTransfer::isPassthough() const noexcept {
 	return m_impl->isPassthough();
 }
+
+bool OutputColorTransfer::isLinear() const noexcept {
+	return m_impl->isLinear();
+}
+
 
 size_t OutputColorTransfer::size() noexcept {
 	return sizeof(ct_read_data);

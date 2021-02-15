@@ -38,7 +38,8 @@ private:
 
 	static vk::SamplerYcbcrConversion	createSamplerYCbCrConversion(	const Vulkan& vulkan,
 																		const Image::Plane& plane,
-																		const InputColorTransfer& colorTransfer );
+																		const InputColorTransfer& colorTransfer,
+																		vk::Filter filter );
 	static vk::Sampler					createSampler(	const Vulkan& vulkan,
 														vk::Filter filter,
 														vk::SamplerYcbcrConversion samplerYCbCrConversion );

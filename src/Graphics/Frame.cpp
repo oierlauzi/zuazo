@@ -423,7 +423,7 @@ std::shared_ptr<StagedBuffer> Frame::createColorTransferBuffer(	const Vulkan& vu
 }
 
 std::shared_ptr<Frame::Samplers> Frame::createSamplers(	const Vulkan& vulkan,
-														const InputColorTransfer& colorTransfer,
+														InputColorTransfer& colorTransfer,
 														Utils::BufferView<const Image::Plane> planes )
 {
 	std::shared_ptr<Samplers> result = Utils::makeShared<Samplers>();
@@ -438,6 +438,8 @@ std::shared_ptr<Frame::Samplers> Frame::createSamplers(	const Vulkan& vulkan,
 			static_cast<ScalingFilter>(i)
 		);
 	}
+
+	colorTransfer.optimize(samplers.front());
 
 	return result;
 }

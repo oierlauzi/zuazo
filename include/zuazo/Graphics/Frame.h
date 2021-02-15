@@ -61,7 +61,7 @@ public:
 	static std::shared_ptr<StagedBuffer>	createColorTransferBuffer(	const Vulkan& vulkan,
 																		const InputColorTransfer& colorTransfer );
 	static std::shared_ptr<Samplers>		createSamplers(	const Vulkan& vulkan,
-															const InputColorTransfer& colorTransfer,
+															InputColorTransfer& colorTransfer,
 															Utils::BufferView<const Image::Plane> planes );
 	static std::vector<Image::Plane> 		getPlaneDescriptors(const Descriptor& desc);
 
