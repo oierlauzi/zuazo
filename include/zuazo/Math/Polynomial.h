@@ -55,14 +55,14 @@ private:
 
 };
 
-enum class PolynomialSolutionCount {
+enum class SolutionCount {
 	INFINITE = -1,
 	NONE = 0,
 };
 
-ZUAZO_ENUM_COMP_OPERATORS(PolynomialSolutionCount)
-ZUAZO_ENUM_ADD_OPERATORS(PolynomialSolutionCount)
-ZUAZO_ENUM_SUB_OPERATORS(PolynomialSolutionCount)
+ZUAZO_ENUM_COMP_OPERATORS(SolutionCount)
+ZUAZO_ENUM_ADD_OPERATORS(SolutionCount)
+ZUAZO_ENUM_SUB_OPERATORS(SolutionCount)
 
 
 template<typename T, size_t Deg>
@@ -143,17 +143,20 @@ constexpr Polynomial<T, Deg-1> derivate(const Polynomial<T, Deg>& p);
 
 
 template<typename T>
-constexpr std::array<T, 0> solve(const Polynomial<T, 0>& poly, PolynomialSolutionCount* cnt = nullptr);
+constexpr std::array<T, 0> solve(const Polynomial<T, 0>& poly, SolutionCount* cnt = nullptr);
 
 template<typename T>
-constexpr std::array<T, 1> solve(const Polynomial<T, 1>& poly, PolynomialSolutionCount* cnt = nullptr);
+constexpr std::array<T, 1> solve(const Polynomial<T, 1>& poly, SolutionCount* cnt = nullptr);
 
 template<typename T>
-constexpr std::array<T, 2> solve(const Polynomial<T, 2>& poly, PolynomialSolutionCount* cnt = nullptr);
+constexpr std::array<T, 2> solve(const Polynomial<T, 2>& poly, SolutionCount* cnt = nullptr);
+
+template<typename T>
+constexpr std::array<T, 3> solve(const Polynomial<T, 3>& poly, SolutionCount* cnt = nullptr);
 
 
 template<typename T, size_t N, size_t Deg>
-constexpr std::array<Vec<T, N>, Deg> solve(const Polynomial<Vec<T, N>, Deg>& poly, Vec<PolynomialSolutionCount, N>* cnt = nullptr) noexcept;
+constexpr std::array<Vec<T, N>, Deg> solve(const Polynomial<Vec<T, N>, Deg>& poly, Vec<SolutionCount, N>* cnt = nullptr) noexcept;
 
 }
 

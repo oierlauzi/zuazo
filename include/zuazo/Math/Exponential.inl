@@ -177,4 +177,23 @@ constexpr Vec<T, N> sqrt(const Vec<T, N>& v) {
 	);
 }
 
+
+inline float cbrt(float x) noexcept {
+	return std::cbrt(x);
+}
+
+inline double cbrt(double x) noexcept {
+	return std::cbrt(x);
+}
+
+template<typename T, size_t N>
+constexpr Vec<T, N> cbrt(const Vec<T, N>& v) {
+	return transform(
+		[] (const auto& x) -> auto {
+			return cbrt(x);
+		},
+		v
+	);
+}
+
 }

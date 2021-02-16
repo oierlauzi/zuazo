@@ -1,6 +1,7 @@
 #include "Polynomial.h"
 
 #include "Exponential.h"
+#include "Trigonometry.h"
 
 #include <cassert>
 
@@ -50,7 +51,7 @@ template<typename Q>
 constexpr typename Polynomial<T, Deg>::value_type Polynomial<T, Deg>::operator()(Q t) const {
 	value_type result(0);
 
-	for(size_t i = 0; < size(); ++i) {
+	for(size_t i = 0; i < size(); ++i) {
 		result += (*this)[i] * pow(t, Q(i));
 	}
 
@@ -147,7 +148,7 @@ constexpr bool operator!=(const Polynomial<T, Deg>& lhs, const Polynomial<T, Deg
 
 
 template<typename T, size_t Deg>
-constexpr Polynomial<T, Deg> operator+(const Polynomial<T, Deg>& b) {
+constexpr Polynomial<T, Deg> operator+(const Polynomial<T, Deg>& a) {
 	return a;
 }
 
@@ -325,25 +326,28 @@ constexpr Polynomial<T, Deg-1> derivate(const Polynomial<T, Deg>& p) {
 
 
 template<typename T>
-constexpr std::array<T, 0> solve(const Polynomial<T, 0>& poly, PolynomialSolutionCount* cnt) {
+constexpr std::array<T, 0> solve(const Polynomial<T, 0>& poly, SolutionCount* cnt) {
 	std::array<T, 0> result = {};
 
-	if(poly[0] == static_cast<typename Polynomial<T, 0>::value_type>(0)) {
-		if(cnt) *cnt = PolynomialSolutionCount::INFINITE;
+	if(poly[0] == typename Polynomial<T, 0>::value_type()) {
+		if(cnt) *cnt = SolutionCount::INFINITE;
+
 	} else {
-		if(cnt) *cnt = PolynomialSolutionCount::NONE;
+		if(cnt) *cnt = SolutionCount::NONE;
+
 	}
 
 	return result;
 }
 
 template<typename T>
-constexpr std::array<T, 1> solve(const Polynomial<T, 1>& poly, PolynomialSolutionCount* cnt) {
+constexpr std::array<T, 1> solve(const Polynomial<T, 1>& poly, SolutionCount* cnt) {
 	std::array<T, 1> result = {};
 
-	if(poly.back() != static_cast<typename Polynomial<T, 1>::value_type>(0)) {
-		result[0] = -poly[0] / poly[1];
-		if(cnt)	*cnt = static_cast<PolynomialSolutionCount>(1);
+	if(poly.back() != typename Polynomial<T, 1>::value_type()) {
+		result[0] = -poly[0] / poly[1]; //-b/m
+		if(cnt)	*cnt = static_cast<SolutionCount>(1);
+
 	} else {
 		//Highest order coefficient is zero. Fall back into a lower degree solver
 		Polynomial<T, poly.degree()-1> prevPoly;
@@ -362,31 +366,106 @@ constexpr std::array<T, 1> solve(const Polynomial<T, 1>& poly, PolynomialSolutio
 }
 
 template<typename T>
-constexpr std::array<T, 2> solve(const Polynomial<T, 2>& poly, PolynomialSolutionCount* cnt) {
+constexpr std::array<T, 2> solve(const Polynomial<T, 2>& poly, SolutionCount* cnt) {
 	std::array<T, 2> result = {};
 
-	if(poly.back() != static_cast<typename Polynomial<T, 2>::value_type>(0)) {
+	if(poly.back() != typename Polynomial<T, 2>::value_type()) {
+		const auto& c = poly[0], b = poly[1], a = poly[2];
+
 		//Compute the discriminant (b^2 - 4ac)
-		const auto delta = poly[1]*poly[1] - static_cast<T>(4)*poly[2]*poly[0];
+		const auto delta = b*b - 4*a*c;
 
-		if(delta < static_cast<typename Polynomial<T, 2>::value_type>(0)) {
-			//No solution!
-			if(cnt) *cnt = PolynomialSolutionCount::NONE;
+		if(delta >= typename Polynomial<T, 2>::value_type()) {
+			//2 real solutions. May be double or not
+			const auto den = 2 * a; //2a
+			const auto sqrtDelta = sqrt(delta);
+
+			result[0] = (-b + sqrtDelta) / den; //-b + sqrt(...)/2a
+			result[1] = (-b - sqrtDelta) / den; //-b - sqrt(...)/2a
+			if(cnt)	*cnt = static_cast<SolutionCount>(2);
 		} else {
-			//1 or 2 solutions
-			const auto den = static_cast<typename Polynomial<T, 2>::value_type>(2) * poly[2]; //2a
-
-			if(delta == static_cast<typename Polynomial<T, 2>::value_type>(0)) {
-				//Only one solution
-				result[0] = -poly[1] / den; //-b/2a
-				if(cnt)	*cnt = static_cast<PolynomialSolutionCount>(1);
-			} else {
-				//2 solutions
-				result[0] = (-poly[1] + sqrt(delta)) / den; //-b + sqrt(...)/2a
-				result[1] = (-poly[1] - sqrt(delta)) / den; //-b - sqrt(...)/2a
-				if(cnt)	*cnt = static_cast<PolynomialSolutionCount>(2);
-			}
+			//No real solution
+			if(cnt) *cnt = SolutionCount::NONE;
 		}
+
+	} else {
+		//Highest order coefficient is zero. Fall back into a lower degree solver
+		Polynomial<T, poly.degree()-1> prevPoly;
+		for(size_t i = 0; i < prevPoly.size(); ++i) {
+			prevPoly[i] = poly[i];
+		}
+
+		const auto prevResult = solve(prevPoly, cnt);
+		
+		for(size_t i = 0; i < prevResult.size(); ++i) {
+			result[i] = prevResult[i];
+		}
+	}
+
+	return result;
+}
+
+template<typename T>
+constexpr std::array<T, 3> solve(const Polynomial<T, 3>& poly, SolutionCount* cnt) {
+	std::array<T, 3> result = {};
+
+	if(poly.back() != typename Polynomial<T, 3>::value_type()) {
+		const auto d = poly[0] / poly[3], c = poly[1] / poly[3], b = poly[2] / poly[3];
+
+		//Based on:
+		//https://en.wikipedia.org/wiki/Cubic_equation
+		//https://stackoverflow.com/questions/13328676/c-solving-cubic-equations
+		const auto b2 = b*b;
+		const auto b3 = b2*b;
+		const auto bOver3 = b / 3;
+
+		//Using depressed cubic: t = x + b/3a (a=1)
+		const auto p = (3*c - b2) / 9;
+		const auto q = -(2*b3 - 9*b*c + 27*d) / 54;
+
+		//Obtain the discriminant
+		const auto p3 = p*p*p;
+		const auto q2 = q*q;
+		const auto delta = -(p3 + q2);
+
+		//Solution count must be preserved
+		SolutionCount backupSolutionCount;
+		auto& solutionCount = cnt ? *cnt : backupSolutionCount;
+
+		if (delta >= typename Polynomial<T, 3>::value_type()) {
+			//Three real roots
+			if(delta == typename Polynomial<T, 3>::value_type()) {
+				//Double or triple solutions
+				result[0] = q/p;
+				result[1] = result[0];
+				result[2] = -2*result[0];
+			} else {
+				//Unique solutions
+				const auto theta = acos(q / sqrt(-p3));
+				const auto r = 2*sqrt(-p);
+				result[0] = r*cos((theta       	 )/3);
+				result[1] = r*cos((theta + 2*M_PI)/3);
+				result[2] = r*cos((theta + 4*M_PI)/3);
+			}
+
+			solutionCount = static_cast<SolutionCount>(3);
+
+		} else {
+			//Single solution
+			//Cardano's formula for the single real root
+			//Must exist, as delta < 0
+			const auto beta = sqrt(-delta);			
+			result[0] = cbrt(q + beta) + cbrt(q - beta);
+			solutionCount = static_cast<SolutionCount>(1);
+
+		}
+
+		//Remember that we've solved for t, obtain x
+		//t = x + b/3a => x = t - b/3a (a=1)
+		for(size_t i = 0; i < static_cast<size_t>(solutionCount); ++i) {
+			result[i] -= bOver3;
+		}
+
 	} else {
 		//Highest order coefficient is zero. Fall back into a lower degree solver
 		Polynomial<T, poly.degree()-1> prevPoly;
@@ -406,7 +485,7 @@ constexpr std::array<T, 2> solve(const Polynomial<T, 2>& poly, PolynomialSolutio
 
 
 template<typename T, size_t N, size_t Deg>
-constexpr std::array<Vec<T, N>, Deg> solve(const Polynomial<Vec<T, N>, Deg>& poly, Vec<PolynomialSolutionCount, N>* cnt = nullptr) noexcept {
+constexpr std::array<Vec<T, N>, Deg> solve(const Polynomial<Vec<T, N>, Deg>& poly, Vec<SolutionCount, N>* cnt = nullptr) noexcept {
 	std::array<Vec<T, N>, poly.degree()-1> result;
 
 	//Majorness needs to be modified

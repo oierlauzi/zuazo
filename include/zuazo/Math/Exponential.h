@@ -69,6 +69,13 @@ double sqrt(double x) noexcept;
 template<typename T, size_t N>
 constexpr Vec<T, N> sqrt(const Vec<T, N>& v);
 
+
+float cbrt(float x) noexcept;
+double cbrt(double x) noexcept;
+
+template<typename T, size_t N>
+constexpr Vec<T, N> cbrt(const Vec<T, N>& v);
+
 }
 
 #include "Exponential.inl"

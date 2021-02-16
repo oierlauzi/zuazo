@@ -374,7 +374,7 @@ constexpr Bezier<T, Deg-1> derivate(const Bezier<T, Deg>& s) {
 
 template<typename T, size_t Deg>
 constexpr std::array<typename Bezier<T, Deg>::value_type, Deg> solve(	const Bezier<T, Deg>& s, 
-																		PolynomialSolutionCount* cnt) 
+																		SolutionCount* cnt) 
 {
 	const auto polynomial = toPolynomial(s);
 	const auto solution = solve(polynomial, cnt);
@@ -396,7 +396,7 @@ constexpr std::array<typename Bezier<T, Deg>::value_type, Deg> solve(	const Bezi
 
 template<typename T, size_t N, size_t Deg>
 constexpr std::array<typename Bezier<Vec<T, N>, Deg>::value_type, Deg> solve(	const Bezier<Vec<T, N>, Deg>& s, 
-																				Vec<PolynomialSolutionCount, N>* cnt )
+																				Vec<SolutionCount, N>* cnt )
 {
 	std::array<typename Bezier<Vec<T, N>, Deg>::value_type, Deg> result;
 
