@@ -309,8 +309,8 @@ transform(Func f, const Bezier<T, Deg>&... v) {
 
 template<typename T, size_t N, size_t Deg>
 constexpr void setComponent(Bezier<Vec<T, N>, Deg>& s, size_t i, const Bezier<typename Vec<T, N>::value_type, Deg>& c) {
-	static_assert(p.size() == c.size(), "Sizes must match");
-	for(size_t j = 0; j < c.size(); ++j) {
+	static_assert(s.size() == c.size(), "Sizes must match");
+	for(size_t j = 0; j < s.size(); ++j) {
 		s[j][i] = c[j];
 	}
 }
@@ -320,7 +320,7 @@ constexpr Bezier<typename Vec<T, N>::value_type, Deg> getComponent(const Bezier<
 	Bezier<typename Vec<T, N>::value_type, Deg> result;
 	static_assert(s.size() == result.size(), "Sizes must match");
 
-	for(size_t j = 0; j < c.size(); ++j) {
+	for(size_t j = 0; j < result.size(); ++j) {
 		result[j] = s[j][i];
 	}
 
@@ -377,16 +377,16 @@ constexpr std::array<typename Bezier<T, Deg>::value_type, Deg> solve(	const Bezi
 																		SolutionCount* cnt) 
 {
 	const auto polynomial = toPolynomial(s);
-	const auto solution = solve(polynomial, cnt);
+	auto solution = solve(polynomial, cnt);
 
 	//Clamp the solution in [0, 1]
 	for(size_t i = 0; i < solution.size(); ++i) {
-		if(!isInRange(solution[i], Bezier<T, Deg>::value_type(0), Bezier<T, Deg>::value_type(1))) {
+		if(!isInRange(solution[i], typename Bezier<T, Deg>::value_type(0), typename Bezier<T, Deg>::value_type(1))) {
 			//This solution is not valid as it exceeds the range. Decrease the solution count
 			for(size_t j = i; j < solution.size()-1; ++j) {
 				solution[j] = solution[j+1];
 			}
-			solution.back() = Bezier<T, Deg>::value_type();
+			solution.back() = typename Bezier<T, Deg>::value_type();
 			if(cnt) --(*cnt);
 		}
 	}
@@ -424,7 +424,7 @@ constexpr Utils::Range<typename Bezier<T, Deg>::value_type> getBoundaries(const 
 	const auto ddt = derivate(s);
 
 	//Obtain the roots of the derivate
-	PolynomialSolutionCount solutionCount;
+	SolutionCount solutionCount;
 	const auto roots = solve(ddt, &solutionCount);
 
 	//Update the minimum and maximum with the valid solutions
@@ -462,64 +462,50 @@ constexpr Utils::Range<typename Bezier<Vec<T, N>, Deg>::value_type> getBoundarie
 
 template<typename T, size_t Deg>
 inline BezierLoop<T, Deg>::BezierLoop(Utils::BufferView<const value_type> values) 
-	: m_values((values.size() / degree() > 0) ? (values.size() / degree() + 1) : 0)
+	: m_values(values.cbegin(), values.cend())
+{
+	if(m_values.size()) {
+		//Repeat the first element at the back, so that it loops
+		//over to the first value when casting to Bezier
+		m_values.push_back(m_values.front());
+	}
+
+
+	//This value is not possible!
+	assert(m_values.size() != 1);
+}
+
+template<typename T, size_t Deg>
+inline BezierLoop<T, Deg>::BezierLoop(Utils::BufferView<const Bezier> segments) 
+	: m_values(segments.size() > 0 ? segments.size()*degree() + 1 : 0)
 {
 	//This value is not possible!
 	assert(m_values.size() != 1);
 
 	//Fill the array
-	if(m_values.size() > 0) {
-		for(size_t i = 0; i < m_values.size() - 1; ++i) {
-			for(size_t j = 0; j < degree(); ++j) {
-				m_values[i][j] = values[i*degree() + j];
-			}
-		}
-
-		//Repeat the first element at the back, so that it loops
-		//over to the first value when casting to Bezier
-		m_values.back() = m_values.front();
+	for(size_t i = 0; i < segments.size(); ++i) {
+		//Ensure continuity
+		assert(segments[i].back() == segments[(i+1) % segments.size()].front());
+		setBezier(i, segments[i]);
 	}
 }
 
 template<typename T, size_t Deg>
-inline BezierLoop<T, Deg>::BezierLoop(Utils::BufferView<const Bezier> splines) 
-	: m_values((splines.size() > 0) ? (splines.size() + 1) : 0)
-{
-	//This value is not possible!
-	assert(m_values.size() != 1);
-
-	//Fill the array
-	if(m_values.size() > 0) {
-		for(size_t i = 0; i < m_values.size() - 1; ++i) {
-			//Ensure continuity
-			assert(splines[i].back() == splines[(i+1) % splines.size()].front());
-
-			//Last value will be discarded due to continuity
-			for(size_t j = 0; j < degree(); ++j) {
-				m_values[i][j] = splines[i][j];
-			}
-		}
-
-		//Repeat the first element at the back, so that it loops
-		//over to the first value when casting to Bezier
-		m_values.back() = m_values.front();
-	}
-}
-
-template<typename T, size_t Deg>
-inline void BezierLoop<T, Deg>::setBezier(size_t i, const Bezier& s) {
-	assert(i < splineCount());
+inline void BezierLoop<T, Deg>::setSegment(size_t i, const Bezier& s) {
+	assert(i < segmentCount());
 	reinterpret_cast<Bezier&>(m_values[i*degree()]) = s;
 
 	//Ensure continuity
 	if(i == 0) {
 		m_values.back() = m_values.front();
+	} else if(i == segmentCount()-1) {
+		m_values.front() = m_values.back();
 	}
 }
 
 template<typename T, size_t Deg>
-inline const typename BezierLoop<T, Deg>::Bezier& BezierLoop<T, Deg>::getBezier(size_t i) const noexcept {
-	assert(i < splineCount());
+inline const typename BezierLoop<T, Deg>::Bezier& BezierLoop<T, Deg>::getSegment(size_t i) const noexcept {
+	assert(i < segmentCount());
 	return reinterpret_cast<const Bezier&>(m_values[i*degree()]);
 }
 
@@ -530,14 +516,14 @@ inline typename BezierLoop<T, Deg>::value_type BezierLoop<T, Deg>::sample(Q t) c
 	//Sanitize the values
 	const auto index = static_cast<intmax_t>(floor(t)); //Floors
 	t -= index; //Obtain only the fractional part: [0, 1)
-	const auto i = static_cast<size_t>((index % splineCount() + splineCount()) % splineCount()); //Index in [0, splineCount)
+	const auto i = static_cast<size_t>((index % segmentCount() + segmentCount()) % segmentCount()); //Index in [0, segmentCount)
 
 	//Ensure that the values are correct
 	assert(Q(0) <= t && t < Q(1));
-	assert(0U <= i && i < splineCount());
+	assert(0U <= i && i < segmentCount());
 
 	//Sample
-	return getBezier(i).sample(t);
+	return getSegment(i).sample(t);
 }
 
 
@@ -548,19 +534,43 @@ inline const typename BezierLoop<T, Deg>::value_type* BezierLoop<T, Deg>::data()
 
 template<typename T, size_t Deg>
 inline size_t BezierLoop<T, Deg>::size() const {
-	//Account the repeated last value
-	return (m_values.size() > 0) ? (m_values.size() - 1) : 0;
+	return m_values.size();
 }
 
 template<typename T, size_t Deg>
-inline size_t BezierLoop<T, Deg>::splineCount() const {
-	return size() / degree();
+inline size_t BezierLoop<T, Deg>::segmentCount() const {
+	//Account the repeated last value
+	return size() > 0 ? (size()-1) / degree() : 0;
 }
 
 
 template<typename T, size_t Deg>
 constexpr size_t BezierLoop<T, Deg>::degree() {
 	return Deg;
+}
+
+
+
+template<typename T, size_t Deg>
+inline Utils::Range<typename BezierLoop<T, Deg>::value_type> getBoundaries(const BezierLoop<T, Deg>& s) {
+	Utils::Range<typename BezierLoop<T, Deg>::value_type> result;
+
+	if(s.segmentCount() > 0) {
+		//Populate the result with the first segment
+		result = getBoundaries(s.getSegment(0));
+
+		//Accumulate the rest of the boundaries
+		for(size_t i = 1; i < s.segmentCount(); ++i) {
+			const auto newBoundaries = getBoundaries(s.getSegment(i));
+
+			result = Utils::Range<typename BezierLoop<T, Deg>::value_type>(
+				min(newBoundaries.getMin(), result.getMin()),
+				max(newBoundaries.getMax(), result.getMax())
+			);
+		}
+	}
+
+	return result;
 }
 
 }

@@ -667,7 +667,7 @@ constexpr Vec<T, N>& operator^=(Vec<T, N>& lhs, const typename Vec<T, N>::value_
 template<typename Func, typename... T, size_t N>
 constexpr Vec<typename std::invoke_result<Func, const typename Vec<T, N>::value_type&...>::type, N> 
 transform(Func f, const Vec<T, N>&... v) {
-	Vec<typename std::invoke_result<Func, const typename Vec<T, Deg>::value_type&...>::type, N> result;
+	Vec<typename std::invoke_result<Func, const typename Vec<T, N>::value_type&...>::type, N> result;
 
 	for(size_t i = 0; i < result.size(); ++i) {
 		result[i] = f(v[i]...);

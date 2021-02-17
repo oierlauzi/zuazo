@@ -153,7 +153,7 @@ constexpr Vec<T, N> pow(const typename Vec<T, N>::value_type& base, const Vec<T,
 	return transform(
 		[&base] (const auto& power) -> auto {
 			return pow(base, power);
-		}
+		},
 		power
 	);
 }

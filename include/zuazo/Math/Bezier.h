@@ -169,7 +169,8 @@ public:
 	using Bezier = Math::Bezier<T, Deg>;
 	using value_type = typename Bezier::value_type;
 
-	BezierLoop(Utils::BufferView<const value_type> values);
+	BezierLoop() = default;
+	BezierLoop(Utils::BufferView<const value_type> segments);
 	BezierLoop(Utils::BufferView<const Bezier> splines);
 	BezierLoop(const BezierLoop& other) = default;
 	BezierLoop(BezierLoop&& other) = default;
@@ -178,20 +179,20 @@ public:
 	BezierLoop&									operator=(const BezierLoop& other) = default;
 	BezierLoop&									operator=(BezierLoop&& other) = default;
 
-	void 										setBezier(size_t i, const Bezier& s);
-	const Bezier&								getBezier(size_t i) const noexcept;
+	void 										setSegment(size_t i, const Bezier& s);
+	const Bezier&								getSegment(size_t i) const noexcept;
 
 	template<typename Q>
 	value_type 									sample(Q t) const;
 
 	const value_type*							data();
 	size_t										size() const;
-	size_t										splineCount() const;
+	size_t										segmentCount() const;
 
 	static constexpr size_t						degree();
 
 private:
-	std::vector<std::array<value_type, Deg>>	m_values;
+	std::vector<value_type>						m_values;
 
 };
 
@@ -203,6 +204,11 @@ using QuadraticBezierLoop = BezierLoop<T, 2>;
 
 template<typename T>
 using CubicBezierLoop = BezierLoop<T, 3>;
+
+
+
+template<typename T, size_t Deg>
+Utils::Range<typename BezierLoop<T, Deg>::value_type> getBoundaries(const BezierLoop<T, Deg>& s);
 
 }
 

@@ -278,7 +278,7 @@ constexpr Polynomial<T, Deg>& operator/=(Polynomial<T, Deg>& lhs, const typename
 template<typename Func, typename... T, size_t Deg>
 constexpr Polynomial<typename std::invoke_result<Func, const typename Polynomial<T, Deg>::value_type&...>::type, Deg> 
 transform(Func f, const Polynomial<T, Deg>&... v) {
-	Polynomial<typename std::invoke_result<Func, const typename Polynomial<T, N>::value_type&...>::type, Deg> result;
+	Polynomial<typename std::invoke_result<Func, const typename Polynomial<T, Deg>::value_type&...>::type, Deg> result;
 
 	for(size_t i = 0; i < result.size(); ++i) {
 		result[i] = f(v[i]...);
@@ -292,7 +292,7 @@ transform(Func f, const Polynomial<T, Deg>&... v) {
 template<typename T, size_t N, size_t Deg>
 constexpr void setComponent(Polynomial<Vec<T, N>, Deg>& p, size_t i, const Polynomial<typename Vec<T, N>::value_type, Deg>& c) {
 	static_assert(p.size() == c.size(), "Sizes must match");
-	for(size_t j = 0; j < c.size(); ++j) {
+	for(size_t j = 0; j < p.size(); ++j) {
 		p[j][i] = c[j];
 	}
 }
@@ -302,7 +302,7 @@ constexpr Polynomial<typename Vec<T, N>::value_type, Deg> getComponent(const Pol
 	Polynomial<typename Vec<T, N>::value_type, p.degree()> result;
 	static_assert(p.size() == result.size(), "Sizes must match");
 
-	for(size_t j = 0; j < c.size(); ++j) {
+	for(size_t j = 0; j < result.size(); ++j) {
 		result[j] = p[i][j];
 	}
 
@@ -485,7 +485,7 @@ constexpr std::array<T, 3> solve(const Polynomial<T, 3>& poly, SolutionCount* cn
 
 
 template<typename T, size_t N, size_t Deg>
-constexpr std::array<Vec<T, N>, Deg> solve(const Polynomial<Vec<T, N>, Deg>& poly, Vec<SolutionCount, N>* cnt = nullptr) noexcept {
+constexpr std::array<Vec<T, N>, Deg> solve(const Polynomial<Vec<T, N>, Deg>& poly, Vec<SolutionCount, N>* cnt) noexcept {
 	std::array<Vec<T, N>, poly.degree()-1> result;
 
 	//Majorness needs to be modified
