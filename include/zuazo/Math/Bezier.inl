@@ -166,7 +166,7 @@ constexpr bool operator!=(const Bezier<T, Deg>& lhs, const Bezier<T, Deg>& rhs) 
 
 
 template<typename T, size_t Deg>
-constexpr Bezier<T, Deg> operator+(const Bezier<T, Deg>& b) {
+constexpr Bezier<T, Deg> operator+(const Bezier<T, Deg>& a) {
 	return a;
 }
 
@@ -296,7 +296,7 @@ constexpr Bezier<T, Deg>& operator/=(Bezier<T, Deg>& lhs, const typename Bezier<
 template<typename Func, typename... T, size_t Deg>
 constexpr Bezier<typename std::invoke_result<Func, const typename Bezier<T, Deg>::value_type&...>::type, Deg> 
 transform(Func f, const Bezier<T, Deg>&... v) {
-	Bezier<typename std::invoke_result<Func, const typename Bezier<T, N>::value_type&...>::type, Deg> result;
+	Bezier<typename std::invoke_result<Func, const typename Bezier<T, Deg>::value_type&...>::type, Deg> result;
 
 	for(size_t i = 0; i < result.size(); ++i) {
 		result[i] = f(v[i]...);
