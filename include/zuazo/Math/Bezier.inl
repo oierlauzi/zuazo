@@ -336,17 +336,17 @@ constexpr Polynomial<typename Bezier<T, Deg>::value_type, Deg> toPolynomial(cons
 	//of coefficients upto degree 3. I haven't done any further testing, so
 	//results for higher orders might be wrong
 
-	constexpr auto binomialCoefficientTree = generateBinomialCoefficientTree<size_t, s.degree()>();
-	static_assert(binomialCoefficientTree.size() == s.size(), "Binomial coefficients must have the same size as this");
-	static_assert(binomialCoefficientTree.back().size() == s.size(), "Binomial coefficients must have the same size as this");
+	constexpr auto pascalTriangle = generatePascalsTriangle<size_t, s.degree()>();
+	static_assert(pascalTriangle.size() == s.size(), "Triangle must have the same size as this");
+	static_assert(pascalTriangle.back().size() == s.size(), "Triangle must have the same size as this");
 
 	for(size_t i = 0; i < result.size(); ++i) {
-		//Last row in the tree is equivalent to generateBinomialCoefficients()
-		const typename Bezier<T, Deg>::value_type w0(binomialCoefficientTree.back()[i]);
+		//Last row in the triangle is equivalent to generateBinomialCoefficients()
+		const typename Bezier<T, Deg>::value_type w0(pascalTriangle.back()[i]);
 
 		for(size_t j = 0; j <= i; ++j) {
 			//Equivalent to binomialCoefficient(i ,j)
-			const typename Bezier<T, Deg>::value_type w1(binomialCoefficientTree[i][j]);
+			const typename Bezier<T, Deg>::value_type w1(pascalTriangle[i][j]);
 
 			//Alternate sign between columns and rows
 			const typename Bezier<T, Deg>::value_type sign(((i+j) % 2) ? +1 : -1);

@@ -37,23 +37,40 @@ template<typename T, size_t N>
 constexpr std::array<T, N+1> generateBinomialCoefficients() noexcept {
 	std::array<T, N+1> result = {};
 
-	for(size_t i = 0; i < result.size(); ++i) {
-		result[i] = binomialCoefficient(static_cast<T>(N), static_cast<T>(i));
+	constexpr auto n = N;
+	const auto cent = result.size() / 2 + 1; //Center index
+
+	for(size_t i = 0; i < cent; ++i) {
+		result[i] = binomialCoefficient(static_cast<T>(n), static_cast<T>(i));
+	}
+	
+	for(size_t i = cent; i < result.size(); ++i) {
+		result[i] = result[n-i];
 	}
 
 	return result;
 }
 
 template<typename T, size_t N>
-constexpr std::array<std::array<T, N+1>, N+1> generateBinomialCoefficientTree() noexcept {
+constexpr std::array<std::array<T, N+1>, N+1> generatePascalsTriangle() noexcept {
 	std::array<std::array<T, N+1>, N+1> result = {};
-
+	
 	for(size_t i = 0; i < result.size(); ++i) {
-		for(size_t j = 0; j<= i; ++j) {
-			result[i][j] = binomialCoefficient(i, j);
+		const auto cent = i / 2 + 1; //Center index
+
+		//First element is always 1
+		result[i][0] = 1;
+		
+		//Sum the previous row onto this for the first half.
+		for(size_t j = 1; j < cent; ++j) {
+			result[i][j] = result[i-1][j-1] + result[i-1][j];
+		}
+
+		//Repeat symmetrically the previous values
+		for(size_t j = cent; j <= i; ++j) {
+			result[i][j] = result[i][i-j]; 
 		}
 	}
-
 
 	return result;
 }
