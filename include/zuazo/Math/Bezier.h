@@ -65,6 +65,9 @@ using QuadraticBezier = Bezier<T, 2>;
 template<typename T>
 using CubicBezier = Bezier<T, 3>;
 
+template<typename T, size_t N>
+using Line = LinearBezier<Vec<T, N>>;
+
 
 template<typename T, size_t Deg>
 constexpr bool operator==(const Bezier<T, Deg>& lhs, const Bezier<T, Deg>& rhs) noexcept;
@@ -148,11 +151,11 @@ constexpr Bezier<T, Deg-1> derivate(const Bezier<T, Deg>& s);
 
 template<typename T, size_t Deg>
 constexpr std::array<typename Bezier<T, Deg>::value_type, Deg> solve(	const Bezier<T, Deg>& s, 
-																		SolutionCount* cnt);
+																		SolutionCount* cnt = nullptr);
 
 template<typename T, size_t N, size_t Deg>
 constexpr std::array<typename Bezier<Vec<T, N>, Deg>::value_type, Deg> solve(	const Bezier<Vec<T, N>, Deg>& s, 
-																				Vec<SolutionCount, N>* cnt );
+																				Vec<SolutionCount, N>* cnt = nullptr );
 
 template<typename T, size_t Deg>
 constexpr Utils::Range<typename Bezier<T, Deg>::value_type> getBoundaries(const Bezier<T, Deg>& s);
@@ -183,9 +186,9 @@ public:
 	const Bezier&								getSegment(size_t i) const noexcept;
 
 	template<typename Q>
-	value_type 									sample(Q t) const;
+	value_type 									operator()(Q t) const;
 
-	const value_type*							data();
+	const value_type*							data() const;
 	size_t										size() const;
 	size_t										segmentCount() const;
 
@@ -205,6 +208,8 @@ using QuadraticBezierLoop = BezierLoop<T, 2>;
 template<typename T>
 using CubicBezierLoop = BezierLoop<T, 3>;
 
+template<typename T>
+using Polygon = LinearBezierLoop<Vec<T, 2>>;
 
 
 template<typename T, size_t Deg>

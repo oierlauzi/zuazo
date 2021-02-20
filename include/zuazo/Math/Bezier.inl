@@ -376,19 +376,28 @@ template<typename T, size_t Deg>
 constexpr std::array<typename Bezier<T, Deg>::value_type, Deg> solve(	const Bezier<T, Deg>& s, 
 																		SolutionCount* cnt) 
 {
-	const auto polynomial = toPolynomial(s);
-	auto solution = solve(polynomial, cnt);
+	SolutionCount backupSolutionCount;
+	auto& solutionCount = cnt ? *cnt : backupSolutionCount;
 
-	//Clamp the solution in [0, 1]
-	for(size_t i = 0; i < solution.size(); ++i) {
-		if(!isInRange(solution[i], typename Bezier<T, Deg>::value_type(0), typename Bezier<T, Deg>::value_type(1))) {
-			//This solution is not valid as it exceeds the range. Decrease the solution count
-			for(size_t j = i; j < solution.size()-1; ++j) {
-				solution[j] = solution[j+1];
+	const auto polynomial = toPolynomial(s);
+	auto solution = solve(polynomial, &solutionCount);
+
+	if(solutionCount > SolutionCount::NONE) {
+		//Remove all invalid solutions
+		const auto ite = std::remove_if(
+			solution.begin(),
+			std::next(solution.begin(), static_cast<size_t>(solutionCount)),
+			[] (const typename Bezier<T, Deg>::value_type& value) -> bool {
+				return !isInRange(
+					value, 
+					typename Bezier<T, Deg>::value_type(0), 
+					typename Bezier<T, Deg>::value_type(1)
+				);
 			}
-			solution.back() = typename Bezier<T, Deg>::value_type();
-			if(cnt) --(*cnt);
-		}
+		);
+
+		//Update the solution count
+		solutionCount = static_cast<SolutionCount>(std::distance(solution.begin(), ite));
 	}
 
 	return solution;
@@ -512,7 +521,7 @@ inline const typename BezierLoop<T, Deg>::Bezier& BezierLoop<T, Deg>::getSegment
 
 template<typename T, size_t Deg>
 template<typename Q>
-inline typename BezierLoop<T, Deg>::value_type BezierLoop<T, Deg>::sample(Q t) const {
+inline typename BezierLoop<T, Deg>::value_type BezierLoop<T, Deg>::operator()(Q t) const {
 	//Sanitize the values
 	const auto index = static_cast<intmax_t>(floor(t)); //Floors
 	t -= index; //Obtain only the fractional part: [0, 1)
@@ -523,12 +532,12 @@ inline typename BezierLoop<T, Deg>::value_type BezierLoop<T, Deg>::sample(Q t) c
 	assert(0U <= i && i < segmentCount());
 
 	//Sample
-	return getSegment(i).sample(t);
+	return getSegment(i)(t);
 }
 
 
 template<typename T, size_t Deg>
-inline const typename BezierLoop<T, Deg>::value_type* BezierLoop<T, Deg>::data() {
+inline const typename BezierLoop<T, Deg>::value_type* BezierLoop<T, Deg>::data() const {
 	return m_values.data();
 }
 

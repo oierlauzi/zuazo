@@ -32,6 +32,12 @@ template<typename T, size_t N>
 constexpr Vec<T, N> abs(const Vec<T, N>& v);
 
 
+template<typename T>
+constexpr T sign(const T& value) noexcept;
+
+template<typename T, size_t N>
+constexpr Vec<T, N> sign(const Vec<T, N>& v);
+
 }
 
 #include "Absolute.inl"

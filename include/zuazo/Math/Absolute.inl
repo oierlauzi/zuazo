@@ -75,4 +75,26 @@ constexpr Vec<T, N> abs(const Vec<T, N>& v) {
 	);
 }
 
+
+template<typename T>
+constexpr T sign(const T& value) noexcept {
+	if(value < T()) {
+		return T(-1);
+	} else if(value > T()) {
+		return T(+1);
+	} else {
+		return T(0);
+	}
+}
+
+template<typename T, size_t N>
+constexpr Vec<T, N> sign(const Vec<T, N>& v) {
+	return transform(
+		[] (const auto& x) -> auto {
+			return sign(x);
+		},
+		v
+	);
+}
+
 }

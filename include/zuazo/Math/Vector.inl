@@ -678,7 +678,7 @@ transform(Func f, const Vec<T, N>&... v) {
 
 template<typename T, size_t N>
 constexpr T dot(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept {
-	T result = T(0);
+	T result = T();
 
 	for(size_t i = 0; i < Vec<T, N>::size(); ++i) {
 		result += lhs[i] * rhs[i];
@@ -714,43 +714,6 @@ constexpr Vec<T, N> normalize(const Vec<T, N>& a) noexcept {
 template<typename T, size_t N>
 constexpr Vec<T, N> proj(const Vec<T, N>& dir, const Vec<T, N>& p) noexcept {
 	return dot(p, normalize(dir)) * dir;
-}
-
-template<typename T>
-constexpr typename Vec2<T>::value_type signedDistance(const Vec2<T>& origin, const Vec2<T>& direction, const Vec2<T>& point) {
-	const auto perpendicular = Vec2<T>(-direction.y, direction.x);
-	return dot(perpendicular, point - origin);
-}
-
-template<typename T>
-constexpr void align(Utils::BufferView<Vec<T, 2>> points) {
-	//Set the origin in points[0]
-	for(size_t i = 1; i < points.size(); ++i) {
-		points[i] -= points[0];
-	}
-	points[0] = Vec<T, 2>(); //points[0] -= points[0] will result in 0
-
-	//Apply the rotatation to it
-	const auto dir = points.back(); //-points.front()
-	const auto len = length(dir);
-	const auto c = dir[0] / len; //cos: x
-	const auto s = dir[1] / len; //sin: y
-
-	//Rotate all the points. the first and last ones are
-	//trivial.
-	for(size_t i = 1; i < points.size() - 1; ++i) {
-		//This is equivalent to multiplying by a 2x2 rotation
-		//matrix. However, as the matrix class has not been declared
-		//yet, well manually implement it. Note that the rotation 
-		//matrix is defined as the following:
-		// [cos(O), -sin(O); sin(O), cos(O)]
-		// As we want to rotate in the opposite direction of the direction
-		//vector, substituting O by -O inverts the sign of the sines.
-		points[i][0] =  points[i][0]*c + points[i][1]*s;
-		points[i][1] = -points[i][1]*s + points[i][1]*c;
-	}
-	//points.front() = Vec<T, 2>(); //Already set
-	points.back() = Vec<T, 2>(len, 0);
 }
 
 
