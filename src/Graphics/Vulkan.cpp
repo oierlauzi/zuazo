@@ -963,6 +963,19 @@ struct Vulkan::Impl {
 		);
 	}
 
+	void bindIndexBuffer(	vk::CommandBuffer cmd,
+							vk::Buffer buffer,
+							size_t offset,
+							vk::IndexType indexType ) const noexcept
+	{
+		cmd.bindIndexBuffer(
+			buffer,
+			offset,
+			indexType,
+			dispatcher
+		);
+	}
+
 	void bindDescriptorSets(vk::CommandBuffer cmd, 
 							vk::PipelineBindPoint pipelineBindPoint, 
 							vk::PipelineLayout layout, 
@@ -2323,6 +2336,14 @@ void Vulkan::bindVertexBuffers(	vk::CommandBuffer cmd,
 								Utils::BufferView<const vk::DeviceSize> offsets ) const noexcept
 {
 	m_impl->bindVertexBuffers(cmd, firstBinding, buffers, offsets);
+}
+
+void Vulkan::bindIndexBuffer(	vk::CommandBuffer cmd,
+								vk::Buffer buffer,
+								size_t offset,
+								vk::IndexType indexType ) const noexcept
+{
+	m_impl->bindIndexBuffer(cmd, buffer, offset, indexType);
 }
 
 void Vulkan::bindDescriptorSets(vk::CommandBuffer cmd, 

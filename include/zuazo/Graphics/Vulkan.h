@@ -281,9 +281,10 @@ public:
 															uint32_t firstBinding, 
 															Utils::BufferView<const vk::Buffer> buffers, 
 															Utils::BufferView<const vk::DeviceSize> offsets ) const noexcept;
-	void								bindIndexBuffer(vk::Buffer buffer,
+	void								bindIndexBuffer(vk::CommandBuffer cmd,
+														vk::Buffer buffer,
    														size_t offset,
-    													vk::IndexType indexType ) noexcept;
+    													vk::IndexType indexType ) const noexcept;
 	void								bindDescriptorSets(	vk::CommandBuffer cmd, 
 															vk::PipelineBindPoint pipelineBindPoint, 
 															vk::PipelineLayout layout, 

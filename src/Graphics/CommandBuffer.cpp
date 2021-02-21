@@ -214,6 +214,13 @@ void CommandBuffer::bindVertexBuffers(	uint32_t firstBinding,
 	getVulkan().bindVertexBuffers(get(), firstBinding, buffers, offsets);
 }
 
+void CommandBuffer::bindIndexBuffer(vk::Buffer buffer,
+									size_t offset,
+									vk::IndexType indexType ) noexcept
+{
+	getVulkan().bindIndexBuffer(get(), buffer, offset, indexType);
+}
+
 void CommandBuffer::bindDescriptorSets(	vk::PipelineBindPoint pipelineBindPoint, 
 										vk::PipelineLayout layout, 
 										uint32_t firstSet, 
