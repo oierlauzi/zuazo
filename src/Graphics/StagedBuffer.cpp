@@ -2,6 +2,8 @@
 
 namespace Zuazo::Graphics {
 
+StagedBuffer::StagedBuffer() noexcept = default;
+
 StagedBuffer::StagedBuffer(	const Vulkan& vulkan, 
 							vk::BufferUsageFlags usage,
 							size_t size )

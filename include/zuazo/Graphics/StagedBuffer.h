@@ -13,6 +13,7 @@ class StagedBuffer
 	: public Buffer 
 {
 public:
+	StagedBuffer() noexcept;
 	StagedBuffer(	const Vulkan& vulkan, 
 					vk::BufferUsageFlags usage,
 					size_t size );
