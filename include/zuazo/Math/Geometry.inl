@@ -25,6 +25,10 @@ constexpr Mat2x2<typename Vec2<T>::value_type> getAlignmentMatrix(const Vec2<T> 
 	);
 }
 
+template<typename T, size_t N>
+constexpr typename Vec<T, N>::value_type distance(const Vec<T, N>& a, const Vec<T, N>& b) noexcept {
+	return length(b - a);
+}
 
 template<typename T>
 constexpr typename Line<T, 2>::value_type::value_type getSignedDistance(const Line<T, 2>& line,
@@ -36,6 +40,30 @@ constexpr typename Line<T, 2>::value_type::value_type getSignedDistance(const Li
 	return dot(normal, delta);
 }
 
+template<typename T>
+constexpr bool getIntersection(	const Line<T, 2>& a,
+								const Line<T, 2>& b,
+								typename Line<T, 2>::value_type* point ) noexcept
+{
+	const auto dirA = a.back() - a.front();
+	const auto dirB = b.back() - b.front();
+	const auto deltaOrig = a.front() - b.front();
+
+	const auto sNum = det(Mat2x2<T>(dirA, deltaOrig));
+	const auto tNum = det(Mat2x2<T>(dirB, deltaOrig));
+	const auto den = det(Mat2x2<T>(dirA, dirB));
+	const auto s = sNum / den;
+	const auto t = tNum / den;
+
+	constexpr typename Line<T, 2>::value_type::value_type ZERO(0), ONE(1);
+	const bool result = isInRange(s, ZERO, ONE) && isInRange(t, ZERO, ONE);
+	if(result && point) {
+		*point = a(s);
+		assert(distance(*point, b(t)) < 1e-12);
+	}
+
+	return result;
+}
 
 template<typename T, typename Index>
 inline std::vector<Index> triangulate(Utils::BufferView<const Vec2<T>> polygon) {
@@ -55,79 +83,107 @@ inline std::vector<Index> triangulate(Utils::BufferView<const Vec2<T>> polygon) 
 	std::vector<Index> indices(polygon.size());
 	std::iota(indices.begin(), indices.end(), 0);
 
-	std::vector<Index> sortedIndices, removeIndices, monotonePolygonIndices;
+	std::vector<Index> sortedIndices, monotonePolygonIndices;
 	while(!indices.empty()) {
-		//Recreate the array of the sorted indices
-		sortedIndices.resize(indices.size());
-		std::iota(sortedIndices.begin(), sortedIndices.end(), 0);
-		std::sort(
-			sortedIndices.begin(), sortedIndices.end(),
-			[&indices, &polygon, &L] (Index aIdx, Index bIdx) -> bool {
-				//Sort based on the y coordinate of the referenced vertex. Greatest first
-				return dot(polygon[indices[aIdx]], L) > dot(polygon[indices[bIdx]], L);
-			}
-		);
-
 		//Initialize the work vectors. This won't free their space
-		removeIndices.clear();
 		monotonePolygonIndices.clear();
 
-		//Create a monotone polygon from the indices
-		for (size_t i = 0; i < sortedIndices.size(); ++i) {
-			assert(removeIndices.empty());
-			assert(monotonePolygonIndices.empty());
-
-			//Extract the vertices from the polygon
-			const size_t nIth = sortedIndices[i];
-			const size_t nNext = (nIth + 1) % indices.size();
-			const size_t nPrev = (nIth + indices.size() - 1) % indices.size();
-			const auto& ith = polygon[indices[nIth]];
-			const auto& next = polygon[indices[nNext]];
-			const auto& prev = polygon[indices[nPrev]];
-
-			//Obtain the side on which they lie on
-			const auto sidePrev = sign(dot(ith-prev, L));
-        	const auto sideNext = sign(dot(ith-next, L));
-
-			if(sidePrev*sideNext >= 0) {
-				//Both indices are on the same side.
-				//Check that the line does not exit the polygon in case
-				//of a concave edge
-				size_t nBegin = indices.size(); //Invalid index
-				if(sidePrev + sideNext > 0) {
-					if(i > 0) {
-						nBegin = sortedIndices[i-1];
-					}
-				} else {
-					if(i+1 < sortedIndices.size()) {
-						nBegin = sortedIndices[i+1];
-					}
+		//We only need to split it in a monotone polygon if it is not a triangle
+		if(indices.size() > 3) {
+			//Recreate the array of the sorted indices
+			sortedIndices.resize(indices.size());
+			std::iota(sortedIndices.begin(), sortedIndices.end(), 0);
+			std::sort(
+				sortedIndices.begin(), sortedIndices.end(),
+				[&indices, &polygon, &L] (Index aIdx, Index bIdx) -> bool {
+					//Sort based on the y coordinate of the referenced vertex. Greatest first
+					return dot(polygon[indices[aIdx]], L) > dot(polygon[indices[bIdx]], L);
 				}
+			);
 
-				if(nBegin < indices.size()) {
-					//Ensure ordering to step over all elements
-					const size_t nEnd = min(nBegin, nIth);
-					nBegin = max(nBegin, nIth);
-					assert(nEnd < nBegin);
+			//Create a monotone polygon from the indices
+			for (size_t i = 0; i < sortedIndices.size(); ++i) {
+				assert(monotonePolygonIndices.empty());
 
-					//Add all the vertices. Remove all but the first and last
-					monotonePolygonIndices.push_back(indices[nBegin]);
-					for(size_t j = (nBegin+1) % indices.size(); j != nEnd; j = (j+1) % indices.size()) {
-						monotonePolygonIndices.push_back(indices[j]);
-						removeIndices.push_back(j);
+				//Extract the vertices from the polygon
+				const size_t nIth = sortedIndices[i];
+				const size_t nNext = (nIth + 1) % indices.size();
+				const size_t nPrev = (nIth + indices.size() - 1) % indices.size();
+				const auto& ith = polygon[indices[nIth]];
+				const auto& next = polygon[indices[nNext]];
+				const auto& prev = polygon[indices[nPrev]];
+
+				//Obtain the side on which they lie on
+				const auto sidePrev = sign(dot(ith-prev, L));
+				const auto sideNext = sign(dot(ith-next, L));
+
+				if(sidePrev*sideNext >= 0) {
+					//Both indices are on the same side.
+					//Decide the direction in which we are going to 
+					//travel across the edges
+					size_t nBegin = indices.size(); //Invalid index
+					if(sidePrev + sideNext > 0) {
+						if(i > 0) {
+							nBegin = sortedIndices[i-1];
+						}
+					} else {
+						if(i+1 < sortedIndices.size()) {
+							nBegin = sortedIndices[i+1];
+						}
 					}
-					monotonePolygonIndices.push_back(indices[nEnd]);
 
-					//Discard all unwanted indices for the next iteration
-					//Sort is used in order to remove backwards, so that lower indices remain valid
-					std::sort(removeIndices.begin(), removeIndices.end());
-					for(auto ite = removeIndices.crbegin(); ite != removeIndices.crend(); ++ite) {
-						assert(*ite < indices.size());
-						indices.erase(std::next(indices.cbegin(), *ite));
+					//Check that the line does not exit the polygon
+					if(nBegin < indices.size()) {
+						//Get the line which divides the polygon in 2
+						const Zuazo::Math::Line<float, 2> divisor(
+							polygon[indices[nIth]], 
+							polygon[indices[nBegin]]
+						);
+
+						//Check if it intersects any edge other than itself
+						for(size_t j0 = 0; j0 < indices.size(); ++j0) { 
+							const auto j1 = (j0+1) % indices.size();
+							if(j0==nIth || j0==nBegin || j1==nIth || j1==nBegin){
+								continue;
+							}
+							
+							//Get the current test segment
+							const Zuazo::Math::Line<float, 2> polygonSegment(
+								polygon[indices[j0]], 
+								polygon[indices[j1]]
+							);
+
+							//Check intersection
+							if(Zuazo::Math::getIntersection(divisor, polygonSegment)) {
+								//This segment exits the polygon. Try with another
+								nBegin = indices.size();
+								break;
+							}
+						}
 					}
 
-					//We have finished creating a monotone polygon
-					break;
+					//Extract a monotone polygon if the previous calculations were successful
+					if(nBegin < indices.size()) {
+						//Ensure ordering to step over all elements in between nBegin and nEnd
+						const size_t nEnd = min(nBegin, nIth)+1;
+						nBegin = max(nBegin, nIth);
+						assert(nEnd < nBegin);
+
+						//Obtain the begin and end iterators for the edge range
+						const auto begin = std::next(indices.cbegin(), nBegin);
+						const auto end = std::next(indices.cbegin(), nEnd);
+
+						//Add all the vertices in a circular manner. Remove all but the first and last
+						std::copy(begin, indices.cend(), std::back_inserter(monotonePolygonIndices));
+						std::copy(indices.cbegin(), end, std::back_inserter(monotonePolygonIndices));
+
+						//Discard all the edges but the first and last. Same manner as above
+						indices.erase(std::next(begin), indices.cend());
+						indices.erase(indices.cbegin(), std::prev(end));
+
+						//We have finished creating a monotone polygon
+						break;
+					}
 				}
 			}
 		}
@@ -139,6 +195,7 @@ inline std::vector<Index> triangulate(Utils::BufferView<const Vec2<T>> polygon) 
 		}
 		assert(!monotonePolygonIndices.empty());
 
+		//Ensure that at least a triangle was formed
 		if(monotonePolygonIndices.size() >= 3) {
 			//Begin populating the triangle strip indices
 			if(!result.empty()) {
