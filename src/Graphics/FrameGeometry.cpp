@@ -2,17 +2,9 @@
 
 namespace Zuazo::Graphics {
 
-Frame::Geometry::Geometry(	std::byte* data,
-							size_t stride,
-							size_t positionOffset,
-							size_t texCoordOffset,
-							ScalingMode scaling,
+Frame::Geometry::Geometry(	ScalingMode scaling,
 							Math::Vec2f targetSize ) noexcept
-	: m_data(data)
-	, m_stride(stride)
-	, m_positionOffset(positionOffset)
-	, m_texCoordOffset(texCoordOffset)
-	, m_scalingMode(scaling)
+	: m_scalingMode(scaling)
 	, m_targetSize(targetSize)
 	, m_sourceSize(0.0f)
 {
@@ -38,43 +30,57 @@ const Math::Vec2f& Frame::Geometry::getTargetSize() const noexcept {
 }
 
 
+std::pair<Math::Vec2f, Math::Vec2f> Frame::Geometry::calculateSurfaceSize() const noexcept {
+		//Scale according to the mode
+		auto recSize = scale(m_sourceSize, m_targetSize, m_scalingMode);
+
+		//Obtain the texture size
+		auto texSize = m_targetSize / recSize;
+
+		//Clamp the values
+		recSize = Math::min(recSize, m_targetSize);
+		texSize = Math::min(texSize, Math::Vec2f(1.0f));
+
+		return std::make_pair(recSize, texSize);
+}
+
+
 bool Frame::Geometry::useFrame(const Frame& frame) {
 	const auto frameSize = frame.getDescriptor().calculateSize();
 
 	if(m_sourceSize != frameSize) {
 		m_sourceSize = frameSize;
-		updateBuffer();
+
 		return true;
 	} else {
 		return false;
 	}
 }
 
-
-
-void Frame::Geometry::updateBuffer() { 
-	//Scale accordingly and clamp its value
-	auto recSize = scale(m_sourceSize, m_targetSize, m_scalingMode);
-	auto texSize = m_targetSize / recSize;
-	recSize = Math::min(recSize, m_targetSize);
-	texSize = Math::min(texSize, Math::Vec2f(1.0f));
-
+void Frame::Geometry::writeQuadVertices(Math::Vec2f* position,
+										Math::Vec2f* texCoord,
+										size_t positionStride,
+										size_t texCoordStride ) const noexcept
+{
+	const auto surfaceSize = calculateSurfaceSize();
 	constexpr std::array vertexPositions {
 		Math::Vec2f(-0.5f, -0.5f),
 		Math::Vec2f(-0.5f, +0.5f),
 		Math::Vec2f(+0.5f, -0.5f),
 		Math::Vec2f(+0.5f, +0.5f),
 	};
-
 	static_assert(vertexPositions.size() == VERTEX_COUNT, "Vertex count does not match");
 
-	for(size_t i = 0; i < vertexPositions.size(); i++) {
-		auto& position = *(reinterpret_cast<Math::Vec2f*>(m_data + (i * m_stride) + m_positionOffset));
-		auto& texCoord = *(reinterpret_cast<Math::Vec2f*>(m_data + (i * m_stride) + m_texCoordOffset));
-
-		position = recSize * vertexPositions[i];
-		texCoord = texSize * vertexPositions[i] + Math::Vec2f(0.5f);
+	for(size_t i = 0; i < vertexPositions.size(); ++i) {
+		//Write the values
+		*position = surfaceSize.first * vertexPositions[i];
+		*texCoord = surfaceSize.second * vertexPositions[i] + Math::Vec2f(0.5f);
+		
+		//Advance write pointers
+		reinterpret_cast<std::byte*&>(position) += positionStride;
+		reinterpret_cast<std::byte*&>(texCoord) += texCoordStride;
 	}
+
 }
 
 }

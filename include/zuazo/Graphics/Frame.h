@@ -128,11 +128,7 @@ private:
 
 class Frame::Geometry {
 public:
-	Geometry(	std::byte* data,
-				size_t stride,
-				size_t positionOffset,
-				size_t texCoordOffset,
-				ScalingMode scaling = ScalingMode::STRETCH,
+	Geometry(	ScalingMode scaling = ScalingMode::STRETCH,
 				Math::Vec2f targetSize = Math::Vec2f() ) noexcept;
 	Geometry(const Geometry& other) noexcept = default;
 	~Geometry() = default;
@@ -145,21 +141,21 @@ public:
 	void									setTargetSize(Math::Vec2f size) noexcept;
 	const Math::Vec2f&						getTargetSize() const noexcept;
 
+	std::pair<Math::Vec2f, Math::Vec2f>		calculateSurfaceSize() const noexcept;
+
 	bool									useFrame(const Frame& frame);
+	void									writeQuadVertices(	Math::Vec2f* position,
+																Math::Vec2f* texCoord,
+																size_t positionStride = sizeof(Math::Vec2f),
+																size_t texCoordStride = sizeof(Math::Vec2f) ) const noexcept;
 	
 	static constexpr size_t					VERTEX_COUNT = 4;
 
 private:
-	std::byte*								m_data;
-	size_t									m_stride;
-	size_t									m_positionOffset;
-	size_t									m_texCoordOffset;
-
 	ScalingMode								m_scalingMode;
 	Math::Vec2f								m_targetSize;
 	Math::Vec2f 							m_sourceSize;
 
-	void									updateBuffer();
 };
 
 }

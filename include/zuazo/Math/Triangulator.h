@@ -20,7 +20,7 @@ public:
 	Triangulator() = default;
 	Triangulator(const Triangulator& other) = delete;
 	Triangulator(Triangulator&& other) = default;
-	~Triangulator();
+	~Triangulator() = default;
 
 	Triangulator&			operator=(const Triangulator& other) = delete;
 	Triangulator&			operator=(Triangulator&& other) = default;
