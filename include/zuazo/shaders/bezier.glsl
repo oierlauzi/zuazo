@@ -22,7 +22,7 @@ vec2 bezier2_gradient(vec2 uv) {
 	return jacobian*v;
 }
 
-float bezier3_signed_distance(vec2 uv) {
+float bezier2_signed_distance(vec2 uv) {
 	return bezier2_distance(uv) / length(bezier2_gradient(uv));
 }
 

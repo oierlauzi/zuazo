@@ -21,11 +21,6 @@ constexpr bool getIntersection(	const Line<T, 2>& a,
 								const Line<T, 2>& b,
 								typename Line<T, 2>::value_type* point = nullptr ) noexcept;
 
-
-
-template<typename T, typename Index = uint32_t>
-std::vector<Index> triangulate(Utils::BufferView<const Vec2<T>> polygon);
-
 }
 
 #include "Geometry.inl"
