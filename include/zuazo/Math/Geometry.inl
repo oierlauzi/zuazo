@@ -167,7 +167,7 @@ inline std::vector<Index> triangulate(Utils::BufferView<const Vec2<T>> polygon) 
 						//Ensure ordering to step over all elements in between nBegin and nEnd
 						const size_t nEnd = min(nBegin, nIth)+1;
 						nBegin = max(nBegin, nIth);
-						assert(nEnd < nBegin);
+						assert(nEnd <= nBegin);
 
 						//Obtain the begin and end iterators for the edge range
 						const auto begin = std::next(indices.cbegin(), nBegin);
