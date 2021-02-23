@@ -117,12 +117,12 @@ constexpr const typename Bezier<T, Deg>::value_type* Bezier<T, Deg>::cbegin() co
 
 template<typename T, size_t Deg>
 constexpr typename Bezier<T, Deg>::value_type* Bezier<T, Deg>::end() noexcept {
-	return data() + size();
+	return begin() + size();
 }
 
 template<typename T, size_t Deg>
 constexpr const typename Bezier<T, Deg>::value_type* Bezier<T, Deg>::end() const noexcept {
-	return data() + size();
+	return begin() + size();
 }
 
 template<typename T, size_t Deg>
@@ -139,6 +139,15 @@ constexpr typename Bezier<T, Deg>::value_type* Bezier<T, Deg>::data() noexcept {
 template<typename T, size_t Deg>
 constexpr const typename Bezier<T, Deg>::value_type* Bezier<T, Deg>::data() const noexcept {
 	return m_values.data();
+}
+
+
+template<typename T, size_t Deg>
+void Bezier<T, Deg>::reverse() noexcept {
+	std::reverse(
+		m_values.begin(),
+		m_values.end()
+	);
 }
 
 
@@ -462,124 +471,6 @@ constexpr Utils::Range<typename Bezier<Vec<T, N>, Deg>::value_type> getBoundarie
 	}
 
 	return Utils::Range<typename Bezier<Vec<T, N>, Deg>::value_type>(min, max);
-}
-
-
-/*
- * BezierLoop
- */
-
-template<typename T, size_t Deg>
-inline BezierLoop<T, Deg>::BezierLoop(Utils::BufferView<const value_type> values) 
-	: m_values(values.cbegin(), values.cend())
-{
-	if(m_values.size()) {
-		//Repeat the first element at the back, so that it loops
-		//over to the first value when casting to Bezier
-		m_values.push_back(m_values.front());
-	}
-
-
-	//This value is not possible!
-	assert(m_values.size() != 1);
-}
-
-template<typename T, size_t Deg>
-inline BezierLoop<T, Deg>::BezierLoop(Utils::BufferView<const Bezier> segments) 
-	: m_values(segments.size() > 0 ? segments.size()*degree() + 1 : 0)
-{
-	//This value is not possible!
-	assert(m_values.size() != 1);
-
-	//Fill the array
-	for(size_t i = 0; i < segments.size(); ++i) {
-		//Ensure continuity
-		assert(segments[i].back() == segments[(i+1) % segments.size()].front());
-		setBezier(i, segments[i]);
-	}
-}
-
-template<typename T, size_t Deg>
-inline void BezierLoop<T, Deg>::setSegment(size_t i, const Bezier& s) {
-	assert(i < segmentCount());
-	reinterpret_cast<Bezier&>(m_values[i*degree()]) = s;
-
-	//Ensure continuity
-	if(i == 0) {
-		m_values.back() = m_values.front();
-	} else if(i == segmentCount()-1) {
-		m_values.front() = m_values.back();
-	}
-}
-
-template<typename T, size_t Deg>
-inline const typename BezierLoop<T, Deg>::Bezier& BezierLoop<T, Deg>::getSegment(size_t i) const noexcept {
-	assert(i < segmentCount());
-	return reinterpret_cast<const Bezier&>(m_values[i*degree()]);
-}
-
-
-template<typename T, size_t Deg>
-template<typename Q>
-inline typename BezierLoop<T, Deg>::value_type BezierLoop<T, Deg>::operator()(Q t) const {
-	//Sanitize the values
-	const auto index = static_cast<intmax_t>(floor(t)); //Floors
-	t -= index; //Obtain only the fractional part: [0, 1)
-	const auto i = static_cast<size_t>((index % segmentCount() + segmentCount()) % segmentCount()); //Index in [0, segmentCount)
-
-	//Ensure that the values are correct
-	assert(Q(0) <= t && t < Q(1));
-	assert(0U <= i && i < segmentCount());
-
-	//Sample
-	return getSegment(i)(t);
-}
-
-
-template<typename T, size_t Deg>
-inline const typename BezierLoop<T, Deg>::value_type* BezierLoop<T, Deg>::data() const {
-	return m_values.data();
-}
-
-template<typename T, size_t Deg>
-inline size_t BezierLoop<T, Deg>::size() const {
-	return m_values.size();
-}
-
-template<typename T, size_t Deg>
-inline size_t BezierLoop<T, Deg>::segmentCount() const {
-	//Account the repeated last value
-	return size() > 0 ? (size()-1) / degree() : 0;
-}
-
-
-template<typename T, size_t Deg>
-constexpr size_t BezierLoop<T, Deg>::degree() {
-	return Deg;
-}
-
-
-
-template<typename T, size_t Deg>
-inline Utils::Range<typename BezierLoop<T, Deg>::value_type> getBoundaries(const BezierLoop<T, Deg>& s) {
-	Utils::Range<typename BezierLoop<T, Deg>::value_type> result;
-
-	if(s.segmentCount() > 0) {
-		//Populate the result with the first segment
-		result = getBoundaries(s.getSegment(0));
-
-		//Accumulate the rest of the boundaries
-		for(size_t i = 1; i < s.segmentCount(); ++i) {
-			const auto newBoundaries = getBoundaries(s.getSegment(i));
-
-			result = Utils::Range<typename BezierLoop<T, Deg>::value_type>(
-				min(newBoundaries.getMin(), result.getMin()),
-				max(newBoundaries.getMax(), result.getMax())
-			);
-		}
-	}
-
-	return result;
 }
 
 }

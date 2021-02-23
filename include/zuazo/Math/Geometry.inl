@@ -7,9 +7,15 @@ namespace Zuazo::Math {
 
 template<typename T>
 constexpr Mat2x2<typename Vec2<T>::value_type> getAlignmentMatrix(const Vec2<T> vec) noexcept {
-	const auto len = length(vec);
-	const auto c = vec.x / len; //cos: x
-	const auto s = vec.y / len; //sin: y
+	return getAlignmentMatrix(normalize(vec), normalized);
+}
+
+template<typename T>
+constexpr Mat2x2<typename Vec2<T>::value_type> getAlignmentMatrix(	const Vec2<T> vec,
+																	normalized_t ) noexcept
+{
+	const auto c = vec.x; //cos: x
+	const auto s = vec.y; //sin: y
 
 	//Note that the rotation matrix is defined as the following:
 	// [cos(O), -sin(O); 
@@ -35,6 +41,23 @@ constexpr typename Line<T, 2>::value_type::value_type getSignedDistance(const Li
 	const auto direction = normalize(line.back() - line.front());
 	const auto normal = typename Line<T, 2>::value_type(-direction.y, direction.x);
 	return dot(normal, delta);
+}
+
+template<typename T>
+constexpr typename Vec2<T>::value_type getSignedArea(Utils::BufferView<const Vec2<T>> poly) noexcept {
+	auto result = typename Vec2<T>::value_type();
+
+	//From:
+	//https://mathworld.wolfram.com/PolygonArea.html
+
+	for(size_t i = 0; i < poly.size(); ++i) {
+		const auto& p0 = poly[i]; //This one
+		const auto& p1 = poly[(i+1) % poly.size()]; //Next one
+
+		result += p0.x*p1.y - p0.y*p1.x;
+	}
+
+	return result / 2;
 }
 
 template<typename T>

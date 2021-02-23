@@ -5,7 +5,6 @@
 #include "../Utils/Limit.h"
 
 #include <array>
-#include <vector>
 
 namespace Zuazo::Math {
 
@@ -47,6 +46,8 @@ public:
 
 	constexpr value_type*					data() noexcept;
 	constexpr const value_type*				data() const noexcept;
+
+	void 									reverse() noexcept;
 
 	static constexpr size_t					size() noexcept;
 	static constexpr size_t					degree() noexcept;
@@ -162,58 +163,6 @@ constexpr Utils::Range<typename Bezier<T, Deg>::value_type> getBoundaries(const 
 
 template<typename T, size_t N, size_t Deg>
 constexpr Utils::Range<typename Bezier<Vec<T, N>, Deg>::value_type> getBoundaries(const Bezier<Vec<T, N>, Deg>& s);
-
-
-template<typename T, size_t Deg>
-class BezierLoop {
-public:
-	static_assert(Deg > 0, "Degree must be 1 or greater");
-	
-	using Bezier = Math::Bezier<T, Deg>;
-	using value_type = typename Bezier::value_type;
-
-	BezierLoop() = default;
-	BezierLoop(Utils::BufferView<const value_type> segments);
-	BezierLoop(Utils::BufferView<const Bezier> splines);
-	BezierLoop(const BezierLoop& other) = default;
-	BezierLoop(BezierLoop&& other) = default;
-	~BezierLoop() = default;
-
-	BezierLoop&									operator=(const BezierLoop& other) = default;
-	BezierLoop&									operator=(BezierLoop&& other) = default;
-
-	void 										setSegment(size_t i, const Bezier& s);
-	const Bezier&								getSegment(size_t i) const noexcept;
-
-	template<typename Q>
-	value_type 									operator()(Q t) const;
-
-	const value_type*							data() const;
-	size_t										size() const;
-	size_t										segmentCount() const;
-
-	static constexpr size_t						degree();
-
-private:
-	std::vector<value_type>						m_values;
-
-};
-
-template<typename T>
-using LinearBezierLoop = BezierLoop<T, 1>;
-
-template<typename T>
-using QuadraticBezierLoop = BezierLoop<T, 2>;
-
-template<typename T>
-using CubicBezierLoop = BezierLoop<T, 3>;
-
-template<typename T>
-using Polygon = LinearBezierLoop<Vec<T, 2>>;
-
-
-template<typename T, size_t Deg>
-Utils::Range<typename BezierLoop<T, Deg>::value_type> getBoundaries(const BezierLoop<T, Deg>& s);
 
 }
 
