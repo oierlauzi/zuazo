@@ -6,10 +6,13 @@
 namespace Zuazo::Math {
 
 template<typename T, typename Index>
-inline std::vector<typename Triangulator<T, Index>::index_type> 
-Triangulator<T, Index>::operator()(	Utils::BufferView<const vector_type> polygon,
-									index_type restartIndex ) const 
+inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
+												Utils::BufferView<const vector_type> polygon,
+												index_type restartIndex ) const 
 {
+	//The following code is based on:
+	//https://stackoverflow.com/questions/8980379/polygon-triangulation-into-triangle-strips-for-opengl-es
+
 	//Line used to project the points. 
 	//This will select the y component of the vectors when dot()
 	constexpr vector_type L(0, 1); 
@@ -30,10 +33,6 @@ Triangulator<T, Index>::operator()(	Utils::BufferView<const vector_type> polygon
 			}
 		}
 	}
-
-	//The following code is based on:
-	//https://stackoverflow.com/questions/8980379/polygon-triangulation-into-triangle-strips-for-opengl-es
-	std::vector<index_type> result;
 
 	//Initialize the index vector
 	m_indices.resize(polygon.size());
@@ -177,7 +176,15 @@ Triangulator<T, Index>::operator()(	Utils::BufferView<const vector_type> polygon
 			}
 		}
 	}
+}
 
+template<typename T, typename Index>
+inline std::vector<typename Triangulator<T, Index>::index_type> 		
+Triangulator<T, Index>::operator()(	Utils::BufferView<const vector_type> polygon,
+									index_type restartIndex ) const
+{
+	std::vector<typename Triangulator<T, Index>::index_type> result;
+	(*this)(result, polygon, restartIndex);
 	return result;
 }
 

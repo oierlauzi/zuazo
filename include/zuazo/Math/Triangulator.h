@@ -22,11 +22,15 @@ public:
 	Triangulator(Triangulator&& other) = default;
 	~Triangulator() = default;
 
-	Triangulator&			operator=(const Triangulator& other) = delete;
-	Triangulator&			operator=(Triangulator&& other) = default;
+	Triangulator&					operator=(const Triangulator& other) = delete;
+	Triangulator&					operator=(Triangulator&& other) = default;
+
+	void							operator()(	std::vector<index_type>& result,
+												Utils::BufferView<const vector_type> polygon,
+												index_type restartIndex = ~index_type(0) ) const;
 
 	std::vector<index_type> 		operator()(	Utils::BufferView<const vector_type> polygon,
-												index_type restartIndex = ~index_type(0)) const;
+												index_type restartIndex = ~index_type(0) ) const;
 
 private:
 	mutable std::vector<index_type>	m_indices;
