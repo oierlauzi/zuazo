@@ -1,6 +1,7 @@
 #include "Triangulator.h"
 
 #include "Geometry.h"
+#include "../Exception.h"
 
 namespace Zuazo::Math {
 
@@ -11,11 +12,24 @@ Triangulator<T, Index>::operator()(	Utils::BufferView<const vector_type> polygon
 {
 	//Line used to project the points. 
 	//This will select the y component of the vectors when dot()
-	constexpr Vec2<T> L(0, 1); 
+	constexpr vector_type L(0, 1); 
 
-	//Ensure index type is big enough. < is used as the last value is reserved
-	//for restarting the primitive
-	assert(polygon.size() < std::numeric_limits<index_type>::max());
+	//Ensure index type is big enough.
+	if(polygon.size() >= restartIndex) {
+		throw Exception("Insufficent index size for triangulation");
+	}
+
+	//Check that the given polygon is simple (no intersecting edges)
+	for(size_t i = 1; i < polygon.size(); ++i) {
+		for(size_t j = i + 2; j < polygon.size(); ++j) {
+			const Line<value_type, 2> seg0(polygon[i-1], polygon[i]);
+			const Line<value_type, 2> seg1(polygon[j-1], polygon[j]);
+
+			if(getIntersection(seg0, seg1)) {
+				throw Exception("Unable to triangulate a complex polygon");
+			}
+		}
+	}
 
 	//The following code is based on:
 	//https://stackoverflow.com/questions/8980379/polygon-triangulation-into-triangle-strips-for-opengl-es
@@ -76,7 +90,7 @@ Triangulator<T, Index>::operator()(	Utils::BufferView<const vector_type> polygon
 					//Check that the line does not exit the polygon
 					if(nBegin < m_indices.size()) {
 						//Get the line which divides the polygon in 2
-						const Zuazo::Math::Line<float, 2> divisor(
+						const Zuazo::Math::Line<value_type, 2> divisor(
 							polygon[m_indices[nIth]], 
 							polygon[m_indices[nBegin]]
 						);
@@ -89,7 +103,7 @@ Triangulator<T, Index>::operator()(	Utils::BufferView<const vector_type> polygon
 							}
 							
 							//Get the current test segment
-							const Zuazo::Math::Line<float, 2> polygonSegment(
+							const Zuazo::Math::Line<value_type, 2> polygonSegment(
 								polygon[m_indices[j0]], 
 								polygon[m_indices[j1]]
 							);

@@ -54,10 +54,49 @@ constexpr typename Vec2<T>::value_type getSignedArea(Utils::BufferView<const Vec
 		const auto& p0 = poly[i]; //This one
 		const auto& p1 = poly[(i+1) % poly.size()]; //Next one
 
-		result += p0.x*p1.y - p0.y*p1.x;
+		result += zCross(p0, p1);
 	}
 
 	return result / 2;
+}
+
+template<typename T>
+constexpr bool isConvex(Utils::BufferView<const Vec2<T>> poly) noexcept {
+	auto direction = typename Vec2<T>::value_type();
+
+	for(size_t i = 0; i < poly.size(); ++i) {
+		//Obtain the indices of the adjacent vertices
+		const auto nIth = i;
+		const auto nPrev = (i+poly.size()-1) % poly.size();
+		const auto nNext = (i+1) %  poly.size();
+
+		//Calculate the the z component of the cross 
+		//product of adjacent edges
+		const auto delta0 = poly[nIth] - poly[nPrev];
+		const auto delta1 = poly[nNext] - poly[nIth];
+		const auto z = zCross(delta0, delta1);
+
+		//Test only if the edges were not colinear
+		if(!approxZero(z)) {
+			const auto newDirection = sign(z);
+			assert(newDirection); //It must not be zero or NaN at this point
+
+			if(!direction) {
+				//Direction was not set. Set it
+				//with the current edge
+				direction = newDirection;
+			} else {
+				//If direction has changed, this is 
+				//not a convex polygon
+				if(direction != newDirection) {
+					return false;
+				}
+			}
+		}
+	}
+
+	//All test passed. This is a convex polygon
+	return true;
 }
 
 template<typename T>

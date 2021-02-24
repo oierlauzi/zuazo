@@ -327,7 +327,10 @@ template<typename T, size_t N>
 constexpr T dot(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept;
 
 template<typename T>
-constexpr Vec<T, 3> cross(const Vec<T, 3>& lhs, const Vec<T, 3>& rhs) noexcept;
+constexpr Vec3<T> cross(const Vec3<T>& lhs, const Vec3<T>& rhs) noexcept;
+
+template<typename T>
+constexpr typename Vec2<T>::value_type zCross(const Vec2<T>& lhs, const Vec2<T>& rhs) noexcept;
 
 template<typename T, size_t N>
 constexpr T length(const Vec<T, N>& a) noexcept;

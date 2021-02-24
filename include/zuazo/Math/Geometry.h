@@ -26,7 +26,10 @@ constexpr typename Line<T, 2>::value_type::value_type getSignedDistance(const Li
 																		const typename Line<T, 2>::value_type& point ) noexcept;
 
 template<typename T>
-constexpr typename Vec2<T>::value_type getSignedArea(Utils::BufferView<const Vec2<T>> poly) noexcept; 
+constexpr typename Vec2<T>::value_type getSignedArea(Utils::BufferView<const Vec2<T>> poly) noexcept;
+
+template<typename T>
+constexpr bool isConvex(Utils::BufferView<const Vec2<T>> poly) noexcept;
 
 template<typename T>
 constexpr bool getIntersection(	const Line<T, 2>& a,
