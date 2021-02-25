@@ -83,10 +83,17 @@ inline void OutlineProcessor<T, I>::addPolygon(const polygon_type& polygon) {
 
 template<typename T, typename I>
 inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
+	//Ensure that the contour is counter clockwise
+	m_ccwContour = contour;
+	if(getSignedArea(reinterpret_cast<const polygon_type&>(m_ccwContour)) > 0) { //FIXME ugly reinterpret cast
+		m_ccwContour.reverse();
+	}
+	assert(getSignedArea(reinterpret_cast<const polygon_type&>(m_ccwContour)) <= 0);
+
 	//Obtain the vertices corresponding to the inner hull
 	m_innerHull.clear();
-	for(size_t i = 0; i < contour.getSegmentCount(); ++i) {
-		const auto& segment = contour.getSegment(i);
+	for(size_t i = 0; i < m_ccwContour.getSegmentCount(); ++i) {
+		const auto& segment = m_ccwContour.getSegment(i);
 		const auto segmentAxis = segment.getAxis();
 
 		//First point will always be at the inner hull

@@ -56,7 +56,8 @@ private:
 	std::vector<Vertex>						m_vertices;
 	std::vector<index_type>					m_indices;
 
-	Polygon<value_type>						m_innerHull;
+	contour_type							m_ccwContour;
+	polygon_type							m_innerHull;
 	Triangulator<value_type, index_type>	m_triangulator;
 
 	
