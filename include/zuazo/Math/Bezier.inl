@@ -143,11 +143,22 @@ constexpr const typename Bezier<T, Deg>::value_type* Bezier<T, Deg>::data() cons
 
 
 template<typename T, size_t Deg>
-void Bezier<T, Deg>::reverse() noexcept {
+inline void Bezier<T, Deg>::reverse() noexcept {
 	std::reverse(
 		m_values.begin(),
 		m_values.end()
 	);
+}
+
+
+template<typename T, size_t Deg>
+constexpr Bezier<typename Bezier<T, Deg>::value_type, 1> Bezier<T, Deg>::getAxis() const noexcept {
+	return Bezier<value_type, 1>(front(), back());
+}
+
+template<typename T, size_t Deg>
+constexpr typename Bezier<T, Deg>::value_type Bezier<T, Deg>::getDelta() const noexcept {
+	return back() - front();
 }
 
 

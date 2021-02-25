@@ -26,7 +26,9 @@ public:
 	BezierLoop&									operator=(const BezierLoop& other) = default;
 	BezierLoop&									operator=(BezierLoop&& other) = default;
 
+	void										setSegmentCount(size_t count);
 	size_t										getSegmentCount() const noexcept;
+
 	void 										setSegment(size_t i, const bezier_type& s);
 	const bezier_type&							getSegment(size_t i) const noexcept;
 
@@ -44,7 +46,11 @@ public:
 	const value_type*							end() const noexcept;
 	const value_type*							cend() const noexcept;
 
+	void										clear() noexcept;
 	void										reverse() noexcept;
+
+	void										lineTo(const value_type& value);
+	void										pushSegment(const bezier_type& bezier);
 
 	static constexpr size_t						degree() noexcept;
 

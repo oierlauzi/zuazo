@@ -49,6 +49,9 @@ public:
 
 	void 									reverse() noexcept;
 
+	constexpr Bezier<value_type, 1>			getAxis() const noexcept;
+	constexpr value_type					getDelta() const noexcept;
+
 	static constexpr size_t					size() noexcept;
 	static constexpr size_t					degree() noexcept;
 

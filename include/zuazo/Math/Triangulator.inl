@@ -7,7 +7,8 @@ namespace Zuazo::Math {
 
 template<typename T, typename Index>
 inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
-												Utils::BufferView<const vector_type> polygon,
+												const polygon_type& polygon,
+												index_type startIndex,
 												index_type restartIndex ) const 
 {
 	//The following code is based on:
@@ -18,25 +19,25 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 	constexpr vector_type L(0, 1); 
 
 	//Ensure index type is big enough.
-	if(polygon.size() >= restartIndex) {
+	if(polygon.size() + startIndex >= restartIndex) {
 		throw Exception("Insufficent index size for triangulation");
 	}
 
 	//Check that the given polygon is simple (no intersecting edges)
-	for(size_t i = 1; i < polygon.size(); ++i) {
-		for(size_t j = i + 2; j < polygon.size(); ++j) {
-			const Line<value_type, 2> seg0(polygon[i-1], polygon[i]);
-			const Line<value_type, 2> seg1(polygon[j-1], polygon[j]);
+	/*for(size_t i = 0; i < polygon.getSegmentCount(); ++i) {
+		for(size_t j = i + 2; j < polygon.getSegmentCount(); ++j) {
+			const auto& seg0 = polygon.getSegment(i);
+			const auto& seg1 = polygon.getSegment(j);
 
 			if(getIntersection(seg0, seg1)) {
 				throw Exception("Unable to triangulate a complex polygon");
 			}
 		}
-	}
+	}*/
 
 	//Initialize the index vector
 	m_indices.resize(polygon.size());
-	std::iota(m_indices.begin(), m_indices.end(), 0);
+	std::iota(m_indices.begin(), m_indices.end(), startIndex);
 
 	while(!m_indices.empty()) {
 		//Initialize the work vectors. This won't free their space
@@ -49,9 +50,10 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 			std::iota(m_sortedIndices.begin(), m_sortedIndices.end(), 0);
 			std::sort(
 				m_sortedIndices.begin(), m_sortedIndices.end(),
-				[this, &polygon, &L] (Index aIdx, Index bIdx) -> bool {
+				[this, &polygon, startIndex, &L] (Index aIdx, Index bIdx) -> bool {
 					//Sort based on the y coordinate of the referenced vertex. Greatest first
-					return dot(polygon[this->m_indices[aIdx]], L) > dot(polygon[this->m_indices[bIdx]], L);
+					return 	dot(polygon.getPoint(this->m_indices[aIdx]-startIndex), L) > 
+							dot(polygon.getPoint(this->m_indices[bIdx]-startIndex), L);
 				}
 			);
 
@@ -63,9 +65,9 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 				const size_t nIth = m_sortedIndices[i];
 				const size_t nNext = (nIth + 1) % m_indices.size();
 				const size_t nPrev = (nIth + m_indices.size() - 1) % m_indices.size();
-				const auto& ith = polygon[m_indices[nIth]];
-				const auto& next = polygon[m_indices[nNext]];
-				const auto& prev = polygon[m_indices[nPrev]];
+				const auto& ith = polygon.getPoint(m_indices[nIth]-startIndex);
+				const auto& next = polygon.getPoint(m_indices[nNext]-startIndex);
+				const auto& prev = polygon.getPoint(m_indices[nPrev]-startIndex);
 
 				//Obtain the side on which they lie on
 				const auto sidePrev = sign(dot(ith-prev, L));
@@ -90,8 +92,8 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 					if(nBegin < m_indices.size()) {
 						//Get the line which divides the polygon in 2
 						const Zuazo::Math::Line<value_type, 2> divisor(
-							polygon[m_indices[nIth]], 
-							polygon[m_indices[nBegin]]
+							polygon.getPoint(m_indices[nIth]-startIndex), 
+							polygon.getPoint(m_indices[nBegin]-startIndex)
 						);
 
 						//Check if it intersects any edge other than itself
@@ -103,8 +105,8 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 							
 							//Get the current test segment
 							const Zuazo::Math::Line<value_type, 2> polygonSegment(
-								polygon[m_indices[j0]], 
-								polygon[m_indices[j1]]
+								polygon.getPoint(m_indices[j0]-startIndex), 
+								polygon.getPoint(m_indices[j1]-startIndex)
 							);
 
 							//Check intersection
@@ -161,8 +163,9 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 			//Find the bottom-most vertex
 			const auto topIte = std::min_element(
 				m_monotonePolygonIndices.cbegin(), m_monotonePolygonIndices.cend(),
-				[&polygon, &L] (Index aIdx, Index bIdx) -> bool {
-					return dot(polygon[aIdx], L) < dot(polygon[bIdx], L);
+				[&polygon, startIndex, &L] (Index aIdx, Index bIdx) -> bool {
+					return 	dot(polygon.getPoint(aIdx-startIndex), L) < 
+							dot(polygon.getPoint(bIdx-startIndex), L);
 				}
 			);
 			const size_t nTop = std::distance(m_monotonePolygonIndices.cbegin(), topIte);
@@ -180,11 +183,12 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 
 template<typename T, typename Index>
 inline std::vector<typename Triangulator<T, Index>::index_type> 		
-Triangulator<T, Index>::operator()(	Utils::BufferView<const vector_type> polygon,
+Triangulator<T, Index>::operator()(	const polygon_type& polygon,
+									index_type startIndex,
 									index_type restartIndex ) const
 {
 	std::vector<typename Triangulator<T, Index>::index_type> result;
-	(*this)(result, polygon, restartIndex);
+	(*this)(result, polygon, startIndex, restartIndex);
 	return result;
 }
 

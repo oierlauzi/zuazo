@@ -1,21 +1,22 @@
 #pragma once
 
 #include "Vector.h"
-#include "../Utils/BufferView.h"
+#include "BezierLoop.h"
 
 #include <vector>
 #include <type_traits>
 
 namespace Zuazo::Math {
 
-template<typename T, typename Index = uint32_t>
+template<typename T, typename I = uint32_t>
 class Triangulator {
 public:
-	static_assert(std::is_integral<Index>::value && std::is_unsigned<Index>::value , "Index must be a unsigned integer");
+	static_assert(std::is_integral<I>::value && std::is_unsigned<I>::value , "Index must be a unsigned integer");
 
-	using vector_type = Vec2<T>;
-	using index_type = Index;
-	using value_type = typename vector_type::value_type;
+	using value_type = T;
+	using index_type = I;
+	using polygon_type = Polygon<value_type>;
+	using vector_type = typename polygon_type::value_type;
 
 	Triangulator() = default;
 	Triangulator(const Triangulator& other) = delete;
@@ -26,10 +27,12 @@ public:
 	Triangulator&					operator=(Triangulator&& other) = default;
 
 	void							operator()(	std::vector<index_type>& result,
-												Utils::BufferView<const vector_type> polygon,
+												const polygon_type& polygon,
+												index_type startIndex = index_type(0),
 												index_type restartIndex = ~index_type(0) ) const;
 
-	std::vector<index_type> 		operator()(	Utils::BufferView<const vector_type> polygon,
+	std::vector<index_type> 		operator()(	const polygon_type& polygon,
+												index_type startIndex = index_type(0),
 												index_type restartIndex = ~index_type(0) ) const;
 
 private:

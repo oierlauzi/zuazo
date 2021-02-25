@@ -44,36 +44,34 @@ constexpr typename Line<T, 2>::value_type::value_type getSignedDistance(const Li
 }
 
 template<typename T>
-constexpr typename Vec2<T>::value_type getSignedArea(Utils::BufferView<const Vec2<T>> poly) noexcept {
-	auto result = typename Vec2<T>::value_type();
+constexpr typename Polygon<T>::value_type::value_type getSignedArea(const Polygon<T>& polygon) noexcept {
+	auto result = typename Polygon<T>::value_type::value_type();
 
 	//From:
 	//https://mathworld.wolfram.com/PolygonArea.html
 
-	for(size_t i = 0; i < poly.size(); ++i) {
-		const auto& p0 = poly[i]; //This one
-		const auto& p1 = poly[(i+1) % poly.size()]; //Next one
+	for(size_t i = 0; i < polygon.getSegmentCount(); ++i) {
+		const auto& segment = polygon.getSegment(i);
 
-		result += zCross(p0, p1);
+		result += zCross(segment.front(), segment.back());
 	}
 
 	return result / 2;
 }
 
 template<typename T>
-constexpr bool isConvex(Utils::BufferView<const Vec2<T>> poly) noexcept {
-	auto direction = typename Vec2<T>::value_type();
+constexpr bool isConvex(const Polygon<T>& polygon) noexcept {
+	auto direction = typename Polygon<T>::value_type::value_type();
 
-	for(size_t i = 0; i < poly.size(); ++i) {
-		//Obtain the indices of the adjacent vertices
-		const auto nIth = i;
-		const auto nPrev = (i+poly.size()-1) % poly.size();
-		const auto nNext = (i+1) %  poly.size();
+	for(size_t i = 0; i < polygon.getSegmentCount(); ++i) {
+		//Obtain 2 adjacent edges
+		const auto& seg0 = polygon.getSegment(i);
+		const auto& seg1 = polygon.getSegment((i+1) % polygon.getSegmentCount());
 
 		//Calculate the the z component of the cross 
 		//product of adjacent edges
-		const auto delta0 = poly[nIth] - poly[nPrev];
-		const auto delta1 = poly[nNext] - poly[nIth];
+		const auto delta0 = seg0.getDelta();
+		const auto delta1 = seg1.getDelta();
 		const auto z = zCross(delta0, delta1);
 
 		//Test only if the edges were not colinear

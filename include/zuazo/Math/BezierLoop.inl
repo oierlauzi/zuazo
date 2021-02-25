@@ -39,10 +39,17 @@ inline BezierLoop<T, Deg>::BezierLoop(Utils::BufferView<const bezier_type> segme
 }
 
 
+template<typename T, size_t Deg>
+inline void BezierLoop<T, Deg>::setSegmentCount(size_t count) {
+	m_values.resize(count ? count*degree() + 1 : 0);
+	m_values.back() = m_values.front();
+
+	assert(size()%degree()==0);
+	assert(m_values.front() == m_values.back());
+}
 
 template<typename T, size_t Deg>
 inline size_t BezierLoop<T, Deg>::getSegmentCount() const noexcept {
-	//Account the repeated last value
 	assert(size()%degree()==0);
 	return size() / degree();
 }
@@ -129,6 +136,12 @@ inline const typename BezierLoop<T, Deg>::value_type* BezierLoop<T, Deg>::cend()
 }
 
 
+
+template<typename T, size_t Deg>
+inline void BezierLoop<T, Deg>::clear() noexcept {
+	m_values.clear();
+}
+
 template<typename T, size_t Deg>
 void BezierLoop<T, Deg>::reverse() noexcept {
 	//Skip first and last elements
@@ -137,6 +150,32 @@ void BezierLoop<T, Deg>::reverse() noexcept {
 		std::prev(m_values.end())
 	);
 }
+
+
+template<typename T, size_t Deg>
+inline void BezierLoop<T, Deg>::lineTo(const value_type& value) {
+	bezier_type bezier;
+	std::fill(bezier.begin(), bezier.end(), value);
+	pushSegment(bezier);
+}
+
+template<typename T, size_t Deg>
+inline void BezierLoop<T, Deg>::pushSegment(const bezier_type& bezier) {
+	if(m_values.empty()) {
+		m_values.push_back(bezier.front());
+	}
+
+	assert(!m_values.empty());
+	m_values.insert(
+		std::prev(m_values.cend()), 
+		bezier.cbegin(), 
+		std::prev(bezier.cend())
+	);
+
+	assert(size()%degree()==0);
+	assert(m_values.front() == m_values.back());
+}
+
 
 
 template<typename T, size_t Deg>
