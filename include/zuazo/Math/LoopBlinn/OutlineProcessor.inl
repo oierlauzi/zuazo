@@ -68,7 +68,16 @@ inline void OutlineProcessor<T, I>::addBezier(const bezier_type& bezier) {
 			m_vertices.emplace_back(position, klmCoord);
 		}
 	} else if(!std::isnan(klmCoords.subdivisionParameter)) {
-		assert(!"Subdivision required!"); //TODO
+		//This is the special case where the loop has 2 solutions 
+		//in [0, 1] for the equation, and a rendering artifact appears.
+		//We'll split the curve at that point and add each half separately.
+		const auto halves = bezier.split(klmCoords.subdivisionParameter);
+
+		//Add both sections
+		for(const auto& half : halves) {
+			addBezier(half);
+		}
+		
 	}
 }
 

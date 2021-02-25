@@ -117,9 +117,9 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(	const 
 		const float qm = ms / mt;
 
 		//Check if subdivision will be required
-		if(isInRange(ql, value_type(0), value_type(1))) {
+		if(isInRangeExclusive(ql, value_type(0), value_type(1))) {
 			result.subdivisionParameter = ql;
-		} else if(isInRange(qm, value_type(0), value_type(1))) {
+		} else if(isInRangeExclusive(qm, value_type(0), value_type(1))) {
 			result.subdivisionParameter = qm;
 		} else {
 			const auto Lsmt = ls - lt;
