@@ -24,8 +24,8 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 	}
 
 	//Check that the given polygon is simple (no intersecting edges)
-	/*for(size_t i = 0; i < polygon.getSegmentCount(); ++i) {
-		for(size_t j = i + 2; j < polygon.getSegmentCount(); ++j) {
+	for(size_t i = 0; i < polygon.getSegmentCount(); ++i) {
+		for(size_t j = i + 2; j < polygon.getSegmentCount()-1; ++j) {
 			const auto& seg0 = polygon.getSegment(i);
 			const auto& seg1 = polygon.getSegment(j);
 
@@ -33,7 +33,7 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 				throw Exception("Unable to triangulate a complex polygon");
 			}
 		}
-	}*/
+	}
 
 	//Initialize the index vector
 	m_indices.resize(polygon.size());

@@ -14,14 +14,17 @@ class OutlineProcessor {
 public:
 	using value_type = T;
 	using index_type = I;
-	using vector_type = Vec2<value_type>;
-	using bezier_type = CubicBezier<vector_type>;
-	using contour_type = CubicBezierLoop<vector_type>;
+	using position_vector_type = Vec2<value_type>;
+	using klm_vector_type = Vec3<value_type>;
+	using bezier_type = CubicBezier<position_vector_type>;
+	using contour_type = CubicBezierLoop<position_vector_type>;
 	using polygon_type = Polygon<value_type>;
 
+	static constexpr klm_vector_type PASS_ALL_KLM = klm_vector_type(-1);
+
 	struct Vertex {
-		constexpr Vertex(	Vec2<value_type> pos = Vec2<value_type>(0), 
-							Vec3<value_type> klm = Vec3<value_type>(-1, 0, 0) )
+		constexpr Vertex(	position_vector_type pos = position_vector_type(0), 
+							klm_vector_type klm = PASS_ALL_KLM )
 			: pos(pos)
 			, klm(klm)
 		{

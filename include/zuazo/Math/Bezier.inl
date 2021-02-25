@@ -54,7 +54,7 @@ constexpr const typename Bezier<T, Deg>::value_type& Bezier<T, Deg>::operator[](
 
 template<typename T, size_t Deg>
 template<typename Q>
-constexpr typename Bezier<T, Deg>::value_type Bezier<T, Deg>::operator()(Q t) const {
+constexpr typename Bezier<T, Deg>::value_type Bezier<T, Deg>::operator()(const Q& t) const {
 	value_type result = value_type(0);
 
 	//Statically generate the binomial coefficients
@@ -139,6 +139,34 @@ constexpr typename Bezier<T, Deg>::value_type* Bezier<T, Deg>::data() noexcept {
 template<typename T, size_t Deg>
 constexpr const typename Bezier<T, Deg>::value_type* Bezier<T, Deg>::data() const noexcept {
 	return m_values.data();
+}
+
+
+template<typename T, size_t Deg>
+template<typename Q>
+constexpr std::array<Bezier<T, Deg>, 2> Bezier<T, Deg>::split(const Q& t) const noexcept {
+	std::array<Bezier, 2> result;
+
+	//Set the trivial points:
+	result.front().front() = front();
+	result.back().back() = back();
+
+	//Obtain the rest of the points using Casteljau's algorithm
+	std::array<value_type, size()> casteljauValues = m_values;
+	for(size_t i = 1; i < size(); ++i) {
+		const size_t j = degree()-i; //Complementary i
+
+		for(size_t k = 0; k <= j; ++k) {
+			casteljauValues[k] = lerp(casteljauValues[k+1], casteljauValues[k], t);
+		}
+
+		//Choose from the first and last values
+		//for each segment
+		result.front()[i] = casteljauValues[0];
+		result.back()[j] = casteljauValues[j];
+	}
+
+	return result;
 }
 
 

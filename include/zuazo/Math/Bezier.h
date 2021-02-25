@@ -30,7 +30,7 @@ public:
 	constexpr const value_type&				operator[](size_t i) const noexcept;
 
 	template<typename Q>
-	constexpr value_type 					operator()(Q t) const;
+	constexpr value_type 					operator()(const Q& t) const;
 
 	constexpr value_type&					front() noexcept;
 	constexpr const value_type&				front() const noexcept;
@@ -47,6 +47,9 @@ public:
 	constexpr value_type*					data() noexcept;
 	constexpr const value_type*				data() const noexcept;
 
+	template<typename Q>
+	constexpr std::array<Bezier, 2>			split(const Q& t) const noexcept;
+	
 	void 									reverse() noexcept;
 
 	constexpr Bezier<value_type, 1>			getAxis() const noexcept;
