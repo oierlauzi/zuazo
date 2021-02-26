@@ -143,34 +143,6 @@ constexpr const typename Bezier<T, Deg>::value_type* Bezier<T, Deg>::data() cons
 
 
 template<typename T, size_t Deg>
-template<typename Q>
-constexpr std::array<Bezier<T, Deg>, 2> Bezier<T, Deg>::split(const Q& t) const noexcept {
-	std::array<Bezier, 2> result;
-
-	//Set the trivial points:
-	result.front().front() = front();
-	result.back().back() = back();
-
-	//Obtain the rest of the points using Casteljau's algorithm
-	std::array<value_type, size()> casteljauValues = m_values;
-	for(size_t i = 1; i < size(); ++i) {
-		const size_t j = degree()-i; //Complementary i
-
-		for(size_t k = 0; k <= j; ++k) {
-			casteljauValues[k] = lerp(casteljauValues[k+1], casteljauValues[k], t);
-		}
-
-		//Choose from the first and last values
-		//for each segment
-		result.front()[i] = casteljauValues[0];
-		result.back()[j] = casteljauValues[j];
-	}
-
-	return result;
-}
-
-
-template<typename T, size_t Deg>
 inline void Bezier<T, Deg>::reverse() noexcept {
 	std::reverse(
 		m_values.begin(),
@@ -468,6 +440,34 @@ constexpr std::array<typename Bezier<Vec<T, N>, Deg>::value_type, Deg> solve(	co
 
 	return result;
 }
+
+
+template<typename T, size_t Deg, typename Q>
+constexpr std::array<Bezier<T, Deg>, 2> split(const Bezier<T, Deg>& bezier, const Q& t) noexcept {
+	std::array<Bezier<T, bezier.degree()>, 2> result;
+
+	//Set the trivial points:
+	result.front().front() = bezier.front();
+	result.back().back() = bezier.back();
+
+	//Obtain the rest of the points using Casteljau's algorithm
+	auto casteljauValues = bezier;
+	for(size_t i = 1; i < bezier.size(); ++i) {
+		const size_t j = bezier.degree()-i; //Complementary i
+
+		for(size_t k = 0; k <= j; ++k) {
+			casteljauValues[k] = lerp(casteljauValues[k], casteljauValues[k+1], t);
+		}
+
+		//Choose from the first and last values
+		//for each segment
+		result.front()[i] = casteljauValues[0];
+		result.back()[j] = casteljauValues[j];
+	}
+
+	return result;
+}
+
 
 template<typename T, size_t Deg>
 constexpr Utils::Range<typename Bezier<T, Deg>::value_type> getBoundaries(const Bezier<T, Deg>& s) {

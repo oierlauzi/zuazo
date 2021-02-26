@@ -46,9 +46,6 @@ public:
 
 	constexpr value_type*					data() noexcept;
 	constexpr const value_type*				data() const noexcept;
-
-	template<typename Q>
-	constexpr std::array<Bezier, 2>			split(const Q& t) const noexcept;
 	
 	void 									reverse() noexcept;
 
@@ -163,6 +160,10 @@ constexpr std::array<typename Bezier<T, Deg>::value_type, Deg> solve(	const Bezi
 template<typename T, size_t N, size_t Deg>
 constexpr std::array<typename Bezier<Vec<T, N>, Deg>::value_type, Deg> solve(	const Bezier<Vec<T, N>, Deg>& s, 
 																				Vec<SolutionCount, N>* cnt = nullptr );
+
+template<typename T, size_t Deg, typename Q>
+constexpr std::array<Bezier<T, Deg>, 2> split(const Bezier<T, Deg>& bezier, const Q& t) noexcept;
+
 
 template<typename T, size_t Deg>
 constexpr Utils::Range<typename Bezier<T, Deg>::value_type> getBoundaries(const Bezier<T, Deg>& s);
