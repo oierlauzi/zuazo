@@ -727,6 +727,13 @@ constexpr Mat<T, N, M> transpose(const Mat<T, M, N>& m) {
 	return result;
 }
 
+
+
+template<typename T>
+constexpr const typename Mat<T, 2, 2>::value_type& cofactor(const Mat<T, 2, 2>& m, size_t i, size_t j) {
+	return m[!i][!j];
+}
+
 template<typename T, size_t M, size_t N>
 constexpr Mat<T, M-1, N-1> cofactor(const Mat<T, M ,N>& m, size_t i, size_t j) {
 	Mat<T, M-1, N-1> result(0);
@@ -740,12 +747,18 @@ constexpr Mat<T, M-1, N-1> cofactor(const Mat<T, M ,N>& m, size_t i, size_t j) {
 	return result;
 }
 
+
+
+template<typename T>
+constexpr const T& det(const T& m) {
+	return m; //This needs to exist in order to provide inv method for 2x2
+}
+
 template<typename T>
 constexpr typename Mat<T, 2 ,2>::value_type det(const Mat<T, 2, 2>& m) {
 	//Cramer's rule for 2x2 matrices
-	return m[0][0]*m[1][1] - m[0][1]*m[1][0];
+	return zCross(m[0], m[1]);
 }
-
 
 template<typename T, size_t N>
 constexpr typename Mat<T, N ,N>::value_type det(const Mat<T, N ,N>& m) {

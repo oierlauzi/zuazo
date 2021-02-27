@@ -35,6 +35,9 @@ public:
 												index_type startIndex = index_type(0),
 												index_type restartIndex = ~index_type(0) ) const;
 
+	static constexpr std::array<index_type, 4> triangulateQuad(	const std::array<vector_type, 4>& quad,
+																index_type startIndex = index_type(0) ) noexcept;
+
 private:
 	mutable std::vector<index_type>	m_indices;
 	mutable std::vector<index_type>	m_monotonePolygonIndices;

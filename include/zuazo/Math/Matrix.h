@@ -257,9 +257,15 @@ constexpr typename Mat<T, M, N>::column_type transform(const Mat<T, M, N>& m, co
 template<typename T, size_t M, size_t N>
 constexpr Mat<T, N, M> transpose(const Mat<T, M, N>& m);
 
+
+template<typename T>
+constexpr const typename Mat<T, 2, 2>::value_type& cofactor(const Mat<T, 2, 2>& m, size_t i, size_t j);
+
 template<typename T, size_t M, size_t N>
 constexpr Mat<T, M-1, N-1> cofactor(const Mat<T, M ,N>& m, size_t i, size_t j);
 
+template<typename T>
+constexpr const T& det(const T& m);
 template<typename T>
 constexpr typename Mat<T, 2 ,2>::value_type det(const Mat<T, 2 ,2>& m);
 template<typename T, size_t N>

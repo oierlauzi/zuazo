@@ -3,6 +3,8 @@
 #include "Geometry.h"
 #include "../Exception.h"
 
+#include <cassert>
+
 namespace Zuazo::Math {
 
 template<typename T, typename Index>
@@ -189,6 +191,48 @@ Triangulator<T, Index>::operator()(	const polygon_type& polygon,
 {
 	std::vector<typename Triangulator<T, Index>::index_type> result;
 	(*this)(result, polygon, startIndex, restartIndex);
+	return result;
+}
+
+
+template<typename T, typename Index>
+constexpr std::array<typename Triangulator<T, Index>::index_type, 4> 
+Triangulator<T, Index>::triangulateQuad(const std::array<vector_type, 4>& quad,
+										index_type startIndex ) noexcept
+{
+	std::array<typename Triangulator<T, Index>::index_type, 4> result;
+
+	//Obtain the diagonals
+	const auto diagonal0 = typename polygon_type::bezier_type(quad[0], quad[2]);
+	const auto diagonal1 = typename polygon_type::bezier_type(quad[1], quad[3]);
+
+	//It must be convex and simple:
+	assert(getIntersection(diagonal0, diagonal1)); //All convex quads
+	assert(
+		!getIntersection(
+			typename polygon_type::bezier_type(quad[0], quad[1]), 
+			typename polygon_type::bezier_type(quad[2], quad[3])
+		) 
+	);
+	assert(
+		!getIntersection(
+			typename polygon_type::bezier_type(quad[1], quad[2]), 
+			typename polygon_type::bezier_type(quad[3], quad[0])
+		) 
+	);
+
+	//Split by the shortest diagonal. Length2 is used as it
+	//is cheaper
+	const auto lengthD0 = length2(diagonal0.getDelta());
+	const auto lengthD1 = length2(diagonal1.getDelta());
+	const size_t splitIndex = lengthD0 < lengthD1 ? 0 : 1;
+
+	//Write the values
+	constexpr std::array<index_type, result.size()> offsets = { 0, 1, 3, 2 };
+	for(size_t i = 0; i < result.size(); ++i) {
+		result[i] = startIndex + (splitIndex+offsets[i])%result.size();
+	}
+
 	return result;
 }
 

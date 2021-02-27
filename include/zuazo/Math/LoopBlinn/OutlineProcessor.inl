@@ -32,26 +32,115 @@ inline void OutlineProcessor<T, I>::addBezier(const bezier_type& bezier) {
 			m_indices.emplace_back(m_primitiveRestartIndex);
 		}
 
-		//Determine if the control points are inside or outside to form a quad
-		const auto bezierAxis = bezier.getAxis();
-		const auto b1IsOutside = std::signbit(getSignedDistance(bezierAxis, bezier[1]));
-		const auto b2IsOutside = std::signbit(getSignedDistance(bezierAxis, bezier[2]));
+		//Obtain the 2D basis for the bezier curve's axis. Note that the basis is
+		//orthogonal but not normalized. X axis is parallel to the curve's axis,
+		//whilst the Y axis points outwards
+		const auto bezierAxis = bezier.back() - bezier.front();
+		const auto bezierNormal = position_vector_type(-bezierAxis.y, bezierAxis.x);
+		const auto bezierBasis = inv(Mat2x2<value_type>(bezierAxis, bezierNormal));
 
-		//The vertices are not going to be drawn in order, so that a triangle strip is formed
-		std::array<size_t, bezier.size()> triangleStripMapping;
-		if(b1IsOutside && b2IsOutside) {
-			triangleStripMapping = { 0, 3, 1, 2 };
-		} else if(b1IsOutside && !b2IsOutside) {
-			triangleStripMapping = { 0, 2, 1, 3 };
-		} else if(!b1IsOutside && b2IsOutside) {
-			triangleStripMapping = { 0, 1, 2, 3 };
-		} else { //if(!b1IsOutside && !b2IsOutside) {
-			triangleStripMapping = { 0, 1, 3, 2 };
-		} 
+		//Remove the offset part from the control points
+		const auto b1Axis = bezier[1] - bezier.front();
+		const auto b2Axis = bezier[2] - bezier.front();
+
+		//Project the 2 control points into the basis. //FIXME
+		const auto b1Proj = operator*<value_type, 2, 2>(bezierBasis, b1Axis);
+		const auto b2Proj = operator*<value_type, 2, 2>(bezierBasis, b2Axis);
+
+		//Determine if the control points are inside or outside 
+		const auto b1IsOutside = !std::signbit(b1Proj.y);
+		const auto b2IsOutside = !std::signbit(b2Proj.y);
+
+		//Determine the layout of the vertices, so that although
+		//the vertices are not going to be drawn in order, 
+		//the triangle strip is well-formed
+		std::array<index_type, bezier.size()> triangleStripIndices;
+		bool repeatFirstvertex = false;
+		if(b1IsOutside == b2IsOutside) {
+			//Both control points are on the same side. Suppose they are
+			//outside, we'll correct it later if necessary
+			//Determine if any of the control points overlaps the other
+			if(isInsideTriangle(bezierAxis, b1Axis, b2Axis)) {
+				//b2 is overlapped by b1's triangle
+				triangleStripIndices = { 0, 3, 2, 1 };
+				repeatFirstvertex = true; //We'll draw 3 triangles
+			} else if(isInsideTriangle(bezierAxis, b2Axis, b1Axis)) {
+				//b1 is overlapped by b2's triangle
+				triangleStripIndices = { 0, 3, 1, 2 };
+				repeatFirstvertex = true; //We'll draw 3 triangles
+			} else {
+				//Forming a quad
+				std::array<position_vector_type, bezier.size()> quad;
+				std::copy(bezier.cbegin(), bezier.cend(), quad.begin());
+
+				//Remove the possible self intersection
+				const auto crossing = b1Proj.x > b2Proj.x;
+				if(crossing) {
+					std::swap(quad[1], quad[2]);
+				}
+
+				//Triangulate the quad
+				triangleStripIndices = m_triangulator.triangulateQuad(quad, 0);
+
+				//Undo the self intersection on the indices
+				if(crossing) {
+					std::iter_swap(
+						std::find(triangleStripIndices.begin(), triangleStripIndices.end(), 1),
+						std::find(triangleStripIndices.begin(), triangleStripIndices.end(), 2)
+					);
+				}
+
+			}
+
+		} else {
+			//Sides missmatch. Suppose b1 is outside and b2 inside. We'll correct it later
+			//if necessary
+			//Determine if any of the control points overlaps the extremus points
+			if(isInsideTriangle(b1Axis, b2Axis, position_vector_type())) {
+				//origin is overlapped by the control points
+				triangleStripIndices = { 3, 2, 0, 1 };
+				repeatFirstvertex = true; //We'll draw 3 triangles
+			} else if(isInsideTriangle(b1Axis, b2Axis, bezierAxis)) {
+				//b1 is overlapped by b2's triangle
+				triangleStripIndices = { 1, 0, 3, 2 };
+				repeatFirstvertex = true; //We'll draw 3 triangles
+			} else {
+				//Forming a quad
+				std::array<position_vector_type, bezier.size()> quad;
+				std::copy(bezier.cbegin(), bezier.cend(), quad.begin());
+
+				//Remove the self intersection
+				std::swap(quad[0], quad[3]);
+
+				//Triangulate the quad
+				triangleStripIndices = m_triangulator.triangulateQuad(quad, 0);
+
+				//Undo the self intersection on the indices
+				std::iter_swap(
+					std::find(triangleStripIndices.begin(), triangleStripIndices.end(), 0),
+					std::find(triangleStripIndices.begin(), triangleStripIndices.end(), 3)
+				);
+
+			}
+
+		}
+
+		//If the b1 control point of the curve turns out to be inwards, 
+		//as opposed to our supposition, reverse it by pairs
+		if(!b1IsOutside) {
+			std::iter_swap(
+				std::find(triangleStripIndices.begin(), triangleStripIndices.end(), 0),
+				std::find(triangleStripIndices.begin(), triangleStripIndices.end(), 3)
+			);
+			std::iter_swap(
+				std::find(triangleStripIndices.begin(), triangleStripIndices.end(), 1),
+				std::find(triangleStripIndices.begin(), triangleStripIndices.end(), 2)
+			);
+		}
 
 		//Ensure the size of the arrays is correct
 		static_assert(bezier.size() == klmCoords.klmCoords.size(), "Sizes must match");
-		static_assert(bezier.size() == triangleStripMapping.size(), "Sizes must match");
+		static_assert(bezier.size() == triangleStripIndices.size(), "Sizes must match");
 
 		//Add all the new vertices to the vertex vector with
 		//its corresponding indices
@@ -60,13 +149,19 @@ inline void OutlineProcessor<T, I>::addBezier(const bezier_type& bezier) {
 			m_indices.emplace_back(m_vertices.size()); 
 
 			//Obtain the components of the vertex and add them to the vertex list
-			const auto index = triangleStripMapping[j];
+			const auto index = triangleStripIndices[j];
 			const auto& position = bezier[index];
 			const auto& klmCoord = klmCoords.klmCoords[index];
 
 			//Add the new vertices
 			m_vertices.emplace_back(position, klmCoord);
 		}
+
+		//Repeat an the first index if necessary
+		if(repeatFirstvertex) {
+			m_indices.emplace_back(m_vertices.size() - triangleStripIndices.size());
+		}
+
 	} else if(!std::isnan(klmCoords.subdivisionParameter)) {
 		//This is the special case where the loop has 2 solutions 
 		//in [0, 1] for the equation, and a rendering artifact appears.
@@ -77,7 +172,6 @@ inline void OutlineProcessor<T, I>::addBezier(const bezier_type& bezier) {
 		for(const auto& half : halves) {
 			addBezier(half);
 		}
-		
 	}
 }
 
