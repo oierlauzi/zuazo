@@ -783,7 +783,7 @@ constexpr Mat<T, N ,N> adj(const Mat<T, N, N>& m) {
 
 	for(size_t i = 0; i < result.columns(); ++i) {
 		for(size_t j = 0; j < result.rows(); ++j) {
-			//Obtain the cofactor of m[0][i]
+			//Obtain the cofactor of m[i][j]
 			const auto minor = cofactor(m, i, j);
 			const auto sign = ((i+j) % 2) ? -1 : +1; //1 for even, -1 for odd
 

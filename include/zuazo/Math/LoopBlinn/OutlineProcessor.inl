@@ -54,42 +54,32 @@ inline void OutlineProcessor<T, I>::addBezier(const bezier_type& bezier) {
 		//Determine the layout of the vertices, so that although
 		//the vertices are not going to be drawn in order, 
 		//the triangle strip is well-formed
-		std::array<index_type, bezier.size()> triangleStripIndices;
+		auto quadVertices = reinterpret_cast<const std::array<position_vector_type, bezier.size()>&>(bezier);
+		std::array<index_type, bezier.size()> quadIndices;
 		bool repeatFirstvertex = false;
+
 		if(b1IsOutside == b2IsOutside) {
 			//Both control points are on the same side. Suppose they are
 			//outside, we'll correct it later if necessary
 			//Determine if any of the control points overlaps the other
 			if(isInsideTriangle(bezierAxis, b1Axis, b2Axis)) {
 				//b2 is overlapped by b1's triangle
-				triangleStripIndices = { 0, 3, 2, 1 };
+				quadIndices = { 0, 3, 2, 1 };
 				repeatFirstvertex = true; //We'll draw 3 triangles
 			} else if(isInsideTriangle(bezierAxis, b2Axis, b1Axis)) {
 				//b1 is overlapped by b2's triangle
-				triangleStripIndices = { 0, 3, 1, 2 };
+				quadIndices = { 0, 3, 1, 2 };
 				repeatFirstvertex = true; //We'll draw 3 triangles
 			} else {
 				//Forming a quad
-				std::array<position_vector_type, bezier.size()> quad;
-				std::copy(bezier.cbegin(), bezier.cend(), quad.begin());
-
 				//Remove the possible self intersection
 				const auto crossing = b1Proj.x > b2Proj.x;
 				if(crossing) {
-					std::swap(quad[1], quad[2]);
+					std::swap(quadVertices[1], quadVertices[2]);
 				}
 
 				//Triangulate the quad
-				triangleStripIndices = m_triangulator.triangulateQuad(quad, 0);
-
-				//Undo the self intersection on the indices
-				if(crossing) {
-					std::iter_swap(
-						std::find(triangleStripIndices.begin(), triangleStripIndices.end(), 1),
-						std::find(triangleStripIndices.begin(), triangleStripIndices.end(), 2)
-					);
-				}
-
+				quadIndices = m_triangulator.triangulateQuad(quadVertices, 0);
 			}
 
 		} else {
@@ -98,28 +88,20 @@ inline void OutlineProcessor<T, I>::addBezier(const bezier_type& bezier) {
 			//Determine if any of the control points overlaps the extremus points
 			if(isInsideTriangle(b1Axis, b2Axis, position_vector_type())) {
 				//origin is overlapped by the control points
-				triangleStripIndices = { 3, 2, 0, 1 };
+				quadIndices = { 3, 2, 0, 1 };
 				repeatFirstvertex = true; //We'll draw 3 triangles
 			} else if(isInsideTriangle(b1Axis, b2Axis, bezierAxis)) {
 				//b1 is overlapped by b2's triangle
-				triangleStripIndices = { 1, 0, 3, 2 };
+				quadIndices = { 1, 0, 3, 2 };
 				repeatFirstvertex = true; //We'll draw 3 triangles
 			} else {
 				//Forming a quad
-				std::array<position_vector_type, bezier.size()> quad;
-				std::copy(bezier.cbegin(), bezier.cend(), quad.begin());
-
 				//Remove the self intersection
-				std::swap(quad[0], quad[3]);
+				std::swap(quadVertices[0], quadVertices[3]);
+				std::swap(quadVertices[3], quadVertices[2]);
 
 				//Triangulate the quad
-				triangleStripIndices = m_triangulator.triangulateQuad(quad, 0);
-
-				//Undo the self intersection on the indices
-				std::iter_swap(
-					std::find(triangleStripIndices.begin(), triangleStripIndices.end(), 0),
-					std::find(triangleStripIndices.begin(), triangleStripIndices.end(), 3)
-				);
+				quadIndices = m_triangulator.triangulateQuad(quadVertices, 0);
 
 			}
 
@@ -129,28 +111,28 @@ inline void OutlineProcessor<T, I>::addBezier(const bezier_type& bezier) {
 		//as opposed to our supposition, reverse it by pairs
 		if(!b1IsOutside) {
 			std::iter_swap(
-				std::find(triangleStripIndices.begin(), triangleStripIndices.end(), 0),
-				std::find(triangleStripIndices.begin(), triangleStripIndices.end(), 3)
+				std::find(quadIndices.begin(), quadIndices.end(), 0),
+				std::find(quadIndices.begin(), quadIndices.end(), 3)
 			);
 			std::iter_swap(
-				std::find(triangleStripIndices.begin(), triangleStripIndices.end(), 1),
-				std::find(triangleStripIndices.begin(), triangleStripIndices.end(), 2)
+				std::find(quadIndices.begin(), quadIndices.end(), 1),
+				std::find(quadIndices.begin(), quadIndices.end(), 2)
 			);
 		}
 
 		//Ensure the size of the arrays is correct
-		static_assert(bezier.size() == klmCoords.klmCoords.size(), "Sizes must match");
-		static_assert(bezier.size() == triangleStripIndices.size(), "Sizes must match");
+		static_assert(quadVertices.size() == klmCoords.klmCoords.size(), "Sizes must match");
+		static_assert(quadVertices.size() == quadIndices.size(), "Sizes must match");
 
 		//Add all the new vertices to the vertex vector with
 		//its corresponding indices
-		for(size_t j = 0; j < bezier.size(); ++j) {
+		for(size_t j = 0; j < quadVertices.size(); ++j) {
 			//Simply refer to the following vertex
 			m_indices.emplace_back(m_vertices.size()); 
 
 			//Obtain the components of the vertex and add them to the vertex list
-			const auto index = triangleStripIndices[j];
-			const auto& position = bezier[index];
+			const auto index = quadIndices[j];
+			const auto& position = quadVertices[index];
 			const auto& klmCoord = klmCoords.klmCoords[index];
 
 			//Add the new vertices
@@ -159,7 +141,7 @@ inline void OutlineProcessor<T, I>::addBezier(const bezier_type& bezier) {
 
 		//Repeat an the first index if necessary
 		if(repeatFirstvertex) {
-			m_indices.emplace_back(m_vertices.size() - triangleStripIndices.size());
+			m_indices.emplace_back(m_vertices.size() - quadIndices.size());
 		}
 
 	} else if(!std::isnan(klmCoords.subdivisionParameter)) {
