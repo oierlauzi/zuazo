@@ -37,6 +37,10 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 		}
 	}
 
+	//Obtain the signed area of the polyon, as we'll
+	//need it later
+	const auto sArea = getSignedArea(polygon);
+
 	//Initialize the index vector
 	m_indices.resize(polygon.size());
 	std::iota(m_indices.begin(), m_indices.end(), startIndex);
@@ -61,8 +65,6 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 
 			//Create a monotone polygon from the m_indices
 			for (size_t i = 0; i < m_sortedIndices.size(); ++i) {
-				assert(m_monotonePolygonIndices.empty());
-
 				//Extract the vertices from the polygon
 				const size_t nIth = m_sortedIndices[i];
 				const size_t nNext = (nIth + 1) % m_indices.size();
@@ -76,32 +78,59 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 				const auto sideNext = sign(dot(ith-next, L));
 
 				if(sidePrev*sideNext >= 0) {
-					//Both m_indices are on the same side.
-					//Decide the direction in which we are going to 
-					//travel across the edges
-					size_t nBegin = m_indices.size(); //Invalid index
-					if(sidePrev + sideNext > 0) {
-						if(i > 0) {
-							nBegin = m_sortedIndices[i-1];
+					//Both m_indices are on the same side. This means that we've
+					//found a V shape (interior cusp), where ith is on the edge.
+					//If ith is not the top nor the bottom, this means that this part is 
+					//not monotone, so we need to split it up. For that, we'll
+					//choose a diagonal that departs from nIth. We'll call to the
+					//other point of the diagonal nSplit
+					size_t nSplit = m_indices.size(); //Invalid index
+					for(size_t iteration = 1; nSplit >= m_indices.size(); ++iteration) {
+						//Get a candidate for splitting. For that, follow
+						//the direction of the V. Remember that m_sortedIndices
+						//is sorted top to bottom
+						if(sidePrev + sideNext > 0) { //^
+							if(i >= iteration) {
+								nSplit = m_sortedIndices[i-iteration];
+							} else {
+								//We reached the top with no luck
+								break;
+							}
+						} else { //V
+							if(i+iteration < m_sortedIndices.size()) {
+								nSplit = m_sortedIndices[i+iteration];
+							} else {
+								//We reached the bottom with no luck
+								break;
+							}
 						}
-					} else {
-						if(i+1 < m_sortedIndices.size()) {
-							nBegin = m_sortedIndices[i+1];
-						}
-					}
 
-					//Check that the line does not exit the polygon
-					if(nBegin < m_indices.size()) {
-						//Get the line which divides the polygon in 2
-						const Zuazo::Math::Line<value_type, 2> divisor(
-							polygon.getPoint(m_indices[nIth]-startIndex), 
-							polygon.getPoint(m_indices[nBegin]-startIndex)
+						//Get the other vertex of the diagonal
+						assert(nSplit < m_indices.size());
+						const auto& split = polygon.getPoint(m_indices[nSplit]-startIndex);
+
+						//Check that the diagonal's winding order is correct, 
+						//as this will ensure that it is either completely
+						//or partially inside the polygon
+						const auto winding = getSignedArea(
+							normalize(next-ith),
+							normalize(split-ith),
+							normalize(prev-ith)
 						);
 
-						//Check if it intersects any edge other than itself
-						for(size_t j0 = 0; j0 < m_indices.size(); ++j0) { 
+						if(sArea*winding <= 0) {
+							//Windings missmatch. Line exits the polygon
+							nSplit = m_indices.size();
+							continue;
+						}
+
+						//Check if it intersects any edge other than itself. If not,
+						//This means that the diagonal is completely inside
+						const Zuazo::Math::Line<value_type, 2> divisorLine (ith, split);
+						for(size_t j0 = 0; j0 < m_indices.size(); ++j0) {
+							//Skip checks with neighbour
 							const auto j1 = (j0+1) % m_indices.size();
-							if(j0==nIth || j0==nBegin || j1==nIth || j1==nBegin){
+							if(j0==nIth || j0==nSplit || j1==nIth || j1==nSplit){
 								continue;
 							}
 							
@@ -112,19 +141,19 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 							);
 
 							//Check intersection
-							if(Zuazo::Math::getIntersection(divisor, polygonSegment)) {
+							if(Zuazo::Math::getIntersection(divisorLine, polygonSegment)) {
 								//This segment exits the polygon. Try with another
-								nBegin = m_indices.size();
+								nSplit = m_indices.size();
 								break;
 							}
 						}
 					}
 
 					//Extract a monotone polygon if the previous calculations were successful
-					if(nBegin < m_indices.size()) {
+					if(nSplit < m_indices.size()) {
 						//Ensure ordering to step over all elements in between nBegin and nEnd
-						const size_t nEnd = min(nBegin, nIth)+1;
-						nBegin = max(nBegin, nIth);
+						const size_t nBegin = max(nSplit, nIth);
+						const size_t nEnd = min(nSplit, nIth)+1;
 						assert(nEnd <= nBegin);
 
 						//Obtain the begin and end iterators for the edge range
@@ -132,6 +161,7 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 						const auto end = std::next(m_indices.cbegin(), nEnd);
 
 						//Add all the vertices in a circular manner. Remove all but the first and last
+						assert(m_monotonePolygonIndices.empty());
 						std::copy(begin, m_indices.cend(), std::back_inserter(m_monotonePolygonIndices));
 						std::copy(m_indices.cbegin(), end, std::back_inserter(m_monotonePolygonIndices));
 
@@ -200,14 +230,8 @@ constexpr std::array<typename Triangulator<T, Index>::index_type, 4>
 Triangulator<T, Index>::triangulateQuad(const std::array<vector_type, 4>& quad,
 										index_type startIndex ) noexcept
 {
-	std::array<typename Triangulator<T, Index>::index_type, 4> result;
-
-	//Obtain the diagonals
-	const auto diagonal0 = typename polygon_type::bezier_type(quad[0], quad[2]);
-	const auto diagonal1 = typename polygon_type::bezier_type(quad[1], quad[3]);
-
 	//It must be convex and simple:
-	assert(getIntersection(diagonal0, diagonal1)); //All convex quads
+	assert(isConvex(quad[0], quad[1], quad[2], quad[3]));
 	assert(
 		!getIntersection(
 			typename polygon_type::bezier_type(quad[0], quad[1]), 
@@ -221,16 +245,22 @@ Triangulator<T, Index>::triangulateQuad(const std::array<vector_type, 4>& quad,
 		) 
 	);
 
+	std::array<typename Triangulator<T, Index>::index_type, 4> result;
+
+	//Obtain the diagonals
+	const auto diagonal0 = typename polygon_type::bezier_type(quad[0], quad[2]);
+	const auto diagonal1 = typename polygon_type::bezier_type(quad[1], quad[3]);
+
 	//Split by the shortest diagonal. Length2 is used as it
 	//is cheaper
 	const auto lengthD0 = length2(diagonal0.getDelta());
 	const auto lengthD1 = length2(diagonal1.getDelta());
-	const size_t splitIndex = lengthD0 < lengthD1 ? 0 : 1;
+	const size_t splitIndex = lengthD0 < lengthD1 ? 1 : 0;
 
 	//Write the values
 	constexpr std::array<index_type, result.size()> offsets = { 0, 1, 3, 2 };
 	for(size_t i = 0; i < result.size(); ++i) {
-		result[i] = startIndex + (splitIndex+offsets[i])%result.size();
+		result[i] = startIndex + (splitIndex+offsets[i])%quad.size();
 	}
 
 	return result;

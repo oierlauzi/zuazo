@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Classifier.h"
+#include "KLMCalculator.h"
 #include "../Vector.h"
 #include "../BezierLoop.h"
 #include "../Triangulator.h"
@@ -20,11 +22,12 @@ public:
 	using contour_type = CubicBezierLoop<position_vector_type>;
 	using polygon_type = Polygon<value_type>;
 
-	static constexpr klm_vector_type PASS_ALL_KLM = klm_vector_type(-1);
+	static constexpr klm_vector_type KLM_EDGE = klm_vector_type(0);
+	static constexpr klm_vector_type KLM_FILL = klm_vector_type(-1);
 
 	struct Vertex {
 		constexpr Vertex(	position_vector_type pos = position_vector_type(0), 
-							klm_vector_type klm = PASS_ALL_KLM )
+							klm_vector_type klm = KLM_FILL )
 			: pos(pos)
 			, klm(klm)
 		{
@@ -44,7 +47,8 @@ public:
 
 	void									clear();
 
-	void									addBezier(const bezier_type& bezier);
+	void									addBezier(	const bezier_type& bezier, 
+														FillSide fillSide = FillSide::LEFT);
 	void									addPolygon(const polygon_type& polygon);
 	void									addContour(const contour_type& contour);
 	void									addOutline(Utils::BufferView<const contour_type> outline);

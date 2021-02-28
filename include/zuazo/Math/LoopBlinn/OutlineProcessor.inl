@@ -1,8 +1,5 @@
 #include "OutlineProcessor.h"
 
-#include "Classifier.h"
-#include "KLMCalculator.h"
-
 namespace Zuazo::Math::LoopBlinn {
 
 template<typename T, typename I>
@@ -21,9 +18,11 @@ inline void OutlineProcessor<T, I>::clear() {
 
 
 template<typename T, typename I>
-inline void OutlineProcessor<T, I>::addBezier(const bezier_type& bezier) {
+inline void OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
+												FillSide fillSide ) 
+{
 	const auto classification = Classifier<value_type>()(bezier);
-	const auto klmCoords = KLMCalculator<value_type>()(classification, FillSide::LEFT);
+	const auto klmCoords = KLMCalculator<value_type>()(classification, fillSide);
 
 	//Optimize away lines and points as they have been drawn at the inner hull
 	if(!klmCoords.isLineOrPoint && std::isnan(klmCoords.subdivisionParameter)) {
@@ -54,9 +53,8 @@ inline void OutlineProcessor<T, I>::addBezier(const bezier_type& bezier) {
 		//Determine the layout of the vertices, so that although
 		//the vertices are not going to be drawn in order, 
 		//the triangle strip is well-formed
-		auto quadVertices = reinterpret_cast<const std::array<position_vector_type, bezier.size()>&>(bezier);
-		std::array<index_type, bezier.size()> quadIndices;
-		bool repeatFirstvertex = false;
+		std::array<index_type, bezier.size()> bezierOrdering;
+		bool repeatFirstVertex = false;
 
 		if(b1IsOutside == b2IsOutside) {
 			//Both control points are on the same side. Suppose they are
@@ -64,22 +62,33 @@ inline void OutlineProcessor<T, I>::addBezier(const bezier_type& bezier) {
 			//Determine if any of the control points overlaps the other
 			if(isInsideTriangle(bezierAxis, b1Axis, b2Axis)) {
 				//b2 is overlapped by b1's triangle
-				quadIndices = { 0, 3, 2, 1 };
-				repeatFirstvertex = true; //We'll draw 3 triangles
+				bezierOrdering = { 0, 3, 2, 1 };
+				repeatFirstVertex = true; //We'll draw 3 triangles
 			} else if(isInsideTriangle(bezierAxis, b2Axis, b1Axis)) {
 				//b1 is overlapped by b2's triangle
-				quadIndices = { 0, 3, 1, 2 };
-				repeatFirstvertex = true; //We'll draw 3 triangles
+				bezierOrdering = { 0, 3, 1, 2 };
+				repeatFirstVertex = true; //We'll draw 3 triangles
 			} else {
 				//Forming a quad
+				auto quadVertices = reinterpret_cast<const std::array<position_vector_type, bezier.size()>&>(bezier);
+				enum { SWAP_A = 1, SWAP_B = 2 };
+
 				//Remove the possible self intersection
 				const auto crossing = b1Proj.x > b2Proj.x;
 				if(crossing) {
-					std::swap(quadVertices[1], quadVertices[2]);
+					std::swap(quadVertices[SWAP_A], quadVertices[SWAP_B]);
 				}
 
 				//Triangulate the quad
-				quadIndices = m_triangulator.triangulateQuad(quadVertices, 0);
+				bezierOrdering = m_triangulator.triangulateQuad(quadVertices, 0);
+
+				//Undo the self intersection correction
+				if(crossing) {
+					std::iter_swap(
+						std::find(bezierOrdering.begin(), bezierOrdering.end(), SWAP_A),
+						std::find(bezierOrdering.begin(), bezierOrdering.end(), SWAP_B)
+					);
+				}
 			}
 
 		} else {
@@ -88,51 +97,53 @@ inline void OutlineProcessor<T, I>::addBezier(const bezier_type& bezier) {
 			//Determine if any of the control points overlaps the extremus points
 			if(isInsideTriangle(b1Axis, b2Axis, position_vector_type())) {
 				//origin is overlapped by the control points
-				quadIndices = { 3, 2, 0, 1 };
-				repeatFirstvertex = true; //We'll draw 3 triangles
+				bezierOrdering = { 3, 2, 0, 1 };
+				repeatFirstVertex = true; //We'll draw 3 triangles
 			} else if(isInsideTriangle(b1Axis, b2Axis, bezierAxis)) {
 				//b1 is overlapped by b2's triangle
-				quadIndices = { 1, 0, 3, 2 };
-				repeatFirstvertex = true; //We'll draw 3 triangles
+				bezierOrdering = { 1, 0, 3, 2 };
+				repeatFirstVertex = true; //We'll draw 3 triangles
 			} else {
 				//Forming a quad
+				auto quadVertices = reinterpret_cast<const std::array<position_vector_type, bezier.size()>&>(bezier);
+				enum { SWAP_A = 0, SWAP_B = 3 };
+	
 				//Remove the self intersection
-				std::swap(quadVertices[0], quadVertices[3]);
-				std::swap(quadVertices[3], quadVertices[2]);
+				std::swap(quadVertices[SWAP_A], quadVertices[SWAP_B]);
 
 				//Triangulate the quad
-				quadIndices = m_triangulator.triangulateQuad(quadVertices, 0);
+				bezierOrdering = m_triangulator.triangulateQuad(quadVertices, 0);
 
+				//Undo the self intersection correction
+				std::iter_swap(
+					std::find(bezierOrdering.begin(), bezierOrdering.end(), SWAP_A),
+					std::find(bezierOrdering.begin(), bezierOrdering.end(), SWAP_B)
+				);
 			}
 
 		}
 
 		//If the b1 control point of the curve turns out to be inwards, 
-		//as opposed to our supposition, reverse it by pairs
+		//as opposed to our supposition.
 		if(!b1IsOutside) {
-			std::iter_swap(
-				std::find(quadIndices.begin(), quadIndices.end(), 0),
-				std::find(quadIndices.begin(), quadIndices.end(), 3)
-			);
-			std::iter_swap(
-				std::find(quadIndices.begin(), quadIndices.end(), 1),
-				std::find(quadIndices.begin(), quadIndices.end(), 2)
-			);
+			for(auto& i : bezierOrdering) {
+				i = bezier.degree() - i; // Set the complementary value
+			}
 		}
 
 		//Ensure the size of the arrays is correct
-		static_assert(quadVertices.size() == klmCoords.klmCoords.size(), "Sizes must match");
-		static_assert(quadVertices.size() == quadIndices.size(), "Sizes must match");
+		static_assert(bezier.size() == klmCoords.klmCoords.size(), "Sizes must match");
+		static_assert(bezier.size() == bezierOrdering.size(), "Sizes must match");
 
 		//Add all the new vertices to the vertex vector with
 		//its corresponding indices
-		for(size_t j = 0; j < quadVertices.size(); ++j) {
+		for(size_t j = 0; j < bezier.size(); ++j) {
 			//Simply refer to the following vertex
 			m_indices.emplace_back(m_vertices.size()); 
 
 			//Obtain the components of the vertex and add them to the vertex list
-			const auto index = quadIndices[j];
-			const auto& position = quadVertices[index];
+			const auto index = bezierOrdering[j];
+			const auto& position = bezier[index];
 			const auto& klmCoord = klmCoords.klmCoords[index];
 
 			//Add the new vertices
@@ -140,8 +151,8 @@ inline void OutlineProcessor<T, I>::addBezier(const bezier_type& bezier) {
 		}
 
 		//Repeat an the first index if necessary
-		if(repeatFirstvertex) {
-			m_indices.emplace_back(m_vertices.size() - quadIndices.size());
+		if(repeatFirstVertex) {
+			m_indices.emplace_back(m_vertices.size() - bezierOrdering.size());
 		}
 
 	} else if(!std::isnan(klmCoords.subdivisionParameter)) {
@@ -152,7 +163,7 @@ inline void OutlineProcessor<T, I>::addBezier(const bezier_type& bezier) {
 
 		//Add both sections
 		for(const auto& half : halves) {
-			addBezier(half);
+			addBezier(half, fillSide);
 		}
 	}
 }
@@ -194,8 +205,8 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 			}
 		}
 
-		//Add the outline
-		addBezier(segment);
+		//Add the outline. As we're CCW, fill the left side
+		addBezier(segment, FillSide::LEFT);
 	}
 
 	//Add the inner hull as a polygon

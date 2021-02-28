@@ -719,7 +719,7 @@ constexpr Vec<T, N> normalize(const Vec<T, N>& a) noexcept {
 
 template<typename T, size_t N>
 constexpr Vec<T, N> proj(const Vec<T, N>& dir, const Vec<T, N>& p) noexcept {
-	return dot(p, normalize(dir)) * dir;
+	return dot(p, dir) * dir / length2(dir);
 }
 
 

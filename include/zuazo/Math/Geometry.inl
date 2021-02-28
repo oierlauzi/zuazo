@@ -33,6 +33,11 @@ constexpr typename Vec<T, N>::value_type distance(const Vec<T, N>& a, const Vec<
 	return length(b - a);
 }
 
+template<typename T, size_t N>
+constexpr typename Line<T, N>::value_type proj(const Line<T, N>& line, const typename Line<T, N>::value_type& p) noexcept {
+	return line.front() + proj(line.back() - line.front(), p - line.front());
+}
+
 template<typename T>
 constexpr typename Line<T, 2>::value_type::value_type getSignedDistance(const Line<T, 2>& line,
 																		const typename Line<T, 2>::value_type& point ) noexcept
@@ -60,34 +65,52 @@ constexpr typename Polygon<T>::value_type::value_type getSignedArea(const Polygo
 }
 
 template<typename T>
+constexpr typename Polygon<T>::value_type::value_type getSignedArea(const Vec2<T>& v0,
+																	const Vec2<T>& v1,
+																	const Vec2<T>& v2 ) noexcept
+{
+	const auto c1 = zCross(v0, v1);
+	const auto c2 = zCross(v1, v2);
+	const auto c3 = zCross(v2, v0);
+
+	return (c1 + c2 + c3) / 2;
+}
+
+
+
+template<typename T>
 constexpr bool isConvex(const Polygon<T>& polygon) noexcept {
-	auto direction = typename Polygon<T>::value_type::value_type();
+	//Triangles are always convex. Only run the algorithm if
+	//the input is anything more complex than it
+	if(polygon.size() > 3) {
+		auto direction = typename Polygon<T>::value_type::value_type();
 
-	for(size_t i = 0; i < polygon.getSegmentCount(); ++i) {
-		//Obtain 2 adjacent edges
-		const auto& seg0 = polygon.getSegment(i);
-		const auto& seg1 = polygon.getSegment((i+1) % polygon.getSegmentCount());
+		for(size_t i = 0; i < polygon.getSegmentCount(); ++i) {
+			//Obtain 2 adjacent edges
+			const auto& seg0 = polygon.getSegment(i);
+			const auto& seg1 = polygon.getSegment((i+1) % polygon.getSegmentCount());
 
-		//Calculate the the z component of the cross 
-		//product of adjacent edges
-		const auto delta0 = seg0.getDelta();
-		const auto delta1 = seg1.getDelta();
-		const auto z = zCross(delta0, delta1);
+			//Calculate the the z component of the cross 
+			//product of adjacent edges
+			const auto delta0 = seg0.getDelta();
+			const auto delta1 = seg1.getDelta();
+			const auto z = zCross(delta0, delta1);
 
-		//Test only if the edges were not colinear
-		if(!approxZero(z)) {
-			const auto newDirection = sign(z);
-			assert(newDirection); //It must not be zero or NaN at this point
+			//Test only if the edges were not colinear
+			if(!approxZero(z)) {
+				const auto newDirection = sign(z);
+				assert(newDirection); //It must not be zero or NaN at this point
 
-			if(!direction) {
-				//Direction was not set. Set it
-				//with the current edge
-				direction = newDirection;
-			} else {
-				//If direction has changed, this is 
-				//not a convex polygon
-				if(direction != newDirection) {
-					return false;
+				if(!direction) {
+					//Direction was not set. Set it
+					//with the current edge
+					direction = newDirection;
+				} else {
+					//If direction has changed, this is 
+					//not a convex polygon
+					if(direction != newDirection) {
+						return false;
+					}
 				}
 			}
 		}
@@ -95,6 +118,19 @@ constexpr bool isConvex(const Polygon<T>& polygon) noexcept {
 
 	//All test passed. This is a convex polygon
 	return true;
+}
+
+template<typename T>
+constexpr bool isConvex(const Vec2<T>& v0,
+						const Vec2<T>& v1,
+						const Vec2<T>& v2,
+						const Vec2<T>& v3 ) noexcept
+{
+	//A quad will be convex if their diagonals intersect
+	return getIntersection(
+		Line<T, 2>(v2 - v0),
+		Line<T, 2>(v3 - v1)
+	);
 }
 
 template<typename T>
