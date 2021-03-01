@@ -159,7 +159,7 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(	const 
 	}
 
 	//In case we want to fill the other side, reverse orientation
-	if(side != FillSide::LEFT) {
+	if(side == FillSide::LEFT) {
 		reverse = !reverse;
 	}
 

@@ -47,8 +47,8 @@ inline void OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
 		const auto b2Proj = operator*<value_type, 2, 2>(bezierBasis, b2Axis);
 
 		//Determine if the control points are inside or outside 
-		const auto b1IsOutside = !std::signbit(b1Proj.y);
-		const auto b2IsOutside = !std::signbit(b2Proj.y);
+		const auto b1IsOutside = std::signbit(b1Proj.y);
+		const auto b2IsOutside = std::signbit(b2Proj.y);
 
 		//Determine the layout of the vertices, so that although
 		//the vertices are not going to be drawn in order, 
@@ -95,7 +95,7 @@ inline void OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
 			//Sides missmatch. Suppose b1 is outside and b2 inside. We'll correct it later
 			//if necessary
 			//Determine if any of the control points overlaps the extremus points
-			if(isInsideTriangle(b1Axis, b2Axis, position_vector_type())) {
+			if(isInsideTriangle(b1Axis-bezierAxis, b2Axis-bezierAxis, -bezierAxis)) {
 				//origin is overlapped by the control points
 				bezierOrdering = { 3, 2, 0, 1 };
 				repeatFirstVertex = true; //We'll draw 3 triangles
@@ -106,8 +106,8 @@ inline void OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
 			} else {
 				//Forming a quad
 				auto quadVertices = reinterpret_cast<const std::array<position_vector_type, bezier.size()>&>(bezier);
-				enum { SWAP_A = 0, SWAP_B = 3 };
-	
+				enum { SWAP_A = 0, SWAP_B = 1 };
+
 				//Remove the self intersection
 				std::swap(quadVertices[SWAP_A], quadVertices[SWAP_B]);
 
@@ -181,10 +181,10 @@ template<typename T, typename I>
 inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 	//Ensure that the contour is counter clockwise
 	m_ccwContour = contour;
-	if(getSignedArea(reinterpret_cast<const polygon_type&>(m_ccwContour)) > 0) { //FIXME ugly reinterpret cast
+	if(getSignedArea(reinterpret_cast<const polygon_type&>(m_ccwContour)) < 0) { //FIXME ugly reinterpret cast
 		m_ccwContour.reverse();
 	}
-	assert(getSignedArea(reinterpret_cast<const polygon_type&>(m_ccwContour)) <= 0);
+	assert(getSignedArea(reinterpret_cast<const polygon_type&>(m_ccwContour)) >= 0);
 
 	//Obtain the vertices corresponding to the inner hull
 	m_innerHull.clear();
@@ -199,7 +199,7 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 		for(size_t j = 1; j < segment.degree(); ++j) {
 			const auto sDist = getSignedDistance(segmentAxis, segment[j]);
 
-			if(sDist < 0) {
+			if(sDist > 0) {
 				//This segment lies on the inside
 				m_innerHull.lineTo(segment[j]);
 			}

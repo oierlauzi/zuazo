@@ -1,11 +1,26 @@
 #include "Triangulator.h"
 
 #include "Geometry.h"
+#include "Combinatorics.h"
 #include "../Exception.h"
 
 #include <cassert>
+#include <limits>
 
 namespace Zuazo::Math {
+
+template<typename T, typename Index>
+constexpr Triangulator<T, Index>::DPState::DPState(	bool visible, 
+													value_type weight, 
+													index_type bestVertex ) noexcept
+	: visible(visible)
+	, weight(weight)
+	, bestVertex(bestVertex)
+{
+
+}
+
+
 
 template<typename T, typename Index>
 inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
@@ -14,201 +29,217 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 												index_type restartIndex ) const 
 {
 	//The following code is based on:
-	//https://stackoverflow.com/questions/8980379/polygon-triangulation-into-triangle-strips-for-opengl-es
+	//https://github.com/ivanfratric/polypartition/blob/master/src/polypartition.cpp
 
-	//Line used to project the points. 
-	//This will select the y component of the vectors when dot()
-	constexpr vector_type L(0, 1); 
+	const auto n = polygon.size();
+	const auto dpStateRows = n-1;
 
-	//Ensure index type is big enough.
-	if(polygon.size() + startIndex >= restartIndex) {
-		throw Exception("Insufficent index size for triangulation");
-	}
+	//Dynamic programing state gets stored in a 
+	//triangle-like structure, so we create an array
+	//to accommodate such data. Initialize it with the
+	//default values
+	std::fill(m_dpState.begin(), m_dpState.end(), DPState());
+	m_dpState.resize(triangularNumber(dpStateRows), DPState());
 
-	//Check that the given polygon is simple (no intersecting edges)
-	for(size_t i = 0; i < polygon.getSegmentCount(); ++i) {
-		for(size_t j = i + 2; j < polygon.getSegmentCount()-1; ++j) {
-			const auto& seg0 = polygon.getSegment(i);
-			const auto& seg1 = polygon.getSegment(j);
+	//Initialize the visibility checks
+	for(size_t i = 0; i < n-1; ++i) {
+		const size_t im1 = i > 0 ? i-1 : n-1; //If i is 0, roll back to the last value
+		const size_t ip1 = i+1; //Next i. At most n-1, as this value is not reached by i
+		assert(im1 < n);
+		assert(ip1 < n);
 
-			if(getIntersection(seg0, seg1)) {
-				throw Exception("Unable to triangulate a complex polygon");
-			}
-		}
-	}
+		//Extract the first point from the polygon
+		const auto& p0 = polygon.getPoint(i);
 
-	//Obtain the signed area of the polyon, as we'll
-	//need it later
-	const auto sArea = getSignedArea(polygon);
+		for(size_t j = i+2; j < n; ++j) {
+			const size_t jm1 = j-1; //j will always be > 0
+			const size_t jp1 = j < n-1 ? j+1 : 0; //Next j
+			assert(jm1 < n);
+			assert(jp1 < n);
 
-	//Initialize the index vector
-	m_indices.resize(polygon.size());
-	std::iota(m_indices.begin(), m_indices.end(), startIndex);
+			const size_t dpStateIndex = triangularNumber(j-1)+i;
+			assert(dpStateIndex < m_dpState.size());
+			auto& dpState = m_dpState[dpStateIndex];
 
-	while(!m_indices.empty()) {
-		//Initialize the work vectors. This won't free their space
-		m_monotonePolygonIndices.clear();
+			//Extract the second point from the polygon
+			const auto& p1 = polygon.getPoint(j);
 
-		//We only need to split it in a monotone polygon if it is not a triangle
-		if(m_indices.size() > 3) {
-			//Recreate the array of the sorted m_indices
-			m_sortedIndices.resize(m_indices.size());
-			std::iota(m_sortedIndices.begin(), m_sortedIndices.end(), 0);
-			std::sort(
-				m_sortedIndices.begin(), m_sortedIndices.end(),
-				[this, &polygon, startIndex, &L] (Index aIdx, Index bIdx) -> bool {
-					//Sort based on the y coordinate of the referenced vertex. Greatest first
-					return 	dot(polygon.getPoint(this->m_indices[aIdx]-startIndex), L) > 
-							dot(polygon.getPoint(this->m_indices[bIdx]-startIndex), L);
-				}
-			);
+			//Perform the first visibility check
+			{
+				//Extract the third and fourth points from the polygon
+				const auto& p2 = polygon.getPoint(im1);
+				const auto& p3 = polygon.getPoint(ip1);
 
-			//Create a monotone polygon from the m_indices
-			for (size_t i = 0; i < m_sortedIndices.size(); ++i) {
-				//Extract the vertices from the polygon
-				const size_t nIth = m_sortedIndices[i];
-				const size_t nNext = (nIth + 1) % m_indices.size();
-				const size_t nPrev = (nIth + m_indices.size() - 1) % m_indices.size();
-				const auto& ith = polygon.getPoint(m_indices[nIth]-startIndex);
-				const auto& next = polygon.getPoint(m_indices[nNext]-startIndex);
-				const auto& prev = polygon.getPoint(m_indices[nPrev]-startIndex);
-
-				//Obtain the side on which they lie on
-				const auto sidePrev = sign(dot(ith-prev, L));
-				const auto sideNext = sign(dot(ith-next, L));
-
-				if(sidePrev*sideNext >= 0) {
-					//Both m_indices are on the same side. This means that we've
-					//found a V shape (interior cusp), where ith is on the edge.
-					//If ith is not the top nor the bottom, this means that this part is 
-					//not monotone, so we need to split it up. For that, we'll
-					//choose a diagonal that departs from nIth. We'll call to the
-					//other point of the diagonal nSplit
-					size_t nSplit = m_indices.size(); //Invalid index
-					for(size_t iteration = 1; nSplit >= m_indices.size(); ++iteration) {
-						//Get a candidate for splitting. For that, follow
-						//the direction of the V. Remember that m_sortedIndices
-						//is sorted top to bottom
-						if(sidePrev + sideNext > 0) { //^
-							if(i >= iteration) {
-								nSplit = m_sortedIndices[i-iteration];
-							} else {
-								//We reached the top with no luck
-								break;
-							}
-						} else { //V
-							if(i+iteration < m_sortedIndices.size()) {
-								nSplit = m_sortedIndices[i+iteration];
-							} else {
-								//We reached the bottom with no luck
-								break;
-							}
-						}
-
-						//Get the other vertex of the diagonal
-						assert(nSplit < m_indices.size());
-						const auto& split = polygon.getPoint(m_indices[nSplit]-startIndex);
-
-						//Check that the diagonal's winding order is correct, 
-						//as this will ensure that it is either completely
-						//or partially inside the polygon
-						const auto winding = getSignedArea(
-							normalize(next-ith),
-							normalize(split-ith),
-							normalize(prev-ith)
-						);
-
-						if(sArea*winding <= 0) {
-							//Windings missmatch. Line exits the polygon
-							nSplit = m_indices.size();
-							continue;
-						}
-
-						//Check if it intersects any edge other than itself. If not,
-						//This means that the diagonal is completely inside
-						const Zuazo::Math::Line<value_type, 2> divisorLine (ith, split);
-						for(size_t j0 = 0; j0 < m_indices.size(); ++j0) {
-							//Skip checks with neighbour
-							const auto j1 = (j0+1) % m_indices.size();
-							if(j0==nIth || j0==nSplit || j1==nIth || j1==nSplit){
-								continue;
-							}
-							
-							//Get the current test segment
-							const Zuazo::Math::Line<value_type, 2> polygonSegment(
-								polygon.getPoint(m_indices[j0]-startIndex), 
-								polygon.getPoint(m_indices[j1]-startIndex)
-							);
-
-							//Check intersection
-							if(Zuazo::Math::getIntersection(divisorLine, polygonSegment)) {
-								//This segment exits the polygon. Try with another
-								nSplit = m_indices.size();
-								break;
-							}
-						}
-					}
-
-					//Extract a monotone polygon if the previous calculations were successful
-					if(nSplit < m_indices.size()) {
-						//Ensure ordering to step over all elements in between nBegin and nEnd
-						const size_t nBegin = max(nSplit, nIth);
-						const size_t nEnd = min(nSplit, nIth)+1;
-						assert(nEnd <= nBegin);
-
-						//Obtain the begin and end iterators for the edge range
-						const auto begin = std::next(m_indices.cbegin(), nBegin);
-						const auto end = std::next(m_indices.cbegin(), nEnd);
-
-						//Add all the vertices in a circular manner. Remove all but the first and last
-						assert(m_monotonePolygonIndices.empty());
-						std::copy(begin, m_indices.cend(), std::back_inserter(m_monotonePolygonIndices));
-						std::copy(m_indices.cbegin(), end, std::back_inserter(m_monotonePolygonIndices));
-
-						//Discard all the edges but the first and last. Same manner as above
-						m_indices.erase(std::next(begin), m_indices.cend());
-						m_indices.erase(m_indices.cbegin(), std::prev(end));
-
-						//We have finished creating a monotone polygon
-						break;
-					}
+				//Check if p1 is inside the angle formed
+				//by p0-p2-p3
+				if(!isInCone(p2, p0, p3, p1)) {
+					//This is not inside the angle
+					dpState.visible = false;
+					continue;
 				}
 			}
+
+			//Perform the second visibility check
+			{
+				//Extract the third and fourth points from the polygon
+				const auto& p2 = polygon.getPoint(jm1);
+				const auto& p3 = polygon.getPoint(jp1);
+
+				//Check if p0 is inside the angle formed
+				//by p1-p2-p3
+				if(!isInCone(p2, p1, p3, p0)) {
+					//This is not inside the angle
+					dpState.visible = false;
+					continue;
+				}
+			}
+
+			//Intersection checks
+			for(size_t k = 0; k < n; ++k) {
+				size_t kp1 = k < n-1 ? k+1 : 0;
+
+				//Skip checking intersections with neighbors
+				if(k == i || k == j || kp1 == i || kp1 ==j) {
+					continue;
+				}
+
+				const auto& p2 = polygon.getPoint(k);
+				const auto& p3 = polygon.getPoint(kp1);
+
+				const Line<value_type, 2> ln0(p0, p1);
+				const Line<value_type, 2> ln1(p2, p3);
+
+				if(getIntersection(ln0, ln1)) {
+					//Lines intersect
+					dpState.visible = false;
+					break;
+				}
+			}
+
+			//At this point we can ensure that the point is visible for this vertex
+			assert(dpState.visible == true);
+		}
+	}
+
+	//Initialize first value of the last row of 
+	//the dynamic states
+	m_dpState[m_dpState.size() - dpStateRows] = DPState();
+
+	//Calculate the weights of each vertex
+	for(size_t gap = 2; gap < n; ++gap) {
+		for(size_t i = 0; i < n-gap; ++i) {
+			const size_t j = i+gap;
+
+			const size_t dpStateIndex = triangularNumber(j-1)+i;
+			assert(dpStateIndex < m_dpState.size());
+			auto& dpState = m_dpState[dpStateIndex];
+
+			//Vertex must be visible
+			if(!dpState.visible) {
+				continue;
+			}
+
+			index_type bestVertex = ~index_type(); //Invalid index
+			value_type minWeight = std::numeric_limits<value_type>::max();
+
+			for(size_t k = i+1; k < j; ++k) {
+				//Check visibility of one of the other vertices
+				const size_t dpStateIndexKI = triangularNumber(k-1)+i;
+				assert(dpStateIndexKI < m_dpState.size());
+				const auto& dpStateKI = m_dpState[dpStateIndexKI];
+				if(!dpStateKI.visible) {
+					continue;
+				}
+
+				//Check visibility of one of the other vertices
+				const size_t dpStateIndexJK = triangularNumber(j-1)+k;
+				assert(dpStateIndexJK < m_dpState.size());
+				const auto& dpStateJK = m_dpState[dpStateIndexJK];
+				if(!dpStateJK.visible) {
+					continue;
+				}
+
+				//Get the distances between the vertices. //TODO maybe distance2
+				const auto d1 = (k < i+2) ? 0 : distance(polygon.getPoint(k), polygon.getPoint(i));
+				const auto d2 = (j < k+2) ? 0 : distance(polygon.getPoint(j), polygon.getPoint(k));
+
+				//Calculate the new weight
+				const auto weight = dpStateKI.weight + dpStateJK.weight + d1 + d2;
+
+				//If the weight is lower than the minimum, set it as the best candidate
+				//In the first iteration, miWeight will be set to inf, so this will stablish
+				//the weight for the first time
+				if(weight < minWeight) {
+					bestVertex = k;
+					minWeight = weight;
+				}
+			}
+
+			if(bestVertex >= n) {
+				//A error happened findinding an appropiate vertex
+				throw Exception("Error gathering best vertices for triangulating the polygon");
+			}
+
+			//Write the new data to the current dynamic programming state
+			dpState.bestVertex = bestVertex;
+			dpState.weight = minWeight;
+		}
+	}
+
+	//Start adding diagonals. Also connect the
+	//last 2 edges
+	m_diagonals.clear();
+	m_diagonals.emplace_back(0, n-1);
+	bool enableTriangleStripping = false;
+
+	while(!m_diagonals.empty()) {
+		const auto diagonal = m_diagonals.front();
+		m_diagonals.pop_front();
+
+		//Obtain the best vertex for triangulation for this diagonal
+		const size_t dpStateIndex = triangularNumber(diagonal.second-1) + diagonal.first;
+		assert(dpStateIndex < m_dpState.size());
+		const auto& dpState = m_dpState[dpStateIndex];
+		const auto bestVertex = dpState.bestVertex;
+
+		if(bestVertex >= n) {
+			//Error happened
+			throw Exception("Error triangulating the polygon");
 		}
 
-		//The last step consists on dumping the rest of the m_indices
-		if(m_monotonePolygonIndices.empty()) {
-			m_monotonePolygonIndices = std::move(m_indices);
-			assert(m_indices.empty());
-		}
-		assert(!m_monotonePolygonIndices.empty());
-
-		//Ensure that at least a triangle was formed
-		if(m_monotonePolygonIndices.size() >= 3) {
-			//Begin populating the triangle strip m_indices
+		//Check if we can use stripping
+		if(enableTriangleStripping) {
+			//We only need to push 1 index
+			result.emplace_back(bestVertex + startIndex);
+		} else {
+			//Restart the primitive
 			if(!result.empty()) {
-				//Unless this is the first triangle strip, restart with 
-				//a fresh primitive
-				result.push_back(restartIndex);
+				result.emplace_back(restartIndex);
 			}
-			
-			//Find the bottom-most vertex
-			const auto topIte = std::min_element(
-				m_monotonePolygonIndices.cbegin(), m_monotonePolygonIndices.cend(),
-				[&polygon, startIndex, &L] (Index aIdx, Index bIdx) -> bool {
-					return 	dot(polygon.getPoint(aIdx-startIndex), L) < 
-							dot(polygon.getPoint(bIdx-startIndex), L);
-				}
-			);
-			const size_t nTop = std::distance(m_monotonePolygonIndices.cbegin(), topIte);
 
-			//Fill the index buffer with alternating sides, top to bottom,
-			// so that a triangle strip is formed
-			for(size_t i = 1; i <= m_monotonePolygonIndices.size(); ++i) {
-				const size_t offset = i%2 ? m_monotonePolygonIndices.size() - i/2 : i/2;
-				const size_t idx = (nTop + offset) % m_monotonePolygonIndices.size();
-				result.push_back(m_monotonePolygonIndices[idx]);
-			}
+			//Push 3 vertices to form a tri
+			const std::array<index_type, 3> triangleVertices = {
+				diagonal.second + startIndex,
+				diagonal.first + startIndex,
+				bestVertex + startIndex
+			};
+			result.insert(result.cend(), triangleVertices.cbegin(), triangleVertices.cend());
+		}
+
+		//Segment for the next iteration
+		if(bestVertex > diagonal.first+1) {
+			m_diagonals.emplace_back(diagonal.first, bestVertex);
+			
+			//Only if this diagonal is on the top
+			//triangle can be stripped
+			enableTriangleStripping = true;
+		} else {
+			enableTriangleStripping = false;
+		}
+
+		if(diagonal.second > bestVertex+1) {
+			m_diagonals.emplace_back(bestVertex, diagonal.second);
+			enableTriangleStripping = false;
 		}
 	}
 }
@@ -264,6 +295,18 @@ Triangulator<T, Index>::triangulateQuad(const std::array<vector_type, 4>& quad,
 	}
 
 	return result;
+}
+
+
+
+template<typename T, typename Index>
+constexpr bool Triangulator<T, Index>::isBelow(const vector_type& delta) noexcept {
+	return (delta.y < 0) || ((delta.y == 0) && (delta.x > 0));
+}
+
+template<typename T, typename Index>
+constexpr bool Triangulator<T, Index>::isAbove(const vector_type& delta) noexcept {
+	return (delta.y > 0) || ((delta.y == 0) && (delta.x < 0));
 }
 
 }

@@ -11,6 +11,9 @@ constexpr T factorial(const T& num) noexcept;
 template<typename T>
 constexpr T binomialCoefficient(const T& n, const T& k) noexcept;
 
+template<typename T>
+constexpr T triangularNumber(const T& n) noexcept;
+
 template<typename T, size_t N>
 constexpr std::array<T, N+1> generateBinomialCoefficients() noexcept;
 

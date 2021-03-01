@@ -4,6 +4,8 @@
 #include "BezierLoop.h"
 
 #include <vector>
+#include <deque>
+#include <utility>
 #include <type_traits>
 
 namespace Zuazo::Math {
@@ -35,13 +37,29 @@ public:
 												index_type startIndex = index_type(0),
 												index_type restartIndex = ~index_type(0) ) const;
 
-	static constexpr std::array<index_type, 4> triangulateQuad(	const std::array<vector_type, 4>& quad,
+	static constexpr std::array<index_type, 4> 	triangulateQuad(const std::array<vector_type, 4>& quad,
 																index_type startIndex = index_type(0) ) noexcept;
 
 private:
-	mutable std::vector<index_type>	m_indices;
-	mutable std::vector<index_type>	m_monotonePolygonIndices;
-	mutable std::vector<index_type>	m_sortedIndices;
+	using Diagonal = std::pair<index_type, index_type>;
+
+	struct DPState {
+		constexpr DPState(	bool visible = true, 
+							value_type weight = 0, 
+							index_type bestVertex = ~index_type() ) noexcept;
+
+		bool 		visible;
+		value_type 	weight;
+		index_type	bestVertex;
+	};
+
+	mutable std::vector<DPState>	m_dpState;
+	mutable std::deque<Diagonal>	m_diagonals;
+
+
+	static constexpr bool			isBelow(const vector_type& delta) noexcept;
+	static constexpr bool			isAbove(const vector_type& delta) noexcept;
+
 
 };
 

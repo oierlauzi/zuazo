@@ -3,6 +3,7 @@
 #include "Vector.h"
 #include "Matrix.h"
 #include "Bezier.h"
+#include "BezierLoop.h"
 
 namespace Zuazo::Math {
 
@@ -20,6 +21,9 @@ template<typename T, size_t N>
 constexpr typename Vec<T, N>::value_type distance(const Vec<T, N>& a, const Vec<T, N>& b) noexcept;
 
 template<typename T, size_t N>
+constexpr typename Vec<T, N>::value_type distance2(const Vec<T, N>& a, const Vec<T, N>& b) noexcept;
+
+template<typename T, size_t N>
 constexpr typename Line<T, N>::value_type proj(const Line<T, N>& line, const typename Line<T, N>::value_type& p) noexcept;
 
 template<typename T>
@@ -30,9 +34,14 @@ template<typename T>
 constexpr typename Polygon<T>::value_type::value_type getSignedArea(const Polygon<T>& polygon) noexcept;
 
 template<typename T>
-constexpr typename Polygon<T>::value_type::value_type getSignedArea(const Vec2<T>& v0,
-																	const Vec2<T>& v1,
-																	const Vec2<T>& v2 ) noexcept;
+constexpr typename Vec2<T>::value_type getSignedArea(	const Vec2<T>& v0,
+														const Vec2<T>& v1,
+														const Vec2<T>& v2 ) noexcept;
+
+template<typename T>
+constexpr typename Vec2<T>::value_type getWinding(	const Vec2<T>& v0,
+													const Vec2<T>& v1,
+													const Vec2<T>& v2 ) noexcept;
 
 
 template<typename T>
@@ -43,6 +52,17 @@ constexpr bool isConvex(const Vec2<T>& v0,
 						const Vec2<T>& v1,
 						const Vec2<T>& v2,
 						const Vec2<T>& v3 ) noexcept;
+
+template<typename T>
+constexpr bool isInCone(const Vec2<T>& v0,
+						const Vec2<T>& v1,
+						const Vec2<T>& v2,
+						const Vec2<T>& p ) noexcept;
+
+template<typename T>
+constexpr bool isInCone(const Vec2<T>& v1,
+						const Vec2<T>& v2,
+						const Vec2<T>& p ) noexcept;
 
 template<typename T>
 constexpr bool isInsideTriangle(const Vec2<T>& t0,

@@ -34,6 +34,11 @@ constexpr typename Vec<T, N>::value_type distance(const Vec<T, N>& a, const Vec<
 }
 
 template<typename T, size_t N>
+constexpr typename Vec<T, N>::value_type distance2(const Vec<T, N>& a, const Vec<T, N>& b) noexcept {
+	return length2(b - a);
+}
+
+template<typename T, size_t N>
 constexpr typename Line<T, N>::value_type proj(const Line<T, N>& line, const typename Line<T, N>::value_type& p) noexcept {
 	return line.front() + proj(line.back() - line.front(), p - line.front());
 }
@@ -65,15 +70,35 @@ constexpr typename Polygon<T>::value_type::value_type getSignedArea(const Polygo
 }
 
 template<typename T>
-constexpr typename Polygon<T>::value_type::value_type getSignedArea(const Vec2<T>& v0,
-																	const Vec2<T>& v1,
-																	const Vec2<T>& v2 ) noexcept
+constexpr typename Vec2<T>::value_type getSignedArea(	const Vec2<T>& v0,
+														const Vec2<T>& v1,
+														const Vec2<T>& v2 ) noexcept
 {
 	const auto c1 = zCross(v0, v1);
 	const auto c2 = zCross(v1, v2);
 	const auto c3 = zCross(v2, v0);
 
 	return (c1 + c2 + c3) / 2;
+}
+
+
+template<typename T>
+constexpr typename Vec2<T>::value_type getWinding(	const Vec2<T>& v0,
+													const Vec2<T>& v1,
+													const Vec2<T>& v2 ) noexcept
+{
+	typename Vec2<T>::value_type result = 0;
+
+	const auto c0 = zCross(v0, v2);
+	const auto c1 = zCross(v0, v1);
+	const auto c2 = zCross(v1, v2);
+
+	if(c0) {
+		const auto cond0 = c0 > 0 && (c1 >= 0 && c2 >= 0);
+		const auto cond1 = c0 < 0 && (c1 >= 0 || c2 >= 0);
+
+		result = (cond0 || cond1) ? +1 : -1;
+	}
 }
 
 
@@ -133,6 +158,41 @@ constexpr bool isConvex(const Vec2<T>& v0,
 	);
 }
 
+
+
+template<typename T>
+constexpr bool isInCone(const Vec2<T>& v0,
+						const Vec2<T>& v1,
+						const Vec2<T>& v2,
+						const Vec2<T>& p ) noexcept
+{
+	return isInCone(v1-v0, v2-v0, p-v0);
+}
+
+template<typename T>
+constexpr bool isInCone(const Vec2<T>& v1,
+						const Vec2<T>& v2,
+						const Vec2<T>& p ) noexcept
+{
+	bool result;
+
+	const auto c0 = zCross(v1, v2);
+	const auto c1 = zCross(v1, p);
+	const auto c2 = zCross(v2-v1, p-v1);
+
+	if(c0 >= 0 && c1 >= 0 && c2 >= 0) {
+		result = true;
+	} else if (c0 < 0 && (c1 >= 0 || c2 >= 0)) {
+		result = true;
+	} else {
+		result = false;
+	}
+
+	return result;
+}
+
+
+
 template<typename T>
 constexpr bool isInsideTriangle(const Vec2<T>& t0,
 								const Vec2<T>& t1,
@@ -162,6 +222,8 @@ constexpr bool isInsideTriangle(const Vec2<T>& t1,
 		abs(sArea0) + abs(sArea1) + abs(sArea2)
 	);
 }
+
+
 
 template<typename T>
 constexpr bool getIntersection(	const Line<T, 2>& a,

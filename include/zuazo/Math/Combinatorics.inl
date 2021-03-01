@@ -33,6 +33,14 @@ constexpr T binomialCoefficient(const T& n, const T& k) noexcept {
 	return result;
 }
 
+template<typename T>
+constexpr T triangularNumber(const T& n) noexcept {
+	//As either n or n+1 is even, the multiplication 
+	//is also even, so there is no problem when dividing
+	//by 2
+	return n * (n+1) / 2; 
+}
+
 template<typename T, size_t N>
 constexpr std::array<T, N+1> generateBinomialCoefficients() noexcept {
 	std::array<T, N+1> result = {};
