@@ -36,7 +36,10 @@ inline void OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
 		//whilst the Y axis points outwards
 		const auto bezierAxis = bezier.back() - bezier.front();
 		const auto bezierNormal = position_vector_type(-bezierAxis.y, bezierAxis.x);
-		const auto bezierBasis = inv(Mat2x2<value_type>(bezierAxis, bezierNormal));
+
+		//Obtain the basis with the previous 2 vectors
+		//We'll only compare it w/ 0 and each other, avoid calculating the determinant
+		const auto bezierBasis = transpose(Mat2x2<value_type>(bezierAxis, bezierNormal)); 
 
 		//Remove the offset part from the control points
 		const auto b1Axis = bezier[1] - bezier.front();
@@ -46,9 +49,10 @@ inline void OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
 		const auto b1Proj = operator*<value_type, 2, 2>(bezierBasis, b1Axis);
 		const auto b2Proj = operator*<value_type, 2, 2>(bezierBasis, b2Axis);
 
-		//Determine if the control points are inside or outside 
-		const auto b1IsOutside = std::signbit(b1Proj.y);
-		const auto b2IsOutside = std::signbit(b2Proj.y);
+		//Determine if the control points are inside or outside .
+		//Negative values will be outside
+		const bool b1IsOutside = b1Proj.y > 0;
+		const bool b2IsOutside = b2Proj.y > 0;
 
 		//Determine the layout of the vertices, so that although
 		//the vertices are not going to be drawn in order, 
@@ -62,11 +66,11 @@ inline void OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
 			//Determine if any of the control points overlaps the other
 			if(isInsideTriangle(bezierAxis, b1Axis, b2Axis)) {
 				//b2 is overlapped by b1's triangle
-				bezierOrdering = { 0, 3, 2, 1 };
+				bezierOrdering = { 0, 1, 2, 3 };
 				repeatFirstVertex = true; //We'll draw 3 triangles
 			} else if(isInsideTriangle(bezierAxis, b2Axis, b1Axis)) {
 				//b1 is overlapped by b2's triangle
-				bezierOrdering = { 0, 3, 1, 2 };
+				bezierOrdering = { 3, 0, 1, 2 };
 				repeatFirstVertex = true; //We'll draw 3 triangles
 			} else {
 				//Forming a quad
@@ -89,6 +93,9 @@ inline void OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
 						std::find(bezierOrdering.begin(), bezierOrdering.end(), SWAP_B)
 					);
 				}
+
+				//We do not need to repeat the first vertex
+				repeatFirstVertex = false;
 			}
 
 		} else {
@@ -101,12 +108,12 @@ inline void OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
 				repeatFirstVertex = true; //We'll draw 3 triangles
 			} else if(isInsideTriangle(b1Axis, b2Axis, bezierAxis)) {
 				//b1 is overlapped by b2's triangle
-				bezierOrdering = { 1, 0, 3, 2 };
+				bezierOrdering = { 0, 1, 3, 2 };
 				repeatFirstVertex = true; //We'll draw 3 triangles
 			} else {
 				//Forming a quad
 				auto quadVertices = reinterpret_cast<const std::array<position_vector_type, bezier.size()>&>(bezier);
-				enum { SWAP_A = 0, SWAP_B = 1 };
+				enum { SWAP_A = 2, SWAP_B = 3 };
 
 				//Remove the self intersection
 				std::swap(quadVertices[SWAP_A], quadVertices[SWAP_B]);
@@ -119,6 +126,9 @@ inline void OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
 					std::find(bezierOrdering.begin(), bezierOrdering.end(), SWAP_A),
 					std::find(bezierOrdering.begin(), bezierOrdering.end(), SWAP_B)
 				);
+
+				//We do not need to repeat the first vertex
+				repeatFirstVertex = false;
 			}
 
 		}
@@ -126,8 +136,8 @@ inline void OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
 		//If the b1 control point of the curve turns out to be inwards, 
 		//as opposed to our supposition.
 		if(!b1IsOutside) {
-			for(auto& i : bezierOrdering) {
-				i = bezier.degree() - i; // Set the complementary value
+			for(size_t i = 0; i < bezierOrdering.size(); ++i) {
+				bezierOrdering[i] = bezier.degree() - bezierOrdering[i];
 			}
 		}
 
@@ -161,9 +171,36 @@ inline void OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
 		//We'll split the curve at that point and add each half separately.
 		const auto halves = split(bezier, klmCoords.subdivisionParameter);
 
+		const auto axis = bezier.back() - bezier.front();
+		const auto middle = halves.front().back() - bezier.front();
+		const auto middleSide = dot(middle, position_vector_type(-axis.y, axis.x));
+
+		if(middleSide < 0) {
+			//FIXME also consider the fillside
+			//As we've made 2 halves, there is a unfilled triangle in the middle
+			const std::array<position_vector_type, 3> triangle = {
+				halves.front().front(),
+				halves.back().back(),
+				halves.front().back()
+			};
+
+			if(!m_indices.empty()) {
+				m_indices.emplace_back(m_primitiveRestartIndex);
+			}
+
+			for(const auto v : triangle) {
+				m_indices.emplace_back(m_vertices.size());
+				m_vertices.emplace_back(v);
+			}
+		}
+
+
+
 		//Add both sections
 		for(const auto& half : halves) {
+			//FIXME, not working
 			addBezier(half, fillSide);
+			reinterpret_cast<std::underlying_type<FillSide>::type&>(fillSide) ^= 1; //Exchanges 1<=>0
 		}
 	}
 }
@@ -179,12 +216,30 @@ inline void OutlineProcessor<T, I>::addPolygon(const polygon_type& polygon) {
 
 template<typename T, typename I>
 inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
+	//Reinterpret the contour as a polygon. This works as both types have
+	//A single vector of value_type-s as a member. The contour has the
+	//additional limitation of having 3N+1 elements. (Polygon should have N+1).
+	//HACK Ugly reinterpret cast
+	const auto& ccwContourAsPolygon = reinterpret_cast<const polygon_type&>(m_ccwContour);
+
 	//Ensure that the contour is counter clockwise
 	m_ccwContour = contour;
-	if(getSignedArea(reinterpret_cast<const polygon_type&>(m_ccwContour)) < 0) { //FIXME ugly reinterpret cast
+	if(getSignedArea(ccwContourAsPolygon) < 0) { 
 		m_ccwContour.reverse();
 	}
-	assert(getSignedArea(reinterpret_cast<const polygon_type&>(m_ccwContour)) >= 0);
+	assert(getSignedArea(ccwContourAsPolygon) >= 0);
+
+	//Remove all intersections between control points and axes
+	/*for(size_t i = 0; i < m_ccwContour.getSegmentCount(); ++i) {
+		const auto& segment0 = m_ccwContour.getSegment(i);
+		const auto segment0Axis = segment0.getAxis();
+
+		for(size_t j = 0; j < m_ccwContour.getSegmentCount(); ++j) {
+			if(j == i) {
+				continue;
+			}
+		}
+	}*/
 
 	//Obtain the vertices corresponding to the inner hull
 	m_innerHull.clear();
@@ -195,7 +250,8 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 		//First point will always be at the inner hull
 		m_innerHull.lineTo(segment.front());
 
-		//Evaluate it for the 2 control points
+		//Evaluate it for the 2 control points.
+		//FIXME handle inverted control points
 		for(size_t j = 1; j < segment.degree(); ++j) {
 			const auto sDist = getSignedDistance(segmentAxis, segment[j]);
 

@@ -219,8 +219,8 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 
 			//Push 3 vertices to form a tri
 			const std::array<index_type, 3> triangleVertices = {
-				diagonal.second + startIndex,
 				diagonal.first + startIndex,
+				diagonal.second + startIndex,
 				bestVertex + startIndex
 			};
 			result.insert(result.cend(), triangleVertices.cbegin(), triangleVertices.cend());
@@ -229,16 +229,15 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 		//Segment for the next iteration
 		if(bestVertex > diagonal.first+1) {
 			m_diagonals.emplace_back(diagonal.first, bestVertex);
-			
-			//Only if this diagonal is on the top
-			//triangle can be stripped
-			enableTriangleStripping = true;
-		} else {
-			enableTriangleStripping = false;
 		}
 
 		if(diagonal.second > bestVertex+1) {
 			m_diagonals.emplace_back(bestVertex, diagonal.second);
+
+			//Only if this diagonal is on the top
+			//triangle can be stripped
+			enableTriangleStripping = true;
+		} else {
 			enableTriangleStripping = false;
 		}
 	}

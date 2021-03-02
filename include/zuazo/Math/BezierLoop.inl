@@ -90,16 +90,22 @@ inline const typename BezierLoop<T, Deg>::value_type& BezierLoop<T, Deg>::getPoi
 template<typename T, size_t Deg>
 template<typename Q>
 inline typename BezierLoop<T, Deg>::value_type BezierLoop<T, Deg>::operator()(Q t) const {
-	//Sanitize the values
-	const auto index = static_cast<intmax_t>(floor(t)); //Floors
-	t -= index; //Obtain only the fractional part: [0, 1)
-	const auto i = static_cast<size_t>(sawtooth(static_cast<intmax_t>(getSegmentCount()), index)); //Index in [0, segmentCount)
+	//Obtain the integer part of the time, rounding towards -inf
+	const auto index = static_cast<intmax_t>(floor(t));
 
-	//Ensure that the values are correct
-	assert(Q(0) <= t && t < Q(1));
-	assert(0U <= i && i < getSegmentCount());
+	//Obtain only the fractional part: [0, 1)
+	t -= index; 
 
-	//Sample
+	//Index in [0, segmentCount)
+	const auto i = static_cast<size_t>(sawtooth(static_cast<intmax_t>(getSegmentCount()), index)); 
+
+	//Sample the result
+	return (*this)(i, t);
+}
+
+template<typename T, size_t Deg>
+template<typename Q>
+inline typename BezierLoop<T, Deg>::value_type BezierLoop<T, Deg>::operator()(size_t i, Q t) const {
 	return getSegment(i)(t);
 }
 
@@ -143,13 +149,45 @@ inline void BezierLoop<T, Deg>::clear() noexcept {
 }
 
 template<typename T, size_t Deg>
-void BezierLoop<T, Deg>::reverse() noexcept {
+inline void BezierLoop<T, Deg>::reverse() noexcept {
 	//Skip first and last elements
 	std::reverse(
 		std::next(m_values.begin()),
 		std::prev(m_values.end())
 	);
 }
+
+
+
+template<typename T, size_t Deg>
+template<typename Q>
+inline void BezierLoop<T, Deg>::split(size_t i, const Q& t) {
+	//Ensure index is correct
+	assert(i < getSegmentCount());
+
+	//Get an iterator to the referenced segment
+	auto ite = std::next(m_values.cbegin(), i*degree());
+
+	//Split the referenced segment in 2
+	const auto halves = split(reinterpret_cast<const bezier_type&>(*ite), t);
+
+	//Copy the first half into the existing position. Remember
+	//to discard the last value due to continuity
+	ite = std::copy(
+		halves.front().cbegin(), 
+		std::prev(halves.front().cend()),
+		ite
+	);
+
+	//Insert the second half after the newly inserted first half.
+	//Also remember to discard the last value
+	m_values.insert(
+		ite, 
+		halves.back().cbegin(), 
+		std::prev(halves.back().cend())
+	);
+}
+
 
 
 template<typename T, size_t Deg>

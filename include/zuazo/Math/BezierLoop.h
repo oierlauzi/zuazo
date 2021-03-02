@@ -38,6 +38,9 @@ public:
 	template<typename Q>
 	value_type 									operator()(Q t) const;
 
+	template<typename Q>
+	value_type 									operator()(size_t i, Q t) const;
+
 	const value_type*							data() const noexcept;
 	size_t										size() const noexcept;
 
@@ -48,6 +51,9 @@ public:
 
 	void										clear() noexcept;
 	void										reverse() noexcept;
+
+	template<typename Q>
+	void										split(size_t i, const Q& t);
 
 	void										lineTo(const value_type& value);
 	void										pushSegment(const bezier_type& bezier);
