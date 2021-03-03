@@ -49,8 +49,7 @@ constexpr typename Line<T, 2>::value_type::value_type getSignedDistance(const Li
 {
 	const auto delta = point - line.front();
 	const auto direction = normalize(line.back() - line.front());
-	const auto normal = typename Line<T, 2>::value_type(-direction.y, direction.x);
-	return dot(normal, delta);
+	return zCross(direction, delta);
 }
 
 template<typename T>
@@ -207,20 +206,18 @@ constexpr bool isInsideTriangle(const Vec2<T>& t1,
 								const Vec2<T>& t2,
 								const Vec2<T>& v ) noexcept
 {
-	//Obtain the signed area of the triangle
-	const auto sArea = zCross(t1/*-t0*/, t2/*-t0*/);
-
 	//Obtain the signed areas formed by each side 
 	//and the point
 	const auto sArea0 = zCross(t1/*-t0*/, v/*-t0*/);
 	const auto sArea1 = zCross(t2-t1	, v-t1);
 	const auto sArea2 = zCross(/*t0*/-t2, v-t2);
 
-	//Check if the absolute sums do match
-	return approxEqual(
-		abs(sArea),
-		abs(sArea0) + abs(sArea1) + abs(sArea2)
-	);
+	//Obtain the signs
+	const bool hasPos = sArea0 > 0 || sArea1 > 0 || sArea2 > 0;
+	const bool hasNeg = sArea0 < 0 || sArea1 < 0 || sArea2 < 0;
+
+	//All of the signed areas should have the same sign.
+	return !(hasPos && hasNeg);
 }
 
 

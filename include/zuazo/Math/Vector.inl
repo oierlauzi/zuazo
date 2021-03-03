@@ -701,6 +701,12 @@ constexpr typename Vec2<T>::value_type zCross(const Vec2<T>& lhs, const Vec2<T>&
 	return lhs.x*rhs.y - lhs.y*rhs.x;
 }
 
+template<typename T>
+constexpr Vec2<T> perp(const Vec2<T>& v) noexcept {
+	return Vec2<T>(-v.y, v.x);
+}
+
+
 
 template<typename T, size_t N>
 constexpr T length(const Vec<T, N>& a) noexcept {

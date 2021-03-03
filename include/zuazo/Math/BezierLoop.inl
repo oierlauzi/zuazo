@@ -150,11 +150,15 @@ inline void BezierLoop<T, Deg>::clear() noexcept {
 
 template<typename T, size_t Deg>
 inline void BezierLoop<T, Deg>::reverse() noexcept {
-	//Skip first and last elements
-	std::reverse(
-		std::next(m_values.begin()),
-		std::prev(m_values.end())
-	);
+	//Skip first and last elements, as they are the same
+	if(m_values.size() > 3) {
+		assert(m_values.front() == m_values.back());
+
+		std::reverse(
+			std::next(m_values.begin()),
+			std::prev(m_values.end())
+		);
+	}
 }
 
 

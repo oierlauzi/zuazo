@@ -37,7 +37,10 @@ public:
 												index_type startIndex = index_type(0),
 												index_type restartIndex = ~index_type(0) ) const;
 
-	static constexpr std::array<index_type, 4> 	triangulateQuad(const std::array<vector_type, 4>& quad,
+	static constexpr std::array<index_type, 4> 	triangulateQuad(const vector_type& v0,
+																const vector_type& v1,
+																const vector_type& v2,
+																const vector_type& v3,
 																index_type startIndex = index_type(0) ) noexcept;
 
 private:
