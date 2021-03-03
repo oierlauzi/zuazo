@@ -67,7 +67,7 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 			quadIndices.cend()
 		);
 
-	} else if(polygon.size() > 4) {
+	} else if(polygon.size() > 3) {
 		//General case
 
 		//The following code is based on:
@@ -255,7 +255,9 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 
 			//Check if we can use stripping
 			if(enableTriangleStripping) {
-				//We only need to push 1 index
+				//We only need to push 1 index, as the previous
+				//2 are part of the previous triangle. Push
+				//the last index of the new triangle
 				result.emplace_back(bestVertex + startIndex);
 			} else {
 				//Restart the primitive
@@ -265,26 +267,26 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 
 				//Push 3 vertices to form a tri
 				const std::array<index_type, 3> triangleVertices = {
-					diagonal.second + startIndex,
 					diagonal.first + startIndex,
-					bestVertex + startIndex
+					bestVertex + startIndex,
+					diagonal.second + startIndex,
 				};
 				result.insert(result.cend(), triangleVertices.cbegin(), triangleVertices.cend());
 			}
 
 			//Segment for the next iteration
-			if(bestVertex > diagonal.first+1) {
+			if(diagonal.second > bestVertex+1) {
 				//Only if this diagonal is on the front
 				//triangle can be stripped
 				enableTriangleStripping = m_diagonals.empty();
 
-				m_diagonals.emplace_back(diagonal.first, bestVertex);
+				m_diagonals.emplace_back(bestVertex, diagonal.second);
 			} else {
 				enableTriangleStripping = false;
 			}
 
-			if(diagonal.second > bestVertex+1) {
-				m_diagonals.emplace_back(bestVertex, diagonal.second);
+			if(bestVertex > diagonal.first+1) {
+				m_diagonals.emplace_back(diagonal.first, bestVertex);
 			}
 		}
 	}

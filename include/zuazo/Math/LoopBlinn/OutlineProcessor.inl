@@ -241,7 +241,7 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 	const auto& ccwContourAsPolygon = reinterpret_cast<const polygon_type&>(m_ccwContour);
 
 	//Ensure that the contour is counter clockwise
-	//FIXME it is more correct to check CCW-ness only with the begin-end points,
+	//FIXME it is more correct to check CCW-ness only with the front-back points,
 	//as crossing control points may confuse this check
 	m_ccwContour = contour;
 	if(getSignedArea(ccwContourAsPolygon) < 0) { 
@@ -249,17 +249,64 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 	}
 	assert(getSignedArea(ccwContourAsPolygon) >= 0);
 
-	//Remove all intersections between control points and axes //TODO
-	/*for(size_t i = 0; i < m_ccwContour.getSegmentCount(); ++i) {
+	//Remove all intersections between control points and axes
+	for(size_t i = 0; i < m_ccwContour.getSegmentCount(); ++i) {
 		const auto& segment0 = m_ccwContour.getSegment(i);
-		const auto segment0Axis = segment0.getAxis();
+		auto segment0Axis = segment0.getAxis();
 
 		for(size_t j = 0; j < m_ccwContour.getSegmentCount(); ++j) {
-			if(j == i) {
+			//Obtain the indices of the next and previous j
+			const auto jp1 = j < m_ccwContour.getSegmentCount()-1 ? j+1 : 0;
+			const auto jm1 = j > 0 ? j-1 : m_ccwContour.getSegmentCount()-1;
+			assert(jp1 < m_ccwContour.getSegmentCount());
+			assert(jm1 < m_ccwContour.getSegmentCount());
+
+			//Avoid checking with itself and neighbors
+			if(j == i || jp1 == i || jm1 == i) {
 				continue;
 			}
+
+			const auto& segment1 = m_ccwContour.getSegment(j);
+			auto segment1Axis = segment1.getAxis();
+			auto b1Axis = Line<value_type, 2>(segment1.front(), segment1[1]);
+			auto b2Axis = Line<value_type, 2>(segment1.back(), segment1[2]);
+
+			if(getIntersection(segment0Axis, segment1Axis)) {
+				throw Exception("Self intersecting contour provided");
+			}
+
+			//Check if any of the control points intersect the bezier axis
+			while(getIntersection(segment0Axis, b1Axis) || getIntersection(segment0Axis, b2Axis)) {
+				//If so, split both parts. Repeat until the intersection
+				//disapears (or turns out to be a self intersection)
+
+				//Split in 2, considering that after doing so,
+				//a new segment is introduced, so the index needs
+				//to consider it.
+				//TODO split more optimally (t value calculation)
+				auto& a = i>j ? i : j; //Highest index (needs to be incremented later)
+				auto& b = i>j ? j : i; //Lowest index (keeps its value)
+				m_ccwContour.split(a++, value_type(0.5)); 
+				m_ccwContour.split(b  , value_type(0.5));
+
+				assert(i < m_ccwContour.size());
+				assert(j < m_ccwContour.size());
+				assert(i!=j);
+
+				//Recalculate things as they have become invalid when splitting
+				const auto& segment0 = m_ccwContour.getSegment(i);
+				segment0Axis = segment0.getAxis();
+				const auto& segment1 = m_ccwContour.getSegment(j);
+				segment1Axis = segment1.getAxis();
+				b1Axis = Line<value_type, 2>(segment1.front(), segment1[1]);
+				b2Axis = Line<value_type, 2>(segment1.back(), segment1[2]);
+
+				if(getIntersection(segment0Axis, segment1Axis)) {
+					throw Exception("Self intersecting contour provided");
+				}
+			}
 		}
-	}*/
+	}
 
 	//Obtain the vertices corresponding to the inner hull
 	m_innerHull.clear();

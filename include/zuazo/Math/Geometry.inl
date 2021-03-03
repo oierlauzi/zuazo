@@ -104,15 +104,26 @@ constexpr typename Vec2<T>::value_type getWinding(	const Vec2<T>& v0,
 
 template<typename T>
 constexpr bool isConvex(const Polygon<T>& polygon) noexcept {
+	bool result;
+
 	//Triangles are always convex. Only run the algorithm if
-	//the input is anything more complex than it
-	if(polygon.size() > 3) {
+	//the input is anything more complex than it. Also run the
+	//optimized version for quads if possible
+	if(polygon.size() == 4) {
+		result = isConvex(
+			polygon.getPoint(0),
+			polygon.getPoint(1),
+			polygon.getPoint(2),
+			polygon.getPoint(3)
+		);
+	} else if(polygon.size() > 4) {
 		auto direction = typename Polygon<T>::value_type::value_type();
 
 		for(size_t i = 0; i < polygon.getSegmentCount(); ++i) {
 			//Obtain 2 adjacent edges
 			const auto& seg0 = polygon.getSegment(i);
 			const auto& seg1 = polygon.getSegment((i+1) % polygon.getSegmentCount());
+			assert(seg0.back() == seg1.front());
 
 			//Calculate the the z component of the cross 
 			//product of adjacent edges
@@ -121,7 +132,8 @@ constexpr bool isConvex(const Polygon<T>& polygon) noexcept {
 			const auto z = zCross(delta0, delta1);
 
 			//Test only if the edges were not colinear
-			if(!approxZero(z)) {
+			result = true;
+			if(approxZero(z)) {
 				const auto newDirection = sign(z);
 				assert(newDirection); //It must not be zero or NaN at this point
 
@@ -133,15 +145,18 @@ constexpr bool isConvex(const Polygon<T>& polygon) noexcept {
 					//If direction has changed, this is 
 					//not a convex polygon
 					if(direction != newDirection) {
-						return false;
+						result = false;
+						break;
 					}
 				}
 			}
 		}
+	} else {
+		assert(polygon.size() < 4);
+		result = true;
 	}
 
-	//All test passed. This is a convex polygon
-	return true;
+	return result;
 }
 
 template<typename T>

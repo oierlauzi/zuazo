@@ -170,10 +170,10 @@ inline void BezierLoop<T, Deg>::split(size_t i, const Q& t) {
 	assert(i < getSegmentCount());
 
 	//Get an iterator to the referenced segment
-	auto ite = std::next(m_values.cbegin(), i*degree());
+	auto ite = std::next(m_values.begin(), i*degree());
 
 	//Split the referenced segment in 2
-	const auto halves = split(reinterpret_cast<const bezier_type&>(*ite), t);
+	const auto halves = Math::split(reinterpret_cast<const bezier_type&>(*ite), t);
 
 	//Copy the first half into the existing position. Remember
 	//to discard the last value due to continuity
