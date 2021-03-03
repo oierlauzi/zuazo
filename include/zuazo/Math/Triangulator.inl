@@ -57,7 +57,8 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 			polygon.getPoint(0),
 			polygon.getPoint(1),
 			polygon.getPoint(2),
-			polygon.getPoint(3)
+			polygon.getPoint(3),
+			startIndex
 		);
 
 		result.insert(
@@ -204,9 +205,9 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 						continue;
 					}
 
-					//Get the distances between the vertices. //TODO maybe distance2
-					const auto d1 = (k < i+2) ? 0 : distance(polygon.getPoint(k), polygon.getPoint(i));
-					const auto d2 = (j < k+2) ? 0 : distance(polygon.getPoint(j), polygon.getPoint(k));
+					//Get the distances between the vertices. //Using distance2 as it is cheaper
+					const auto d1 = (k < i+2) ? 0 : distance2(polygon.getPoint(k), polygon.getPoint(i));
+					const auto d2 = (j < k+2) ? 0 : distance2(polygon.getPoint(j), polygon.getPoint(k));
 
 					//Calculate the new weight
 					const auto weight = dpStateKI.weight + dpStateJK.weight + d1 + d2;

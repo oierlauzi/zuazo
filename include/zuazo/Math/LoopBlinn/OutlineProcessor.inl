@@ -174,11 +174,49 @@ inline void OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
 		//We'll split the curve at that point and add each half separately.
 		const auto halves = split(bezier, klmCoords.subdivisionParameter);
 
-		//TODO fill the empty space left by splitting
+		//As we've made 2 halves, there is a unfilled triangle in the middle
+		//Determine if the empty triangle would lies
+		//or right side of the left side
+		const auto bezierDirection = bezier.back() - bezier.front();
+		const auto middleDirection = halves.front().back() - bezier.front();
+		const auto middleSide = zCross(bezierDirection, middleDirection);
+
+		//Determine if the triangle should be filled, and if
+		//so, insert a triangle as a mere polygon
+		if(fillSide == FillSide::LEFT && middleSide < 0) {
+			const std::array<position_vector_type, 3> triangle = {
+				halves.front().front(),
+				halves.front().back(),
+				halves.back().back()
+			};
+
+			if(!m_indices.empty()) {
+				m_indices.emplace_back(m_primitiveRestartIndex);
+			}
+
+			for(const auto v : triangle) {
+				m_indices.emplace_back(m_vertices.size());
+				m_vertices.emplace_back(v);
+			}
+		} else if(fillSide == FillSide::RIGHT && middleSide > 0) {
+			const std::array<position_vector_type, 3> triangle = {
+				halves.front().back(),
+				halves.front().front(),
+				halves.back().back()
+			};
+
+			if(!m_indices.empty()) {
+				m_indices.emplace_back(m_primitiveRestartIndex);
+			}
+
+			for(const auto v : triangle) {
+				m_indices.emplace_back(m_vertices.size());
+				m_vertices.emplace_back(v);
+			}
+		}
 
 		//Add both sections
 		for(const auto& half : halves) {
-			//FIXME, not working
 			addBezier(half, fillSide);
 			reinterpret_cast<std::underlying_type<FillSide>::type&>(fillSide) ^= 1; //Exchanges 1<=>0
 		}
@@ -211,7 +249,7 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 	}
 	assert(getSignedArea(ccwContourAsPolygon) >= 0);
 
-	//Remove all intersections between control points and axes
+	//Remove all intersections between control points and axes //TODO
 	/*for(size_t i = 0; i < m_ccwContour.getSegmentCount(); ++i) {
 		const auto& segment0 = m_ccwContour.getSegment(i);
 		const auto segment0Axis = segment0.getAxis();

@@ -152,8 +152,8 @@ constexpr bool isConvex(const Vec2<T>& v0,
 {
 	//A quad will be convex if their diagonals intersect
 	return getIntersection(
-		Line<T, 2>(v2 - v0),
-		Line<T, 2>(v3 - v1)
+		Line<T, 2>(v0, v2),
+		Line<T, 2>(v1, v3)
 	);
 }
 
