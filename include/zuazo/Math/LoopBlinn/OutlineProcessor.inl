@@ -251,8 +251,8 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 
 	//Remove all intersections between control points and axes
 	for(size_t i = 0; i < m_ccwContour.getSegmentCount(); ++i) {
-		const auto& segment0 = m_ccwContour.getSegment(i);
-		auto segment0Axis = segment0.getAxis();
+		//Get the axis of the segment
+		auto segment0Axis = m_ccwContour.getSegment(i).getAxis();
 
 		for(size_t j = 0; j < m_ccwContour.getSegmentCount(); ++j) {
 			//Obtain the indices of the next and previous j
@@ -261,50 +261,54 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 			assert(jp1 < m_ccwContour.getSegmentCount());
 			assert(jm1 < m_ccwContour.getSegmentCount());
 
-			//Avoid checking with itself and neighbors
-			if(j == i || jp1 == i || jm1 == i) {
+			//Avoid checking with itself and neighbors.
+			//FIXME this will not work well with 2-segment curves
+			if(i == jm1 || i == j || i == jp1) {
 				continue;
 			}
 
-			const auto& segment1 = m_ccwContour.getSegment(j);
-			auto segment1Axis = segment1.getAxis();
-			auto b1Axis = Line<value_type, 2>(segment1.front(), segment1[1]);
-			auto b2Axis = Line<value_type, 2>(segment1.back(), segment1[2]);
-
-			if(getIntersection(segment0Axis, segment1Axis)) {
-				throw Exception("Self intersecting contour provided");
-			}
-
-			//Check if any of the control points intersect the bezier axis
-			while(getIntersection(segment0Axis, b1Axis) || getIntersection(segment0Axis, b2Axis)) {
-				//If so, split both parts. Repeat until the intersection
-				//disapears (or turns out to be a self intersection)
-
-				//Split in 2, considering that after doing so,
-				//a new segment is introduced, so the index needs
-				//to consider it.
-				//TODO split more optimally (t value calculation)
-				auto& a = i>j ? i : j; //Highest index (needs to be incremented later)
-				auto& b = i>j ? j : i; //Lowest index (keeps its value)
-				m_ccwContour.split(a++, value_type(0.5)); 
-				m_ccwContour.split(b  , value_type(0.5));
-
-				assert(i < m_ccwContour.size());
-				assert(j < m_ccwContour.size());
-				assert(i!=j);
-
-				//Recalculate things as they have become invalid when splitting
-				const auto& segment0 = m_ccwContour.getSegment(i);
-				segment0Axis = segment0.getAxis();
+			//Ensure that there are no intersecting segments and
+			//control points
+			bool intersection;
+			do {
 				const auto& segment1 = m_ccwContour.getSegment(j);
-				segment1Axis = segment1.getAxis();
-				b1Axis = Line<value_type, 2>(segment1.front(), segment1[1]);
-				b2Axis = Line<value_type, 2>(segment1.back(), segment1[2]);
+				auto segment1Axis = segment1.getAxis();
+				auto b1Axis = Line<value_type, 2>(segment1.front(), segment1[1]);
+				auto b2Axis = Line<value_type, 2>(segment1.back(), segment1[2]);
 
+				//Ensure that the axes don't self intersect, as this
+				//means that we have a complex polygon which cannot be 
+				//triangulated
 				if(getIntersection(segment0Axis, segment1Axis)) {
 					throw Exception("Self intersecting contour provided");
 				}
-			}
+
+				//Check if any of the control points intersect the bezier axis
+				intersection = 	getIntersection(segment0Axis, b1Axis) || 
+								getIntersection(segment0Axis, b2Axis) ;
+
+
+				//If this occurs, split both parts. Repeat until the intersection
+				//disapears (or turns out to be a self intersection)
+				if(intersection) {
+					//Split in 2, considering that after doing so,
+					//a new segment is introduced, so the index needs
+					//to consider it.
+					//TODO split more optimally (t value calculation)
+					auto& a = i>j ? i : j; //Highest index (needs to be incremented later)
+					auto& b = i>j ? j : i; //Lowest index (keeps its value)
+					m_ccwContour.split(a++, value_type(0.5)); 
+					m_ccwContour.split(b  , value_type(0.5));
+
+					assert(i < m_ccwContour.size());
+					assert(j < m_ccwContour.size());
+					assert(i!=j);
+
+					//Recaclulate segment0Axis, as it has been modified
+					//when splitting
+					segment0Axis = m_ccwContour.getSegment(i).getAxis();
+				}
+			} while(intersection);
 		}
 	}
 
