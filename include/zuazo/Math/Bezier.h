@@ -164,6 +164,8 @@ constexpr std::array<typename Bezier<Vec<T, N>, Deg>::value_type, Deg> solve(	co
 template<typename T, size_t Deg, typename Q>
 constexpr std::array<Bezier<T, Deg>, 2> split(const Bezier<T, Deg>& bezier, const Q& t) noexcept;
 
+template<typename T, size_t Deg>
+constexpr Bezier<Vec2<T>, Deg> alignToAxis(const Bezier<Vec2<T>, Deg>& bezier) noexcept;
 
 template<typename T, size_t Deg>
 constexpr Utils::Range<typename Bezier<T, Deg>::value_type> getBoundaries(const Bezier<T, Deg>& s);

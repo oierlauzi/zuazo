@@ -37,6 +37,10 @@ public:
 		Vec3<value_type> 	klm;
 	};
 
+	struct BezierResult {
+		std::array<position_vector_type, 2>	protudingVertices;
+	};
+
 	OutlineProcessor(index_type primitiveRestartIndex = ~index_type(0));
 	OutlineProcessor(const OutlineProcessor& other) = delete;
 	OutlineProcessor(OutlineProcessor&& other) = default;
@@ -47,7 +51,7 @@ public:
 
 	void									clear();
 
-	void									addBezier(	const bezier_type& bezier, 
+	BezierResult							addBezier(	const bezier_type& bezier, 
 														FillSide fillSide = FillSide::LEFT);
 	void									addPolygon(const polygon_type& polygon);
 	void									addContour(const contour_type& contour);
@@ -66,7 +70,6 @@ private:
 	contour_type							m_ccwContour;
 	polygon_type							m_innerHull;
 	Triangulator<value_type, index_type>	m_triangulator;
-
 	
 };
 

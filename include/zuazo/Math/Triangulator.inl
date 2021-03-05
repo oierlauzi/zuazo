@@ -232,11 +232,17 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 			}
 		}
 
+		enum class StrippingSide {
+			NONE,
+			LEFT,
+			RIGHT,
+		};
+
 		//Start adding diagonals. Also connect the
 		//last 2 edges
 		m_diagonals.clear();
 		m_diagonals.emplace_back(0, n-1);
-		bool enableTriangleStripping = false;
+		StrippingSide strippingSide = StrippingSide::NONE;
 
 		while(!m_diagonals.empty()) {
 			const auto diagonal = m_diagonals.front();
@@ -254,7 +260,7 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 			}
 
 			//Check if we can use stripping
-			if(enableTriangleStripping) {
+			if(strippingSide != StrippingSide::NONE) {
 				//We only need to push 1 index, as the previous
 				//2 are part of the previous triangle. Push
 				//the last index of the new triangle
@@ -267,26 +273,46 @@ inline void Triangulator<T, Index>::operator()(	std::vector<index_type>& result,
 
 				//Push 3 vertices to form a tri
 				const std::array<index_type, 3> triangleVertices = {
-					diagonal.first + startIndex,
-					bestVertex + startIndex,
 					diagonal.second + startIndex,
+					diagonal.first + startIndex,
+					bestVertex + startIndex
 				};
 				result.insert(result.cend(), triangleVertices.cbegin(), triangleVertices.cend());
+
+				strippingSide = StrippingSide::RIGHT;
 			}
 
-			//Segment for the next iteration
-			if(diagonal.second > bestVertex+1) {
-				//Only if this diagonal is on the front
-				//triangle can be stripped
-				enableTriangleStripping = m_diagonals.empty();
+			//Segment for the next iteration. Stripe in alternating sides
+			if(strippingSide == StrippingSide::RIGHT) {
+				if(bestVertex > diagonal.first+1) {
+					//Only if this diagonal is on the front
+					//triangle can be stripped
+					strippingSide = m_diagonals.empty() ? StrippingSide::LEFT : StrippingSide::NONE;
 
-				m_diagonals.emplace_back(bestVertex, diagonal.second);
-			} else {
-				enableTriangleStripping = false;
-			}
+					m_diagonals.emplace_back(diagonal.first, bestVertex);
+				} else {
+					strippingSide = StrippingSide::NONE;
+				}
 
-			if(bestVertex > diagonal.first+1) {
-				m_diagonals.emplace_back(diagonal.first, bestVertex);
+				if(diagonal.second > bestVertex+1) {
+					m_diagonals.emplace_back(bestVertex, diagonal.second);
+				}
+
+			} else { assert(strippingSide == StrippingSide::LEFT);
+				if(diagonal.second > bestVertex+1) {
+					//Only if this diagonal is on the front
+					//triangle can be stripped
+					strippingSide = m_diagonals.empty() ? StrippingSide::RIGHT : StrippingSide::NONE;
+
+					m_diagonals.emplace_back(bestVertex, diagonal.second);
+				} else {
+					strippingSide = StrippingSide::NONE;
+				}
+
+				if(bestVertex > diagonal.first+1) {
+					m_diagonals.emplace_back(diagonal.first, bestVertex);
+				}
+
 			}
 		}
 	}
