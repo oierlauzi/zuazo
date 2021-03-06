@@ -469,40 +469,6 @@ constexpr std::array<Bezier<T, Deg>, 2> split(const Bezier<T, Deg>& bezier, cons
 	return result;
 }
 
-template<typename T, size_t Deg>
-constexpr Bezier<Vec2<T>, Deg> alignToAxis(const Bezier<Vec2<T>, Deg>& bezier) noexcept {
-	Bezier<Vec2<T>, Deg> result;
-
-	const auto delta = bezier.getDelta();
-	const auto l = length(delta);
-	const auto s = delta.y / l; //sin: y
-	const auto c = delta.x / l; //cos: x
-
-	//Create the rotation matrix.
-	//Although the rotation matrix
-	//is defined as:
-	// cos(O)  -sin(O)
-	// sin(O)  cos(O)
-	//We want to rotate in the
-	//opposite direction, so O' = -O.
-	//This means that sines get their
-	//sign inverted and cosines remain
-	//unchanged
-	const Math::Mat2x2<T> rotate(
-		+c, +s,
-		-s, +c
-	);
-
-	//Calculate the result
-	result.front() = Vec2<T>(0); 
-	for(size_t i = 1; i < bezier.degree(); ++i) {
-		result[i] = transform(rotate, bezier[i] - bezier.front());
-	}
-	result.back() = Vec2<T>(l, 0); //Last point has only x component
-
-	return result;
-}
-
 
 template<typename T, size_t Deg>
 constexpr Utils::Range<typename Bezier<T, Deg>::value_type> getBoundaries(const Bezier<T, Deg>& s) {

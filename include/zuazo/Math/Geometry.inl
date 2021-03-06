@@ -43,14 +43,31 @@ constexpr typename Line<T, N>::value_type proj(const Line<T, N>& line, const typ
 	return line.front() + proj(line.back() - line.front(), p - line.front());
 }
 
+
+
+template<typename T>
+constexpr typename Line<T, 2>::value_type::value_type getSignedDistance(const Vec2<T>& dir,
+																		const Vec2<T>& p,
+																		normalized_t ) noexcept
+{
+	return zCross(dir, p); //Dot product with the normal
+}
+
+template<typename T>
+constexpr typename Line<T, 2>::value_type::value_type getSignedDistance(const Vec2<T>& dir,
+																		const Vec2<T>& p ) noexcept
+{
+	return getSignedDistance(normalize(dir), p, normalized);
+}
+
 template<typename T>
 constexpr typename Line<T, 2>::value_type::value_type getSignedDistance(const Line<T, 2>& line,
 																		const typename Line<T, 2>::value_type& point ) noexcept
 {
-	const auto delta = point - line.front();
-	const auto direction = normalize(line.back() - line.front());
-	return zCross(direction, delta);
+	return getSignedDistance(line.back() - line.front(), point - line.front());
 }
+
+
 
 template<typename T>
 constexpr typename Polygon<T>::value_type::value_type getSignedArea(const Polygon<T>& polygon) noexcept {

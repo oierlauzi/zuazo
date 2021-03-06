@@ -38,14 +38,27 @@ OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
 			m_indices.emplace_back(m_primitiveRestartIndex);
 		}
 
-		const auto alignedBezier = alignToAxis(bezier);
-		assert(alignedBezier.front() == position_vector_type());
+		//Obtain the directions of the bezier and its control points
+		const auto bezierDir = bezier.back() - bezier.front();
+		const auto b1Dir = bezier[1] - bezier.front();
+		const auto b2Dir = bezier[2] - bezier.front();
+
+		//Create a rotation matrix to project the control points
+		//Onto a basis formed by the axis of the segment and its
+		//normal. Although the axis we're passing is not normalized,
+		//we don't care about the absolute magnitude of it, only if
+		//it is positive or negative and some relative comparisons.
+		//Therefore, passing the "normalized" parameter will avoid
+		//some extra calculations
+		const auto bezierBasis = getAlignmentMatrix(bezierDir, normalized);
+		const auto b1Proj = transform(bezierBasis, b1Dir);
+		const auto b2Proj = transform(bezierBasis, b2Dir);
 
 		//Determine if the control points are inside or outside .
 		//Negative values will be outside, as the normal axis
 		//points inwards
-		const bool b1IsOutside = alignedBezier[1].y < 0;
-		const bool b2IsOutside = alignedBezier[2].y < 0;
+		const bool b1IsOutside = b1Proj.y < 0;
+		const bool b2IsOutside = b2Proj.y < 0;
 
 		//Determine the layout of the vertices, so that although
 		//the vertices are not going to be drawn in order, 
@@ -58,7 +71,7 @@ OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
 			//Both control points are on the same side. Suppose they are
 			//outside, we'll correct it later if necessary
 			//Determine if any of the control points overlap the other
-			if(!approxZero(distance2(alignedBezier[1], alignedBezier[2]))) {
+			if(!approxZero(distance2(bezier[1], bezier[2]))) {
 				//Both control points are in the same spot. This is a quadratic
 				//curve. Skip the second control point. (Only 1 tri)
 				bezierOrdering = { 0, 0, 1, 3 };
@@ -66,7 +79,7 @@ OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
 				if((fillSide==FillSide::LEFT && !b1IsOutside) || (fillSide==FillSide::RIGHT && b1IsOutside)) {
 					result.protudingVertices[0] = bezier[1];
 				}
-			} else if(isInsideTriangle(alignedBezier.back(), alignedBezier[1], alignedBezier[2])) {
+			} else if(isInsideTriangle(bezierDir, b1Dir, b2Dir)) {
 				//b2 is overlapped by b1's triangle
 				//In order to this triangulation to work b1 needs to be on top of b2
 				enum { SWAP_A = 1, SWAP_B = 2 };
@@ -83,7 +96,7 @@ OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
 					result.protudingVertices[0] = bezier[1];
 				}
 
-			} else if(isInsideTriangle(alignedBezier.back(), alignedBezier[2], alignedBezier[1])) {
+			} else if(isInsideTriangle(bezierDir, b2Dir, b1Dir)) {
 				//b1 is overlapped by b2's triangle
 				//In order to this triangulation to work b2 needs to be on top of b1
 				enum { SWAP_A = 1, SWAP_B = 2 };
@@ -105,7 +118,7 @@ OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
 				enum { SWAP_A = 1, SWAP_B = 2 };
 
 				//Remove the possible self intersection
-				const auto crossing = alignedBezier[1].x > alignedBezier[2].x;
+				const auto crossing = b1Proj.x > b2Proj.x;
 				if(crossing) {
 					std::swap(quadVertices[SWAP_A], quadVertices[SWAP_B]);
 					std::swap(klmCoords.klmCoords[SWAP_A], klmCoords.klmCoords[SWAP_B]);
@@ -136,12 +149,12 @@ OutlineProcessor<T, I>::addBezier(	const bezier_type& bezier,
 			//points. This should not happen, as this setup involves self intersection
 			//of the curve (loop). However, I've decided to check it, as it will avoid
 			//crashing due to non-convex quads in the else branch.
-			if(isInsideTriangle(alignedBezier[1]-alignedBezier.back(), alignedBezier[2]-alignedBezier.back(), -alignedBezier.back())) {
+			if(isInsideTriangle(b1Dir-bezierDir, b2Dir-bezierDir, -bezierDir)) {
 				//origin is overlapped by the control points
 				bezierOrdering = { 3, 2, 0, 1 };
 				repeatFirstVertex = true; //We'll draw 3 triangles
 
-			} else if(isInsideTriangle(alignedBezier[1], alignedBezier[2], alignedBezier.back())) {
+			} else if(isInsideTriangle(b1Dir, b2Dir, bezierDir)) {
 				//b1 is overlapped by b2's triangle
 				bezierOrdering = { 0, 1, 3, 2 };
 				repeatFirstVertex = true; //We'll draw 3 triangles

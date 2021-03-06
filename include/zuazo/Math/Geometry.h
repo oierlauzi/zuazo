@@ -27,6 +27,15 @@ template<typename T, size_t N>
 constexpr typename Line<T, N>::value_type proj(const Line<T, N>& line, const typename Line<T, N>::value_type& p) noexcept;
 
 template<typename T>
+constexpr typename Line<T, 2>::value_type::value_type getSignedDistance(const Vec2<T>& dir,
+																		const Vec2<T>& p,
+																		normalized_t ) noexcept;
+
+template<typename T>
+constexpr typename Line<T, 2>::value_type::value_type getSignedDistance(const Vec2<T>& dir,
+																		const Vec2<T>& p ) noexcept;
+
+template<typename T>
 constexpr typename Line<T, 2>::value_type::value_type getSignedDistance(const Line<T, 2>& line,
 																		const typename Line<T, 2>::value_type& point ) noexcept;
 
