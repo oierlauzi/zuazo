@@ -2,6 +2,9 @@
 
 #include "Classifier.h"
 #include "KLMCalculator.h"
+#include "Vertex.h"
+#include "SegmentTriangulator.h"
+#include "ChordalTriangulator.h"
 #include "../Vector.h"
 #include "../BezierLoop.h"
 #include "../Triangulator.h"
@@ -16,30 +19,17 @@ class OutlineProcessor {
 public:
 	using value_type = T;
 	using index_type = I;
-	using position_vector_type = Vec2<value_type>;
-	using klm_vector_type = Vec3<value_type>;
-	using bezier_type = CubicBezier<position_vector_type>;
+	using polygon_triangulator_type = Triangulator<value_type, index_type>;
+	using polygon_type = typename polygon_triangulator_type::polygon_type;
+	using chordal_triangulator_type = ChordalTriangulator<value_type, index_type>;
+	using vertex_reference_type = typename chordal_triangulator_type::VertexReference;
+	using vertex_type = Vertex<value_type>;
+	using position_vector_type = typename vertex_type::position_vector_type;
+	using klm_vector_type = typename vertex_type::klm_vector_type;
+	using segment_triangulator_type = SegmentTriangulator<value_type, index_type>;
 	using contour_type = CubicBezierLoop<position_vector_type>;
-	using polygon_type = Polygon<value_type>;
-
-	static constexpr klm_vector_type KLM_EDGE = klm_vector_type(0);
-	static constexpr klm_vector_type KLM_FILL = klm_vector_type(-1);
-
-	struct Vertex {
-		constexpr Vertex(	position_vector_type pos = position_vector_type(0), 
-							klm_vector_type klm = KLM_FILL )
-			: pos(pos)
-			, klm(klm)
-		{
-		}
-
-		Vec2<value_type> 	pos;
-		Vec3<value_type> 	klm;
-	};
-
-	struct BezierResult {
-		std::array<position_vector_type, 2>	protudingVertices;
-	};
+	using bezier_type = typename segment_triangulator_type::bezier_type;
+	static_assert(std::is_same<bezier_type, typename contour_type::bezier_type>::value, "Bezier types missmatch");
 
 	OutlineProcessor(index_type primitiveRestartIndex = ~index_type(0));
 	OutlineProcessor(const OutlineProcessor& other) = delete;
@@ -51,25 +41,28 @@ public:
 
 	void									clear();
 
-	BezierResult							addBezier(	const bezier_type& bezier, 
+	void									addBezier(	const bezier_type& bezier, 
 														FillSide fillSide = FillSide::LEFT);
 	void									addPolygon(const polygon_type& polygon);
 	void									addContour(const contour_type& contour);
 	void									addOutline(Utils::BufferView<const contour_type> outline);
 
-	Utils::BufferView<const Vertex>			getVertices() const noexcept;
+	Utils::BufferView<const vertex_type>	getVertices() const noexcept;
 	Utils::BufferView<const index_type>		getIndices() const noexcept;
 
 	
 private:
 	index_type 								m_primitiveRestartIndex;
 
-	std::vector<Vertex>						m_vertices;
+	std::vector<vertex_type>				m_vertices;
 	std::vector<index_type>					m_indices;
 
 	contour_type							m_ccwContour;
 	polygon_type							m_innerHull;
-	Triangulator<value_type, index_type>	m_triangulator;
+	std::vector<vertex_type>				m_chordalAxis;
+	std::vector<vertex_reference_type>		m_innerHullReferences;
+	polygon_triangulator_type				m_polygonTriangulator;
+	segment_triangulator_type				m_segmentTriangulator;
 	
 };
 

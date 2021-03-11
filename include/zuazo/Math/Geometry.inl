@@ -90,11 +90,29 @@ constexpr typename Vec2<T>::value_type getSignedArea(	const Vec2<T>& v0,
 														const Vec2<T>& v1,
 														const Vec2<T>& v2 ) noexcept
 {
-	const auto c1 = zCross(v0, v1);
-	const auto c2 = zCross(v1, v2);
-	const auto c3 = zCross(v2, v0);
+	return zCross(v1-v0, v2-v0) / 2;
+}
 
-	return (c1 + c2 + c3) / 2;
+
+template<typename T>
+constexpr Vec2<T> getBarycentricCoordinates(const Vec2<T>& t0,
+											const Vec2<T>& t1,
+											const Vec2<T>& t2,
+											const Vec2<T>& p ) noexcept
+{
+	return getBarycentricCoordinates(t1-t0, t2-t0, p-t0);
+}
+
+template<typename T>
+constexpr Vec2<T> getBarycentricCoordinates(const Vec2<T>& t1,
+											const Vec2<T>& t2,
+											const Vec2<T>& p ) noexcept
+{
+	const auto area = zCross(t1, t2);	//Total area of the triangle
+	const auto vUnorm = zCross(t1, p);	//Area formed by the triangle with a side in t1
+	const auto uUnorm = zCross(p, t2);	//Area formed by the triangle with a side in t2
+
+	return Vec2<T>(uUnorm, vUnorm) / area; //Normalize
 }
 
 

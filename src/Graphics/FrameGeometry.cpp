@@ -65,8 +65,8 @@ void Frame::Geometry::writeQuadVertices(Math::Vec2f* position,
 	const auto surfaceSize = calculateSurfaceSize();
 	constexpr std::array vertexPositions {
 		Math::Vec2f(-0.5f, -0.5f),
-		Math::Vec2f(-0.5f, +0.5f),
 		Math::Vec2f(+0.5f, -0.5f),
+		Math::Vec2f(-0.5f, +0.5f),
 		Math::Vec2f(+0.5f, +0.5f),
 	};
 	static_assert(vertexPositions.size() == VERTEX_COUNT, "Vertex count does not match");

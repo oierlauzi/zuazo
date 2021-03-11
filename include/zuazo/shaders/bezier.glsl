@@ -2,28 +2,28 @@
 //https://developer.nvidia.com/gpugems/gpugems3/part-iv-image-effects/chapter-25-rendering-vector-art-gpu
 
 //The algebraic form of the quadratic bezier curve is:
-//u^2 - v = 0
-//where u=x, v=y
+//k^2 - lm = 0
+//where k=x, l=y, m=1
 
-float bezier2_distance(vec2 uv) {
+float bezier2_distance(vec2 kl) {
 	//Apply the equation described above
-	return uv.x*uv.x - uv.y;
+	return kl.x*kl.x - kl.y;
 }
 
-vec2 bezier2_gradient(vec2 uv) {
+vec2 bezier2_gradient(vec2 kl) {
 	//Obtain the jacobian matrix of the procedural texture coordinates
-	const mat2x2 jacobian = transpose(mat2x2(dFdx(uv), dFdy(uv)));
+	const mat2x2 jacobian = transpose(mat2x2(dFdx(kl), dFdy(kl)));
 
 	//Obtain the vector for applying the chain rule:
 	//[f(g(x))]' = f'(g(x))*g'(x)
-	const vec2 v = vec2(2.0f*uv.x, -uv.y); //2u, -v
+	const vec2 v = vec2(2.0f*kl.x, -kl.y); //2u, -v
 	
 	//Obtain the gradient
 	return jacobian*v;
 }
 
-float bezier2_signed_distance(vec2 uv) {
-	return bezier2_distance(uv) / length(bezier2_gradient(uv));
+float bezier2_signed_distance(vec2 kl) {
+	return bezier2_distance(kl) / length(bezier2_gradient(kl));
 }
 
 

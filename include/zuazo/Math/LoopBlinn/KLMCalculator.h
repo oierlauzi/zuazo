@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Classifier.h"
-
 #include "../Vector.h"
 
 #include <array>

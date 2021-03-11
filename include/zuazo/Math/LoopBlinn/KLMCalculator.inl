@@ -18,21 +18,33 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(	const 
 
 	switch (c.type) {
 	case CurveType::POINT:
-	case CurveType::LINE:
-		result.isLineOrPoint = true;
-		break;
+	case CurveType::LINE: {
+		constexpr auto NOT_USED = std::numeric_limits<value_type>::quiet_NaN();
 
-	case CurveType::QUADRATIC: {
 		result.klmCoords = {
-			Vec3<value_type>(0.0f, 		0.0f, 		0.0f		),
-			Vec3<value_type>(1.0f/3.0f, 	0.0f, 		1.0f/3.0f	),
-			Vec3<value_type>(2.0f/3.0f, 	1.0f/3.0f, 	2.0f/3.0f	),
-			Vec3<value_type>(1.0f, 		1.0f, 		1.0f		)
+			Vec3<value_type>(0, 		0, 			0		),
+			Vec3<value_type>(NOT_USED,	NOT_USED,	NOT_USED), //Should not be used
+			Vec3<value_type>(NOT_USED,	NOT_USED,	NOT_USED), //Should not be used
+			Vec3<value_type>(0,			0,			0		)
 		};
-		reverse = c.d3 < 0;
+
+		result.isLineOrPoint = true;
+
 		break;
 	}
+	case CurveType::QUADRATIC: {
+		constexpr auto THIRD = value_type(1) / value_type(3);
 
+		result.klmCoords = {
+			Vec3<value_type>(0, 		0, 			0		),
+			Vec3<value_type>(THIRD, 	0, 			THIRD	),
+			Vec3<value_type>(2*THIRD, 	THIRD, 		2*THIRD	),
+			Vec3<value_type>(1, 		1, 			1		)
+		};
+		reverse = c.d3 < 0;
+
+		break;
+	}
 	case CurveType::SERPENTINE: {
 		assert(c.discriminantTerm1 >= 0); //To avoid NaNs
 		const auto sqrt3DiscTerm1 = sqrt(3*c.discriminantTerm1);
@@ -67,9 +79,9 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(	const 
 			)
 		};
 		reverse = c.d1 < 0;
+
 		break;
 	}
-
 	case CurveType::CUSP: {
 		const auto ls = c.d3;
 		const auto lt = 3*c.d2;
@@ -101,7 +113,6 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(	const 
 
 		break;
 	}
-
 	case CurveType::LOOP: {
 		assert(c.discriminantTerm1 < 0); //To avoid NaNs
 		const auto sqrtDisc = sqrt(-c.discriminantTerm1);
@@ -152,7 +163,6 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(	const 
 
 		break;
 	}
-	
 	default:
 		assert(false);
 		break;

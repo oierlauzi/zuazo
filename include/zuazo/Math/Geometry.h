@@ -43,6 +43,17 @@ template<typename T>
 constexpr typename Polygon<T>::value_type::value_type getSignedArea(const Polygon<T>& polygon) noexcept;
 
 template<typename T>
+constexpr Vec2<T> getBarycentricCoordinates(const Vec2<T>& t0,
+											const Vec2<T>& t1,
+											const Vec2<T>& t2,
+											const Vec2<T>& p ) noexcept;
+
+template<typename T>
+constexpr Vec2<T> getBarycentricCoordinates(const Vec2<T>& t1,
+											const Vec2<T>& t2,
+											const Vec2<T>& p ) noexcept;
+
+template<typename T>
 constexpr typename Vec2<T>::value_type getSignedArea(	const Vec2<T>& v0,
 														const Vec2<T>& v1,
 														const Vec2<T>& v2 ) noexcept;
