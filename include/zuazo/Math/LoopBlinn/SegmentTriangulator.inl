@@ -248,7 +248,7 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 				if(result.getVertices()[1].isProtruding) {
 					assert(result.getVertices()[2].isProtruding);
 					result.getVertices()[0].helperIndex = 3;
-					result.getVertices()[1].helperIndex = 0;
+					result.getVertices()[1].helperIndex = 3;
 					result.getVertices()[2].helperIndex = 0;
 				} else {
 					assert(!result.getVertices()[2].isProtruding);
@@ -411,20 +411,9 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 			result0.getVertices().cbegin(), std::prev(result0.getVertices().cend()), //Middle vertex provided by result1
 			result.getVertices().begin()
 		);
-		lastVertex = std::transform(
+		lastVertex = std::copy(
 			result1.getVertices().cbegin(), result1.getVertices().cend(), 
-			lastVertex,
-			[offset = result0.getVertexCount()-1, size = result1.getVertexCount()]
-			(const VertexData& vertexData) -> VertexData {
-				//Account for the helper offset
-				VertexData result = vertexData;
-
-				if(result.helperIndex < size) {
-					result.helperIndex += offset;
-				}
-
-				return result;
-			}
+			lastVertex
 		);
 		assert(lastVertex == result.getVertices().cend());
 
