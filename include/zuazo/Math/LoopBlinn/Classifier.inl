@@ -44,9 +44,9 @@ constexpr typename Classifier<T>::Result Classifier<T>::operator()(const curve_t
 	result.d2 = approxZero(D.y);
 	result.d3 = approxZero(D.z);
 
-	if(	!approxZero(length2(curve[0]-curve[1])) && //length2 is cheaper than length
-		!approxZero(length2(curve[1]-curve[2])) &&
-		!approxZero(length2(curve[2]-curve[3])) )
+	if(	!approxZero(distance2(curve[0], curve[1])) && //distance2 is cheaper than length
+		!approxZero(distance2(curve[1], curve[2])) &&
+		!approxZero(distance2(curve[2], curve[3])) )
 	{
 		result.type = CurveType::POINT;
 	} else {

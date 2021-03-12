@@ -1,11 +1,31 @@
 //This code is based on
 //https://developer.nvidia.com/gpugems/gpugems3/part-iv-image-effects/chapter-25-rendering-vector-art-gpu
 
+//The algebraic form of the linear bezier curve (line )is:
+//k - l = 0
+//where k=x, l=1
+
+float bezier1_equation(float k) {
+	//Apply the equation described above
+	return k - 1;
+}
+
+vec2 bezier1_gradient(float k) {
+	//Trivial gradient
+	return vec2(dFdx(k), dFdy(k));
+}
+
+float bezier1_signed_distance(float k) {
+	return bezier1_equation(k) / length(bezier1_gradient(k));
+}
+
+
+
 //The algebraic form of the quadratic bezier curve is:
 //k^2 - lm = 0
 //where k=x, l=y, m=1
 
-float bezier2_distance(vec2 kl) {
+float bezier2_equation(vec2 kl) {
 	//Apply the equation described above
 	return kl.x*kl.x - kl.y;
 }
@@ -23,15 +43,16 @@ vec2 bezier2_gradient(vec2 kl) {
 }
 
 float bezier2_signed_distance(vec2 kl) {
-	return bezier2_distance(kl) / length(bezier2_gradient(kl));
+	return bezier2_equation(kl) / length(bezier2_gradient(kl));
 }
+
 
 
 //The algebraic form of the cubic bezier curve is:
 //k^3 - lmn = 0
 //where k=x, l=y, m=z, n=1
 
-float bezier3_distance(vec3 klm) {
+float bezier3_equation(vec3 klm) {
 	//Apply the equation described above
 	return klm.x*klm.x*klm.x - klm.y*klm.z;
 }
@@ -50,5 +71,5 @@ vec2 bezier3_gradient(vec3 klm) {
 }
 
 float bezier3_signed_distance(vec3 klm) {
-	return bezier3_distance(klm) / length(bezier3_gradient(klm));
+	return bezier3_equation(klm) / length(bezier3_gradient(klm));
 }

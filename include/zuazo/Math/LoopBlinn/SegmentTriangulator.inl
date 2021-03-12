@@ -252,7 +252,7 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 					result.getVertices()[2].helperIndex = 0;
 				} else {
 					assert(!result.getVertices()[2].isProtruding);
-					result.getVertices()[0].helperIndex = 1;
+					result.getVertices()[0].helperIndex = 2;
 				}
 
 				//Triangulate the quad and add the indices to the result
@@ -379,7 +379,7 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 		}
 
 		for(auto& vertexData : result.getVertices()) {
-			if(vertexData.helperIndex != ~index_type(0)) {
+			if(vertexData.helperIndex < result.getVertices().size()) {
 				vertexData.helperIndex += baseIndex;
 			}
 		}
@@ -411,9 +411,20 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 			result0.getVertices().cbegin(), std::prev(result0.getVertices().cend()), //Middle vertex provided by result1
 			result.getVertices().begin()
 		);
-		lastVertex = std::copy(
+		lastVertex = std::transform(
 			result1.getVertices().cbegin(), result1.getVertices().cend(), 
-			lastVertex
+			lastVertex,
+			[offset = result0.getVertexCount()-1, size = result1.getVertexCount()]
+			(const VertexData& vertexData) -> VertexData {
+				//Account for the helper offset
+				VertexData result = vertexData;
+
+				if(result.helperIndex < size) {
+					result.helperIndex += offset;
+				}
+
+				return result;
+			}
 		);
 		assert(lastVertex == result.getVertices().cend());
 

@@ -25,7 +25,7 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(	const 
 			Vec3<value_type>(0, 		0, 			0		),
 			Vec3<value_type>(NOT_USED,	NOT_USED,	NOT_USED), //Should not be used
 			Vec3<value_type>(NOT_USED,	NOT_USED,	NOT_USED), //Should not be used
-			Vec3<value_type>(0,			0,			0		)
+			Vec3<value_type>(1,			1,			1		)
 		};
 
 		result.isLineOrPoint = true;

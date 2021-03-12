@@ -154,17 +154,17 @@ inline void Triangulator<T, Index>::operator()(	const polygon_type& polygon,
 
 		//First triangle
 		std::forward<F>(triangleCallback)(
-			Diagonal(indices[0], indices[2]),
-			indices[1],
-			TriangleSideFlags::NONE,
+			Diagonal(indices[1], indices[0]),
+			indices[2],
+			TriangleSideFlags::RIGHT,
 			0,
-			false
+			true
 		);
 
 		//Second triangle
 		std::forward<F>(triangleCallback)(
-			Diagonal(indices[3], indices[5]),
-			indices[4],
+			Diagonal(indices[4], indices[3]),
+			indices[5],
 			TriangleSideFlags::NONE,
 			0,
 			false

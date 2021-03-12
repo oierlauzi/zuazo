@@ -399,15 +399,19 @@ inline typename ChordalTriangulator<T, I>::vertex_type
 ChordalTriangulator<T, I>::getChordalVertex(index_type index,
 											const position_vector_type& pos ) const noexcept
 {
-	vertex_type result(pos, klm_vector_type(-1));
-
-	if(m_references[index].helper != ~index_type(0)) {
+	vertex_type result(pos, klm_vector_type(-1), value_type(0));
+	if(m_references[index].helper < m_vertices.size()) {
+		//Obtain the vertices
 		const auto nextIndex = (index + 1) % m_references.size();
-
+		const auto& helperVertex = m_vertices[m_references[index].helper];
+		const auto& firstVertex = m_vertices[m_references[index].front];
+		const auto& secondVertex = m_vertices[m_references[nextIndex].back];
+		
+		//Extrapolate the klm coordinates
 		result.klm = extrapolate(
-			m_vertices[m_references[index].front],
-			m_vertices[m_references[index].helper],
-			m_vertices[m_references[nextIndex].back],
+			firstVertex,
+			helperVertex,
+			secondVertex,
 			pos
 		);
 	}
