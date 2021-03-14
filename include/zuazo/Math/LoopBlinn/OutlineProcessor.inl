@@ -164,26 +164,28 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 		const auto vertices = bezierTriangulation.getVertices();
 		const auto indices = bezierTriangulation.getIndices();
 
-		//Add the protruding vertices (except the last one) to the inner hull.
-		//The last one will be provided by the next segment.
-		for(size_t j = 0; j < vertices.size() - 1; ++j) {
-			const auto& vertexData = vertices[j];
-			if(vertexData.isProtruding) {
-				//Add the vertex to the inner hull
-				m_innerHull.lineTo(vertexData.vertex.pos);
-				
-				//Add its reference to reference it from the inner hull
-				const auto vertexIndex = baseIndex + j;
-				const auto helperIndex = vertexData.helperIndex;
-				if(j == 0) {
-					//This is the first vertex, which has 2 references.
-					//Note that the first one will be incorrect, as it 
-					//actually refers to the last one. We'll correct it 
-					//at the end
-					m_innerHullReferences.emplace_back(vertexIndex, vertexIndex-1, helperIndex);
-				} else {
-					//This is a intermediary vertex. Has no duplicity
-					m_innerHullReferences.emplace_back(vertexIndex, vertexIndex, helperIndex);
+		if(!vertices.empty()) {
+			//Add the protruding vertices (except the last one) to the inner hull.
+			//The last one will be provided by the next segment.
+			for(size_t j = 0; j < vertices.size() - 1; ++j) {
+				const auto& vertexData = vertices[j];
+				if(vertexData.isProtruding) {
+					//Add the vertex to the inner hull
+					m_innerHull.lineTo(vertexData.vertex.pos);
+					
+					//Add its reference to reference it from the inner hull
+					/*const auto vertexIndex = baseIndex + j; //TODO We'll use it when fixed
+					const auto helperIndex = vertexData.helperIndex;
+					if(j == 0) {
+						//This is the first vertex, which has 2 references.
+						//Note that the first one will be incorrect, as it 
+						//actually refers to the last one. We'll correct it 
+						//at the end
+						m_innerHullReferences.emplace_back(vertexIndex, vertexIndex-1, helperIndex);
+					} else {
+						//This is a intermediary vertex. Has no duplicity
+						m_innerHullReferences.emplace_back(vertexIndex, vertexIndex, helperIndex);
+					}*/
 				}
 			}
 		}
@@ -213,14 +215,16 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 	}
 
 	//Correct the first reference, as it actually refers to the last one
-	m_innerHullReferences.front().back = m_vertices.size()-1;
+	if(!m_innerHullReferences.empty()) {
+		m_innerHullReferences.front().back = m_vertices.size()-1;
+	}	
 
 	assert(getSignedArea(m_innerHull) >= 0);
-	assert(m_innerHullReferences.size() == m_innerHull.size());
+	//assert(m_innerHullReferences.size() == m_innerHull.size()); //TODO We'll use it when fixed
 
 	//Triangulate the new vertices and append them to the indices
-	assert(m_chordalAxis.empty());
-	m_polygonTriangulator(
+	/*assert(m_chordalAxis.empty());
+	m_polygonTriangulator( //TODO We'll use it when fixed
 		m_innerHull, 
 		chordal_triangulator_type(
 			m_indices, 				//out: indices
@@ -230,16 +234,27 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 			m_vertices.size(),		//in: chordal axis base index. We'll append it at the back
 			m_primitiveRestartIndex	//in: primitive restart index
 		)
+	);*/
+	m_polygonTriangulator( //TODO remove when above one is uncomment
+		m_innerHull, 
+		typename polygon_triangulator_type::TriangleStripGenerator(
+			m_indices, 				//out: indices
+			m_vertices.size(),		//in: start index
+			m_primitiveRestartIndex	//in: primitive restart index
+		)
 	);
 
 	//Insert the vertices corresponding to the chordal axis
-	m_vertices.insert(m_vertices.cend(), m_chordalAxis.cbegin(), m_chordalAxis.cend());
+	//m_vertices.insert(m_vertices.cend(), m_chordalAxis.cbegin(), m_chordalAxis.cend()); //TODO We'll use it when fixed
+
+	//Insert the inner-hull vertices
+	m_vertices.insert(m_vertices.cend(), m_innerHull.cbegin(), m_innerHull.cend()); //TODO remove when above one is uncomment
 
 	//Clear all for the next call
 	m_ccwContour.clear();
 	m_innerHull.clear();
-	m_innerHullReferences.clear();
-	m_chordalAxis.clear();
+	//m_innerHullReferences.clear(); //TODO We'll use it when fixed
+	//m_chordalAxis.clear(); //TODO We'll use it when fixed
 }
 
 template<typename T, typename I>

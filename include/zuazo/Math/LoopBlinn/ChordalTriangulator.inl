@@ -52,6 +52,16 @@ inline TriangleSideFlags ChordalTriangulator<T, I>::operator()(	const typename t
 	const auto nextChordal1Pos = (diagonalSecondPos + bestVertexPos) / 2;
 	const auto centroid = (diagonalFirstPos + diagonalSecondPos + bestVertexPos) / 3;
 
+	//Obtain the previous indices
+	const auto preBestVertex = (bestVertex > 0 ? bestVertex : references.size()) - 1;
+	const auto preDiagonal = typename triangulator_type::Diagonal(
+		(diagonal.first > 0 ? diagonal.first : references.size()) - 1,
+		(diagonal.second > 0 ? diagonal.second : references.size()) - 1
+	);
+
+	//Obtain the preferred vertex
+
+
 	//Restart a new primitive
 	if(!indices.empty()) {
 		indices.push_back(restartIndex);
@@ -62,7 +72,48 @@ inline TriangleSideFlags ChordalTriangulator<T, I>::operator()(	const typename t
 		//Treat specially the first tri, as its diagonal is actually an edge
 		switch (adjointDiagonals) {
 		case TriangleSideFlags::NONE: {
-			assert(!"Implemented"); //TODO
+			//This triangle has no adjacent diagonals
+			//There is only one possible ordering
+			//Draw 4 triangles:
+			//
+			//                X bestVertex
+			//               /|\
+			//              / | \
+			//			   /  |  \
+			//            /  _X_  \ <--- centroid
+			//           /__/   \__\
+			//   second X-----------X first <-current diagonal
+			//
+			//
+			assert(preBestVertex == diagonal.first);
+			assert(preDiagonal.second == bestVertex);
+			assert(preDiagonal.first == diagonal.second);
+
+			//Create the three triangles and add them
+			const std::array<index_type, 11> triangles = {
+				references[diagonal.first].front,
+				references[bestVertex].back,
+				chordalBaseIndex + chordalAxis.size() + 0,	//centroid
+				restartIndex, //--------------------------
+				references[bestVertex].front,
+				references[diagonal.second].back,
+				chordalBaseIndex + chordalAxis.size() + 1,	//centroid
+				restartIndex, //--------------------------
+				references[diagonal.second].front,
+				references[diagonal.first].back,
+				chordalBaseIndex + chordalAxis.size() + 2,	//centroid
+			};
+			indices.insert(indices.cend(), triangles.cbegin(), triangles.cend());
+
+			//Calculate the chordal vertices and add them
+			const std::array<vertex_type, 3> chordalVertices = {
+				getChordalVertex(diagonal.first, centroid),			//0
+
+				getChordalVertex(bestVertex, centroid),				//1
+
+				getChordalVertex(diagonal.second, centroid),		//2		
+			};
+			chordalAxis.insert(chordalAxis.cend(), chordalVertices.cbegin(), chordalVertices.cend());
 
 			break;
 		}
@@ -79,6 +130,8 @@ inline TriangleSideFlags ChordalTriangulator<T, I>::operator()(	const typename t
 			//   second X-----------X first <-current diagonal
 			//
 			//
+			assert(preBestVertex == diagonal.first);
+			assert(preDiagonal.first == diagonal.second);
 
 			//Create the three triangles and add them
 			const std::array<index_type, 7> triangles = {
@@ -115,6 +168,8 @@ inline TriangleSideFlags ChordalTriangulator<T, I>::operator()(	const typename t
 			//second X-----------X first <-current diagonal
 			//         chordal
 			//
+			assert(preDiagonal.second == bestVertex);
+			assert(preDiagonal.first == diagonal.second);
 
 			//Create the three triangles and add them
 			const std::array<index_type, 7> triangles = {
@@ -152,6 +207,7 @@ inline TriangleSideFlags ChordalTriangulator<T, I>::operator()(	const typename t
 			//   second X-----------X first <-current diagonal
 			//             chordal
 			//
+			assert(preDiagonal.first == diagonal.second);
 
 			//Create the three triangles and add them
 			const std::array<index_type, 8> triangles = {
@@ -214,6 +270,8 @@ inline TriangleSideFlags ChordalTriangulator<T, I>::operator()(	const typename t
 			//second X----X----X first <-current diagonal
 			//         chordal
 			//
+			assert(preBestVertex == diagonal.first);
+			assert(preDiagonal.second == bestVertex);
 
 			//Create both triangles and add them
 			const std::array<index_type, 7> triangles = {
@@ -250,6 +308,7 @@ inline TriangleSideFlags ChordalTriangulator<T, I>::operator()(	const typename t
 			//   second X-----X-----X first <-current diagonal
 			//             chordal
 			//
+			assert(preBestVertex == diagonal.first); //They share a line
 
 			//Create the three triangles and add them
 			const std::array<index_type, 8> triangles = {
@@ -289,6 +348,7 @@ inline TriangleSideFlags ChordalTriangulator<T, I>::operator()(	const typename t
 			//second X-----X-----X first <-current diagonal
 			//         chordal
 			//
+			assert(preDiagonal.second == bestVertex);
 
 			//Create the three triangles and add them
 			const std::array<index_type, 8> triangles = {
@@ -399,7 +459,7 @@ inline typename ChordalTriangulator<T, I>::vertex_type
 ChordalTriangulator<T, I>::getChordalVertex(index_type index,
 											const position_vector_type& pos ) const noexcept
 {
-	vertex_type result(pos, klm_vector_type(-1), value_type(0));
+	vertex_type result(pos, klm_vector_type(-1));
 	if(m_references[index].helper < m_vertices.size()) {
 		//Obtain the vertices
 		const auto nextIndex = (index + 1) % m_references.size();

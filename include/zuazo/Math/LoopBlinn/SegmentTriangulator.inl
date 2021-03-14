@@ -155,6 +155,10 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 				result.getVertices()[1].isProtruding = 	(fillSide==FillSide::LEFT && !b1IsOutside) || 
 														(fillSide==FillSide::RIGHT && b1IsOutside) ;
 
+				//Remove the second control point as it is not needed anymore
+				std::swap(result.getVertices()[2], result.getVertices()[3]);
+				result.setVertexCount(3);
+
 				//Establish the helper vertices
 				if(result.getVertices()[1].isProtruding) {
 					result.getVertices()[0].helperIndex = 2;
@@ -162,10 +166,6 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 				} else {
 					result.getVertices()[0].helperIndex = 1;
 				}
-
-				//Remove the second control point as it is not needed anymore
-				std::swap(result.getVertices()[2], result.getVertices()[3]);
-				result.setVertexCount(3);
 
 				//Add the indices to the result
 				constexpr std::array<index_type, 3> indices = {
@@ -184,12 +184,14 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 					std::swap(result.getVertices()[1], result.getVertices()[2]);
 
 					//Establish the helper vertex (b2)
+					assert(!result.getVertices()[1].isProtruding);
 					result.getVertices()[0].helperIndex = 1;
 					if(result.getVertices()[2].isProtruding) {
 						result.getVertices()[2].helperIndex = 1;
 					}
 				} else {
 					//Establish the helper vertex (b2)
+					assert(!result.getVertices()[2].isProtruding);
 					result.getVertices()[0].helperIndex = 2;
 					if(result.getVertices()[1].isProtruding) {
 						result.getVertices()[1].helperIndex = 2;
@@ -213,12 +215,14 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 					std::swap(result.getVertices()[1], result.getVertices()[2]);
 
 					//Establish the helper vertex (b1)
+					assert(!result.getVertices()[2].isProtruding);
 					result.getVertices()[0].helperIndex = 2;
 					if(result.getVertices()[1].isProtruding) {
 						result.getVertices()[1].helperIndex = 2;
 					}
 				} else {
 					//Establish the helper vertex (b1)
+					assert(!result.getVertices()[1].isProtruding);
 					result.getVertices()[0].helperIndex = 1;
 					if(result.getVertices()[2].isProtruding) {
 						result.getVertices()[2].helperIndex = 1;
@@ -247,12 +251,12 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 				//Establish the helper vertices
 				if(result.getVertices()[1].isProtruding) {
 					assert(result.getVertices()[2].isProtruding);
-					result.getVertices()[0].helperIndex = 3;
-					result.getVertices()[1].helperIndex = 3;
-					result.getVertices()[2].helperIndex = 0;
+					result.getVertices()[0].helperIndex = 3; //Either 2 or 3
+					result.getVertices()[1].helperIndex = 0; //Either 0 or 3
+					result.getVertices()[2].helperIndex = 0; //Either 0 or 1
 				} else {
 					assert(!result.getVertices()[2].isProtruding);
-					result.getVertices()[0].helperIndex = 2;
+					result.getVertices()[0].helperIndex = 2; //Either 1 or 2
 				}
 
 				//Triangulate the quad and add the indices to the result
@@ -321,12 +325,14 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 			} else {
 				//Forming a quad
 				//Establish the helper vertices
-				result.getVertices()[0].helperIndex = 3;
 				if(result.getVertices()[1].isProtruding) {
-					result.getVertices()[1].helperIndex = 0;
+					assert(!result.getVertices()[2].isProtruding);
+					result.getVertices()[0].helperIndex = 2; //Either 3 or 2
+					result.getVertices()[1].helperIndex = 2; //Either 0 or 2
 				} else {
 					assert(result.getVertices()[2].isProtruding);
-					result.getVertices()[2].helperIndex = 0;
+					result.getVertices()[0].helperIndex = 1; //Either 3 or 1
+					result.getVertices()[2].helperIndex = 1; //Either 0 or 1
 				}
 
 				//Remove the self intersection
