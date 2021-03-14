@@ -10,9 +10,11 @@ namespace Zuazo::Math::LoopBlinn {
 template<typename T, typename I>
 constexpr SegmentTriangulator<T, I>::VertexData::VertexData(const position_vector_type& position,
 															const klm_vector_type& klm,
+															bool isFirst,
 															bool isProtruding,
 															index_type helperIndex ) noexcept
 	: vertex(position, klm)
+	, isFirst(isFirst)
 	, isProtruding(isProtruding)
 	, helperIndex(helperIndex)
 {
@@ -114,11 +116,10 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 			bezier.cbegin(), bezier.cend(), klmCoords.klmCoords.cbegin(),
 			result.getVertices().begin(),
 			[] (const position_vector_type& pos, const klm_vector_type& klm) -> VertexData {
-				return VertexData(pos, klm, false);
+				return VertexData(pos, klm, false, false);
 			}
 		);
-		result.getVertices().front().isProtruding = true;
-		result.getVertices().back().isProtruding = true;
+		result.getVertices().front().isFirst = true;
 
 		//Obtain the directions of the bezier and its control points
 		const auto bezierDir = bezier.back() - bezier.front();
@@ -393,47 +394,69 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 	} else if(!std::isnan(klmCoords.subdivisionParameter)) {
 		//This is the special case where the loop has 2 solutions 
 		//in [0, 1] for the equation, and a rendering artifact appears.
-		//We'll split the curve at that point and add each half separately.
+		//We'll split the curve at that point and add each quarter separately.
 		const auto halves = split(bezier, klmCoords.subdivisionParameter);
 
-		//Process each half
-		const auto result0 = (*this)(
-			halves.front(),
-			fillSide,
-			baseIndex,
-			restartIndex
-		);
-		const auto result1 = (*this)(
-			halves.back(),
-			(fillSide==FillSide::LEFT) ? FillSide::RIGHT : FillSide::LEFT, //Invert the fill-side
-			baseIndex + result0.getVertices().size()-1, //Accumulate the offset. Well ignore the last vertex of result0, so -1
-			restartIndex
-		);
+		//Triangulate both halves
+		Result lastResult;
+		auto lastVertex = result.getVertices().begin();
+		auto lastIndex = result.getIndices().begin();
+		for(const auto& half : halves) {
+			//Triangulate the quarter
+			const auto tempResult = (*this)(
+				half,
+				fillSide,
+				baseIndex + result.getVertexCount(),
+				restartIndex
+			);
 
-		//Copy the data to the results
-		//TODO this will fail in case of a self-intersecting loop
-		result.setVertexCount(result0.getVertexCount() + result1.getVertexCount() - 1); //Account for middle vertice's redundancy.
-		auto lastVertex = std::copy(
-			result0.getVertices().cbegin(), std::prev(result0.getVertices().cend()), //Middle vertex provided by result1
-			result.getVertices().begin()
-		);
-		lastVertex = std::copy(
-			result1.getVertices().cbegin(), result1.getVertices().cend(), 
-			lastVertex
-		);
+			//Ensure continuity
+			if(lastResult.getVertexCount() > 0 && tempResult.getVertexCount() > 0) {
+				const auto& back = lastResult.getVertices().back().vertex;
+				const auto& front = tempResult.getVertices().front().vertex;
+
+				assert(!approxZero(distance2(back.pos, front.pos)));
+				assert(!approxZero(distance2(back.klm, front.klm)));
+			}
+
+			//Add its vertices except the last one
+			if(tempResult.getVertexCount() > 0) {
+				assert(tempResult.getVertexCount() <= bezier_type::size());
+				result.setVertexCount(result.getVertexCount() + tempResult.getVertexCount() - 1);
+				lastVertex = std::copy(
+					tempResult.getVertices().cbegin(), std::prev(tempResult.getVertices().cend()), 
+					lastVertex
+				);
+
+				lastResult = tempResult;
+			}
+
+			//Add its indices
+			if(result.getIndexCount() > 0 && tempResult.getIndexCount() > 0) {
+				result.setIndexCount(result.getIndexCount() + tempResult.getIndexCount() + 1);
+				*(lastIndex++) = restartIndex; //Restart the primitive in-between
+			} else {
+				result.setIndexCount(result.getIndexCount() + tempResult.getIndexCount());
+			}
+			lastIndex = std::copy(
+				tempResult.getIndices().cbegin(), tempResult.getIndices().cend(), 
+				lastIndex
+			);
+
+			//Invert the fill-side for the next
+			fillSide = (fillSide==FillSide::LEFT) ? FillSide::RIGHT : FillSide::LEFT;
+			
+		}
+
+		//Ensure everything has been written
 		assert(lastVertex == result.getVertices().cend());
-
-		result.setIndexCount(result0.getIndexCount() + result1.getIndexCount() + 1);
-		auto lastIndex = std::copy(
-			result0.getIndices().cbegin(), result0.getIndices().cend(), 
-			result.getIndices().begin()
-		);
-		*(lastIndex++) = restartIndex; //Restart the primitive in-between
-		lastIndex = std::copy(
-			result1.getIndices().cbegin(), result1.getIndices().cend(), 
-			lastIndex
-		);
 		assert(lastIndex == result.getIndices().cend());
+
+		//Add the last vertex manually
+		if(lastResult.getVertexCount() > 0) {
+			result.setVertexCount(result.getVertexCount() + 1);
+			result.getVertices().back() = lastResult.getVertices().back();
+		}
 
 	} else {
 		assert(klmCoords.isLineOrPoint);

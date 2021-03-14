@@ -25,10 +25,12 @@ public:
 	struct VertexData {
 		constexpr VertexData(	const position_vector_type& position = position_vector_type(0),
 								const klm_vector_type& klm = klm_vector_type(-1),
+								bool isFirst = false,
 								bool isProtruding = false,
 								index_type helperIndex = ~index_type(0) ) noexcept;
 
 		vertex_type 	vertex;
+		bool			isFirst;
 		bool			isProtruding;
 		index_type		helperIndex;
 	};

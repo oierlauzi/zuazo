@@ -164,29 +164,27 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 		const auto vertices = bezierTriangulation.getVertices();
 		const auto indices = bezierTriangulation.getIndices();
 
-		if(!vertices.empty()) {
-			//Add the protruding vertices (except the last one) to the inner hull.
-			//The last one will be provided by the next segment.
-			for(size_t j = 0; j < vertices.size() - 1; ++j) {
-				const auto& vertexData = vertices[j];
-				if(vertexData.isProtruding) {
-					//Add the vertex to the inner hull
-					m_innerHull.lineTo(vertexData.vertex.pos);
-					
-					//Add its reference to reference it from the inner hull
-					/*const auto vertexIndex = baseIndex + j; //TODO We'll use it when fixed
-					const auto helperIndex = vertexData.helperIndex;
-					if(j == 0) {
-						//This is the first vertex, which has 2 references.
-						//Note that the first one will be incorrect, as it 
-						//actually refers to the last one. We'll correct it 
-						//at the end
-						m_innerHullReferences.emplace_back(vertexIndex, vertexIndex-1, helperIndex);
-					} else {
-						//This is a intermediary vertex. Has no duplicity
-						m_innerHullReferences.emplace_back(vertexIndex, vertexIndex, helperIndex);
-					}*/
-				}
+		//Add the protruding vertices (except the last one) to the inner hull.
+		//The last one will be provided by the next segment.
+		for(size_t j = 0; j < vertices.size(); ++j) {
+			const auto& vertexData = vertices[j];
+			if(vertexData.isFirst || vertexData.isProtruding) {
+				//Add the vertex to the inner hull
+				m_innerHull.lineTo(vertexData.vertex.pos);
+				
+				//Add its reference to reference it from the inner hull
+				/*const auto vertexIndex = baseIndex + j; //TODO We'll use it when fixed
+				const auto helperIndex = vertexData.helperIndex;
+				if(vertexData.isFirst) {
+					//This is the first vertex, which has 2 references.
+					//Note that the first one will be incorrect, as it 
+					//actually refers to the last one. We'll correct it 
+					//at the end
+					m_innerHullReferences.emplace_back(vertexIndex, vertexIndex-1, helperIndex);
+				} else {
+					//This is a intermediary vertex. Has no duplicity
+					m_innerHullReferences.emplace_back(vertexIndex, vertexIndex, helperIndex);
+				}*/
 			}
 		}
 
