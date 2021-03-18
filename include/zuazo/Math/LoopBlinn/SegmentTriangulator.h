@@ -12,6 +12,19 @@
 
 namespace Zuazo::Math::LoopBlinn {
 
+enum class FillSide {
+	LEFT,
+	RIGHT
+};
+
+enum class VertexType {
+	UNKNOWN = -1,
+	FIRST,
+	LAST,
+	CONTROL_PROTRUDING,
+	CONTROL,
+};
+
 template<typename T, typename I = uint32_t>
 class SegmentTriangulator {
 public:
@@ -21,17 +34,17 @@ public:
 	using position_vector_type = typename vertex_type::position_vector_type;
 	using klm_vector_type = typename vertex_type::klm_vector_type;
 	using bezier_type = CubicBezier<position_vector_type>;
+	using classifier_type = Classifier<value_type>;
+	using klm_calculator_type = KLMCalculator<value_type>;
 
 	struct VertexData {
 		constexpr VertexData(	const position_vector_type& position = position_vector_type(0),
 								const klm_vector_type& klm = klm_vector_type(-1),
-								bool isFirst = false,
-								bool isProtruding = false,
+								VertexType type = VertexType::UNKNOWN,
 								index_type helperIndex = ~index_type(0) ) noexcept;
 
 		vertex_type 	vertex;
-		bool			isFirst;
-		bool			isProtruding;
+		VertexType		type;
 		index_type		helperIndex;
 	};
 
@@ -72,6 +85,12 @@ public:
 	SegmentTriangulator&		operator=(const SegmentTriangulator& other) = default;
 
 	Result						operator()(	const bezier_type& bezier, 
+											FillSide fillSide,
+											index_type baseIndex = index_type(0),
+											index_type restartIndex = ~index_type(0) ) const noexcept;
+
+	Result						operator()(	const bezier_type& bezier, 
+											const typename klm_calculator_type::Result& klmCoords,
 											FillSide fillSide,
 											index_type baseIndex = index_type(0),
 											index_type restartIndex = ~index_type(0) ) const noexcept;

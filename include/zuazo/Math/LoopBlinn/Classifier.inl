@@ -12,6 +12,7 @@ namespace Zuazo::Math::LoopBlinn {
 template<typename T>
 constexpr typename Classifier<T>::Result Classifier<T>::operator()(const curve_type& curve) const noexcept{
 	Result result;
+	constexpr value_type EPSILON = 5e-4;
 
 	//Calculate the mixed product of the control points. Note that we're using
 	//a affine space (1.0f at the end of the vector)
@@ -31,27 +32,31 @@ constexpr typename Classifier<T>::Result Classifier<T>::operator()(const curve_t
 		Vec3<value_type>(curve[0], 1) //Errata in GPU Gems 3
 	));
 
-	//In order to avoid numerical inestability, normaliza the values.
+	//In order to avoid numerical inestability, normalize the values.
 	//This won't affect the result. Idea from Apple's WebCore impl
-	const auto D = normalize(Vec3<value_type>(
+	auto D = Vec3<value_type>(
 		a1 - 2*a2 + 3*a3,
 		-a2 + 3*a3,
 		3*a3
-	));
+	);
+	if(length2(D) > EPSILON) {
+		//Only normalize if the length is non-zero
+		D = normalize(D);
+	}
 
 	//Obtain the d values, rounding to zero small values
-	result.d1 = approxZero(D.x);
-	result.d2 = approxZero(D.y);
-	result.d3 = approxZero(D.z);
+	result.d1 = approxZero(D.x, EPSILON);
+	result.d2 = approxZero(D.y, EPSILON);
+	result.d3 = approxZero(D.z, EPSILON);
 
-	if(	!approxZero(distance2(curve[0], curve[1])) && //distance2 is cheaper than length
-		!approxZero(distance2(curve[1], curve[2])) &&
-		!approxZero(distance2(curve[2], curve[3])) )
+	if(	!approxZero(distance2(curve[0], curve[1]), EPSILON) && //distance2 is cheaper than length
+		!approxZero(distance2(curve[1], curve[2]), EPSILON) &&
+		!approxZero(distance2(curve[2], curve[3]), EPSILON) )
 	{
 		result.type = CurveType::POINT;
 	} else {
-		result.discriminantTerm1 = 3*result.d2*result.d2 - 4*result.d1*result.d3; //3d2^2 - 4d1d3
-		const auto discriminant = approxZero(result.d1*result.d1*result.discriminantTerm1); //d1^2 * above
+		result.discriminantTerm1 = 3*D.y*D.y - 4*D.x*D.z; //3d2^2 - 4d1d3
+		const auto discriminant = approxZero(D.x*D.x*result.discriminantTerm1, EPSILON); //d1^2 * above
 
 		if(!discriminant) {
 			if(!result.d1 && !result.d2) {
@@ -85,7 +90,7 @@ constexpr typename Classifier<T>::Result Classifier<T>::operator()(const curve_t
 		}
 	}
 
-	assert(static_cast<int>(result.type) >= 0); //Ensure it has been written
+	assert(result.type != CurveType::UNKNOWN); //Ensure it has been written
 	return result;
 }
 

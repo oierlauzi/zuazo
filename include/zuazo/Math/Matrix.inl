@@ -760,8 +760,14 @@ constexpr typename Mat<T, 2 ,2>::value_type det(const Mat<T, 2, 2>& m) {
 	return zCross(m[0], m[1]);
 }
 
+template<typename T>
+constexpr typename Mat<T, 3, 3>::value_type det(const Mat<T, 3, 3>& m) {
+	//Mixed product of the columns (or rows)
+	return dot(m[0], cross(m[1], m[2]));
+}
+
 template<typename T, size_t N>
-constexpr typename Mat<T, N ,N>::value_type det(const Mat<T, N ,N>& m) {
+constexpr typename Mat<T, N ,N>::value_type det(const Mat<T, N, N>& m) {
 	//General solution for calculating determinants
 	typename Mat<T, N, N>::value_type result(0);
 

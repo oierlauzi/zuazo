@@ -10,12 +10,10 @@ namespace Zuazo::Math::LoopBlinn {
 template<typename T, typename I>
 constexpr SegmentTriangulator<T, I>::VertexData::VertexData(const position_vector_type& position,
 															const klm_vector_type& klm,
-															bool isFirst,
-															bool isProtruding,
+															VertexType type,
 															index_type helperIndex ) noexcept
 	: vertex(position, klm)
-	, isFirst(isFirst)
-	, isProtruding(isProtruding)
+	, type(type)
 	, helperIndex(helperIndex)
 {
 }
@@ -101,25 +99,55 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 										index_type baseIndex,
 										index_type restartIndex ) const noexcept 
 {
-	Result result;
+	constexpr classifier_type classifier;
+	constexpr klm_calculator_type klmCalculator;
 
-	const auto classification = Classifier<value_type>()(bezier);
-	const auto klmCoords = KLMCalculator<value_type>()(classification, fillSide);
+	const auto classification = classifier(bezier);
+	const auto klmCoords = klmCalculator(classification);
+
+	return (*this)(
+		bezier,
+		klmCoords,
+		fillSide,
+		baseIndex,
+		restartIndex
+	);
+}
+
+template<typename T, typename I>
+inline typename SegmentTriangulator<T, I>::Result
+SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier, 
+										const typename klm_calculator_type::Result& klmCoords,
+										FillSide fillSide,
+										index_type baseIndex,
+										index_type restartIndex ) const noexcept
+{
+	Result result;
 
 	//Optimize away lines and points as they have been drawn at the inner hull
 	if(!klmCoords.isLineOrPoint && std::isnan(klmCoords.subdivisionParameter)) {
-		//We're going to draw a quad (or a tri with a center vertex). Add those vertices
+		//We're going to draw a quad (or a tri with a center vertex)
 		result.setVertexCount(bezier.size());
 		assert(result.getVertices().size() == bezier.size());
-		assert(result.getVertices().size() == klmCoords.klmCoords.size());
+		assert(result.getVertices().size() == klmCoords.values.size());
+
+		//Evaluate if klm coordinates need to be reversed
+		const bool reverse = 	(klmCoords.reverse && fillSide == FillSide::RIGHT) ||
+								(!klmCoords.reverse && fillSide == FillSide::LEFT) ;
+
+		//Copy the vertices
 		std::transform(
-			bezier.cbegin(), bezier.cend(), klmCoords.klmCoords.cbegin(),
+			bezier.cbegin(), bezier.cend(), klmCoords.values.cbegin(),
 			result.getVertices().begin(),
-			[] (const position_vector_type& pos, const klm_vector_type& klm) -> VertexData {
-				return VertexData(pos, klm, false, false);
+			[reverse] (const position_vector_type& pos, const klm_vector_type& klm) -> VertexData {
+				return VertexData(
+					pos, 
+					reverse ? klm_vector_type(-klm.x, -klm.y, klm.z) : klm
+				);
 			}
 		);
-		result.getVertices().front().isFirst = true;
+		result.getVertices().front().type = VertexType::FIRST;
+		result.getVertices().back().type = VertexType::LAST;
 
 		//Obtain the directions of the bezier and its control points
 		const auto bezierDir = bezier.back() - bezier.front();
@@ -143,6 +171,14 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 		const bool b1IsOutside = b1Proj.y < 0;
 		const bool b2IsOutside = b2Proj.y < 0;
 
+		//Check if the control points are protruding
+		const bool b1IsProtruding = (fillSide==FillSide::LEFT && !b1IsOutside) || 
+									(fillSide==FillSide::RIGHT && b1IsOutside) ;
+		const bool b2IsProtruding = (fillSide==FillSide::LEFT && !b2IsOutside) || 
+									(fillSide==FillSide::RIGHT && b2IsOutside) ;
+		result.getVertices()[1].type = b1IsProtruding ? VertexType::CONTROL_PROTRUDING : VertexType::CONTROL;
+		result.getVertices()[2].type = b2IsProtruding ? VertexType::CONTROL_PROTRUDING : VertexType::CONTROL;
+
 		//Determine the layout of the vertices, so that although
 		//the vertices are not going to be drawn in order, 
 		//the triangle strip is well-formed
@@ -151,17 +187,12 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 			//outside, we'll correct it later if necessary
 			//Determine if any of the control points overlap the other
 			if(!approxZero(distance2(b1Proj, b2Proj))) {
-				//This is a quadratic curve. Just draw a tri
-				//b1 will be protruding only if it is inside
-				result.getVertices()[1].isProtruding = 	(fillSide==FillSide::LEFT && !b1IsOutside) || 
-														(fillSide==FillSide::RIGHT && b1IsOutside) ;
-
 				//Remove the second control point as it is not needed anymore
 				std::swap(result.getVertices()[2], result.getVertices()[3]);
 				result.setVertexCount(3);
 
 				//Establish the helper vertices
-				if(result.getVertices()[1].isProtruding) {
+				if(result.getVertices()[1].type == VertexType::CONTROL_PROTRUDING) {
 					result.getVertices()[0].helperIndex = 2;
 					result.getVertices()[1].helperIndex = 0;
 				} else {
@@ -176,25 +207,25 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 
 			} else if(isInsideTriangle(bezierDir, b1Dir, b2Dir)) {
 				//b2 is overlapped by b1's triangle
-				//b1 will be protruding only if it is inside
-				result.getVertices()[1].isProtruding = 	(fillSide==FillSide::LEFT && !b1IsOutside) || 
-														(fillSide==FillSide::RIGHT && b1IsOutside) ;
+				//Only b1 can be protruding
+				result.getVertices()[2].type = VertexType::CONTROL;
+				
 
 				//In order to this triangulation to work b1 needs to be on top of b2
 				if(!b1IsOutside) {
 					std::swap(result.getVertices()[1], result.getVertices()[2]);
 
 					//Establish the helper vertex (b2)
-					assert(!result.getVertices()[1].isProtruding);
+					assert(result.getVertices()[1].type == VertexType::CONTROL);
 					result.getVertices()[0].helperIndex = 1;
-					if(result.getVertices()[2].isProtruding) {
+					if(result.getVertices()[2].type == VertexType::CONTROL_PROTRUDING) {
 						result.getVertices()[2].helperIndex = 1;
 					}
 				} else {
 					//Establish the helper vertex (b2)
-					assert(!result.getVertices()[2].isProtruding);
+					assert(result.getVertices()[2].type == VertexType::CONTROL);
 					result.getVertices()[0].helperIndex = 2;
-					if(result.getVertices()[1].isProtruding) {
+					if(result.getVertices()[1].type == VertexType::CONTROL_PROTRUDING) {
 						result.getVertices()[1].helperIndex = 2;
 					}
 				}
@@ -207,25 +238,24 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 
 			} else if(isInsideTriangle(bezierDir, b2Dir, b1Dir)) {
 				//b1 is overlapped by b2's triangle
-				//b2 will be protruding only if it is inside
-				result.getVertices()[2].isProtruding =	(fillSide==FillSide::LEFT && !b2IsOutside) || 
-														(fillSide==FillSide::RIGHT && b2IsOutside) ;
+				//Only b2 can be protruding
+				result.getVertices()[1].type = VertexType::CONTROL;
 
 				//In order to this triangulation to work b2 needs to be on top of b1
 				if(!b2IsOutside) {
 					std::swap(result.getVertices()[1], result.getVertices()[2]);
 
 					//Establish the helper vertex (b1)
-					assert(!result.getVertices()[2].isProtruding);
+					assert(result.getVertices()[2].type == VertexType::CONTROL);
 					result.getVertices()[0].helperIndex = 2;
-					if(result.getVertices()[1].isProtruding) {
+					if(result.getVertices()[1].type == VertexType::CONTROL_PROTRUDING) {
 						result.getVertices()[1].helperIndex = 2;
 					}
 				} else {
 					//Establish the helper vertex (b1)
-					assert(!result.getVertices()[1].isProtruding);
+					assert(result.getVertices()[1].type == VertexType::CONTROL);
 					result.getVertices()[0].helperIndex = 1;
-					if(result.getVertices()[2].isProtruding) {
+					if(result.getVertices()[2].type == VertexType::CONTROL_PROTRUDING) {
 						result.getVertices()[2].helperIndex = 1;
 					}
 				}
@@ -238,25 +268,20 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 
 			} else {
 				//Forming a quad
-				//Both will be protruding if they are inside. We have them in order in the
-				//quad vertices
-				result.getVertices()[1].isProtruding = 	(fillSide==FillSide::LEFT && !b1IsOutside) || 
-														(fillSide==FillSide::RIGHT && b1IsOutside) ;
-				result.getVertices()[2].isProtruding = result.getVertices()[1].isProtruding;
-
 				//Remove the possible self intersection
 				if(b1Proj.x > b2Proj.x) {
 					std::swap(result.getVertices()[1], result.getVertices()[2]);
 				}
 
 				//Establish the helper vertices
-				if(result.getVertices()[1].isProtruding) {
-					assert(result.getVertices()[2].isProtruding);
+				if(result.getVertices()[1].type == VertexType::CONTROL_PROTRUDING) {
+					assert(result.getVertices()[2].type == VertexType::CONTROL_PROTRUDING);
 					result.getVertices()[0].helperIndex = 3; //Either 2 or 3
 					result.getVertices()[1].helperIndex = 0; //Either 0 or 3
 					result.getVertices()[2].helperIndex = 0; //Either 0 or 1
 				} else {
-					assert(!result.getVertices()[2].isProtruding);
+					assert(result.getVertices()[1].type == VertexType::CONTROL);
+					assert(result.getVertices()[2].type == VertexType::CONTROL);
 					result.getVertices()[0].helperIndex = 2; //Either 1 or 2
 				}
 
@@ -275,16 +300,7 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 
 		} else {
 			//Sides missmatch. Suppose b1 is outside and b2 inside. We'll correct it later
-			//if necessary. 
-
-			//b1 will be protruding only if it is inside, b2 otherwise
-			if((fillSide==FillSide::LEFT && !b1IsOutside) || (fillSide==FillSide::RIGHT && b1IsOutside)) {
-				result.getVertices()[1].isProtruding = true;
-			} else {
-				result.getVertices()[2].isProtruding = true;
-			}
-
-			//Determine if any of the control points overlaps the extremus
+			//if necessary. Determine if any of the control points overlap the extremus
 			//points.
 			if(isInsideTriangle(b1Dir-bezierDir, b2Dir-bezierDir, -bezierDir)) {				
 				//Origin is overlapped by the control points
@@ -292,10 +308,12 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 				assert(false); //TODO test this case
 				//Establish the helper vertices
 				result.getVertices()[0].helperIndex = 3;
-				if(result.getVertices()[1].isProtruding) {
+				if(result.getVertices()[1].type == VertexType::CONTROL_PROTRUDING) {
+					assert(result.getVertices()[2].type == VertexType::CONTROL);
 					result.getVertices()[1].helperIndex = 0;
 				} else {
-					assert(result.getVertices()[2].isProtruding);
+					assert(result.getVertices()[1].type == VertexType::CONTROL);
+					assert(result.getVertices()[2].type == VertexType::CONTROL_PROTRUDING);
 					result.getVertices()[2].helperIndex = 0;
 				}
 
@@ -311,10 +329,12 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 				assert(false); //TODO test this case
 				//Establish the helper vertices
 				result.getVertices()[0].helperIndex = 3;
-				if(result.getVertices()[1].isProtruding) {
+				if(result.getVertices()[1].type == VertexType::CONTROL_PROTRUDING) {
+					assert(result.getVertices()[2].type == VertexType::CONTROL);
 					result.getVertices()[1].helperIndex = result.getVertices()[0].helperIndex;
 				} else {
-					assert(result.getVertices()[2].isProtruding);
+					assert(result.getVertices()[1].type == VertexType::CONTROL);
+					assert(result.getVertices()[2].type == VertexType::CONTROL_PROTRUDING);
 					result.getVertices()[2].helperIndex = result.getVertices()[0].helperIndex;
 				}
 				//Add the indices to the result
@@ -326,12 +346,13 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 			} else {
 				//Forming a quad
 				//Establish the helper vertices
-				if(result.getVertices()[1].isProtruding) {
-					assert(!result.getVertices()[2].isProtruding);
+				if(result.getVertices()[1].type == VertexType::CONTROL_PROTRUDING) {
+					assert(result.getVertices()[2].type == VertexType::CONTROL);
 					result.getVertices()[0].helperIndex = 2; //Either 3 or 2
 					result.getVertices()[1].helperIndex = 2; //Either 0 or 2
 				} else {
-					assert(result.getVertices()[2].isProtruding);
+					assert(result.getVertices()[1].type == VertexType::CONTROL);
+					assert(result.getVertices()[2].type == VertexType::CONTROL_PROTRUDING);
 					result.getVertices()[0].helperIndex = 1; //Either 3 or 1
 					result.getVertices()[2].helperIndex = 1; //Either 0 or 1
 				}
@@ -394,42 +415,42 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 	} else if(!std::isnan(klmCoords.subdivisionParameter)) {
 		//This is the special case where the loop has 2 solutions 
 		//in [0, 1] for the equation, and a rendering artifact appears.
-		//We'll split the curve at that point and add each quarter separately.
+		//We'll split the curve at that point and add each half separately.
 		const auto halves = split(bezier, klmCoords.subdivisionParameter);
-
-		//Triangulate both halves
-		Result lastResult;
+		constexpr classifier_type classifier;
+		constexpr klm_calculator_type klmCalculator;
 		auto lastVertex = result.getVertices().begin();
 		auto lastIndex = result.getIndices().begin();
-		for(const auto& half : halves) {
-			//Triangulate the quarter
+
+		for(size_t i = 0; i < halves.size(); ++i) {
+			const auto& half = halves[i];
+
+			//Classify and calculate KLM coordinates
+			const auto classification = classifier(half);
+			auto klmCoords2 = klmCalculator(classification);
+			klmCoords2.subdivisionParameter = std::numeric_limits<value_type>::quiet_NaN(); //Can't handle more reentrances.
+			
+			//Invert the orientation for the second half
+			if(i) {
+				klmCoords2.reverse = !klmCoords2.reverse;
+			}
+
+			//Triangulate each half
 			const auto tempResult = (*this)(
 				half,
+				klmCoords2,
 				fillSide,
 				baseIndex + result.getVertexCount(),
 				restartIndex
 			);
 
-			//Ensure continuity
-			if(lastResult.getVertexCount() > 0 && tempResult.getVertexCount() > 0) {
-				const auto& back = lastResult.getVertices().back().vertex;
-				const auto& front = tempResult.getVertices().front().vertex;
-
-				assert(!approxZero(distance2(back.pos, front.pos)));
-				assert(!approxZero(distance2(back.klm, front.klm)));
-			}
-
-			//Add its vertices except the last one
-			if(tempResult.getVertexCount() > 0) {
-				assert(tempResult.getVertexCount() <= bezier_type::size());
-				result.setVertexCount(result.getVertexCount() + tempResult.getVertexCount() - 1);
-				lastVertex = std::copy(
-					tempResult.getVertices().cbegin(), std::prev(tempResult.getVertices().cend()), 
-					lastVertex
-				);
-
-				lastResult = tempResult;
-			}
+			//Add its vertices
+			assert(tempResult.getVertexCount() <= bezier_type::size());
+			result.setVertexCount(result.getVertexCount() + tempResult.getVertexCount());
+			lastVertex = std::copy(
+				tempResult.getVertices().cbegin(), tempResult.getVertices().cend(), 
+				lastVertex
+			);
 
 			//Add its indices
 			if(result.getIndexCount() > 0 && tempResult.getIndexCount() > 0) {
@@ -443,20 +464,11 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 				lastIndex
 			);
 
-			//Invert the fill-side for the next
-			fillSide = (fillSide==FillSide::LEFT) ? FillSide::RIGHT : FillSide::LEFT;
-			
 		}
 
 		//Ensure everything has been written
 		assert(lastVertex == result.getVertices().cend());
 		assert(lastIndex == result.getIndices().cend());
-
-		//Add the last vertex manually
-		if(lastResult.getVertexCount() > 0) {
-			result.setVertexCount(result.getVertexCount() + 1);
-			result.getVertices().back() = lastResult.getVertices().back();
-		}
 
 	} else {
 		assert(klmCoords.isLineOrPoint);
@@ -468,12 +480,17 @@ SegmentTriangulator<T, I>::operator()(	const bezier_type& bezier,
 			//helper index will be invalid, despite being signaled
 			//as a protruding vertex.
 			const std::array<VertexData, 2> vertices = {
-				VertexData(bezier.front(), klmCoords.klmCoords.front(), true, ~index_type(0)),
-				VertexData(bezier.back(),  klmCoords.klmCoords.back(),  true, ~index_type(0))
+				VertexData(bezier.front(), klmCoords.values.front(), VertexType::FIRST, ~index_type(0)),
+				VertexData(bezier.back(),  klmCoords.values.back(),  VertexType::LAST, ~index_type(0))
 			};
 
 			result.setVertices(vertices);
 		}	
+	}
+
+	//All vertices should be correctly classified
+	for(const auto& vertex : result.getVertices()) {
+		assert(vertex.type != VertexType::UNKNOWN);
 	}
 
 	return result;

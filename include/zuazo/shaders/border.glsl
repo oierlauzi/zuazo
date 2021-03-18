@@ -6,7 +6,7 @@ vec4 border_smooth(	in vec4 inColor,
 					in float sDist )
 {
 	//Obtain the blend coefficients
-	const float blend0 = clamp(1.0f - (sDist + width) / smoothness, 0.0f, 1.0f); //in gain
+	const float blend0 = clamp(-(sDist + width) / smoothness, 0.0f, 1.0f); //in gain
 	const float blend1 = clamp(1.0f + sDist / smoothness, 0.0f, 1.0f); //out gain
 	const float blend2 = 1.0f - blend0 - blend1; //border gain
 

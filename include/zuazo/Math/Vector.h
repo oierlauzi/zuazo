@@ -14,7 +14,7 @@ template <typename T, size_t N>
 class Vec;
 
 template<typename T>
-class Vec<T, 2> {
+class alignas(2*sizeof(T)) Vec<T, 2> {
 public:
 	using value_type = T;
 
@@ -54,7 +54,7 @@ public:
 };
 
 template<typename T>
-class Vec<T, 3> {
+class alignas(4*sizeof(T)) Vec<T, 3> {
 public:
 	using value_type = T;
 
@@ -101,7 +101,7 @@ public:
 };
 
 template<typename T>
-class Vec<T, 4> {
+class alignas(4*sizeof(T)) Vec<T, 4> {
 public:
 	using value_type = T;
 

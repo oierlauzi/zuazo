@@ -10,38 +10,37 @@ namespace Zuazo::Math::LoopBlinn {
 //https://www.microsoft.com/en-us/research/wp-content/uploads/2005/01/p1000-loop.pdf
 
 template<typename T>
-constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(	const classification_type& c,
-																			FillSide side ) const noexcept 
+constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(const classification_type& c) const noexcept 
 {
 	Result result;
-	bool reverse = false;
 
 	switch (c.type) {
 	case CurveType::POINT:
 	case CurveType::LINE: {
 		constexpr auto NOT_USED = std::numeric_limits<value_type>::quiet_NaN();
 
-		result.klmCoords = {
-			Vec3<value_type>(0, 		0, 			0		),
-			Vec3<value_type>(NOT_USED,	NOT_USED,	NOT_USED), //Should not be used
-			Vec3<value_type>(NOT_USED,	NOT_USED,	NOT_USED), //Should not be used
-			Vec3<value_type>(0,			0,			0		)
+		result.values = {
+			Vec3<value_type>(1),
+			Vec3<value_type>(NOT_USED), //Should not be used
+			Vec3<value_type>(NOT_USED), //Should not be used
+			Vec3<value_type>(1)
 		};
 
 		result.isLineOrPoint = true;
+		result.reverse = false;
 
 		break;
 	}
 	case CurveType::QUADRATIC: {
 		constexpr auto THIRD = value_type(1) / value_type(3);
 
-		result.klmCoords = {
+		result.values = {
 			Vec3<value_type>(0, 		0, 			0		),
 			Vec3<value_type>(THIRD, 	0, 			THIRD	),
 			Vec3<value_type>(2*THIRD, 	THIRD, 		2*THIRD	),
 			Vec3<value_type>(1, 		1, 			1		)
 		};
-		reverse = c.d3 < 0;
+		result.reverse = c.d3 < 0;
 
 		break;
 	}
@@ -56,7 +55,7 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(	const 
 		const auto Lsmt = ls - lt;
 		const auto Msmt = ms - mt;
 
-		result.klmCoords = {
+		result.values = {
 			Vec3<value_type>(
 				ls*ms,											//ls*ms, 			
 				ls*ls*ls,										//ls^3
@@ -78,7 +77,7 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(	const 
 				Msmt*Msmt*Msmt									//(ms-mt)^3
 			)
 		};
-		reverse = c.d1 < 0;
+		result.reverse = c.d1 < 0;
 
 		break;
 	}
@@ -87,7 +86,7 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(	const 
 		const auto lt = 3*c.d2;
 		const auto Lsmt = ls - lt;
 
-		result.klmCoords = {
+		result.values = {
 			Vec3<value_type>(
 				ls,												//ls, 
 				ls*ls*ls,										//ls^3
@@ -109,7 +108,7 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(	const 
 				1.0f											//1
 			) 
 		};
-		reverse = false; //Never reverses
+		result.reverse = false; //Never reverses
 
 		break;
 	}
@@ -136,7 +135,7 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(	const 
 			const auto Lsmt = ls - lt;
 			const auto Msmt = ms - mt;
 
-			result.klmCoords = {
+			result.values = {
 				Vec3<value_type>(
 					ls*ms,										//ls*ms
 					ls*ls*ms,									//ls^2*ms
@@ -158,7 +157,8 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(	const 
 					Lsmt*Msmt*Msmt								//(ls-lt)*(ms-mt)^2
 				)
 			};
-			reverse = sign(result.klmCoords.front().x) != sign(c.d1);
+			result.reverse = sign(result.values.front().x) != sign(c.d1);
+			
 		}
 
 		break;
@@ -166,18 +166,6 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(	const 
 	default:
 		assert(false);
 		break;
-	}
-
-	//In case we want to fill the other side, reverse orientation
-	if(side == FillSide::LEFT) {
-		reverse = !reverse;
-	}
-
-	//Reverse the orientation if needed
-	if(reverse) {
-		for(size_t i = 0; i < result.klmCoords.size(); ++i) {
-			result.klmCoords[i] *= Vec3<value_type>(-1, -1, 1);
-		}
 	}
 
 	return result;

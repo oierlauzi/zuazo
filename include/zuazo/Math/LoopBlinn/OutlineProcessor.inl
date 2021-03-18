@@ -157,7 +157,7 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 		const auto baseIndex = m_vertices.size();
 		const auto bezierTriangulation = m_segmentTriangulator(
 			m_ccwContour.getSegment(i),
-			FillSide::LEFT,
+			FillSide::LEFT,				//We are CCW, so the inner side is to the left
 			baseIndex,
 			m_primitiveRestartIndex
 		);
@@ -168,14 +168,14 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 		//The last one will be provided by the next segment.
 		for(size_t j = 0; j < vertices.size(); ++j) {
 			const auto& vertexData = vertices[j];
-			if(vertexData.isFirst || vertexData.isProtruding) {
+			if(vertexData.type == VertexType::FIRST || vertexData.type == VertexType::CONTROL_PROTRUDING) {
 				//Add the vertex to the inner hull
 				m_innerHull.lineTo(vertexData.vertex.pos);
 				
 				//Add its reference to reference it from the inner hull
-				/*const auto vertexIndex = baseIndex + j; //TODO We'll use it when fixed
+				/*const auto vertexIndex = baseIndex + j; //FIXME uncomment when solved
 				const auto helperIndex = vertexData.helperIndex;
-				if(vertexData.isFirst) {
+				if(vertexData.type == VertexType::FIRST) {
 					//This is the first vertex, which has 2 references.
 					//Note that the first one will be incorrect, as it 
 					//actually refers to the last one. We'll correct it 
@@ -218,11 +218,11 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 	}	
 
 	assert(getSignedArea(m_innerHull) >= 0);
-	//assert(m_innerHullReferences.size() == m_innerHull.size()); //TODO We'll use it when fixed
+	//assert(m_innerHullReferences.size() == m_innerHull.size()); //FIXME uncomment when solved
 
 	//Triangulate the new vertices and append them to the indices
-	/*assert(m_chordalAxis.empty());
-	m_polygonTriangulator( //TODO We'll use it when fixed
+	/*assert(m_chordalAxis.empty()); //FIXME uncomment when solved
+	m_polygonTriangulator(
 		m_innerHull, 
 		chordal_triangulator_type(
 			m_indices, 				//out: indices
@@ -232,27 +232,27 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 			m_vertices.size(),		//in: chordal axis base index. We'll append it at the back
 			m_primitiveRestartIndex	//in: primitive restart index
 		)
-	);*/
-	m_polygonTriangulator( //TODO remove when above one is uncomment
-		m_innerHull, 
-		typename polygon_triangulator_type::TriangleStripGenerator(
-			m_indices, 				//out: indices
-			m_vertices.size(),		//in: start index
-			m_primitiveRestartIndex	//in: primitive restart index
-		)
 	);
 
 	//Insert the vertices corresponding to the chordal axis
-	//m_vertices.insert(m_vertices.cend(), m_chordalAxis.cbegin(), m_chordalAxis.cend()); //TODO We'll use it when fixed
+	m_vertices.insert(m_vertices.cend(), m_chordalAxis.cbegin(), m_chordalAxis.cend());*/
 
-	//Insert the inner-hull vertices
-	m_vertices.insert(m_vertices.cend(), m_innerHull.cbegin(), m_innerHull.cend()); //TODO remove when above one is uncomment
+	m_polygonTriangulator( //FIXME remove when previous line is uncomment
+		m_innerHull, 
+		typename polygon_triangulator_type::TriangleStripGenerator(
+			m_indices,
+			m_vertices.size(),
+			m_primitiveRestartIndex
+		)
+	);
+
+	m_vertices.insert(m_vertices.cend(), m_innerHull.cbegin(), m_innerHull.cend()); //FIXME remove when previous line is uncomment
 
 	//Clear all for the next call
 	m_ccwContour.clear();
 	m_innerHull.clear();
-	//m_innerHullReferences.clear(); //TODO We'll use it when fixed
-	//m_chordalAxis.clear(); //TODO We'll use it when fixed
+	m_innerHullReferences.clear();
+	m_chordalAxis.clear();
 }
 
 template<typename T, typename I>
