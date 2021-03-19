@@ -763,7 +763,7 @@ constexpr typename Mat<T, 2 ,2>::value_type det(const Mat<T, 2, 2>& m) {
 template<typename T>
 constexpr typename Mat<T, 3, 3>::value_type det(const Mat<T, 3, 3>& m) {
 	//Mixed product of the columns (or rows)
-	return dot(m[0], cross(m[1], m[2]));
+	return mixed(m[0], m[1], m[2]);
 }
 
 template<typename T, size_t N>

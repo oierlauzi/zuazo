@@ -677,11 +677,12 @@ transform(Func f, const Vec<T, N>&... v) {
 }
 
 template<typename T, size_t N>
-constexpr T dot(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept {
-	T result = T();
+constexpr typename Vec3<T>::value_type dot(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept {
+	const auto mult = lhs*rhs;
+	auto result = mult[0];
 
-	for(size_t i = 0; i < Vec<T, N>::size(); ++i) {
-		result += lhs[i] * rhs[i];
+	for(size_t i = 1; i < mult.size(); ++i) {
+		result += mult[i];
 	}
 
 	return result;
@@ -694,6 +695,15 @@ constexpr Vec3<T> cross(const Vec3<T>& lhs, const Vec3<T>& rhs) noexcept {
 		lhs.z*rhs.x - lhs.x*rhs.z,
 		lhs.x*rhs.y - lhs.y*rhs.x
 	);
+}
+
+template<typename T>
+constexpr typename Vec3<T>::value_type mixed(const Vec3<T>& v0, const Vec3<T>& v1, const Vec3<T>& v2) noexcept {
+	//Based on:
+	//https://github.com/g-truc/glm/blob/master/glm/detail/func_matrix.inl
+	return	v0.x * (v1.y*v2.z - v2.y*v1.z) -
+			v1.x * (v0.y*v2.z - v2.y*v0.z) +
+			v2.x * (v0.y*v1.z - v1.y*v0.z) ;
 }
 
 template<typename T>

@@ -14,7 +14,7 @@ template <typename T, size_t N>
 class Vec;
 
 template<typename T>
-class alignas(2*sizeof(T)) Vec<T, 2> {
+class Vec<T, 2> {
 public:
 	using value_type = T;
 
@@ -54,7 +54,7 @@ public:
 };
 
 template<typename T>
-class alignas(4*sizeof(T)) Vec<T, 3> {
+class Vec<T, 3> {
 public:
 	using value_type = T;
 
@@ -101,7 +101,7 @@ public:
 };
 
 template<typename T>
-class alignas(4*sizeof(T)) Vec<T, 4> {
+class Vec<T, 4> {
 public:
 	using value_type = T;
 
@@ -324,10 +324,13 @@ constexpr Vec<typename std::invoke_result<Func, const typename Vec<T, N>::value_
 transform(Func f, const Vec<T, N>&... v);
 
 template<typename T, size_t N>
-constexpr T dot(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept;
+constexpr typename Vec3<T>::value_type dot(const Vec<T, N>& lhs, const Vec<T, N>& rhs) noexcept;
 
 template<typename T>
 constexpr Vec3<T> cross(const Vec3<T>& lhs, const Vec3<T>& rhs) noexcept;
+
+template<typename T>
+constexpr typename Vec3<T>::value_type mixed(const Vec3<T>& v0, const Vec3<T>& v1, const Vec3<T>& v2) noexcept;
 
 template<typename T>
 constexpr typename Vec2<T>::value_type zCross(const Vec2<T>& lhs, const Vec2<T>& rhs) noexcept;

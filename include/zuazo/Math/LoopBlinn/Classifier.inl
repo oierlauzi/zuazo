@@ -16,21 +16,21 @@ constexpr typename Classifier<T>::Result Classifier<T>::operator()(const curve_t
 
 	//Calculate the mixed product of the control points. Note that we're using
 	//a affine space (1.0f at the end of the vector)
-	const auto a1 = det(Mat3x3<value_type>( //b0.(b3 x b2)
+	const auto a1 = mixed( //b0.(b3 x b2)
 		Vec3<value_type>(curve[0], 1), 
 		Vec3<value_type>(curve[3], 1), 
 		Vec3<value_type>(curve[2], 1)
-	)); 
-	const auto a2 = det(Mat3x3<value_type>( //b1.(b0 x b3)
+	); 
+	const auto a2 = mixed( //b1.(b0 x b3)
 		Vec3<value_type>(curve[1], 1), 
 		Vec3<value_type>(curve[0], 1), 
 		Vec3<value_type>(curve[3], 1)
-	)); 
-	const auto a3 = det(Mat3x3<value_type>( //b2.(b1 x b0)
+	); 
+	const auto a3 = mixed( //b2.(b1 x b0)
 		Vec3<value_type>(curve[2], 1), 
 		Vec3<value_type>(curve[1], 1), 
 		Vec3<value_type>(curve[0], 1) //Errata in GPU Gems 3
-	));
+	);
 
 	//In order to avoid numerical inestability, normalize the values.
 	//This won't affect the result. Idea from Apple's WebCore impl
