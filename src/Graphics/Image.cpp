@@ -191,11 +191,10 @@ void copy(	const Vulkan& vulkan,
 	
 	//Copy plane by plane
 	for(size_t i = 0; i < planeCount; ++i) {
-		const vk::Image srcImage = srcPlaneCnt < planeCount ? src.getPlanes().front().getImage() : src.getPlanes()[i].getImage();
-		const vk::Image dstImage = dstPlaneCnt < planeCount ? dst.getPlanes().front().getImage() : dst.getPlanes()[i].getImage();
+		const auto srcImage = srcPlaneCnt < planeCount ? src.getPlanes().front().getImage() : src.getPlanes()[i].getImage();
+		const auto dstImage = dstPlaneCnt < planeCount ? dst.getPlanes().front().getImage() : dst.getPlanes()[i].getImage();
 		const vk::ImageAspectFlags srcAspectMask = srcPlaneCnt < planeCount ? getPlaneAspectBit(i) : vk::ImageAspectFlagBits::eColor;
 		const vk::ImageAspectFlags dstAspectMask = dstPlaneCnt < planeCount ? getPlaneAspectBit(i) : vk::ImageAspectFlagBits::eColor;
-		//const vk::ImageAspectFlags dstAspectMask = (i == 0) ? vk::ImageAspectFlagBits::ePlane0 : vk::ImageAspectFlagBits::ePlane1;
 		const auto extent = (srcPlaneCnt == planeCount) ? src.getPlanes()[i].getExtent() : dst.getPlanes()[i].getExtent();
 		constexpr uint32_t baseMipLevel = 0;
 		constexpr uint32_t baseArrayLevel = 0;

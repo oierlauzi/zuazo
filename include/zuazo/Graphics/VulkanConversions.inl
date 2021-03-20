@@ -915,15 +915,15 @@ constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::Color
 	case vk::ColorSpaceKHR::eBt709NonlinearEXT:			return { ColorPrimaries::BT709, 		ColorTransferFunction::BT709 };
 	case vk::ColorSpaceKHR::eBt2020LinearEXT:			return { ColorPrimaries::BT2020, 		ColorTransferFunction::LINEAR };
 	case vk::ColorSpaceKHR::eHdr10St2084EXT:			return { ColorPrimaries::BT2020, 		ColorTransferFunction::SMPTE2084 };
-	case vk::ColorSpaceKHR::eDolbyvisionEXT:			return { ColorPrimaries::BT2020, 		ColorTransferFunction::SMPTE2084 }; //FIXME is this correct?
+	//case vk::ColorSpaceKHR::eDolbyvisionEXT:			return {}; /*NOT SUPPORTED*/
 	case vk::ColorSpaceKHR::eHdr10HlgEXT:				return { ColorPrimaries::BT2020, 		ColorTransferFunction::ARIB_STD_B67 };
 	case vk::ColorSpaceKHR::eAdobergbLinearEXT:			return { ColorPrimaries::ADOBE_RGB, 	ColorTransferFunction::LINEAR };
-	//case vk::ColorSpaceKHR::eAdobergbNonlinearEXT:	return {}; /*NOT SUPPORTED*/
+	case vk::ColorSpaceKHR::eAdobergbNonlinearEXT:		return { ColorPrimaries::ADOBE_RGB, 	ColorTransferFunction::GAMMA22 };
 	//case vk::ColorSpaceKHR::ePassThroughEXT:			return {}; /*NOT SUPPORTED*/
 	//case vk::ColorSpaceKHR::eExtendedSrgbNonlinearEXT:return {}; /*NOT SUPPORTED*/
 	//case vk::ColorSpaceKHR::eDisplayNativeAMD:		return {}; /*NOT SUPPORTED*/
 	//case vk::ColorSpaceKHR::eVkColorspaceSrgbNonlinear:return { ColorPrimaries::BT709, 	ColorTransferFunction::IEC61966_2_1 };	
-	//case vk::ColorSpaceKHR::eDciP3LinearEXT:			return {}; /*NOT SUPPORTED wrongly named as DisplayP3*/
+	//case vk::ColorSpaceKHR::eDciP3LinearEXT:			return {}; /*NOT SUPPORTED: wrongly named as DisplayP3*/
 	default: 											return {};
 	}
 }

@@ -152,6 +152,7 @@ vk::SamplerYcbcrConversion Sampler::createSamplerYCbCrConversion(	const Vulkan& 
 			);
 
 			result = vulkan.createSamplerYcbcrConversion(id, createInfo);
+
 		}
 	}
 
@@ -168,7 +169,7 @@ vk::Sampler Sampler::createSampler(	const Vulkan& vulkan,
 	//Create an index with the relevant parameters and obtain the id
 	Index index;
 	index |= static_cast<size_t>(filter);
-	index <<= sizeof(size_t)*Utils::getByteSize();
+	index <<= sizeof(uintptr_t)*Utils::getByteSize();
 	index |= reinterpret_cast<const uintptr_t&>(samplerYCbCrConversion);
 	const auto& id = ids[index]; //TODO concurrent access
 
@@ -176,10 +177,10 @@ vk::Sampler Sampler::createSampler(	const Vulkan& vulkan,
 	vk::Sampler result = vulkan.createSampler(id);
 	if(!result) {
 		//Sampler does not exist, create it
-		const vk::SamplerYcbcrConversionInfo ycbcrConversionInfo(samplerYCbCrConversion);
+		const auto ycbcrConversionInfo = vk::SamplerYcbcrConversionInfo(samplerYCbCrConversion);
 		constexpr auto addressMode = vk::SamplerAddressMode::eClampToEdge;
 
-		vk::SamplerCreateInfo createInfo(
+		const auto createInfo = vk::SamplerCreateInfo(
 			{},														//Flags
 			filter, filter,											//Min/Mag filter
 			vk::SamplerMipmapMode::eNearest,						//Mipmap mode
@@ -193,12 +194,8 @@ vk::Sampler Sampler::createSampler(	const Vulkan& vulkan,
 			vk::CompareOp::eNever,									//Compare operation
 			0.0f, 0.0f,												//Min/Max LOD
 			vk::BorderColor::eFloatTransparentBlack,				//Boreder color
-			false													//Unormalized coords
-		);
-
-		if(ycbcrConversionInfo.conversion) {
-			createInfo.setPNext(&ycbcrConversionInfo);
-		}
+			false													//Unnormalized coords
+		).setPNext(ycbcrConversionInfo.conversion ? &ycbcrConversionInfo : nullptr);
 
 		result = vulkan.createSampler(id, createInfo);		
 	}

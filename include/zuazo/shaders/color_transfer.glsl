@@ -107,14 +107,18 @@ vec4 ct_expand(in int range, in vec4 color){
 	vec4 result;
 
 	switch(range){
+	case ct_COLOR_RANGE_FULL_YCBCR:
+		result.ga = color.ga;
+		result.rb = color.rb - vec2(0.5f);
+		break;
 	case ct_COLOR_RANGE_ITU_NARROW_RGB:
 		result = (color - vec4(ct_ITU_NARROW_MIN_Y)) / (ct_ITU_NARROW_MAX_Y - ct_ITU_NARROW_MIN_Y);
 		break;
 	case ct_COLOR_RANGE_ITU_NARROW_YCBCR:
 		result.ga = (color.ga - vec2(ct_ITU_NARROW_MIN_Y)) / (ct_ITU_NARROW_MAX_Y - ct_ITU_NARROW_MIN_Y);
-		result.rb = (color.rb - vec2(ct_ITU_NARROW_MIN_C)) / (ct_ITU_NARROW_MAX_C - ct_ITU_NARROW_MIN_C);
+		result.rb = (color.rb - vec2(ct_ITU_NARROW_MIN_C)) / (ct_ITU_NARROW_MAX_C - ct_ITU_NARROW_MIN_C) - vec2(0.5f);
 		break;
-	default: //ct_COLOR_RANGE_FULL
+	default: //ct_COLOR_RANGE_FULL_RGB
 		result = color;
 		break;
 	}
@@ -127,14 +131,18 @@ vec4 ct_contract(in int range, in vec4 color){
 	vec4 result;
 
 	switch(range){
+	case ct_COLOR_RANGE_FULL_YCBCR:
+		result.ga = color.ga;
+		result.rb = color.rb + vec2(0.5f);
+		break;
 	case ct_COLOR_RANGE_ITU_NARROW_RGB:
 		result = color * (ct_ITU_NARROW_MAX_Y - ct_ITU_NARROW_MIN_Y) + vec4(ct_ITU_NARROW_MIN_Y);
 		break;
 	case ct_COLOR_RANGE_ITU_NARROW_YCBCR:
 		result.ga = color.ga * (ct_ITU_NARROW_MAX_Y - ct_ITU_NARROW_MIN_Y) + vec2(ct_ITU_NARROW_MIN_Y);
-		result.rb = color.rb * (ct_ITU_NARROW_MAX_C - ct_ITU_NARROW_MIN_C) + vec2(ct_ITU_NARROW_MIN_C);
+		result.rb = (color.rb + vec2(0.5f)) * (ct_ITU_NARROW_MAX_C - ct_ITU_NARROW_MIN_C) + vec2(ct_ITU_NARROW_MIN_C);
 		break;
-	default: //ct_COLOR_RANGE_FULL
+	default: //ct_COLOR_RANGE_FULL_RGB
 		result = color;
 		break;
 	}
@@ -561,7 +569,7 @@ vec4 ct_read(in ct_read_data inputProp, in vec4 color) {
 
 	//Convert it into RGB color model if necessary
 	if(inputProp.colorModel != ct_COLOR_MODEL_RGB) {
-		color.rgb = (inputProp.mtxYCbCr2RGB * vec4(color.rgb, 1.0f)).rgb; 
+		color.rgb = (inputProp.mtxYCbCr2RGB * vec4(color.rgb, 0.0f)).rgb; 
 	}
 
 	//Undo all gamma-like compressions
@@ -576,7 +584,7 @@ vec4 ct_write(in ct_write_data outputProp, in vec4 color) {
 
 	//Convert it into a YCbCr color model if necessary
 	if(outputProp.colorModel != ct_COLOR_MODEL_RGB) {
-		color.rgb 	= (outputProp.mtxRGB2YCbCr * vec4(color.rgb, 1.0f)).rgb; 
+		color.rgb 	= (outputProp.mtxRGB2YCbCr * vec4(color.rgb, 0.0f)).rgb; 
 	}
 
 	//Convert it into the corresponding range

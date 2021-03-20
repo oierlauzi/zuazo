@@ -93,20 +93,27 @@ private:
 			//Update all images. As nullptr images can't be passed, repeat available images		
 			const auto planes = image.getPlanes();
 			std::array<vk::DescriptorImageInfo, frame_SAMPLER_COUNT> images;
-			for(size_t i = 0; i < planes.size(); ++i) {
-				images[i] = vk::DescriptorImageInfo(
-					nullptr,												//Sampler
-					planes[i].getImageView(),								//Image views
-					vk::ImageLayout::eShaderReadOnlyOptimal					//Layout
-				);
-			}
-			for(size_t i = planes.size(); i < images.size(); ++i) {
-				images[i] = vk::DescriptorImageInfo(
+			assert(planes.size() <= images.size());
+			const auto lastImage = std::transform(
+				planes.cbegin(), planes.cend(),
+				images.begin(),
+				[] (const Image::Plane& plane) -> vk::DescriptorImageInfo {
+					return vk::DescriptorImageInfo(
+						nullptr,												//Sampler (already set)
+						plane.getImageView(),									//Image view
+						vk::ImageLayout::eShaderReadOnlyOptimal					//Layout
+					);
+				}
+				
+			);
+			std::fill(
+				lastImage, images.end(),
+				vk::DescriptorImageInfo(
 					nullptr,												//Sampler
 					planes.front().getImageView(),							//Image views
 					vk::ImageLayout::eShaderReadOnlyOptimal					//Layout
-				);
-			}
+				)
+			);
 			static_assert(images.size() == frame_SAMPLER_COUNT, "Sampler count must match");
 
 			//Obtain the sample mode buffer for this sampling mode
@@ -122,7 +129,7 @@ private:
 				vk::DescriptorBufferInfo(
 					samplingModeBuffer.getBuffer(),							//Buffer
 					0,														//Offset
-					sizeof(int)											//Size
+					sizeof(int)												//Size
 				)
 			};
 
@@ -234,9 +241,7 @@ private:
 				//No luck, need to create it
 				//Create the sampler array
 				std::array<vk::Sampler, frame_SAMPLER_COUNT> immutableSamplers;
-				for(size_t i = 0; i < immutableSamplers.size(); ++i) {
-					immutableSamplers[i] = sampler;
-				}
+				std::fill(immutableSamplers.begin(), immutableSamplers.end(), sampler);
 				static_assert(immutableSamplers.size() == frame_SAMPLER_COUNT, "Sampler count does not match");
 
 				//Create the bindings

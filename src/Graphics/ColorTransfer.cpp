@@ -45,16 +45,7 @@ constexpr int32_t getColorTransferFunction(ColorTransferFunction transferFunctio
 }
 
 inline Math::Mat4x4f getRGB2YCbCrMatrix(ColorModel model) noexcept {
-	Math::Mat4x4f result = getRGB2YCbCrConversionMatrix(model);
-
-	if(isYCbCr(model)) {
-		//If it is YCbCr a displacement needs to be applied from [-0.5, 0.5] to [0.0, 1.0]
-		//							Cr		Y		Cb
-		constexpr Math::Vec3f delta(0.5f, 	0.0f, 	0.5f );
-		result[result.columns() - 1] = Math::Vec4f(delta, 1.0f);
-	}
-
-	return result;
+	return getRGB2YCbCrConversionMatrix(model);
 }
 
 constexpr int32_t getColorModel(ColorModel model) {
@@ -70,7 +61,7 @@ constexpr int32_t getColorModel(ColorModel model) {
 constexpr int32_t getColorRange(ColorRange range, ColorModel model) noexcept {
 	switch(range){
 	case ColorRange::ITU_NARROW: 		return isYCbCr(model) ? ct_COLOR_RANGE_ITU_NARROW_YCBCR : ct_COLOR_RANGE_ITU_NARROW_RGB;
-	default: /*ColorRange::FULL*/		return ct_COLOR_RANGE_FULL;
+	default: /*ColorRange::FULL*/		return isYCbCr(model) ? ct_COLOR_RANGE_FULL_YCBCR : ct_COLOR_RANGE_FULL_RGB;
 	}
 }
 
@@ -95,7 +86,7 @@ static int32_t optimizeColorTransferFunction(	int32_t colorRange,
 	assert(std::is_sorted(supportedFormats.cbegin(), supportedFormats.cend()));
 
 	//Test if sRGB formats can be used
-	if(	colorRange == ct_COLOR_RANGE_FULL && 
+	if(	colorRange == ct_COLOR_RANGE_FULL_RGB && 
 		colorModel == ct_COLOR_MODEL_RGB && 
 		colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_1 )
 	{
@@ -351,11 +342,14 @@ struct InputColorTransfer::Impl {
 		if(sampler.getSamplerYCbCrConversion()) {
 			if(getYCbCrSamplerRange() > vk::SamplerYcbcrRange::eItuFull) {
 				//Remove shader range extension
-				transferData.colorRange = ct_COLOR_RANGE_FULL;
+				assert(transferData.planeFormat == ct_PLANE_FORMAT_RGBA);
+				transferData.colorRange = ct_COLOR_RANGE_FULL_RGB;
 			}
 
 			if(getYCbCrSamplerModel() > vk::SamplerYcbcrModelConversion::eYcbcrIdentity) {
 				//Remove shader color model conversion
+				assert(transferData.planeFormat == ct_PLANE_FORMAT_RGBA);
+				assert(transferData.colorRange == ct_COLOR_RANGE_FULL_RGB);
 				transferData.colorModel = ct_COLOR_MODEL_RGB;
 			}
 		}
@@ -369,7 +363,7 @@ struct InputColorTransfer::Impl {
 	bool isPassthough() const noexcept {
 		return	transferData.colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_LINEAR &&
 				transferData.colorModel == ct_COLOR_MODEL_RGB &&
-				transferData.colorRange == ct_COLOR_RANGE_FULL &&
+				transferData.colorRange == ct_COLOR_RANGE_FULL_RGB &&
 				transferData.planeFormat == ct_PLANE_FORMAT_RGBA ;
 	}
 
@@ -379,7 +373,12 @@ struct InputColorTransfer::Impl {
 	
 
 	vk::SamplerYcbcrRange getYCbCrSamplerRange() const noexcept {
-		const auto result = toVulkan(colorRange);
+		auto result = static_cast<vk::SamplerYcbcrRange>(-1);
+		if(isYCbCr(colorModel)) {
+			//This conversion is only valid for YCbCr
+			result = toVulkan(colorRange);
+		}
+
 		return Math::max(result, vk::SamplerYcbcrRange::eItuFull); //Do not return invalid values
 	}
 
@@ -563,7 +562,7 @@ struct OutputColorTransfer::Impl {
 	bool isPassthough() const noexcept {
 		return	transferData.colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_LINEAR &&
 				transferData.colorModel == ct_COLOR_MODEL_RGB &&
-				transferData.colorRange == ct_COLOR_RANGE_FULL &&
+				transferData.colorRange == ct_COLOR_RANGE_FULL_RGB &&
 				transferData.planeFormat == ct_PLANE_FORMAT_RGBA ;
 	}
 
