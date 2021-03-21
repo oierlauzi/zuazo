@@ -24,7 +24,7 @@ struct TriangleStripTag {};
 constexpr TriangleStripTag triangleStrip;
 
 struct TriangleListTag {};
-constexpr TriangleStripTag triangleList;
+constexpr TriangleListTag triangleList;
 
 
 template<typename T, typename I = uint32_t>

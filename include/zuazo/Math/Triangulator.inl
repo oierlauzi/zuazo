@@ -170,7 +170,7 @@ inline void Triangulator<T, Index>::operator()(	const polygon_type& polygon,
 			false
 		);
 
-	} if(polygon.size() > 3) {
+	} else if(polygon.size() > 3) {
 		//The following code is based on:
 		//https://github.com/ivanfratric/polypartition/blob/master/src/polypartition.cpp
 		const auto n = polygon.size();
@@ -424,7 +424,7 @@ Triangulator<T, Index>::triangulateQuad(TriangleListTag,
 	//It must be convex and simple. In quads, one implies the other
 	assert(isConvex(v0, v1, v2, v3));
 
-	std::array<typename Triangulator<T, Index>::index_type, 4> result;
+	std::array<typename Triangulator<T, Index>::index_type, 6> result;
 
 	//Obtain the diagonals
 	const auto diagonal0 = typename polygon_type::bezier_type(v0, v2);
@@ -439,7 +439,7 @@ Triangulator<T, Index>::triangulateQuad(TriangleListTag,
 	//Write the values
 	constexpr std::array<index_type, result.size()> offsets = { 0, 1, 3, 3, 1, 2 };
 	for(size_t i = 0; i < result.size(); ++i) {
-		result[i] = startIndex + (splitIndex+offsets[i]) % offsets.size();
+		result[i] = startIndex + (splitIndex+offsets[i]) % 4;
 	}
 
 	return result;
@@ -472,7 +472,7 @@ Triangulator<T, Index>::triangulateQuad(TriangleStripTag,
 	//Write the values
 	constexpr std::array<index_type, result.size()> offsets = { 0, 1, 3, 2 };
 	for(size_t i = 0; i < result.size(); ++i) {
-		result[i] = startIndex + (splitIndex+offsets[i]) % offsets.size();
+		result[i] = startIndex + (splitIndex+offsets[i]) % 4;
 	}
 
 	return result;
