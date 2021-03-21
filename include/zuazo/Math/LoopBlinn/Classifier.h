@@ -22,11 +22,17 @@ struct Classifier {
 	using curve_type = CubicBezier<Vec2<value_type>>;
 
 	struct Result {
-		CurveType			type = CurveType::UNKNOWN;
-		value_type			d1 = std::numeric_limits<value_type>::quiet_NaN();
-		value_type			d2 = std::numeric_limits<value_type>::quiet_NaN();
-		value_type			d3 = std::numeric_limits<value_type>::quiet_NaN();
-		value_type			discriminantTerm1 = std::numeric_limits<value_type>::quiet_NaN();
+		constexpr Result(	CurveType type = CurveType::UNKNOWN,
+							value_type d1 = std::numeric_limits<value_type>::quiet_NaN(),
+							value_type d2 = std::numeric_limits<value_type>::quiet_NaN(),
+							value_type d3 = std::numeric_limits<value_type>::quiet_NaN(),
+							value_type discriminantTerm1 = std::numeric_limits<value_type>::quiet_NaN() ) noexcept;
+
+		CurveType			type;
+		value_type			d1;
+		value_type			d2;
+		value_type			d3;
+		value_type			discriminantTerm1 ;
 	};
 
 	constexpr Result operator()(const curve_type& curve) const noexcept;

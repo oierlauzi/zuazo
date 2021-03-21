@@ -2,12 +2,26 @@
 
 #include "../Matrix.h"
 
-namespace Zuazo::Math::LoopBlinn {
-
 //This code is based on:
 //https://opensource.apple.com/source/WebCore/WebCore-1298.39/platform/graphics/gpu/LoopBlinnClassifier.cpp.auto.html
 //https://developer.nvidia.com/gpugems/gpugems3/part-iv-image-effects/chapter-25-rendering-vector-art-gpu
 //https://www.microsoft.com/en-us/research/wp-content/uploads/2005/01/p1000-loop.pdf
+
+namespace Zuazo::Math::LoopBlinn {
+
+template<typename T>
+constexpr KLMCalculator<T>::Result::Result(	const std::array<klm_type, curve_type::size()>& values,
+											value_type subdivisionParameter,
+											DegeneratedCurveType degeneratedType,
+											bool reverse ) noexcept
+	: values(values)
+	, subdivisionParameter(subdivisionParameter)
+	, degeneratedType(degeneratedType)
+	, reverse(reverse)
+{
+}
+
+
 
 template<typename T>
 constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(const classification_type& c) const noexcept 
@@ -15,10 +29,15 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(const c
 	Result result;
 
 	switch (c.type) {
-	case CurveType::POINT:
-	case CurveType::LINE: {
-		constexpr auto NOT_USED = std::numeric_limits<value_type>::quiet_NaN();
+	case CurveType::POINT: {
+		result.degeneratedType = DegeneratedCurveType::POINT;
 
+		break;
+	}
+	case CurveType::LINE: {
+		result.degeneratedType = DegeneratedCurveType::LINE;
+
+		constexpr auto NOT_USED = std::numeric_limits<value_type>::quiet_NaN();
 		result.values = {
 			Vec3<value_type>(1),
 			Vec3<value_type>(NOT_USED), //Should not be used
@@ -26,25 +45,28 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(const c
 			Vec3<value_type>(1)
 		};
 
-		result.isLineOrPoint = true;
 		result.reverse = false;
 
 		break;
 	}
 	case CurveType::QUADRATIC: {
-		constexpr auto THIRD = value_type(1) / value_type(3);
+		result.degeneratedType = DegeneratedCurveType::QUADRATIC;
 
+		constexpr auto THIRD = value_type(1) / value_type(3);
 		result.values = {
 			Vec3<value_type>(0, 		0, 			0		),
 			Vec3<value_type>(THIRD, 	0, 			THIRD	),
 			Vec3<value_type>(2*THIRD, 	THIRD, 		2*THIRD	),
 			Vec3<value_type>(1, 		1, 			1		)
 		};
+
 		result.reverse = c.d3 < 0;
 
 		break;
 	}
 	case CurveType::SERPENTINE: {
+		result.degeneratedType = DegeneratedCurveType::CUBIC;
+
 		assert(c.discriminantTerm1 >= 0); //To avoid NaNs
 		const auto sqrt3DiscTerm1 = sqrt(3*c.discriminantTerm1);
 		const auto ls = 3*c.d2 - sqrt3DiscTerm1;
@@ -77,11 +99,14 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(const c
 				Msmt*Msmt*Msmt									//(ms-mt)^3
 			)
 		};
+
 		result.reverse = c.d1 < 0;
 
 		break;
 	}
 	case CurveType::CUSP: {
+		result.degeneratedType = DegeneratedCurveType::CUBIC;
+
 		const auto ls = c.d3;
 		const auto lt = 3*c.d2;
 		const auto Lsmt = ls - lt;
@@ -108,11 +133,14 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(const c
 				1.0f											//1
 			) 
 		};
+
 		result.reverse = false; //Never reverses
 
 		break;
 	}
 	case CurveType::LOOP: {
+		result.degeneratedType = DegeneratedCurveType::CUBIC;
+
 		assert(c.discriminantTerm1 < 0); //To avoid NaNs
 		const auto sqrtDisc = sqrt(-c.discriminantTerm1);
 		const auto ls = c.d2 - sqrtDisc;
@@ -157,6 +185,7 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(const c
 					Lsmt*Msmt*Msmt								//(ls-lt)*(ms-mt)^2
 				)
 			};
+			
 			result.reverse = sign(result.values.front().x) != sign(c.d1);
 			
 		}
@@ -168,6 +197,7 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(const c
 		break;
 	}
 
+	assert(result.degeneratedType != DegeneratedCurveType::UNKNOWN);
 	return result;
 }
 

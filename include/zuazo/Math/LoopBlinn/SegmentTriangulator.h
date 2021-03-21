@@ -90,6 +90,12 @@ public:
 											index_type restartIndex = ~index_type(0) ) const noexcept;
 
 	Result						operator()(	const bezier_type& bezier, 
+											const typename classifier_type::Result& classification,
+											FillSide fillSide,
+											index_type baseIndex = index_type(0),
+											index_type restartIndex = ~index_type(0) ) const noexcept;
+
+	Result						operator()(	const bezier_type& bezier, 
 											const typename klm_calculator_type::Result& klmCoords,
 											FillSide fillSide,
 											index_type baseIndex = index_type(0),

@@ -173,7 +173,7 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 				m_innerHull.lineTo(vertexData.vertex.pos);
 				
 				//Add its reference to reference it from the inner hull
-				/*const auto vertexIndex = baseIndex + j; //FIXME uncomment when solved
+				/*const auto vertexIndex = baseIndex + j; //TODO uncomment when solved
 				const auto helperIndex = vertexData.helperIndex;
 				if(vertexData.type == VertexType::FIRST) {
 					//This is the first vertex, which has 2 references.
@@ -218,10 +218,10 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 	}	
 
 	assert(getSignedArea(m_innerHull) >= 0);
-	//assert(m_innerHullReferences.size() == m_innerHull.size()); //FIXME uncomment when solved
+	//assert(m_innerHullReferences.size() == m_innerHull.size()); //TODO uncomment when solved
 
 	//Triangulate the new vertices and append them to the indices
-	/*assert(m_chordalAxis.empty()); //FIXME uncomment when solved
+	/*assert(m_chordalAxis.empty()); //TODO uncomment when solved
 	m_polygonTriangulator(
 		m_innerHull, 
 		chordal_triangulator_type(
@@ -237,7 +237,7 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 	//Insert the vertices corresponding to the chordal axis
 	m_vertices.insert(m_vertices.cend(), m_chordalAxis.cbegin(), m_chordalAxis.cend());*/
 
-	m_polygonTriangulator( //FIXME remove when previous line is uncomment
+	m_polygonTriangulator( //TODO remove when previous line is uncomment
 		m_innerHull, 
 		typename polygon_triangulator_type::TriangleStripGenerator(
 			m_indices,
@@ -246,7 +246,7 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 		)
 	);
 
-	m_vertices.insert(m_vertices.cend(), m_innerHull.cbegin(), m_innerHull.cend()); //FIXME remove when previous line is uncomment
+	m_vertices.insert(m_vertices.cend(), m_innerHull.cbegin(), m_innerHull.cend()); //TODO remove when previous line is uncomment
 
 	//Clear all for the next call
 	m_ccwContour.clear();

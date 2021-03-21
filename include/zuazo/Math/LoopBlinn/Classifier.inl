@@ -1,6 +1,7 @@
 #include "Classifier.h"
 
 #include "../Approximation.h"
+#include "../Geometry.h"
 
 //This code is based on:
 //https://opensource.apple.com/source/WebCore/WebCore-1298.39/platform/graphics/gpu/LoopBlinnClassifier.cpp.auto.html
@@ -8,6 +9,23 @@
 //https://www.microsoft.com/en-us/research/wp-content/uploads/2005/01/p1000-loop.pdf
 
 namespace Zuazo::Math::LoopBlinn {
+
+
+template<typename T>
+constexpr Classifier<T>::Result::Result(CurveType type,
+										value_type d1,
+										value_type d2,
+										value_type d3,
+										value_type discriminantTerm1 ) noexcept
+	: type(type)
+	, d1(d1)
+	, d2(d2)
+	, d3(d3)
+	, discriminantTerm1(discriminantTerm1)
+{
+}
+
+
 
 template<typename T>
 constexpr typename Classifier<T>::Result Classifier<T>::operator()(const curve_type& curve) const noexcept{
