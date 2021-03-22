@@ -2,8 +2,8 @@
 
 namespace Zuazo {
 
-constexpr std::string_view toString(BlendingMode format) noexcept {
-	switch(format){
+constexpr std::string_view toString(BlendingMode mode) noexcept {
+	switch(mode){
 
 	ZUAZO_ENUM2STR_CASE( BlendingMode, WRITE )
 	ZUAZO_ENUM2STR_CASE( BlendingMode, OPACITY )
@@ -19,8 +19,8 @@ constexpr std::string_view toString(BlendingMode format) noexcept {
 	}
 }
 
-inline std::ostream& operator<<(std::ostream& os, BlendingMode format) {
-	return os << toString(format);
+inline std::ostream& operator<<(std::ostream& os, BlendingMode mode) {
+	return os << toString(mode);
 }
 
 namespace Utils {

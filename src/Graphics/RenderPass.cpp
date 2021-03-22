@@ -654,7 +654,7 @@ vk::Pipeline RenderPass::createFinalizationPipeline(const Graphics::Vulkan& vulk
 
 		const std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachments(
 			ATTACHMENT_COUNT,
-			Graphics::toVulkan(BlendingMode::WRITE)
+			Graphics::getBlendingConfiguration(BlendingMode::WRITE)
 		);
 
 		const vk::PipelineColorBlendStateCreateInfo colorBlend(

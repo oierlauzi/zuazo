@@ -310,30 +310,48 @@ private:
 
 	bool layerComp(const LayerBase& a, const LayerBase& b) const {
 		/*
-			* The strategy will be the following:
-			* 1. Draw the alphaless objects backwards, writing and testing depth
-			* 2. Draw the transparent objscts forwards, writing and testing depth
-			*/
-		
-		if(a.hasAlpha() != b.hasAlpha()) {
-			//Prioritize alphaless drawing
-			return a.hasAlpha() < b.hasAlpha();
+		 * The strategy will be the following:
+		 * 1. Draw all the background objects in order, disabling depth tests
+		 * 2. Draw the alphaless scene objects backwards, writing and testing depth
+		 * 3. Draw the transparent scene objects forwards, writing and testing depth
+		 * 4. Draw all the foreground objects in order, disabling depth tests
+		 */
+		bool result;
+
+		if(a.getRenderingLayer() != b.getRenderingLayer()) {
+			//Prioritize background, then scene and finally foreground
+			result = static_cast<int>(a.getRenderingLayer()) < static_cast<int>(b.getRenderingLayer());
+
+		} else if(a.getRenderingLayer() == RenderingLayer::SCENE) {
+			if(a.hasAlpha() != b.hasAlpha()) {
+				//Prioritize alphaless drawing
+				result = a.hasAlpha() < b.hasAlpha();
+			} else {
+				//Both use the same 3D rendering mode and both or neither have alpha. 
+				//Depth must be taken in consideration in order to decide which comes first
+				//Calculate the average depth 
+				constexpr size_t zRowIndex = 2; //0: x, 1: y, 2: z, 3: w
+				const auto zProjection = projectionMatrix.getRow(zRowIndex);
+
+				const auto aDepth = Math::dot(zProjection, Math::Vec4f(a.getTransform().getPosition(), 1.0f));
+				const auto bDepth = Math::dot(zProjection, Math::Vec4f(b.getTransform().getPosition(), 1.0f));
+
+				if(a.hasAlpha()) {
+					//Both layers have alpha. Render the furthest one first
+					result = aDepth > bDepth;
+				} else {
+					//Neither of the layers alpha. Render the closest one first
+					result = aDepth < bDepth;
+				}
+			}
+
 		} else {
-			//Both or neither have alpha. Depth must be taken in consideration
-			assert(a.hasAlpha() == b.hasAlpha());
-			const auto hasAlpha = a.hasAlpha();
+			//Both layers are using the same 2D rendering mode. Render them in order
+			result = false;
 
-			//Calculate the average depth 
-			constexpr size_t zRowIndex = 2; //0: x, 1: y, 2: z, 3: w
-			const auto zProjection = projectionMatrix.getRow(zRowIndex);
-
-			const auto aDepth = Math::dot(zProjection, Math::Vec4f(a.getTransform().getPosition(), 1.0f));
-			const auto bDepth = Math::dot(zProjection, Math::Vec4f(b.getTransform().getPosition(), 1.0f));
-
-			return !hasAlpha
-				? aDepth < bDepth
-				: aDepth > bDepth;
 		}
+
+		return result;
 	}
 
 };

@@ -28,8 +28,8 @@ enum class BlendingMode {
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(BlendingMode)
 ZUAZO_ENUM_COMP_OPERATORS(BlendingMode)	
 
-constexpr std::string_view toString(BlendingMode format) noexcept;
-std::ostream& operator<<(std::ostream& os, BlendingMode format);
+constexpr std::string_view toString(BlendingMode mode) noexcept;
+std::ostream& operator<<(std::ostream& os, BlendingMode mode);
 
 namespace Utils {
 

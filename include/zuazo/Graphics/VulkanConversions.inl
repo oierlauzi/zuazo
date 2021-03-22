@@ -978,7 +978,7 @@ constexpr vk::ShaderStageFlags toShaderStageFlags(vk::PipelineStageFlags flags) 
 
 
 
-constexpr vk::PipelineColorBlendAttachmentState toVulkan(BlendingMode mode) noexcept {
+constexpr vk::PipelineColorBlendAttachmentState getBlendingConfiguration(BlendingMode mode) noexcept {
 	constexpr vk::ColorComponentFlags colorWriteMask = 
 		vk::ColorComponentFlagBits::eR |
 		vk::ColorComponentFlagBits::eG |
@@ -1091,6 +1091,19 @@ constexpr vk::PipelineColorBlendAttachmentState toVulkan(BlendingMode mode) noex
 	default:
 		return vk::PipelineColorBlendAttachmentState();
 	}
+}
+
+constexpr vk::PipelineDepthStencilStateCreateInfo getDepthStencilConfiguration(RenderingLayer layer) noexcept {
+	const auto enableDepthTesting = (layer == RenderingLayer::SCENE);
+	return vk::PipelineDepthStencilStateCreateInfo(
+		{},													//Flags
+		enableDepthTesting, enableDepthTesting, 			//Depth test enable, write
+		vk::CompareOp::eLess,								//Depth compare op
+		false,												//Depth bounds test
+		false, 												//Stencil enabled
+		{}, {},												//Stencil operation state front, back
+		0.0f, 0.0f											//min, max depth bounds
+	);
 }
 
 

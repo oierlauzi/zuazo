@@ -14,6 +14,7 @@
 #include "../DepthStencilFormat.h"
 #include "../ScalingFilter.h"
 #include "../BlendingMode.h"
+#include "../RenderingLayer.h"
 #include "../Utils/BufferView.h"
 
 #include <tuple>
@@ -80,7 +81,9 @@ constexpr ScalingFilter fromVulkan(vk::Filter filt) noexcept;
 constexpr vk::PipelineStageFlags toPipelineStageFlags(vk::ShaderStageFlags flags) noexcept;
 constexpr vk::ShaderStageFlags toShaderStageFlags(vk::PipelineStageFlags flags) noexcept;
 
-constexpr vk::PipelineColorBlendAttachmentState toVulkan(BlendingMode mode) noexcept;
+constexpr vk::PipelineColorBlendAttachmentState getBlendingConfiguration(BlendingMode mode) noexcept;
+constexpr vk::PipelineDepthStencilStateCreateInfo getDepthStencilConfiguration(RenderingLayer layer) noexcept;
+
 
 template<typename T>
 constexpr vk::ArrayProxy<T> toVulkan(Utils::BufferView<T> bv) noexcept;
