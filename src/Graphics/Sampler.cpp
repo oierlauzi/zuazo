@@ -2,6 +2,7 @@
 
 #include <zuazo/Macros.h>
 #include <zuazo/Utils/StaticId.h>
+#include <zuazo/Utils/Hasher.h>
 #include <zuazo/Graphics/ColorTransfer.h>
 
 #include <bitset>
@@ -98,34 +99,34 @@ vk::SamplerYcbcrConversion Sampler::createSamplerYCbCrConversion(	const Vulkan& 
 																	vk::Filter filter )
 {
 	vk::SamplerYcbcrConversion result;
-	const vk::Format format = plane.getFormat();
+	const auto format = plane.getFormat();
 
 	//Determine if it will be required
 	if(requiresYCbCrSamplerConversion(format)) {
-		using Index = std::bitset<sizeof(uint32_t)*Utils::getByteSize()*8>;
-		static std::unordered_map<Index, const Utils::StaticId> ids; 
+		using Index = std::tuple<	vk::Filter,
+									vk::Format,
+									vk::ComponentSwizzle,
+									vk::ComponentSwizzle,
+									vk::ComponentSwizzle,
+									vk::ComponentSwizzle,
+									vk::SamplerYcbcrModelConversion,
+									vk::SamplerYcbcrRange >;	
+		
+		static std::unordered_map<Index, const Utils::StaticId, Utils::Hasher<Index>> ids; 
 
-		const vk::ComponentMapping swizzle = plane.getSwizzle();
+		const auto swizzle = plane.getSwizzle();
 		const auto model = colorTransfer.getYCbCrSamplerModel();
 		const auto range = colorTransfer.getYCbCrSamplerRange();
 
 		//Create an index to try to retrieve it from cache
-		Index index;
-		index |= static_cast<uint32_t>(filter);
-		index <<= sizeof(uint32_t)*Utils::getByteSize();
-		index |= static_cast<uint32_t>(format);
-		std::for_each(
-			reinterpret_cast<const vk::ComponentSwizzle*>(&swizzle),
-			reinterpret_cast<const vk::ComponentSwizzle*>(&swizzle + 1),
-			[&index] (vk::ComponentSwizzle componentSwizzle) {
-				index <<= sizeof(uint32_t)*Utils::getByteSize();
-				index |= static_cast<uint32_t>(componentSwizzle);
-			}
+		const Index index (
+			filter, format,
+			swizzle.r,
+			swizzle.g,
+			swizzle.b,
+			swizzle.a,
+			model, range
 		);
-		index <<= sizeof(uint32_t)*Utils::getByteSize();
-		index |= static_cast<uint32_t>(model);
-		index <<= sizeof(uint32_t)*Utils::getByteSize();
-		index |= static_cast<uint32_t>(range);
 		const auto& id = ids[index]; //TODO concurrent access
 
 		//Try to obtain it from cache
@@ -163,14 +164,11 @@ vk::Sampler Sampler::createSampler(	const Vulkan& vulkan,
 									vk::Filter filter,
 									vk::SamplerYcbcrConversion samplerYCbCrConversion )
 {
-	using Index = std::bitset<sizeof(size_t)*Utils::getByteSize()*2>;
-	static std::unordered_map<Index, const Utils::StaticId> ids; 
+	using Index = std::tuple<vk::Filter, vk::SamplerYcbcrConversion>;
+	static std::unordered_map<Index, const Utils::StaticId, Utils::Hasher<Index>> ids;
 
 	//Create an index with the relevant parameters and obtain the id
-	Index index;
-	index |= static_cast<size_t>(filter);
-	index <<= sizeof(uintptr_t)*Utils::getByteSize();
-	index |= reinterpret_cast<const uintptr_t&>(samplerYCbCrConversion);
+	const Index index(filter, samplerYCbCrConversion);
 	const auto& id = ids[index]; //TODO concurrent access
 
 	//Try to retrieve the sampler from cache

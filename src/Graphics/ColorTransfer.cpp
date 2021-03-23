@@ -340,7 +340,7 @@ struct InputColorTransfer::Impl {
 	void optimize(const Sampler& sampler) noexcept {
 		//Check if a HW conversion has been set-up
 		if(sampler.getSamplerYCbCrConversion()) {
-			if(getYCbCrSamplerRange() > vk::SamplerYcbcrRange::eItuFull) {
+			if(isYCbCr(colorModel)) {
 				//Remove shader range extension
 				assert(transferData.planeFormat == ct_PLANE_FORMAT_RGBA);
 				transferData.colorRange = ct_COLOR_RANGE_FULL_RGB;

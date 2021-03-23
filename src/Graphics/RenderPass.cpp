@@ -2,6 +2,7 @@
 
 #include <zuazo/Graphics/ColorTransfer.h>
 #include <zuazo/Utils/StaticId.h>
+#include <zuazo/Utils/Hasher.h>
 
 #include <algorithm>
 #include <bitset>
@@ -292,38 +293,34 @@ vk::RenderPass RenderPass::createRenderPass(const Vulkan& vulkan,
 											vk::Format intermediaryFmt,
 											vk::ImageLayout finalLayout )
 {
-	//Some type definitions and constants used for indexing
-	using Field = uint;
-	constexpr size_t INDEX_FIELD_COUNT = 8; //Actually 7, just in case 8
-	constexpr size_t INDEX_FIELD_OFFSET = sizeof(Field) * Utils::getByteSize();
-	using Index = std::bitset<INDEX_FIELD_OFFSET * INDEX_FIELD_COUNT>;
+	using Index = std::tuple<	std::array<vk::Format, ATTACHMENT_COUNT>,
+								vk::Format,
+								vk::Format,
+								vk::ImageLayout >;
 
-	//Obtain the index for these parameters
-	Index index;
+	//Calculate a index for these parameters
+	std::array<vk::Format, ATTACHMENT_COUNT> planeFormats;
+	assert(planeDescriptors.size() <= planeFormats.size());
+	const auto lastPlaneFormat = std::transform(
+		planeDescriptors.cbegin(), planeDescriptors.cend(),
+		planeFormats.begin(),
+		[] (const Image::Plane& plane) -> vk::Format {
+			//In order to be a render target, it must not have a swizzle
+			assert(plane.getSwizzle() == vk::ComponentMapping());
+			return plane.getFormat();
+		}
+	);
+	std::fill(lastPlaneFormat, planeFormats.end(), vk::Format::eUndefined);
+	const Index index(
+		planeFormats,
+		depthStencilFmt,
+		intermediaryFmt,
+		finalLayout
+	);
 
-	//Add all the plane formats
-	for(const auto& plane : planeDescriptors) {
-		assert(plane.getSwizzle() == vk::ComponentMapping());
-
-		index <<= INDEX_FIELD_OFFSET;
-		index |= static_cast<Field>(plane.getFormat());
-	}
-
-	//Pad upto 4 plane formats and add the depth stencil format
-	index <<= INDEX_FIELD_OFFSET * (4 - planeDescriptors.size() + 1);
-	index |= static_cast<Field>(depthStencilFmt);
-
-	//Add the intermediary format
-	index <<= INDEX_FIELD_OFFSET;
-	index |= static_cast<Field>(intermediaryFmt);
-
-	//Add the final layout
-	index <<= INDEX_FIELD_OFFSET;
-	index |= static_cast<Field>(finalLayout);
-
-	//Finally obtain the id
-	static std::unordered_map<Index, const Utils::StaticId> ids; //TODO make thread-safe
-	const auto& id = ids[index];
+	//Obtain the id of the parameters
+	static std::unordered_map<Index, const Utils::StaticId, Utils::Hasher<Index>> ids; 
+	const auto& id = ids[index]; //TODO make thread-safe
 
 	//Check if a renderpass with this id is cached
 	vk::RenderPass result = vulkan.createRenderPass(id);
