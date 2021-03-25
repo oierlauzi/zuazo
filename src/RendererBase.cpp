@@ -15,6 +15,8 @@ struct RendererBase::Impl {
 		DSCBK_COUNT
 	};
 
+	Math::Vec2f											viewportSize;
+
 	Utils::Limit<DepthStencilFormat>					depthStencilFmtLimits;
 	Utils::Limit<DepthStencilFormat>					depthStencilFmtCompatibility;
 	Utils::Limit<DepthStencilFormat>					depthStencilFmt;
@@ -22,6 +24,7 @@ struct RendererBase::Impl {
 	Camera												camera;	
 	std::vector<LayerRef>								layers;
 
+	ViewportSizeCallback								viewportSizeCbk;
 	DepthStencilFormatCallback							depthStencilFmtCompatibilityCbk;
 	std::array<DepthStencilFormatCallback, DSCBK_COUNT>	depthStencilFmtCbk;
 	CameraCallback										cameraCbk;
@@ -38,11 +41,13 @@ struct RendererBase::Impl {
 			DepthStencilFormatCallback internalDepthStencilFormatCbk, 
 			CameraCallback cameraCbk, 
 			RenderPassQueryCallback renderPassQueryCbk)
-		: depthStencilFmtLimits(std::move(depthStencil))
+		: viewportSize()
+		, depthStencilFmtLimits(std::move(depthStencil))
 		, depthStencilFmtCompatibility()
 		, depthStencilFmt()
 		, camera()
 		, layers()
+		, viewportSizeCbk()
 		, depthStencilFmtCompatibilityCbk()
 		, depthStencilFmtCbk{ std::move(internalDepthStencilFormatCbk) }
 		, cameraCbk(std::move(cameraCbk))
@@ -53,6 +58,28 @@ struct RendererBase::Impl {
 	}
 
 	~Impl() = default;
+
+
+
+	void setViewportSize(RendererBase& base, Math::Vec2f size) {
+		if(viewportSize != size) {
+			viewportSize = size;
+			Utils::invokeIf(viewportSizeCbk, base, size);
+		}		
+	}
+
+	Math::Vec2f getViewportSize() const noexcept {
+		return viewportSize;
+	}
+
+	void setViewportSizeCallback(ViewportSizeCallback cbk) {
+		viewportSizeCbk = std::move(cbk);
+	}
+
+	const ViewportSizeCallback& getViewportSizeCallback() const noexcept {
+		return viewportSizeCbk;
+	}
+
 
 
 	void setDepthStencilFormatCompatibilityCallback(DepthStencilFormatCallback cbk) {
@@ -374,6 +401,20 @@ RendererBase& RendererBase::operator=(RendererBase&& other) = default;
 
 
 
+Math::Vec2f RendererBase::getViewportSize() const noexcept {
+	return m_impl->getViewportSize();
+}
+
+void RendererBase::setViewportSizeCallback(ViewportSizeCallback cbk) {
+	m_impl->setViewportSizeCallback(std::move(cbk));
+}
+
+const RendererBase::ViewportSizeCallback& RendererBase::getViewportSizeCallback() const noexcept {
+	return m_impl->getViewportSizeCallback();
+}
+
+
+
 void RendererBase::setDepthStencilFormatCompatibilityCallback(DepthStencilFormatCallback cbk) {
 	m_impl->setDepthStencilFormatCompatibilityCallback(std::move(cbk));
 }
@@ -407,6 +448,7 @@ const Utils::Limit<DepthStencilFormat>& RendererBase::getDepthStencilFormatCompa
 const Utils::Limit<DepthStencilFormat>&	RendererBase::getDepthStencilFormat() const {
 	return m_impl->getDepthStencilFormat();
 }
+
 
 
 void RendererBase::setCamera(const Camera& cam) {
@@ -456,6 +498,12 @@ vk::DescriptorSetLayout RendererBase::getDescriptorSetLayout(const Graphics::Vul
 
 vk::PipelineLayout RendererBase::getBasePipelineLayout(const Graphics::Vulkan& vulkan) {
 	return Impl::getBasePipelineLayout(vulkan);
+}
+
+
+
+void RendererBase::setViewportSize(Math::Vec2f size) {
+	m_impl->setViewportSize(*this, size);
 }
 
 

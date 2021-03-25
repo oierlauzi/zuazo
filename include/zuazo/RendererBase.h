@@ -35,6 +35,7 @@ public:
 
 	using UniformBufferSizes = Utils::BufferView<const std::pair<uint32_t, size_t>>;
 	using DescriptorPoolSizes = Utils::BufferView<const vk::DescriptorPoolSize>;
+	using ViewportSizeCallback = std::function<void(RendererBase&, Math::Vec2f)>;
 
 	static constexpr uint32_t DESCRIPTOR_SET = 0;
 
@@ -48,6 +49,10 @@ public:
 
 	RendererBase& 							operator=(const RendererBase& other) = delete;
 	RendererBase&							operator=(RendererBase&& other);
+
+	Math::Vec2f								getViewportSize() const noexcept;
+	void									setViewportSizeCallback(ViewportSizeCallback cbk);
+	const ViewportSizeCallback&				getViewportSizeCallback() const noexcept;
 
 	void									setDepthStencilFormatCompatibilityCallback(DepthStencilFormatCallback cbk);
 	const DepthStencilFormatCallback&		getDepthStencilFormatCompatibilityCallback() const;
@@ -77,6 +82,8 @@ public:
 	static vk::PipelineLayout				getBasePipelineLayout(const Graphics::Vulkan& vulkan);
 
 protected:
+	void									setViewportSize(Math::Vec2f size);
+
 	void									setDepthStencilFormatCompatibility(Utils::Limit<DepthStencilFormat> comp);
 
 	void									setInternalDepthStencilFormatCallback(DepthStencilFormatCallback cbk);
@@ -90,7 +97,7 @@ protected:
 
 private:
 	struct Impl;
-	Utils::Pimpl<Impl>		m_impl;		
+	Utils::Pimpl<Impl>						m_impl;		
 
 };
 
