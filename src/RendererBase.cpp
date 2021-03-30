@@ -205,7 +205,7 @@ struct RendererBase::Impl {
 
 	static UniformBufferSizes getUniformBufferSizes() noexcept {
 		static const std::array uniformBufferSizes = {
-			std::make_pair(static_cast<uint32_t>(DESCRIPTOR_BINDING_PROJECTION_MATRIX), 	sizeof(glm::mat4)),
+			std::make_pair(static_cast<uint32_t>(DESCRIPTOR_BINDING_PROJECTION_MATRIX), 	sizeof(Math::Mat4x4f)),
 			std::make_pair(static_cast<uint32_t>(DESCRIPTOR_BINDING_OUTPUT_COLOR_TRANSFER),	Graphics::OutputColorTransfer::size())
 		};
 

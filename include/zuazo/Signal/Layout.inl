@@ -120,6 +120,10 @@ inline void Layout::removePad(PadRef pad) noexcept {
 	m_pads.erase(ite);
 }
 
+template<typename T>
+inline void Layout::removePad(PadProxy<T>& pad) {
+	removePad(static_cast<PadBase&>(pad));
+}
 
 
 template <typename T>

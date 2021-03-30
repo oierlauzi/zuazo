@@ -10,6 +10,10 @@
 
 namespace Zuazo::Math {
 
+//Tag used to represent that a normalized vector is provided
+struct normalized_t {};
+constexpr normalized_t normalized;
+
 template <typename T, size_t N>
 class Vec;
 

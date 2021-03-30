@@ -3,6 +3,13 @@
 namespace Zuazo::Math {
 
 template<typename T>
+constexpr Quaternion<T>::Quaternion(value_type s, 
+									const Vec3<value_type>& v)
+	: Quaternion(s, v.x, v.y, v.z)
+{
+}
+
+template<typename T>
 constexpr Quaternion<T>::Quaternion(value_type w, value_type x, value_type y, value_type z)
 	: w(std::move(w))
 	, x(std::move(x))
@@ -241,6 +248,44 @@ constexpr Quaternion<T>& operator/=(Quaternion<T>& lhs, const typename Quaternio
 	}
 
 	return lhs;
+}
+
+
+
+template<typename T>
+constexpr typename Quaternion<T>::value_type dot(Quaternion<T>& lhs, const Quaternion<T>& rhs) noexcept {
+	return lhs.w*rhs.w + lhs.x*rhs.x + lhs.y*rhs.y + lhs.z*rhs.z;
+}
+
+template<typename T>
+constexpr typename Quaternion<T>::value_type length2(const Quaternion<T>& q) noexcept {
+	return dot(q, q);
+}
+
+template<typename T>
+constexpr typename Quaternion<T>::value_type length(const Quaternion<T>& q) noexcept {
+	return sqrt(length2(q));
+}
+
+template<typename T>
+constexpr Quaternion<T> normalize(const Quaternion<T>& q) noexcept {
+	return q / length(q);
+}
+
+
+
+template<typename T>
+constexpr Quaternion<T> rotateAbout(const Vec3<T>& v, const T& alpha, normalized_t) noexcept {
+	const auto halfAlpha = alpha / 2;
+	const auto c = cos(halfAlpha);
+	const auto s = sin(halfAlpha);
+
+	return Quaternion<T>(c, s*v);
+}
+
+template<typename T>
+constexpr Quaternion<T> rotateAbout(const Vec3<T>& v, const T& alpha) noexcept {
+	return rotateAround(normalize(v), alpha, normalized);
 }
 
 

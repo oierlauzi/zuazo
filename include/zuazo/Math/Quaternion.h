@@ -3,8 +3,6 @@
 #include "Vector.h"
 #include "Matrix.h"
 
-#include <glm/gtc/quaternion.hpp>
-
 namespace Zuazo::Math {
 
 template<typename T>
@@ -15,10 +13,13 @@ public:
 	constexpr Quaternion(const Quaternion& other) = default;
 	constexpr Quaternion(Quaternion&& other) = default;
 
-	constexpr Quaternion(	value_type w = value_type(1), 
-							value_type x = value_type(0), 
-							value_type y = value_type(0), 
-							value_type z = value_type(0) );
+	constexpr Quaternion(	value_type s, 
+							const Vec3<value_type>& v);
+
+	constexpr explicit Quaternion(	value_type w = value_type(1), 
+									value_type x = value_type(0), 
+									value_type y = value_type(0), 
+									value_type z = value_type(0) );
 	template<typename Q>
 	constexpr Quaternion(const Quaternion<Q>& other);
 	template<typename Q>
@@ -92,10 +93,29 @@ constexpr Quaternion<T>& operator/=(Quaternion<T>& lhs, const typename Quaternio
 
 
 template<typename T>
+constexpr typename Quaternion<T>::value_type dot(Quaternion<T>& lhs, const Quaternion<T>& rhs) noexcept;
+template<typename T>
+constexpr typename Quaternion<T>::value_type length2(const Quaternion<T>& q) noexcept;
+template<typename T>
+constexpr typename Quaternion<T>::value_type length(const Quaternion<T>& q) noexcept;
+template<typename T>
+constexpr Quaternion<T> normalize(const Quaternion<T>& q) noexcept;
+
+
+
+template<typename T>
+constexpr Quaternion<T> rotateAbout(const Vec3<T>& v, const T& alpha, normalized_t) noexcept;
+template<typename T>
+constexpr Quaternion<T> rotateAbout(const Vec3<T>& v, const T& alpha) noexcept;
+
+
+
+template<typename T>
 constexpr Mat3x3<T> toMatrix(const Quaternion<T>& q) noexcept;
 
 template<typename T>
 constexpr Quaternion<T> fromMatrix(const Mat3x3<T>& m) noexcept;
+
 
 
 template<typename T>

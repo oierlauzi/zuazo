@@ -50,7 +50,10 @@ protected:
 	void													registerPad(PadProxy<T>& pad);
 	template<typename InputIt>
 	void													registerPad(InputIt begin, InputIt end);
+
 	void													removePad(PadRef pad) noexcept;
+	template<typename T>
+	void													removePad(PadProxy<T>& pad);
 
 private:
 	std::string												m_name;

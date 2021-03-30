@@ -7,9 +7,6 @@
 
 namespace Zuazo::Math {
 
-struct normalized_t {};
-constexpr normalized_t normalized;
-
 template<typename T>
 constexpr Mat2x2<typename Vec2<T>::value_type> getAlignmentMatrix(const Vec2<T> vec) noexcept;
 
