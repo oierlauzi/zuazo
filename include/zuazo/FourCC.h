@@ -25,8 +25,12 @@ enum class FourCC : uint32_t {
 	//RGB(A)-like
 	RGBX	= makeFourCC("RGBX"),
 	RGBA	= makeFourCC("RGBA"),
+	XRGB	= makeFourCC("XRGB"),
+	ARGB	= makeFourCC("ARGB"),
 	BGRX	= makeFourCC("BGRX"),
 	BGRA	= makeFourCC("BGRA"),
+	XBGR	= makeFourCC("XBGR"),
+	ABGR	= makeFourCC("ABGR"),
 
 	//Grayscale
 	Y800	= makeFourCC("Y800"),	///<Simple, single Y plane for monochrome images
@@ -50,22 +54,30 @@ enum class FourCC : uint32_t {
 	//Planar YUV
 	NV12	= makeFourCC("NV12"),	///<8-bit Y plane followed by an interleaved U/V plane with 2x2 subsampling
 	NV21	= makeFourCC("NV21"),	///<As NV12 with U and V reversed in the interleaved plane
+	NV16	= makeFourCC("NV16"),	///<8-bit Y plane followed by an interleaved U/V plane with 2x1 subsampling
+	NV61	= makeFourCC("NV61"),	///<As NV16 with U and V reversed in the interleaved plane
+	NV24	= makeFourCC("NV24"),	///<8-bit Y plane followed by an interleaved U/V plane with no subsampling
+	NV42	= makeFourCC("NV42"),	///<As NV16 with U and V reversed in the interleaved plane
 
 	P016 	= makeFourCC("P016"), 	///<Planar, 4:2:0, 16-bit.
 	P010 	= makeFourCC("P010"), 	///<Planar, 4:2:0, 10-bit.
 	P216 	= makeFourCC("P216"), 	///<Planar, 4:2:2, 16-bit.
 	P210 	= makeFourCC("P210"), 	///<Planar, 4:2:2, 10-bit.
 
-	PA16	= makeFourCC("PA16"),	///<This is a 4:2:2:4 buffer in semi-planar format with full 16bpp color and alpha precision.
+	PA16	= makeFourCC("PA16"),	///<Like P216 but with a third alpha plane
+
+	I420	= makeFourCC("I420"),	///<8 bit Y plane followed by 8 bit 2x2 subsampled U and V planes.
+	I422	= makeFourCC("I422"),	///<8 bit Y plane followed by 8 bit 2x1 subsampled U and V planes.
+	I444	= makeFourCC("I444"),	///<8 bit Y plane followed by 8 bit U and V planes (no subsampling).
 
 	YV12	= makeFourCC("YV12"),	///<8 bit Y plane followed by 8 bit 2x2 subsampled V and U planes.
-	I420	= makeFourCC("I420"),	///<8 bit Y plane followed by 8 bit 2x2 subsampled U and V planes.
 	YV16	= makeFourCC("YV16"),	///<8 bit Y plane followed by 8 bit 2x1 subsampled V and U planes.
 
 };
 
-constexpr std::tuple<ColorFormat, ColorSubsampling, ColorModel> fromFourCC(FourCC fcc) noexcept;
+constexpr std::tuple<ColorFormat, ColorSubsampling, ColorModel> fromFourCC(	FourCC fcc, 
+																			ColorModel ycbcrModel = ColorModel::YUV ) noexcept;
 
 }
 
-#include "FourCC.h"
+#include "FourCC.inl"

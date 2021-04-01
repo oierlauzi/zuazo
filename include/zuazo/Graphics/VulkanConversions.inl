@@ -225,6 +225,14 @@ constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COU
 		std::tuple{ vk::Format::eR8Unorm, swizzle("") },
 		std::tuple{ vk::Format::eR8Unorm, swizzle("") },
 		std::tuple{ vk::Format::eR8Unorm, swizzle("") } };
+	case ColorFormat::G8_B8R8_A8:		return { 
+		std::tuple{ vk::Format::eR8Unorm, swizzle("") },
+		std::tuple{ vk::Format::eR8G8Unorm, swizzle("") },
+		std::tuple{ vk::Format::eR8Unorm, swizzle("") } };
+	case ColorFormat::G8_R8B8_A8:		return {
+		std::tuple{ vk::Format::eR8Unorm, swizzle("") },
+		std::tuple{ vk::Format::eR8G8Unorm, swizzle("GR") },
+		std::tuple{ vk::Format::eR8Unorm, swizzle("") } };
 	case ColorFormat::G8_B8R8:			return { 
 		std::tuple{ vk::Format::eR8Unorm, swizzle("") },
 		std::tuple{ vk::Format::eR8G8Unorm, swizzle("") } };
@@ -271,10 +279,18 @@ constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COU
 		std::tuple{ vk::Format::eR10X6UnormPack16, swizzle("") },
 		std::tuple{ vk::Format::eR10X6UnormPack16, swizzle("") },
 		std::tuple{ vk::Format::eR10X6UnormPack16, swizzle("") } };
-	case ColorFormat::G10X6_B10X6R10X6_16:		return { 
+	case ColorFormat::G10X6_B10X6R10X6_A10X6_16:	return { 
+		std::tuple{ vk::Format::eR10X6UnormPack16, swizzle("") },
+		std::tuple{ vk::Format::eR10X6G10X6Unorm2Pack16, swizzle("") },
+		std::tuple{ vk::Format::eR10X6UnormPack16, swizzle("") } };
+	case ColorFormat::G10X6_R10X6B10X6_A10X6_16:	return {
+		std::tuple{ vk::Format::eR10X6UnormPack16, swizzle("") },
+		std::tuple{ vk::Format::eR10X6G10X6Unorm2Pack16, swizzle("GR") },
+		std::tuple{ vk::Format::eR10X6UnormPack16, swizzle("") } };
+	case ColorFormat::G10X6_B10X6R10X6_16:	return { 
 		std::tuple{ vk::Format::eR10X6UnormPack16, swizzle("") },
 		std::tuple{ vk::Format::eR10X6G10X6Unorm2Pack16, swizzle("") } };
-	case ColorFormat::G10X6_R10X6B10X6_16:		return {
+	case ColorFormat::G10X6_R10X6B10X6_16:	return {
 		std::tuple{ vk::Format::eR10X6UnormPack16, swizzle("") },
 		std::tuple{ vk::Format::eR10X6G10X6Unorm2Pack16, swizzle("GR") } };
 	
@@ -308,10 +324,18 @@ constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COU
 		std::tuple{ vk::Format::eR12X4UnormPack16, swizzle("") },
 		std::tuple{ vk::Format::eR12X4UnormPack16, swizzle("") },
 		std::tuple{ vk::Format::eR12X4UnormPack16, swizzle("") } };
-	case ColorFormat::G12X4_B12X4R12X4_16:		return { 
+	case ColorFormat::G12X4_B12X4R12X4_A12X4_16:	return { 
+		std::tuple{ vk::Format::eR12X4UnormPack16, swizzle("") },
+		std::tuple{ vk::Format::eR12X4G12X4Unorm2Pack16, swizzle("") },
+		std::tuple{ vk::Format::eR12X4UnormPack16, swizzle("") } };
+	case ColorFormat::G12X4_R12X4B12X4_A12X4_16:	return {
+		std::tuple{ vk::Format::eR12X4UnormPack16, swizzle("") },
+		std::tuple{ vk::Format::eR12X4G12X4Unorm2Pack16, swizzle("GR") },
+		std::tuple{ vk::Format::eR12X4UnormPack16, swizzle("") } };
+	case ColorFormat::G12X4_B12X4R12X4_16:	return { 
 		std::tuple{ vk::Format::eR12X4UnormPack16, swizzle("") },
 		std::tuple{ vk::Format::eR12X4G12X4Unorm2Pack16, swizzle("") } };
-	case ColorFormat::G12X4_R12X4B12X4_16:		return {
+	case ColorFormat::G12X4_R12X4B12X4_16:	return {
 		std::tuple{ vk::Format::eR12X4UnormPack16, swizzle("") },
 		std::tuple{ vk::Format::eR12X4G12X4Unorm2Pack16, swizzle("GR") } };
 
@@ -368,6 +392,14 @@ constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COU
 	case ColorFormat::G16_B16_R16:			return { 
 		std::tuple{ vk::Format::eR16Unorm, swizzle("") },
 		std::tuple{ vk::Format::eR16Unorm, swizzle("") },
+		std::tuple{ vk::Format::eR16Unorm, swizzle("") } };
+	case ColorFormat::G16_B16R16_A16:			return { 
+		std::tuple{ vk::Format::eR16Unorm, swizzle("") },
+		std::tuple{ vk::Format::eR16G16Unorm, swizzle("") },
+		std::tuple{ vk::Format::eR16Unorm, swizzle("") } };
+	case ColorFormat::G16_R16B16_A16:			return {
+		std::tuple{ vk::Format::eR16Unorm, swizzle("") },
+		std::tuple{ vk::Format::eR16G16Unorm, swizzle("GR") },
 		std::tuple{ vk::Format::eR16Unorm, swizzle("") } };
 	case ColorFormat::G16_B16R16:			return { 
 		std::tuple{ vk::Format::eR16Unorm, swizzle("") },

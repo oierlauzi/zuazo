@@ -13,9 +13,17 @@ constexpr size_t getPlaneCount(ColorFormat format) noexcept {
 		case ColorFormat::G64f_B64f_R64f_A64f:
 			return 4;
 		case ColorFormat::G8_B8_R8:
+		case ColorFormat::G8_B8R8_A8:
+		case ColorFormat::G8_R8B8_A8:
 		case ColorFormat::G10X6_B10X6_R10X6_16:
+		case ColorFormat::G10X6_B10X6R10X6_A10X6_16:
+		case ColorFormat::G10X6_R10X6B10X6_A10X6_16:
 		case ColorFormat::G12X4_B12X4_R12X4_16:
+		case ColorFormat::G12X4_B12X4R12X4_A12X4_16:
+		case ColorFormat::G12X4_R12X4B12X4_A12X4_16:
 		case ColorFormat::G16_B16_R16:
+		case ColorFormat::G16_B16R16_A16:
+		case ColorFormat::G16_R16B16_A16:
 		case ColorFormat::G16f_B16f_R16f:
 		case ColorFormat::G32f_B32f_R32f:
 		case ColorFormat::G64f_B64f_R64f:
@@ -71,6 +79,8 @@ constexpr bool hasAlpha(ColorFormat format) noexcept {
 	case ColorFormat::R8G8B8A8_32:
 	case ColorFormat::B8G8R8A8_32:
 	case ColorFormat::G8_B8_R8_A8:
+	case ColorFormat::G8_B8R8_A8:
+	case ColorFormat::G8_R8B8_A8:
 	case ColorFormat::Y10X6A10X6_16:
 	case ColorFormat::A10X6Y10X6_16:
 	case ColorFormat::A10X6R10X6G10X6B10X6_16:
@@ -86,6 +96,8 @@ constexpr bool hasAlpha(ColorFormat format) noexcept {
 	case ColorFormat::A2G10R10B10_32: 
 	case ColorFormat::A2G10B10R10_32:
 	case ColorFormat::G10X6_B10X6_R10X6_A10X6_16:
+	case ColorFormat::G10X6_B10X6R10X6_A10X6_16:
+	case ColorFormat::G10X6_R10X6B10X6_A10X6_16:
 	case ColorFormat::Y12X4A12X4_16:
 	case ColorFormat::A12X4Y12X4_16:
 	case ColorFormat::A12X4R12X4G12X4B12X4_16:
@@ -97,6 +109,8 @@ constexpr bool hasAlpha(ColorFormat format) noexcept {
 	case ColorFormat::G12X4R12X4B12X4A12X4_16:
 	case ColorFormat::G12X4B12X4R12X4A12X4_16:
 	case ColorFormat::G12X4_B12X4_R12X4_A12X4_16:
+	case ColorFormat::G12X4_B12X4R12X4_A12X4_16:
+	case ColorFormat::G12X4_R12X4B12X4_A12X4_16:
 	case ColorFormat::Y16A16:
 	case ColorFormat::A16Y16:
 	case ColorFormat::Y16fA16f:
@@ -119,6 +133,8 @@ constexpr bool hasAlpha(ColorFormat format) noexcept {
 	case ColorFormat::G16fB16fR16fA16f:
 	case ColorFormat::G16_B16_R16_A16:
 	case ColorFormat::G16f_B16f_R16f_A16f:
+	case ColorFormat::G16_B16R16_A16:
+	case ColorFormat::G16_R16B16_A16:
 	case ColorFormat::Y32f:
 	case ColorFormat::Y32fA32f:
 	case ColorFormat::A32fY32f:
@@ -223,6 +239,8 @@ constexpr std::string_view toString(ColorFormat format) noexcept {
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G8B8G8R8 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G8_B8_R8_A8 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G8_B8_R8 )
+	ZUAZO_ENUM2STR_CASE( ColorFormat, G8_R8B8_A8 )
+	ZUAZO_ENUM2STR_CASE( ColorFormat, G8_B8R8_A8 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G8_R8B8 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G8_B8R8 )
 
@@ -251,6 +269,8 @@ constexpr std::string_view toString(ColorFormat format) noexcept {
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G10X6B10X6G10X6R10X6_16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G10X6_B10X6_R10X6_A10X6_16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G10X6_B10X6_R10X6_16 )
+	ZUAZO_ENUM2STR_CASE( ColorFormat, G10X6_R10X6B10X6_A10X6_16 )
+	ZUAZO_ENUM2STR_CASE( ColorFormat, G10X6_B10X6R10X6_A10X6_16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G10X6_R10X6B10X6_16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G10X6_B10X6R10X6_16 )
 
@@ -271,6 +291,8 @@ constexpr std::string_view toString(ColorFormat format) noexcept {
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G12X4B12X4G12X4R12X4_16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G12X4_B12X4_R12X4_A12X4_16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G12X4_B12X4_R12X4_16 )
+	ZUAZO_ENUM2STR_CASE( ColorFormat, G12X4_R12X4B12X4_A12X4_16 )
+	ZUAZO_ENUM2STR_CASE( ColorFormat, G12X4_B12X4R12X4_A12X4_16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G12X4_R12X4B12X4_16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G12X4_B12X4R12X4_16 )
 
@@ -310,6 +332,8 @@ constexpr std::string_view toString(ColorFormat format) noexcept {
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G16B16G16R16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G16_B16_R16_A16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G16_B16_R16 )
+	ZUAZO_ENUM2STR_CASE( ColorFormat, G16_R16B16_A16 )
+	ZUAZO_ENUM2STR_CASE( ColorFormat, G16_B16R16_A16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G16_R16B16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G16_B16R16 )
 	ZUAZO_ENUM2STR_CASE( ColorFormat, G16f_B16f_R16f_A16f )

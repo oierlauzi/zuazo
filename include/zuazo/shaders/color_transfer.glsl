@@ -13,6 +13,11 @@ vec4 ct_load(in int planeFormat, in vec4 plane0, in vec4 plane1, in vec4 plane2,
 		result.br = plane1.rg;
 		result.a = 1.0f;
 		break;
+	case ct_PLANE_FORMAT_G_BR_A:
+		result.g = plane0.r;
+		result.br = plane1.rg;
+		result.a = plane2.r;
+		break;
 	case ct_PLANE_FORMAT_G_B_R:
 		result.g = plane0.r;
 		result.b = plane1.r;
@@ -45,6 +50,11 @@ vec4 ct_load(in int planeFormat, in sampler2D images[ct_SAMPLER_COUNT], in vec2 
 		result.br = texture(images[1], texCoords).rg;
 		result.a = 1.0f;
 		break;
+	case ct_PLANE_FORMAT_G_BR_A:
+		result.g = texture(images[0], texCoords).r;
+		result.br = texture(images[1], texCoords).rg;
+		result.a = texture(images[2], texCoords).r;
+		break;
 	case ct_PLANE_FORMAT_G_B_R:
 		result.g = texture(images[0], texCoords).r;
 		result.b = texture(images[1], texCoords).r;
@@ -72,6 +82,11 @@ void ct_store(in int planeFormat, in vec4 color, out vec4 plane0, out vec4 plane
 	case ct_PLANE_FORMAT_G_BR:
 		plane0.ra = color.ga;
 		plane1.rga = color.bra;
+		break;
+	case ct_PLANE_FORMAT_G_BR_A:
+		plane0.ra = color.ga;
+		plane1.rga = color.bra;
+		plane2.ra = color.aa;
 		break;
 	case ct_PLANE_FORMAT_G_B_R:
 		plane0.ra = color.ga;

@@ -4,6 +4,8 @@ namespace Zuazo {
 
 constexpr bool isYCbCr(ColorModel colorModel) noexcept {
 	switch(colorModel){
+	case ColorModel::YIQ:
+	case ColorModel::YUV:
 	case ColorModel::BT601:
 	case ColorModel::BT709: 
 	case ColorModel::BT2020:
@@ -43,6 +45,18 @@ constexpr Math::Mat3x3f getRGB2YCbCrConversionMatrix(ColorModel colorModel) noex
 	
 	//From https://en.wikipedia.org/wiki/YCbCr
 	case ColorModel::RGB: return Math::Mat3x3f(1.0f); //Identity
+	case ColorModel::YIQ: 
+		return constructRGB2YCbCrConversionMatrix(
+			0.299f, 	0.587f, 	0.114f,
+			+0.595716f,	-0.274453f,	-0.321263f,
+			+0.211456f,	-0.522591f,	+0.311135f
+		);
+	case ColorModel::YUV: 
+		return constructRGB2YCbCrConversionMatrix(
+			0.299f, 	0.587f, 	0.114f,
+			-0.14713f,	-0.28886f,	+0.436f,
+			+0.615f,	-0.51499f,	-0.10001f
+		);
 	case ColorModel::BT601: return constructRGB2YCbCrConversionMatrix(0.299f, 0.114f);
 	case ColorModel::BT709: return constructRGB2YCbCrConversionMatrix(0.2126f, 0.0722f);
 	case ColorModel::BT2020: return constructRGB2YCbCrConversionMatrix(0.2627f, 0.0593f);
@@ -57,6 +71,8 @@ constexpr std::string_view toString(ColorModel colorModel) noexcept {
 	switch(colorModel){
 
 	ZUAZO_ENUM2STR_CASE( ColorModel, RGB )
+	ZUAZO_ENUM2STR_CASE( ColorModel, YIQ )
+	ZUAZO_ENUM2STR_CASE( ColorModel, YUV )
 	ZUAZO_ENUM2STR_CASE( ColorModel, BT601 )
 	ZUAZO_ENUM2STR_CASE( ColorModel, BT709 )
 	ZUAZO_ENUM2STR_CASE( ColorModel, BT2020 )

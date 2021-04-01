@@ -70,7 +70,7 @@ constexpr int32_t getPlaneFormat(ColorFormat format) noexcept {
 
 	switch(planeCount){
 	case 2: 		return ct_PLANE_FORMAT_G_BR;
-	case 3: 		return ct_PLANE_FORMAT_G_B_R;
+	case 3: 		return hasAlpha(format) ? ct_PLANE_FORMAT_G_BR_A : ct_PLANE_FORMAT_G_B_R;
 	case 4: 		return ct_PLANE_FORMAT_G_B_R_A;
 	default: /*1*/	return ct_PLANE_FORMAT_RGBA;
 	}
@@ -148,6 +148,7 @@ static int32_t optimizePlanes(	int32_t planeFormat,
 		//Try to optimize the format
 		vk::Format optimizedFormat = vk::Format::eUndefined;
 
+		//TODO optimize formats with alpha
 		switch(planeFormat) {
 		case ct_PLANE_FORMAT_G_B_R:
 			//3 Plane format

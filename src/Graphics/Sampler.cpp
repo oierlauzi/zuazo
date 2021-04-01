@@ -133,21 +133,25 @@ vk::SamplerYcbcrConversion Sampler::createSamplerYCbCrConversion(	const Vulkan& 
 		result = vulkan.createSamplerYcbcrConversion(id);
 		if(!result) {
 			//No luck, create it
-			constexpr vk::ChromaLocation xChromaLocation = vk::ChromaLocation::eCositedEven;
-			constexpr vk::ChromaLocation yChromaLocation = vk::ChromaLocation::eCositedEven;
-			constexpr bool forceExplicitReconstruction = false;
-
-			//Ensure that the format is supported
-			assert(vulkan.getFormatSupport().at(format).optimalTilingFeatures & vk::FormatFeatureFlagBits::eCositedChromaSamples);
-			//FIXME only one of cosited or midpoint samples is *required* to be supported, although both should be
+			//Decide where to sample
+			//FIXME this is not colorimetrically correct. It must be sampled where specified.
+			vk::ChromaLocation chromaLocation;
+			const auto& formatSupport = vulkan.getFormatSupport().at(format);
+			if(formatSupport.optimalTilingFeatures & vk::FormatFeatureFlagBits::eCositedChromaSamples) {
+				chromaLocation = vk::ChromaLocation::eCositedEven;
+			} else {
+				assert(formatSupport.optimalTilingFeatures & vk::FormatFeatureFlagBits::eMidpointChromaSamples);
+				chromaLocation = vk::ChromaLocation::eMidpoint;
+			}
+			constexpr bool forceExplicitReconstruction = false;			
 
 			const vk::SamplerYcbcrConversionCreateInfo createInfo(
 				format,						//Image format
 				model,						//Model
 				range,						//Range
 				swizzle,					//Component swizzle
-				xChromaLocation,			//X Chroma location
-				yChromaLocation,			//Y Chroma location
+				chromaLocation,				//X Chroma location
+				chromaLocation,				//Y Chroma location
 				filter,						//Chrominance reconstruction filter
 				forceExplicitReconstruction	//Force explicit chroma reconstruction
 			);

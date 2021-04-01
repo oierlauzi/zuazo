@@ -27,8 +27,9 @@ ZUAZO_IF_CPP(constexpr int32_t, const int) ct_SAMPLE_MODE_BILINEAR_TO_BICUBIC = 
 
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_RGBA = 0;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_G_BR = 1;
-ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_G_B_R = 2;
-ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_G_B_R_A = 3;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_G_BR_A = 2;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_G_B_R = 3;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_G_B_R_A = 4;
 
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_RANGE_FULL_RGB = 0;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_RANGE_FULL_YCBCR = 1;
