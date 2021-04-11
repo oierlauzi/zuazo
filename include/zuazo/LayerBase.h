@@ -20,6 +20,7 @@ public:
 	using BlendingModeCallback = std::function<void(LayerBase&, BlendingMode)>;
 	using RenderingLayerCallback = std::function<void(LayerBase&, RenderingLayer)>;
 	using HasChangedCallback = std::function<bool(const LayerBase&, const RendererBase&)>;
+	using HasAlphaCallback = std::function<bool(const LayerBase&)>;
 	using DrawCallback = std::function<void(const LayerBase&, const RendererBase&, Graphics::CommandBuffer&)>;
 	using RenderPassCallback = std::function<void(LayerBase&, Graphics::RenderPass)>;
 
@@ -30,6 +31,7 @@ public:
 				BlendingModeCallback blendingModeCbk = {},
 				RenderingLayerCallback renderModeCbk = {},
 				HasChangedCallback hasChangedCbk = {},
+				HasAlphaCallback hasAlphaCbk = {},
 				DrawCallback drawCbk = {},
 				RenderPassCallback renderPassCbk = {} );
 	LayerBase(const LayerBase& other) = delete;
@@ -54,7 +56,7 @@ public:
 	void								setRenderingLayer(RenderingLayer mode);
 	RenderingLayer						getRenderingLayer() const noexcept;
 
-	bool								hasAlpha() const;
+	bool								hasBlending() const;
 	bool								hasChanged(const RendererBase& renderer) const;
 	void								draw(const RendererBase& renderer, Graphics::CommandBuffer& cmd) const;
 
@@ -75,6 +77,9 @@ protected:
 
 	void								setHasChangedCallback(HasChangedCallback cbk);
 	const HasChangedCallback&			getHasChangedCallback() const noexcept;
+
+	void								setHasAlphaCallback(HasAlphaCallback cbk);
+	const HasAlphaCallback&				getHasAlphaCallback() const noexcept;
 
 	void								setDrawCallback(DrawCallback cbk);
 	const DrawCallback&					getDrawCallback() const noexcept;

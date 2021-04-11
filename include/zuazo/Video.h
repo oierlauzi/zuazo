@@ -129,9 +129,9 @@ private:
 class VideoBase {
 public:
 	using VideoModeCallback = std::function<void(VideoBase&, const VideoMode&)>;
-	using VideoModeCompatibilityCallback = std::function<void(VideoBase&, const std::vector<VideoMode>&)>;
+	using VideoModeNegotiationCallback = std::function<VideoMode(VideoBase&, const std::vector<VideoMode>&)>;
 
-	explicit VideoBase(VideoMode videoModeLimits = VideoMode::ANY, VideoModeCallback cbk = {}) noexcept;
+	explicit VideoBase(VideoModeCallback videoModeCbk = {}) noexcept;
 	VideoBase(const VideoBase& other) = delete;
 	VideoBase(VideoBase&& other) noexcept;
 	virtual ~VideoBase();
@@ -140,23 +140,16 @@ public:
 	VideoBase&									operator=(VideoBase&& other) noexcept;
 
 
-	void										setVideoModeCompatibilityCallback(VideoModeCompatibilityCallback cbk) noexcept;
-	const VideoModeCompatibilityCallback&		getVideoModeCompatibilityCallback() const noexcept;
-
-	void										setVideoModeCallback(VideoModeCallback cbk) noexcept;
-	const VideoModeCallback&					getVideoModeCallback() const noexcept;
-
-	void										setVideoModeLimits(VideoMode videoMode) noexcept;
-	const VideoMode&							getVideoModeLimits() const noexcept;
+	void										setVideoModeNegotiationCallback(VideoModeNegotiationCallback cbk) noexcept;
+	const VideoModeNegotiationCallback&			getVideoModeNegotiationCallback() const noexcept;
 	const std::vector<VideoMode>& 				getVideoModeCompatibility() const noexcept;
+
+	void										setVideoMode(VideoMode videoMode);
 	const VideoMode&							getVideoMode() const noexcept;
 
 protected:
-	void										setVideoModeLimitCallback(VideoModeCallback cbk) noexcept;
-	const VideoModeCallback&					getVideoModeLimitCallback() const noexcept;
-
-	void										setInternalVideoModeCallback(VideoModeCallback cbk) noexcept;
-	const VideoModeCallback&					getInternalVideoModeCallback() const noexcept;
+	void										setVideoModeCallback(VideoModeCallback cbk) noexcept;
+	const VideoModeCallback&					getVideoModeCallback() const noexcept;
 
 	void										setVideoModeCompatibility(std::vector<VideoMode> comp) noexcept;
 

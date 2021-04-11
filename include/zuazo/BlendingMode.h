@@ -12,13 +12,13 @@ enum class BlendingMode {
 
 	WRITE,				///<C = C_src
 	OPACITY,			///<C = C_src * A_src + C_dst * (1 - A_src)
-	ADD,				///<C = C_src + C_dst
-	DIFFERENCE,			///<C = C_src - C_dst
-	DIFFERENCE_1,		///<C = C_dst - C_src
-	DARKEN,				///<C = min(C_src, C_dst)
-	LIGHTEN,			///<C = max(C_src, C_dst)
-	MULTIPLY,			///<C = C_src * C_dst
-	SCREEN,				///<1 - C = (1 - C_src) * (1 - C_dst) => C = C_src + C_dst * (1 - C_src)
+	ADD,				///<C = C_src * A_src + C_dst
+	DIFFERENCE,			///<C = C_dst - C_src * A_src
+	DIFFERENCE_1,		///<C = C_src * A_src - C_dst
+	DARKEN,				///<C = min(C_src * A_src, C_dst)
+	LIGHTEN,			///<C = max(C_src * A_src, C_dst)
+	MULTIPLY,			///<C = (C_src * A_src) * C_dst
+	SCREEN,				///<1 - C = (1 - C_src * A_src) * (1 - C_dst) => C = C_src * A_src + C_dst * (1 - C_src * A_src)
 
 	//Add here
 

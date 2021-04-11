@@ -1059,10 +1059,10 @@ constexpr vk::PipelineColorBlendAttachmentState getBlendingConfiguration(Blendin
 			true,
 			vk::BlendFactor::eOne,
 			vk::BlendFactor::eOne,
-			vk::BlendOp::eSubtract,
+			vk::BlendOp::eReverseSubtract, //Contrary to our notation
 			vk::BlendFactor::eOne,
 			vk::BlendFactor::eOne,
-			vk::BlendOp::eSubtract,
+			vk::BlendOp::eReverseSubtract, //Contrary to our notation
 			colorWriteMask
 		);
 	case BlendingMode::DIFFERENCE_1:
@@ -1070,10 +1070,10 @@ constexpr vk::PipelineColorBlendAttachmentState getBlendingConfiguration(Blendin
 			true,
 			vk::BlendFactor::eOne,
 			vk::BlendFactor::eOne,
-			vk::BlendOp::eReverseSubtract,
+			vk::BlendOp::eSubtract, //Contrary to our notation
 			vk::BlendFactor::eOne,
 			vk::BlendFactor::eOne,
-			vk::BlendOp::eReverseSubtract,
+			vk::BlendOp::eSubtract, //Contrary to our notation
 			colorWriteMask
 		);
 	case BlendingMode::DARKEN:

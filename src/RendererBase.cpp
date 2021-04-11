@@ -9,26 +9,15 @@
 namespace Zuazo {
 
 struct RendererBase::Impl {
-	enum VideoModeCallbacks {
-		DSCBK_INTERNAL,
-		DSCBK_EXTERNAL,
-		DSCBK_COUNT
-	};
-
 	Math::Vec2f											viewportSize;
-
-	Utils::Limit<DepthStencilFormat>					depthStencilFmtLimits;
-	Utils::Limit<DepthStencilFormat>					depthStencilFmtCompatibility;
-	Utils::Limit<DepthStencilFormat>					depthStencilFmt;
-
+	DepthStencilFormat									depthStencilFormat;
 	Camera												camera;	
 	std::vector<LayerRef>								layers;
 
-	ViewportSizeCallback								viewportSizeCbk;
-	DepthStencilFormatCallback							depthStencilFmtCompatibilityCbk;
-	std::array<DepthStencilFormatCallback, DSCBK_COUNT>	depthStencilFmtCbk;
-	CameraCallback										cameraCbk;
-	RenderPassQueryCallback								renderPassQueryCbk;
+	ViewportSizeCallback								viewportSizeCallback;
+	DepthStencilFormatCallback							depthStencilFormatCallback;
+	CameraCallback										cameraCallback;
+	RenderPassQueryCallback								renderPassQueryCallback;
 
 	Math::Mat4x4f										projectionMatrix; //Precomputed for use in layerComp
 	std::vector<LayerRef>								sortedLayers;
@@ -37,21 +26,17 @@ struct RendererBase::Impl {
 	static constexpr Math::Vec2f DUMMY_SIZE = Math::Vec2f(1.0f, 1.0f);
 
 
-	Impl(	Utils::Limit<DepthStencilFormat> depthStencil,
-			DepthStencilFormatCallback internalDepthStencilFormatCbk, 
+	Impl(	DepthStencilFormatCallback depthStencilFormatCbk, 
 			CameraCallback cameraCbk, 
 			RenderPassQueryCallback renderPassQueryCbk)
 		: viewportSize()
-		, depthStencilFmtLimits(std::move(depthStencil))
-		, depthStencilFmtCompatibility()
-		, depthStencilFmt()
+		, depthStencilFormat(DepthStencilFormat::D16)
 		, camera()
 		, layers()
-		, viewportSizeCbk()
-		, depthStencilFmtCompatibilityCbk()
-		, depthStencilFmtCbk{ std::move(internalDepthStencilFormatCbk) }
-		, cameraCbk(std::move(cameraCbk))
-		, renderPassQueryCbk(std::move(renderPassQueryCbk))
+		, viewportSizeCallback()
+		, depthStencilFormatCallback(std::move(depthStencilFormatCbk))
+		, cameraCallback(std::move(cameraCbk))
+		, renderPassQueryCallback(std::move(renderPassQueryCbk))
 		, projectionMatrix(camera.calculateProjectionMatrix(DUMMY_SIZE))
 		, hasChanged(true)
 	{
@@ -64,7 +49,7 @@ struct RendererBase::Impl {
 	void setViewportSize(RendererBase& base, Math::Vec2f size) {
 		if(viewportSize != size) {
 			viewportSize = size;
-			Utils::invokeIf(viewportSizeCbk, base, size);
+			Utils::invokeIf(viewportSizeCallback, base, size);
 		}		
 	}
 
@@ -73,50 +58,24 @@ struct RendererBase::Impl {
 	}
 
 	void setViewportSizeCallback(ViewportSizeCallback cbk) {
-		viewportSizeCbk = std::move(cbk);
+		viewportSizeCallback = std::move(cbk);
 	}
 
 	const ViewportSizeCallback& getViewportSizeCallback() const noexcept {
-		return viewportSizeCbk;
+		return viewportSizeCallback;
 	}
 
 
 
-	void setDepthStencilFormatCompatibilityCallback(DepthStencilFormatCallback cbk) {
-		depthStencilFmtCompatibilityCbk = std::move(cbk);
-	}
-
-	const DepthStencilFormatCallback& getDepthStencilFormatCompatibilityCallback() const {
-		return depthStencilFmtCompatibilityCbk;
-	}
-
-
-	void setDepthStencilFormatCallback(DepthStencilFormatCallback cbk) {
-		depthStencilFmtCbk[DSCBK_EXTERNAL] = std::move(cbk);
-	}
-
-	const DepthStencilFormatCallback& getDepthStencilFormatCallback() const {
-		return depthStencilFmtCbk[DSCBK_EXTERNAL];
-	}
-
-
-	void setDepthStencilFormatLimits(RendererBase& base, Utils::Limit<DepthStencilFormat> lim) {
-		if(depthStencilFmtLimits != lim) {
-			depthStencilFmtLimits = std::move(lim);
-			updateDepthStencilFormat(base);
+	void setDepthStencilFormat(RendererBase& base, DepthStencilFormat fmt) {
+		if(depthStencilFormat != fmt) {
+			depthStencilFormat = fmt;
+			Utils::invokeIf(depthStencilFormatCallback, base, depthStencilFormat);
 		}
 	}
 
-	const Utils::Limit<DepthStencilFormat>& getDepthStencilFormatLimits() const {
-		return depthStencilFmtLimits;
-	}
-
-	const Utils::Limit<DepthStencilFormat>& getDepthStencilFormatCompatibility() const {
-		return depthStencilFmtCompatibility;
-	}
-
-	const Utils::Limit<DepthStencilFormat>& getDepthStencilFormat() const {
-		return depthStencilFmt;
+	DepthStencilFormat getDepthStencilFormat() const noexcept {
+		return depthStencilFormat;
 	}
 
 
@@ -125,7 +84,7 @@ struct RendererBase::Impl {
 		if(camera != cam) {
 			camera = cam;
 			projectionMatrix = camera.calculateProjectionMatrix(DUMMY_SIZE);
-			Utils::invokeIf(cameraCbk, base, camera);
+			Utils::invokeIf(cameraCallback, base, camera);
 		}
 	}
 
@@ -194,8 +153,8 @@ struct RendererBase::Impl {
 	Graphics::RenderPass getRenderPass(const RendererBase& base) const {
 		Graphics::RenderPass result;
 
-		if(renderPassQueryCbk) {
-			result = renderPassQueryCbk(base);
+		if(renderPassQueryCallback) {
+			result = renderPassQueryCallback(base);
 		}
 
 		return result;
@@ -285,61 +244,39 @@ struct RendererBase::Impl {
 	}
 
 
-	void setDepthStencilFormatCompatibility(RendererBase& base, Utils::Limit<DepthStencilFormat> comp) {
-		if(depthStencilFmtCompatibility != comp) {
-			depthStencilFmtCompatibility = std::move(comp);
-			Utils::invokeIf(depthStencilFmtCompatibilityCbk, base, depthStencilFmtCompatibility);
-			updateDepthStencilFormat(base);
-		}
-	}
 
-
-	void setInternalDepthStencilFormatCallback(DepthStencilFormatCallback cbk) {
-		depthStencilFmtCbk[DSCBK_INTERNAL] = std::move(cbk);
+	void setDepthStencilFormatCallback(DepthStencilFormatCallback cbk) {
+		depthStencilFormatCallback= std::move(cbk);
 	}
 	
-	const DepthStencilFormatCallback& getInternalDepthStencilFormatCallback() const {
-		return depthStencilFmtCbk[DSCBK_INTERNAL];
+	const DepthStencilFormatCallback& getDepthStencilFormatCallback() const {
+		return depthStencilFormatCallback;
 	}
 	
 
 	void setCameraCallback(CameraCallback cbk) {
-		cameraCbk = std::move(cbk);
+		cameraCallback = std::move(cbk);
 	}
 
 	const CameraCallback& getCameraCallback() const {
-		return cameraCbk;
+		return cameraCallback;
 	}
 
 
 	void setRenderPassQueryCallbackCallback(RenderPassQueryCallback cbk) {
-		renderPassQueryCbk = std::move(cbk);
+		renderPassQueryCallback = std::move(cbk);
 	}
 
 	const RenderPassQueryCallback& getRenderPassQueryCallback() const {
-		return renderPassQueryCbk;
+		return renderPassQueryCallback;
 	}
 	
 private:
-	void updateDepthStencilFormat(RendererBase& base) noexcept {
-		auto newDepthStencilFormat = depthStencilFmtCompatibility.intersect(depthStencilFmtLimits);
-
-		if(newDepthStencilFormat != depthStencilFmt) {
-			//Depth Stencil format has changed
-			depthStencilFmt = std::move(newDepthStencilFormat);
-
-			//Call the callbacks
-			for(const auto& cbk : depthStencilFmtCbk) {
-				Utils::invokeIf(cbk, base, depthStencilFmt);
-			}
-		}
-	}
-
 	bool layerComp(const LayerBase& a, const LayerBase& b) const {
 		/*
 		 * The strategy will be the following:
 		 * 1. Draw all the background objects in order, disabling depth tests
-		 * 2. Draw the alphaless scene objects backwards, writing and testing depth
+		 * 2. Draw the blend-less scene objects backwards, writing and testing depth
 		 * 3. Draw the transparent scene objects forwards, writing and testing depth
 		 * 4. Draw all the foreground objects in order, disabling depth tests
 		 */
@@ -350,9 +287,12 @@ private:
 			result = static_cast<int>(a.getRenderingLayer()) < static_cast<int>(b.getRenderingLayer());
 
 		} else if(a.getRenderingLayer() == RenderingLayer::SCENE) {
-			if(a.hasAlpha() != b.hasAlpha()) {
+			const auto aHasBlending = a.hasBlending();
+			const auto bHasBlending = b.hasBlending();
+
+			if(aHasBlending != bHasBlending) {
 				//Prioritize alphaless drawing
-				result = a.hasAlpha() < b.hasAlpha();
+				result = aHasBlending < bHasBlending;
 			} else {
 				//Both use the same 3D rendering mode and both or neither have alpha. 
 				//Depth must be taken in consideration in order to decide which comes first
@@ -363,7 +303,7 @@ private:
 				const auto aDepth = Math::dot(zProjection, Math::Vec4f(a.getTransform().getPosition(), 1.0f));
 				const auto bDepth = Math::dot(zProjection, Math::Vec4f(b.getTransform().getPosition(), 1.0f));
 
-				if(a.hasAlpha()) {
+				if(aHasBlending) {
 					//Both layers have alpha. Render the furthest one first
 					result = aDepth > bDepth;
 				} else {
@@ -385,11 +325,10 @@ private:
 
 
 
-RendererBase::RendererBase(	Utils::Limit<DepthStencilFormat> depthStencil,
-							DepthStencilFormatCallback internalDepthStencilFormatCbk,
+RendererBase::RendererBase(	DepthStencilFormatCallback depthStencilFormatCbk,
 							CameraCallback cameraCbk,
 							RenderPassQueryCallback renderPassQueryCbk )
-	: m_impl({}, std::move(depthStencil), std::move(internalDepthStencilFormatCbk), std::move(cameraCbk), std::move(renderPassQueryCbk))
+	: m_impl({}, std::move(depthStencilFormatCbk), std::move(cameraCbk), std::move(renderPassQueryCbk))
 {
 }
 
@@ -415,37 +354,11 @@ const RendererBase::ViewportSizeCallback& RendererBase::getViewportSizeCallback(
 
 
 
-void RendererBase::setDepthStencilFormatCompatibilityCallback(DepthStencilFormatCallback cbk) {
-	m_impl->setDepthStencilFormatCompatibilityCallback(std::move(cbk));
+void RendererBase::setDepthStencilFormat(DepthStencilFormat fmt) {
+	m_impl->setDepthStencilFormat(*this, fmt);
 }
 
-const RendererBase::DepthStencilFormatCallback& RendererBase::getDepthStencilFormatCompatibilityCallback() const {
-	return m_impl->getDepthStencilFormatCompatibilityCallback();
-}
-
-
-void RendererBase::setDepthStencilFormatCallback(DepthStencilFormatCallback cbk) {
-	m_impl->setDepthStencilFormatCallback(std::move(cbk));
-}
-
-const RendererBase::DepthStencilFormatCallback& RendererBase::getDepthStencilFormatCallback() const {
-	return m_impl->getDepthStencilFormatCallback();
-}
-
-
-void RendererBase::setDepthStencilFormatLimits(Utils::Limit<DepthStencilFormat> lim) {
-	m_impl->setDepthStencilFormatLimits(*this, std::move(lim));
-}
-
-const Utils::Limit<DepthStencilFormat>&	RendererBase::getDepthStencilFormatLimits() const {
-	return m_impl->getDepthStencilFormatLimits();
-}
-
-const Utils::Limit<DepthStencilFormat>& RendererBase::getDepthStencilFormatCompatibility() const {
-	return m_impl->getDepthStencilFormatCompatibility();
-}
-
-const Utils::Limit<DepthStencilFormat>&	RendererBase::getDepthStencilFormat() const {
+DepthStencilFormat RendererBase::getDepthStencilFormat() const noexcept {
 	return m_impl->getDepthStencilFormat();
 }
 
@@ -508,16 +421,12 @@ void RendererBase::setViewportSize(Math::Vec2f size) {
 
 
 
-void RendererBase::setDepthStencilFormatCompatibility(Utils::Limit<DepthStencilFormat> comp) {
-	m_impl->setDepthStencilFormatCompatibility(*this, std::move(comp));
+void RendererBase::setDepthStencilFormatCallback(DepthStencilFormatCallback cbk) {
+	m_impl->setDepthStencilFormatCallback(std::move(cbk));
 }
 
-void RendererBase::setInternalDepthStencilFormatCallback(DepthStencilFormatCallback cbk) {
-	m_impl->setInternalDepthStencilFormatCallback(std::move(cbk));
-}
-
-const RendererBase::DepthStencilFormatCallback& RendererBase::getInternalDepthStencilFormatCallback() const {
-	return m_impl->getInternalDepthStencilFormatCallback();
+const RendererBase::DepthStencilFormatCallback& RendererBase::getDepthStencilFormatCallback() const {
+	return m_impl->getDepthStencilFormatCallback();
 }
 
 

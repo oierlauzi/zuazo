@@ -22,7 +22,7 @@ public:
 	class Camera;
 	using LayerRef = std::reference_wrapper<const LayerBase>;
 
-	using DepthStencilFormatCallback = std::function<void(RendererBase&, const Utils::Limit<DepthStencilFormat>&)>;
+	using DepthStencilFormatCallback = std::function<void(RendererBase&, DepthStencilFormat)>;
 	using CameraCallback = std::function<void(RendererBase&, const Camera& camera)>;
 	using RenderPassQueryCallback = std::function<Graphics::RenderPass(const RendererBase&)>;
 
@@ -39,8 +39,7 @@ public:
 
 	static constexpr uint32_t DESCRIPTOR_SET = 0;
 
-	RendererBase(	Utils::Limit<DepthStencilFormat> depthStencil = {},
-					DepthStencilFormatCallback internalDepthStencilCbk = {},
+	RendererBase(	DepthStencilFormatCallback depthStencilCbk = {},
 					CameraCallback cameraCbk = {},
 					RenderPassQueryCallback renderPassQueryCbk = {} );
 	RendererBase(const RendererBase& other) = delete;
@@ -54,16 +53,8 @@ public:
 	void									setViewportSizeCallback(ViewportSizeCallback cbk);
 	const ViewportSizeCallback&				getViewportSizeCallback() const noexcept;
 
-	void									setDepthStencilFormatCompatibilityCallback(DepthStencilFormatCallback cbk);
-	const DepthStencilFormatCallback&		getDepthStencilFormatCompatibilityCallback() const;
-
-	void									setDepthStencilFormatCallback(DepthStencilFormatCallback cbk);
-	const DepthStencilFormatCallback&		getDepthStencilFormatCallback() const;
-
-	void									setDepthStencilFormatLimits(Utils::Limit<DepthStencilFormat> lim);
-	const Utils::Limit<DepthStencilFormat>&	getDepthStencilFormatLimits() const;
-	const Utils::Limit<DepthStencilFormat>& getDepthStencilFormatCompatibility() const;
-	const Utils::Limit<DepthStencilFormat>&	getDepthStencilFormat() const;
+	void									setDepthStencilFormat(DepthStencilFormat fmt);
+	DepthStencilFormat						getDepthStencilFormat() const noexcept;
 
 	void									setCamera(const Camera& cam);
 	const Camera&							getCamera() const;
@@ -84,10 +75,8 @@ public:
 protected:
 	void									setViewportSize(Math::Vec2f size);
 
-	void									setDepthStencilFormatCompatibility(Utils::Limit<DepthStencilFormat> comp);
-
-	void									setInternalDepthStencilFormatCallback(DepthStencilFormatCallback cbk);
-	const DepthStencilFormatCallback&		getInternalDepthStencilFormatCallback() const;
+	void									setDepthStencilFormatCallback(DepthStencilFormatCallback cbk);
+	const DepthStencilFormatCallback&		getDepthStencilFormatCallback() const;
 
 	void									setCameraCallback(CameraCallback cbk);
 	const CameraCallback&					getCameraCallback() const;

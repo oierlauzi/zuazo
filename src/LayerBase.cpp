@@ -21,6 +21,7 @@ struct LayerBase::Impl {
 	BlendingModeCallback							blendingModeCallback;
 	RenderingLayerCallback							renderingLayerCallback;
 	HasChangedCallback								hasChangedCallback;
+	HasAlphaCallback								hasAlphaCallback;
 	DrawCallback									drawCallback;
 	RenderPassCallback								renderPassCallback;
 
@@ -31,6 +32,7 @@ struct LayerBase::Impl {
 			BlendingModeCallback blendingModeCbk,
 			RenderingLayerCallback renderingLayerCbk,
 			HasChangedCallback hasChangedCbk,
+			HasAlphaCallback hasAlphaCbk,
 			DrawCallback drawCbk,
 			RenderPassCallback renderPassCbk )
 		: renderer(renderer)
@@ -44,6 +46,7 @@ struct LayerBase::Impl {
 		, blendingModeCallback(std::move(blendingModeCbk))
 		, renderingLayerCallback(std::move(renderingLayerCbk))
 		, hasChangedCallback(std::move(hasChangedCbk))
+		, hasAlphaCallback(std::move(hasAlphaCbk))
 		, drawCallback(std::move(drawCbk))
 		, renderPassCallback(std::move(renderPassCbk))
 	{
@@ -115,8 +118,31 @@ struct LayerBase::Impl {
 
 
 
-	bool hasAlpha() const {
-		return opacity != 1.0f; //TODO also take into account the actual layer
+	bool hasBlending(const LayerBase& base) const {
+		bool result;
+
+		if(blendingMode == BlendingMode::NONE) {
+			//This blending mode does not write anything, so it can be considered as alphaless
+			result = false;
+		} else if(blendingMode == BlendingMode::WRITE) {
+			//This blending mode overwrites the framebuffer, so it can be considered as alphaless
+			result = false;
+		} else if(blendingMode == BlendingMode::OPACITY) {
+			//This blending mode will overwrite the framebuffer for alpha == 1
+			if(opacity != 1) {
+				result = true;
+			} else if(hasAlphaCallback) {
+				//Expensive call!
+				result = hasAlphaCallback(base);
+			} else {
+				result = false;
+			}
+		} else {
+			//Default to true
+			result = true;
+		}
+
+		return result;
 	}
 
 	bool hasChanged(const LayerBase& base, const RendererBase& renderer) const {
@@ -124,7 +150,9 @@ struct LayerBase::Impl {
 	}
 
 	void draw(const LayerBase& base, const RendererBase& renderer, Graphics::CommandBuffer& cmd) const {
-		Utils::invokeIf(drawCallback, base, renderer, cmd);
+		if(hasEffect()) {
+			Utils::invokeIf(drawCallback, base, renderer, cmd);
+		}
 	}
 
 
@@ -177,6 +205,16 @@ struct LayerBase::Impl {
 		return hasChangedCallback;
 	}
 
+
+	void setHasAlphaCallback(HasAlphaCallback cbk) {
+		hasAlphaCallback = std::move(cbk);
+	}
+
+	const HasAlphaCallback& getHasAlphaCallback() const noexcept {
+		return hasAlphaCallback;
+	}
+
+
 	void setDrawCallback(DrawCallback cbk) {
 		drawCallback = std::move(cbk);
 	}
@@ -193,6 +231,37 @@ struct LayerBase::Impl {
 		return renderPassCallback;
 	}
 
+private:
+	bool hasEffect() const noexcept {
+		bool result;
+
+		//When one of these blending modes is used in conjunction
+		//with an alpha value of zero, the framebuffer will not be
+		//altered. Demonstration of each format on its comment.
+		constexpr std::array<BlendingMode, 4> A0_NOPS = {
+			BlendingMode::OPACITY,			//C = C_src * 0 + C_dst * (1 - 0) = C_dst
+			BlendingMode::ADD,				//C = C_src * 0 + C_dst = C_dst
+			BlendingMode::DIFFERENCE,		//C = C_dst - C_src * 0 = C_dst
+			BlendingMode::SCREEN			//C = C_src * 0 + C_dst * (1 - C_src * 0) = C_dst
+		};
+
+		//For binary search:
+		assert(std::is_sorted(A0_NOPS.cbegin(), A0_NOPS.cend()));
+
+		if(blendingMode == BlendingMode::NONE) {
+			//Write is disabled
+			result = false;
+		} else if(opacity == 0.0f && std::binary_search(A0_NOPS.cbegin(), A0_NOPS.cend(), blendingMode)) {
+			//These blending modes have no effect with zero opacity
+			result = false;
+		} else {
+			//By default, it will be visible
+			result = true;
+		}
+
+		return result;
+	}
+
 };
 
 
@@ -202,12 +271,17 @@ LayerBase::LayerBase(	const RendererBase* renderer,
 						BlendingModeCallback blendingModeCbk,
 						RenderingLayerCallback renderingLayerCbk,
 						HasChangedCallback hasChangedCbk,
+						HasAlphaCallback hasAlphaCbk,
 						DrawCallback drawCbk,
 						RenderPassCallback renderPassCbk )
 	: m_impl(	{}, renderer, std::move(transformCbk), 
-				std::move(opacityCbk), std::move(blendingModeCbk), 
-				std::move(renderingLayerCbk), std::move(hasChangedCbk), 
-				std::move(drawCbk), std::move(renderPassCbk) )
+				std::move(opacityCbk), 
+				std::move(blendingModeCbk), 
+				std::move(renderingLayerCbk), 
+				std::move(hasChangedCbk), 
+				std::move(hasAlphaCbk),
+				std::move(drawCbk),
+				std::move(renderPassCbk) )
 {
 }
 
@@ -263,8 +337,8 @@ RenderingLayer LayerBase::getRenderingLayer() const noexcept {
 }
 
 
-bool LayerBase::hasAlpha() const {
-	return m_impl->hasAlpha();
+bool LayerBase::hasBlending() const {
+	return m_impl->hasBlending(*this);
 }
 
 bool LayerBase::hasChanged(const RendererBase& renderer) const {
