@@ -29,6 +29,7 @@ struct Instance::Impl {
 	Timing::MainLoop				loop;
 
 	Utils::Discrete<ColorFormat>	formatSupport;
+	Utils::Discrete<DepthStencilFormat>	depthStencilFormatSupport;
 	Utils::Range<Resolution>		resolutionSupport;
 
 	ScheduledCallback 				processEventsCallback;
@@ -54,6 +55,7 @@ struct Instance::Impl {
 		, eventQueue()
 		, loop(scheduler, mutex)
 		, formatSupport(queryFormatSupport(vulkan))
+		, depthStencilFormatSupport(queryDepthStencilSupport(vulkan))
 		, resolutionSupport(queryResolutionSupport(vulkan))
 		, processEventsCallback(createEventProcessingCallback(eventQueue))
 		, presentImagesCallback(createPresentCallback(vulkan))
@@ -88,6 +90,10 @@ struct Instance::Impl {
 
 	const Utils::Discrete<ColorFormat>& getFormatSupport() const noexcept {
 		return formatSupport;
+	}
+
+	const Utils::Discrete<DepthStencilFormat>& getDepthStencilFormatSupport() const noexcept {
+		return depthStencilFormatSupport;
 	}
 
 	const Utils::Range<Resolution>& getResolutionSupport() const noexcept {
@@ -312,6 +318,28 @@ private:
 		return result;
 	}
 
+	static Utils::Discrete<DepthStencilFormat> queryDepthStencilSupport(const Graphics::Vulkan& vulkan) {
+		Utils::Discrete<DepthStencilFormat> result;
+
+		//List the formats
+		constexpr vk::FormatFeatureFlags DESIRED_FLAGS =
+			vk::FormatFeatureFlagBits::eDepthStencilAttachment ;
+		const auto& supportedFormats = vulkan.listSupportedFormatsOptimal(DESIRED_FLAGS);
+
+		//Convert all the formats
+		result.reserve(supportedFormats.size());
+		for(const auto& format : supportedFormats) {
+			const auto conversion = Graphics::fromVulkanDepthStencil(format);
+			if(conversion != DepthStencilFormat::NONE) {
+				result.push_back(conversion);
+			}
+		}
+
+		//Sort the result
+		std::sort(result.begin(), result.end());
+		return result;
+	}
+
 	static Utils::Range<Resolution> queryResolutionSupport(const Graphics::Vulkan& vulkan) {
 		const auto& limits = vulkan.getPhysicalDeviceProperties().limits;
 		return Utils::Range<Resolution>(
@@ -352,6 +380,10 @@ const Graphics::Vulkan& Instance::getVulkan() const noexcept {
 
 const Utils::Discrete<ColorFormat>& Instance::getFormatSupport() const noexcept {
 	return m_impl->getFormatSupport();
+}
+
+const Utils::Discrete<DepthStencilFormat>& Instance::getDepthStencilFormatSupport() const noexcept {
+	return m_impl->getDepthStencilFormatSupport();
 }
 
 const Utils::Range<Resolution>& Instance::getResolutionSupport() const noexcept {

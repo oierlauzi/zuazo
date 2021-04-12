@@ -78,6 +78,9 @@ enum class FourCC : uint32_t {
 constexpr std::tuple<ColorFormat, ColorSubsampling, ColorModel> fromFourCC(	FourCC fcc, 
 																			ColorModel ycbcrModel = ColorModel::YUV ) noexcept;
 
+std::string_view toString(const FourCC& fcc) noexcept;
+std::ostream& operator<<(std::ostream& os, FourCC fcc);
+
 }
 
 #include "FourCC.inl"

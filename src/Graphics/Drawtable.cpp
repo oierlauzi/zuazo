@@ -216,35 +216,6 @@ struct Drawtable::Impl {
 		return result;
 	}
 
-	static Utils::Discrete<DepthStencilFormat> getSupportedFormatsDepthStencil(const Vulkan& vulkan) {
-		Utils::Discrete<DepthStencilFormat> result;
-
-		//Query support for Vulkan formats
-		const auto& vulkanFormatSupport = getVulkanFormatSupportDepthStencil(vulkan);
-		assert(std::is_sorted(vulkanFormatSupport.cbegin(), vulkanFormatSupport.cend())); //For binary search
-
-		//Having no depth/stencil is supported:
-		result.emplace_back(DepthStencilFormat::NONE);
-
-		//Test for each format
-		for(auto i = Utils::EnumTraits<DepthStencilFormat>::first(); i <= Utils::EnumTraits<DepthStencilFormat>::last(); ++i) {
-			//Convert it into a Vulkan format
-			const auto conversion = toVulkan(i);
-
-			//Check if it is supported
-			const auto supported = std::binary_search(
-				vulkanFormatSupport.cbegin(), vulkanFormatSupport.cend(),
-				conversion
-			);
-
-			if(supported) {
-				result.push_back(i);
-			}
-		}
-
-		return result;
-	}
-
 	static RenderPass getRenderPass(const Vulkan& vulkan, 
 									const Frame::Descriptor& frameDesc,
 									DepthStencilFormat depthStencilFmt )
@@ -387,10 +358,6 @@ Utils::Discrete<ColorFormat> Drawtable::getSupportedFormats(const Vulkan& vulkan
 
 Utils::Discrete<ColorFormat> Drawtable::getSupportedSrgbFormats(const Vulkan& vulkan) {
 	return Impl::getSupportedSrgbFormats(vulkan);
-}
-
-Utils::Discrete<DepthStencilFormat> Drawtable::getSupportedFormatsDepthStencil(const Vulkan& vulkan) {
-	return Impl::getSupportedFormatsDepthStencil(vulkan);
 }
 
 RenderPass Drawtable::getRenderPass(const Vulkan& vulkan, 

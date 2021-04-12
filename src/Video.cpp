@@ -305,15 +305,12 @@ struct VideoBase::Impl {
 
 	void setVideoMode(VideoBase& base, VideoMode vm) {
 		//Sanitize the videomode
-		const bool isValid = std::any_of(
-			videoModeCompatibility.cbegin(), 
-			videoModeCompatibility.cend(),
-			[&vm] (const VideoMode& compatibility) -> bool {
-				return static_cast<bool>(compatibility.intersect(vm));
+		for(const auto& compatibility : videoModeCompatibility) {
+			auto sanitizedVideoMode = compatibility.intersect(vm);
+			if(static_cast<bool>(sanitizedVideoMode)) {
+				vm = std::move(sanitizedVideoMode);
+				break;
 			}
-		);
-		if(!isValid) {
-			vm = VideoMode();
 		}
 
 		//Write changes

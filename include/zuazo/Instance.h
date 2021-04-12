@@ -5,6 +5,7 @@
 #include "Verbosity.h"
 #include "Resolution.h"
 #include "ColorFormat.h"
+#include "DepthStencilFormat.h"
 #include "Graphics/Vulkan.h"
 #include "Chrono.h"
 #include "Utils/Pimpl.h"
@@ -60,6 +61,7 @@ public:
 	const Graphics::Vulkan&				getVulkan() const noexcept;
 
 	const Utils::Discrete<ColorFormat>& getFormatSupport() const noexcept;
+	const Utils::Discrete<DepthStencilFormat>& getDepthStencilFormatSupport() const noexcept;
 	const Utils::Range<Resolution>&		getResolutionSupport() const noexcept;
 
 	void								addRegularCallback(	const ScheduledCallback& cbk, 

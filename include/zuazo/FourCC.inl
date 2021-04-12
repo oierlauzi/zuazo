@@ -61,8 +61,20 @@ constexpr std::tuple<ColorFormat, ColorSubsampling, ColorModel> fromFourCC(	Four
 	//case FourCC::YV12:	/*TODO :NOT IMPLEMENTED*/
 	//case FourCC::YV16:	/*TODO :NOT IMPLEMENTED*/
 
-	default:			return {};
+	default:			return { ColorFormat::NONE,												ColorSubsampling::NONE,		ColorModel::NONE }; 
 	}
+}
+
+
+inline std::string_view toString(const FourCC& fcc) noexcept {
+	return std::string_view(
+		reinterpret_cast<const char*>(fcc),
+		sizeof(fcc) / sizeof(char)
+	);
+}
+
+inline std::ostream& operator<<(std::ostream& os, FourCC fcc) {
+	return os << toString(fcc);
 }
 
 }
