@@ -23,7 +23,7 @@ ZUAZO_IF_CPP(constexpr uint32_t, const uint) ct_OUTPUT_COUNT = 4;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_SAMPLE_MODE_PASSTHOUGH = 0;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_SAMPLE_MODE_BILINEAR = 1;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_SAMPLE_MODE_BICUBIC = 2;
-ZUAZO_IF_CPP(constexpr int32_t, const int) ct_SAMPLE_MODE_BILINEAR_TO_BICUBIC = 3;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_SAMPLE_MODE_BICUBIC_FROM_BILINEAR = 3;
 
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_RGBA = 0;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_PLANE_FORMAT_G_BR = 1;
@@ -40,7 +40,7 @@ ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_MODEL_RGB = 0;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_MODEL_YCBCR = 1;
 
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_TRANSFER_FUNCTION_LINEAR = 0;
-ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_TRANSFER_FUNCTION_BT601_709_2020 = 1;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_TRANSFER_FUNCTION_BT1886 = 1;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_TRANSFER_FUNCTION_GAMMA22 = 2;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_TRANSFER_FUNCTION_GAMMA26 = 3;
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_TRANSFER_FUNCTION_GAMMA28 = 4;

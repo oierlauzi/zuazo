@@ -175,370 +175,216 @@ vec4 ct_contract(in int range, in vec4 color){
  */
 
 //Note: gain is expresed OETF-wise
-float ct_EOTF_linear(in float gain, in float value){
-	return value / gain;
+vec3 ct_EOTF_gamma(in float gain, in float gamma, in vec3 color){
+	return pow(color, vec3(gamma));
 }
 
-float ct_OETF_linear(in float gain, in float value){
-	return value * gain;
-}
-
-
-//Note: gain is expresed OETF-wise
-float ct_EOTF_gamma(in float gain, in float gamma, in float value){
-	return pow(ct_EOTF_linear(gain, value), gamma);
-}
-
-float ct_OETF_gamma(in float gain, in float gamma, in float value){
-	return ct_OETF_linear(gain, pow(value, 1.0f/gamma));
+vec3 ct_OETF_gamma(in float gain, in float gamma, in vec3 color){
+	return pow(color, vec3(1.0f/gamma));
 }
 
 
-//Note: gain is expresed OETF-wise
-float ct_EOTF_log(in float gain, in float b, in float value){
-	return exp(ct_EOTF_linear(gain, value)) + b;
-}
-
-float ct_OETF_log(in float gain, in float b, in float value){
-	return ct_OETF_linear(gain, log(value - b));
-}
-
-
-float ct_hybrid_linear_gamma_offset(in float gain2) {
-	//return ct_OETF_linear(gain1, thresh) - ct_OETF_gamma(gain2, gamma, thresh); //Usualy (1 - gain2)
-	return 1.0f - gain2;
-}
 
 //Note: gains are expresed OETF-wise
-float ct_EOTF_hybrid_linear_gamma(in float thresh, in float gain1, in float gain2, in float gamma, in float value) {
-	//Equations from:
+vec3 ct_EOTF_hybrid_linear_gamma(in float gain, in float alpha, in float beta, in float gamma, in vec3 color) {
+	//L = V/g							for 0 <= L <= beta*g
+	//L = [V/alpha + (1-1/alpha)]^gamma	for beta*g < L <= 1
+
+	//Sanitize the value. 0 <= L <= 1
+	color = clamp(color, vec3(0.0f), vec3(1.0f));
+	
+	//Evaluate both parts of the expression (branchless)
+	const vec3 piece0 = (1.0f/gain) * color;
+	const vec3 piece1 = pow((1.0f/alpha) * color + (1.0f - 1.0f/alpha), vec3(gamma));
+
+	//Select the maximum of both
+	return mix(piece0, piece1, greaterThan(color, vec3(beta*gain)));
+}
+
+vec3 ct_OETF_hybrid_linear_gamma(in float gain, in float alpha, in float beta, in float gamma, in vec3 color){
+	//Equation from:
 	//https://en.wikipedia.org/wiki/Rec._2020
-	if(value < 0.0f) {
-		return 0.0f;
-	} else if(value <= ct_OETF_linear(gain1, thresh)){
-		return ct_EOTF_linear(gain1, value);
-	} else {
-		return ct_EOTF_gamma(gain2, gamma, value - ct_hybrid_linear_gamma_offset(gain2));
-	}
-}
+	//V = g*L							for 0 <= L <= beta
+	//V = alpha*L^(1/gamma) + 1 - alpha	for beta < L <= 1
 
-float ct_OETF_hybrid_linear_gamma(in float thresh, in float gain1, in float gain2, in float gamma, in float value){
-	if(value < 0.0f) {
-		return 0.0f;
-	} else if(value <= thresh){
-		return ct_OETF_linear(gain1, value);
-	} else {
-		return ct_OETF_gamma(gain2, gamma, value) + ct_hybrid_linear_gamma_offset(gain2);
-	}
+	//Sanitize the value. 0 <= L <= 1
+	color = clamp(color, vec3(0.0f), vec3(1.0f));
+	
+	//Evaluate both parts of the expression (branchless)
+	const vec3 piece0 = gain * color;
+	const vec3 piece1 = alpha * pow(color, vec3(1.0f/gamma)) + (1 - alpha);
+
+	//Select the minimum of both
+	return mix(piece0, piece1, greaterThan(color, vec3(beta)));
 }
 
 
 //Note: gains are expresed OETF-wise
-float ct_EOTF_hybrid_linear_gamma_EG(in float thresh, in float gain1, in float gain2, in float gamma, in float value) {
-	const float b = ct_OETF_linear(gain1, thresh);
-
-	if(value < -b) {
-		return ct_EOTF_gamma(-gain2, gamma, -value + ct_hybrid_linear_gamma_offset(gain2));
-	} else if(value <= b){
-		return ct_EOTF_linear(gain1, value);
-	} else {
-		return ct_EOTF_gamma(gain2, gamma, value - ct_hybrid_linear_gamma_offset(gain2));
-	}
+vec3 ct_EOTF_hybrid_linear_gamma_EG(in float gain, in float alpha, in float beta, in float gamma, in vec3 color) {
+	return sign(color)*ct_EOTF_hybrid_linear_gamma(gain, alpha, beta, gamma, abs(color));
 }
 
-float ct_OETF_hybrid_linear_gamma_EG(in float thresh, in float gain1, in float gain2, in float gamma, in float value){
-	if(value < -thresh) {
-		return ct_OETF_gamma(-gain2, gamma, -value) - ct_hybrid_linear_gamma_offset(gain2);
-	} else if(value <= thresh){
-		return ct_OETF_linear(gain1, value);
-	} else {
-		return ct_OETF_gamma(gain2, gamma, value) + ct_hybrid_linear_gamma_offset(gain2);
-	}
+vec3 ct_OETF_hybrid_linear_gamma_EG(in float gain, in float alpha, in float beta, in float gamma, in vec3 color){
+	return sign(color)*ct_OETF_hybrid_linear_gamma(gain, alpha, beta, gamma, abs(color));
 }
 
 
-//Note: gain is expresed OETF-wise
-float ct_EOTF_PQ(in float c1, in float c2, in float m1, in float m2, in float value){
-	const float c3 = c1 + c2 - 1;
 
-	const float value2 = pow(max(value, 0.0f), 1.0f/m2); //max is placed in order to avoid negative roots
-	const float num = value2 - c1;
-	const float den = c2 - c3*value2;
-	return pow(max(num/den, 0.0f), 1.0f/m1);
+const float ct_BT1886_GAIN = 4.5f;
+const float ct_BT1886_ALPHA = 1.09929682680944f;
+const float ct_BT1886_BETA = 0.018053968510807f;
+const float ct_BT1886_GAMMA = 1.0f/0.45f; //2.222222...
+
+vec3 ct_EOTF_bt1886(in vec3 color){
+	return ct_EOTF_hybrid_linear_gamma(ct_BT1886_GAIN, ct_BT1886_ALPHA, ct_BT1886_BETA, ct_BT1886_GAMMA, color);
 }
 
-float ct_OETF_PQ(in float c1, in float c2, in float m1, in float m2, in float value){
-	//Equations from:
-	//https://en.wikipedia.org/wiki/High-dynamic-range_video
-
-	const float c3 = c1 + c2 - 1;
-
-	const float value2 = pow(max(value, 0.0f), m1);
-	const float num = c1 	+ c2*value2;
-	const float den = 1.0f 	+ c3*value2;
-	return pow(num/den, m2);
+vec3 ct_OETF_bt1886(in vec3 color){
+	return ct_OETF_hybrid_linear_gamma(ct_BT1886_GAIN, ct_BT1886_ALPHA, ct_BT1886_BETA, ct_BT1886_GAMMA, color);
 }
 
 
-//Note: gains are expresed OETF-wise
-float ct_EOTF_hybrid_log_gamma(in float thresh, in float gain1, in float gamma, in float gain2, in float b, in float value) {
-	if(value <= 0.0f) {
-		return 0.0f;
-	} else if(value < ct_OETF_gamma(gain1, gamma, value)){
-		return ct_EOTF_gamma(gain1, gamma, value);
-	} else {
-		const float offset = ct_OETF_gamma(gain1, gamma, thresh) - ct_OETF_log(gain2, b, thresh);
-		return ct_EOTF_log(gain2, b, value - offset);
-	}
-}
-
-float ct_OETF_hybrid_log_gamma(in float thresh, in float gain1, in float gamma, in float gain2, in float b, in float value){
-	//Equations from:
-	//https://en.wikipedia.org/wiki/Hybrid_Log-Gamma
-
-	if(value <= 0.0f) {
-		return 0.0f;
-	} else if(value < thresh){
-		return ct_OETF_gamma(gain1, gamma, value);
-	} else {
-		const float offset = ct_OETF_gamma(gain1, gamma, thresh) - ct_OETF_log(gain2, b, thresh);
-		return ct_OETF_log(gain2, b, value) + offset;
-	}
-}
-
-
-float ct_EOTF_bt601_709_2020(in float value){
-	return ct_EOTF_hybrid_linear_gamma(0.0181f, 4.5f, 1.0993f, 1.0f/0.45f, value);
-}
-
-float ct_OETF_bt601_709_2020(in float value){
-	return ct_OETF_hybrid_linear_gamma(0.0181f, 4.5f, 1.0993f, 1.0f/0.45f, value);
-}
-
-vec3 ct_EOTF_bt601_709_2020(in vec3 color){
-	return vec3(
-		ct_EOTF_bt601_709_2020(color.r),
-		ct_EOTF_bt601_709_2020(color.g),
-		ct_EOTF_bt601_709_2020(color.b)
-	);
-}
-
-vec3 ct_OETF_bt601_709_2020(in vec3 color){
-	return vec3(
-		ct_OETF_bt601_709_2020(color.r),
-		ct_OETF_bt601_709_2020(color.g),
-		ct_OETF_bt601_709_2020(color.b)
-	);
-}
-
-
-float ct_EOTF_gamma22(in float value){
-	return ct_EOTF_gamma(1.0f, 2.2f, value);
-}
-
-float ct_OETF_gamma22(in float value){
-	return ct_OETF_gamma(1.0f, 2.2f, value);
-}
 
 vec3 ct_EOTF_gamma22(in vec3 color){
-	return vec3(
-		ct_EOTF_gamma22(color.r),
-		ct_EOTF_gamma22(color.g),
-		ct_EOTF_gamma22(color.b)
-	);
+	return ct_EOTF_gamma(1.0f, 2.2f, color);
 }
 
 vec3 ct_OETF_gamma22(in vec3 color){
-	return vec3(
-		ct_OETF_gamma22(color.r),
-		ct_OETF_gamma22(color.g),
-		ct_OETF_gamma22(color.b)
-	);
-}
-
-
-float ct_EOTF_gamma26(in float value){
-	return ct_EOTF_gamma(1.0f, 2.6f, value);
-}
-
-float ct_OETF_gamma26(in float value){
-	return ct_OETF_gamma(1.0f, 2.6f, value);
+	return ct_OETF_gamma(1.0f, 2.2f, color);
 }
 
 vec3 ct_EOTF_gamma26(in vec3 color){
-	return vec3(
-		ct_EOTF_gamma26(color.r),
-		ct_EOTF_gamma26(color.g),
-		ct_EOTF_gamma26(color.b)
-	);
+	return ct_EOTF_gamma(1.0f, 2.6f, color);
 }
 
 vec3 ct_OETF_gamma26(in vec3 color){
-	return vec3(
-		ct_OETF_gamma26(color.r),
-		ct_OETF_gamma26(color.g),
-		ct_OETF_gamma26(color.b)
-	);
-}
-
-
-float ct_EOTF_gamma28(in float value){
-	return ct_EOTF_gamma(1.0f, 2.8f, value);
-}
-
-float ct_OETF_gamma28(in float value){
-	return ct_OETF_gamma(1.0f, 2.8f, value);
+	return ct_OETF_gamma(1.0f, 2.6f, color);
 }
 
 vec3 ct_EOTF_gamma28(in vec3 color){
-	return vec3(
-		ct_EOTF_gamma28(color.r),
-		ct_EOTF_gamma28(color.g),
-		ct_EOTF_gamma28(color.b)
-	);
+	return ct_EOTF_gamma(1.0f, 2.8f, color);
 }
 
 vec3 ct_OETF_gamma28(in vec3 color){
-	return vec3(
-		ct_OETF_gamma28(color.r),
-		ct_OETF_gamma28(color.g),
-		ct_OETF_gamma28(color.b)
-	);
+	return ct_OETF_gamma(1.0f, 2.8f, color);
 }
 
 
-float ct_EOTF_IEC61966_2_1(in float value){
-	return ct_EOTF_hybrid_linear_gamma(0.0031308f, 12.92f, 1.055f, 12.0f/5.0f, value);
-}
 
-float ct_OETF_IEC61966_2_1(in float value){
-	return ct_OETF_hybrid_linear_gamma(0.0031308f, 12.92f, 1.055f, 12.0f/5.0f, value);
-}
+const float ct_IEC61966_2_1_GAIN = 12.92f;
+const float ct_IEC61966_2_1_ALPHA = 1.055f;
+const float ct_IEC61966_2_1_BETA = 0.0031308f;
+const float ct_IEC61966_2_1_GAMMA = 2.4;
 
 vec3 ct_EOTF_IEC61966_2_1(in vec3 color){
-	return vec3(
-		ct_EOTF_IEC61966_2_1(color.r),
-		ct_EOTF_IEC61966_2_1(color.g),
-		ct_EOTF_IEC61966_2_1(color.b)
-	);
+	return ct_EOTF_hybrid_linear_gamma(ct_IEC61966_2_1_GAIN, ct_IEC61966_2_1_ALPHA, ct_IEC61966_2_1_BETA, ct_IEC61966_2_1_GAMMA, color);
 }
 
 vec3 ct_OETF_IEC61966_2_1(in vec3 color){
-	return vec3(
-		ct_OETF_IEC61966_2_1(color.r),
-		ct_OETF_IEC61966_2_1(color.g),
-		ct_OETF_IEC61966_2_1(color.b)
-	);
+	return ct_OETF_hybrid_linear_gamma(ct_IEC61966_2_1_GAIN, ct_IEC61966_2_1_ALPHA, ct_IEC61966_2_1_BETA, ct_IEC61966_2_1_GAMMA, color);
 }
 
 
-float ct_EOTF_IEC61966_2_4(in float value){
-	return ct_EOTF_hybrid_linear_gamma_EG(0.0181f, 4.5f, 1.0993f, 1.0f/0.45f, value);
-}
-
-float ct_OETF_IEC61966_2_4(in float value){
-	return ct_OETF_hybrid_linear_gamma_EG(0.0181f, 4.5f, 1.0993f, 1.0f/0.45f, value);
-}
 
 vec3 ct_EOTF_IEC61966_2_4(in vec3 color){
-	return vec3(
-		ct_EOTF_IEC61966_2_4(color.r),
-		ct_EOTF_IEC61966_2_4(color.g),
-		ct_EOTF_IEC61966_2_4(color.b)
-	);
+	return ct_EOTF_hybrid_linear_gamma_EG(ct_BT1886_GAIN, ct_BT1886_ALPHA, ct_BT1886_BETA, ct_BT1886_GAMMA, color);
 }
 
 vec3 ct_OETF_IEC61966_2_4(in vec3 color){
-	return vec3(
-		ct_OETF_IEC61966_2_4(color.r),
-		ct_OETF_IEC61966_2_4(color.g),
-		ct_OETF_IEC61966_2_4(color.b)
-	);
+	return ct_OETF_hybrid_linear_gamma_EG(ct_BT1886_GAIN, ct_BT1886_ALPHA, ct_BT1886_BETA, ct_BT1886_GAMMA, color);
 }
 
 
-float ct_EOTF_SMPTE240M(in float value){
-	return ct_EOTF_hybrid_linear_gamma(0.0031308f, 12.92f, 1.055f, 1.0f/0.45f, value);
-}
 
-float ct_OETF_SMPTE240M(in float value){
-	return ct_OETF_hybrid_linear_gamma(0.0031308f, 12.92f, 1.055f, 1.0f/0.45f, value);
-}
+const float ct_SMPTE240M_GAIN = 4.0f;
+const float ct_SMPTE240M_ALPHA = 1.1115f;
+const float ct_SMPTE240M_BETA =  0.0228f;
+const float ct_SMPTE240M_GAMMA = 1.0f/0.45; //2.222222
 
 vec3 ct_EOTF_SMPTE240M(in vec3 color){
-	return vec3(
-		ct_EOTF_SMPTE240M(color.r),
-		ct_EOTF_SMPTE240M(color.g),
-		ct_EOTF_SMPTE240M(color.b)
-	);
+	return ct_EOTF_hybrid_linear_gamma(ct_SMPTE240M_GAIN, ct_SMPTE240M_ALPHA, ct_SMPTE240M_BETA, ct_SMPTE240M_GAMMA, color);
 }
 
 vec3 ct_OETF_SMPTE240M(in vec3 color){
-	return vec3(
-		ct_OETF_SMPTE240M(color.r),
-		ct_OETF_SMPTE240M(color.g),
-		ct_OETF_SMPTE240M(color.b)
-	);
+	return ct_OETF_hybrid_linear_gamma(ct_SMPTE240M_GAIN, ct_SMPTE240M_ALPHA, ct_SMPTE240M_BETA, ct_SMPTE240M_GAMMA, color);
 }
 
 
-float ct_EOTF_SMPTE2084(in float value){
-	return ct_EOTF_PQ(107.0f/128.0f, 2413.0f/128.0f, 1305.0f/8192.0f, 2523.0f/32.0f, value);
-}
 
-float ct_OETF_SMPTE2084(in float value){
-	return ct_OETF_PQ(107.0f/128.0f, 2413.0f/128.0f, 1305.0f/8192.0f, 2523.0f/32.0f, value);
-}
+const float ct_SMPTE2084_C1 = 107.0f / 128.0f;
+const float ct_SMPTE2084_C2 = 2413.0f / 128.0f;
+const float ct_SMPTE2084_C3 = 2392.0f / 128.0f;  //ct_SMPTE2084_C1 + ct_SMPTE2084_C2 - 1;
+const float ct_SMPTE2084_M1 = 1305.0f / 8192.0f;
+const float ct_SMPTE2084_M2 = 2523.0f / 32.0f;
 
 vec3 ct_EOTF_SMPTE2084(in vec3 color){
-	return vec3(
-		ct_EOTF_SMPTE2084(color.r),
-		ct_EOTF_SMPTE2084(color.g),
-		ct_EOTF_SMPTE2084(color.b)
-	);
+	//Compute the intermediary values
+	const vec3 temp = pow(max(color, vec3(0.0f)), vec3(1.0f/ct_SMPTE2084_M2));
+	const vec3 num = temp - ct_SMPTE2084_C1;
+	const vec3 den = ct_SMPTE2084_C2 - ct_SMPTE2084_C3*temp;
+
+	//Obtain the final result
+	return pow(max(num/den, vec3(0.0f)), vec3(1.0f/ct_SMPTE2084_M1));
 }
 
 vec3 ct_OETF_SMPTE2084(in vec3 color){
-	return vec3(
-		ct_OETF_SMPTE2084(color.r),
-		ct_OETF_SMPTE2084(color.g),
-		ct_OETF_SMPTE2084(color.b)
-	);
+	//Equations from:
+	//https://en.wikipedia.org/wiki/High-dynamic-range_video
+
+	//Compute the intermediary values
+	const vec3 temp = pow(max(color, vec3(0.0f)), vec3(ct_SMPTE2084_M1));
+	const vec3 num = ct_SMPTE2084_C1 	+ ct_SMPTE2084_C2*temp;
+	const vec3 den = vec3(1.0f)			+ ct_SMPTE2084_C3*temp;
+
+	//Obtain the final result
+	return pow(num/den, vec3(ct_SMPTE2084_M2));
 }
 
 
-float ct_EOTF_ARIB_STD_B67(in float value){
-	//ARIB STD-B67 is expressed for values between 0-12, thats why the result gets divided by 12
-	return ct_EOTF_hybrid_log_gamma(1.0f, 0.5f, 1.0f/0.5f, 0.17883277f, 0.28466892f, value) / 12.0f;
-}
 
-float ct_OETF_ARIB_STD_B67(in float value){
-	//ARIB STD-B67 is expressed for values between 0-12, thats why the value gets multiplied by 12
-	return ct_OETF_hybrid_log_gamma(1.0f, 0.5f, 1.0f/0.5f, 0.17883277f, 0.28466892f, value * 12.0f);
-}
+const float ct_ARIB_STD_B67_A = 0.17883277f;
+const float ct_ARIB_STD_B67_B = 0.28466892f; //1 - 4a
+const float ct_ARIB_STD_B67_C = 0.55991073f; //0.5 - a ln(4a)
 
-vec3 ct_EOTF_ARIB_STD_B67(in vec3 color){
-	return vec3(
-		ct_EOTF_ARIB_STD_B67(color.r),
-		ct_EOTF_ARIB_STD_B67(color.g),
-		ct_EOTF_ARIB_STD_B67(color.b)
-	);
+vec3 ct_EOTF_ARIB_STD_B67(in vec3 color) {
+	//L = (V^2) / 3								for 0 <= L <= 1/2
+	//L = (exp((V-c)/a) + b) / 12				for 1/2 < L <= 1
+
+	//Sanitize the value. 0 <= L <= 1
+	color = clamp(color, vec3(0.0f), vec3(1.0f));
+	
+	//Evaluate both parts of the expression (branchless)
+	const vec3 piece0 = (1.0f/3.0f)*color*color;
+	const vec3 piece1 = (1.0f/12.0f)*(exp((color - ct_ARIB_STD_B67_C) / ct_ARIB_STD_B67_A) + ct_ARIB_STD_B67_B);
+
+	//Select the maximum of both
+	return mix(piece0, piece1, greaterThan(color, vec3(0.5f)));
 }
 
 vec3 ct_OETF_ARIB_STD_B67(in vec3 color){
-	return vec3(
-		ct_OETF_ARIB_STD_B67(color.r),
-		ct_OETF_ARIB_STD_B67(color.g),
-		ct_OETF_ARIB_STD_B67(color.b)
-	);
+	//Equation from:
+	//https://en.wikipedia.org/wiki/Hybrid_Log-Gamma
+	//V = sqrt(3*L)								for 0 <= L <= 1/12
+	//V = a*ln(12*L - b) + c					for 1/12 < L <= 1
+
+	//Sanitize the value. 0 <= L <= 1
+	color = clamp(color, vec3(0.0f), vec3(1.0f));
+	
+	//Evaluate both parts of the expression (branchless)
+	const vec3 piece0 = sqrt(3*color);
+	const vec3 piece1 = ct_ARIB_STD_B67_A*log(12*color - ct_ARIB_STD_B67_B) + ct_ARIB_STD_B67_C;
+
+	//Select the minimum of both
+	return mix(piece0, piece1, greaterThan(color, vec3(1.0/12.0f)));
 }
+
 
 
 vec3 ct_EOTF(in int encoding, in vec3 color){
 	vec3 result;
 
 	switch(encoding){
-	case ct_COLOR_TRANSFER_FUNCTION_BT601_709_2020:	result = ct_EOTF_bt601_709_2020(color);	break;
+	case ct_COLOR_TRANSFER_FUNCTION_BT1886:			result = ct_EOTF_bt1886(color);			break;
 	case ct_COLOR_TRANSFER_FUNCTION_GAMMA22:		result = ct_EOTF_gamma22(color);		break;
 	case ct_COLOR_TRANSFER_FUNCTION_GAMMA26:		result = ct_EOTF_gamma26(color);		break;
 	case ct_COLOR_TRANSFER_FUNCTION_GAMMA28:		result = ct_EOTF_gamma28(color);		break;
@@ -557,7 +403,7 @@ vec3 ct_OETF(in int encoding, in vec3 color){
 	vec3 result;
 
 	switch(encoding){
-	case ct_COLOR_TRANSFER_FUNCTION_BT601_709_2020:	result = ct_OETF_bt601_709_2020(color);	break;
+	case ct_COLOR_TRANSFER_FUNCTION_BT1886:			result = ct_OETF_bt1886(color);			break;
 	case ct_COLOR_TRANSFER_FUNCTION_GAMMA22:		result = ct_OETF_gamma22(color);		break;
 	case ct_COLOR_TRANSFER_FUNCTION_GAMMA26:		result = ct_OETF_gamma26(color);		break;
 	case ct_COLOR_TRANSFER_FUNCTION_GAMMA28:		result = ct_OETF_gamma28(color);		break;
@@ -648,7 +494,7 @@ vec4 ct_bilinear(in ct_read_data inputProp, in sampler2D images[ct_SAMPLER_COUNT
 }
 
 
-vec4 ct_cubic(in float v) {
+vec4 ct_catmullRom(in float v) {
 	//From https://stackoverflow.com/questions/13501081/efficient-bicubic-filtering-code-in-glsl
     const vec4 n = vec4(1.0f, 2.0f, 3.0f, 4.0f) - vec4(v);
     const vec4 s = n * n * n;
@@ -656,10 +502,70 @@ vec4 ct_cubic(in float v) {
     const float y = s.y - 4.0f * s.x;
     const float z = s.z - 4.0f * s.y + 6.0f * s.x;
     const float w = 6.0 - x - y - z;
-    return vec4(x, y, z, w) * (1.0f/6.0f);
+    return (1.0f/6.0f) * vec4(x, y, z, w);
 }
 
-vec4 ct_bicubic(in bool bilinearSampler, in ct_read_data inputProp, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords) {
+vec4 ct_bicubic(in ct_read_data inputProp, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords) {
+	//Based on:
+	//https://github.com/visionworkbench/visionworkbench/blob/95f0729c31121838e9d9f993b92c1912bf024d81/src/vw/GPU/Shaders/Interp/interpolation-bicubic.glsl
+	//TODO optimize using matrices
+
+	//Convert the texture coordinates into image coordinates
+	const ivec2 texSize = textureSize(images[0], 0);
+	texCoords = texCoords * texSize - 0.5f;
+
+	//Obtain the fractional part of the image coordinates
+	const vec2 fxy  = fract(texCoords);
+
+	//Sample the cubic function for the fractional parts
+	const vec4 xCubic = ct_catmullRom(fxy.x);
+	const vec4 yCubic = ct_catmullRom(fxy.y);
+
+	//Sample all 16 positions
+	const mat4 samples[4] = {
+		//Column 0
+		mat4(
+    		ct_passthrough(inputProp, images, (texCoords + vec2(-1.0f, -1.0f))/texSize),
+    		ct_passthrough(inputProp, images, (texCoords + vec2(-1.0f, +0.0f))/texSize),
+    		ct_passthrough(inputProp, images, (texCoords + vec2(-1.0f, +1.0f))/texSize),
+    		ct_passthrough(inputProp, images, (texCoords + vec2(-1.0f, +2.0f))/texSize) 
+		),
+		//Column 1
+		mat4(
+    		ct_passthrough(inputProp, images, (texCoords + vec2(+0.0f, -1.0f))/texSize),
+    		ct_passthrough(inputProp, images, (texCoords + vec2(+0.0f, +0.0f))/texSize),
+    		ct_passthrough(inputProp, images, (texCoords + vec2(+0.0f, +1.0f))/texSize),
+    		ct_passthrough(inputProp, images, (texCoords + vec2(+0.0f, +2.0f))/texSize) 
+		),
+		//Column 2
+		mat4(
+    		ct_passthrough(inputProp, images, (texCoords + vec2(+1.0f, -1.0f))/texSize),
+    		ct_passthrough(inputProp, images, (texCoords + vec2(+1.0f, +0.0f))/texSize),
+    		ct_passthrough(inputProp, images, (texCoords + vec2(+1.0f, +1.0f))/texSize),
+    		ct_passthrough(inputProp, images, (texCoords + vec2(+1.0f, +2.0f))/texSize) 
+		),
+		//Column 3
+		mat4(
+    		ct_passthrough(inputProp, images, (texCoords + vec2(+2.0f, -1.0f))/texSize),
+    		ct_passthrough(inputProp, images, (texCoords + vec2(+2.0f, +0.0f))/texSize),
+    		ct_passthrough(inputProp, images, (texCoords + vec2(+2.0f, +1.0f))/texSize),
+    		ct_passthrough(inputProp, images, (texCoords + vec2(+2.0f, +2.0f))/texSize) 
+		)
+	};
+
+	//Interpolate all rows to obtain a single color per column
+	const mat4 columns = mat4(
+		samples[0] * yCubic, //Column 0
+		samples[1] * yCubic, //Column 1
+		samples[2] * yCubic, //Column 2
+		samples[3] * yCubic  //Column 3
+	);
+
+	//Interpolate all columns to obtain a single value
+	return columns * xCubic; //Maybe *0.25f?
+}
+
+vec4 ct_bicubicFromBilinear(in ct_read_data inputProp, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords) {
 	//From https://stackoverflow.com/questions/13501081/efficient-bicubic-filtering-code-in-glsl
 	//Convert the texture coordinates into image coordinates
 	const ivec2 texSize = textureSize(images[0], 0);
@@ -670,33 +576,19 @@ vec4 ct_bicubic(in bool bilinearSampler, in ct_read_data inputProp, in sampler2D
 	texCoords -= fxy;
 
 	//Sample the cubic function for the fractional parts
-	const vec4 xcubic = ct_cubic(fxy.x);
-	const vec4 ycubic = ct_cubic(fxy.y);
+	const vec4 xCubic = ct_catmullRom(fxy.x);
+	const vec4 yCubic = ct_catmullRom(fxy.y);
 	
 	//Calculate the multi-sample offsets
 	const vec4 c = texCoords.xxyy + vec2(-0.5f, +1.5f).xyxy;
-	const vec4 s = vec4(xcubic.xz + xcubic.yw, ycubic.xz + ycubic.yw);
-	const vec4 offset = (c + vec4(xcubic.yw, ycubic.yw) / s) / texSize.xxyy;
+	const vec4 s = vec4(xCubic.xz + xCubic.yw, yCubic.xz + yCubic.yw);
+	const vec4 offset = (c + vec4(xCubic.yw, yCubic.yw) / s) / texSize.xxyy;
 
-	//Sample multiple values
-	vec4 sample0;
-	vec4 sample1;
-	vec4 sample2;
-	vec4 sample3;
-
-	if(bilinearSampler) {
-		//Sampler configured as bilinear
-		sample0 = ct_passthrough(inputProp, images, offset.xz);
-		sample1 = ct_passthrough(inputProp, images, offset.yz);
-		sample2 = ct_passthrough(inputProp, images, offset.xw);
-		sample3 = ct_passthrough(inputProp, images, offset.yw);
-	} else {
-		//Sampler configured as nearest
-		sample0 = ct_bilinear(inputProp, images, offset.xz);
-		sample1 = ct_bilinear(inputProp, images, offset.yz);
-		sample2 = ct_bilinear(inputProp, images, offset.xw);
-		sample3 = ct_bilinear(inputProp, images, offset.yw);
-	}
+	//Sample 4 times using the bilinear sampler
+	const vec4 sample0 = ct_passthrough(inputProp, images, offset.xz);
+	const vec4 sample1 = ct_passthrough(inputProp, images, offset.yz);
+	const vec4 sample2 = ct_passthrough(inputProp, images, offset.xw);
+	const vec4 sample3 = ct_passthrough(inputProp, images, offset.yw);
 
 	//Obtain the sample weights
 	const float sx = s.x / (s.x + s.y);
@@ -709,19 +601,27 @@ vec4 ct_bicubic(in bool bilinearSampler, in ct_read_data inputProp, in sampler2D
 vec4 ct_texture(in int mode, in ct_read_data inputProp, in sampler2D images[ct_SAMPLER_COUNT], in vec2 texCoords) {
 	vec4 result;
 
-	switch(mode){
-	case ct_SAMPLE_MODE_BILINEAR:
-		result = ct_bilinear(inputProp, images, texCoords);
-		break;
-	case ct_SAMPLE_MODE_BICUBIC:
-		result = ct_bicubic(false, inputProp, images, texCoords);
-		break;
-	case ct_SAMPLE_MODE_BILINEAR_TO_BICUBIC:
-		result = ct_bicubic(true, inputProp, images, texCoords);
-		break;
-	default: //ct_SAMPLE_MODE_PASSTHOUGH
-		result = ct_passthrough(inputProp, images, texCoords);
-		break;
+	//Test if any of the UV coordinates is outside [0, 0], [1, 1] square
+	const bool isOutside = any(lessThan(vec4(texCoords, -texCoords), vec4(vec2(0.0f), vec2(-1.0f))));
+	
+	//Depending on if it is outside, sample or return black
+	if(isOutside) {
+		result = vec4(0.0f);
+	} else {
+		switch(mode){
+		case ct_SAMPLE_MODE_BILINEAR:
+			result = ct_bilinear(inputProp, images, texCoords);
+			break;
+		case ct_SAMPLE_MODE_BICUBIC:
+			result = ct_bicubic(inputProp, images, texCoords);
+			break;
+		case ct_SAMPLE_MODE_BICUBIC_FROM_BILINEAR:
+			result = ct_bicubicFromBilinear(inputProp, images, texCoords);
+			break;
+		default: //ct_SAMPLE_MODE_PASSTHOUGH
+			result = ct_passthrough(inputProp, images, texCoords);
+			break;
+		}
 	}
 
 	return result;

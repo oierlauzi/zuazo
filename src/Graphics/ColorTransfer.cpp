@@ -28,10 +28,7 @@ constexpr int32_t getColorPrimaries(ColorPrimaries primaries, const Chromaticiti
 
 constexpr int32_t getColorTransferFunction(ColorTransferFunction transferFunction) noexcept {
 	switch(transferFunction){		
-	case ColorTransferFunction::BT601:
-	case ColorTransferFunction::BT709:
-	case ColorTransferFunction::BT2020_10:
-	case ColorTransferFunction::BT2020_12:		return ct_COLOR_TRANSFER_FUNCTION_BT601_709_2020;
+	case ColorTransferFunction::BT1886:			return ct_COLOR_TRANSFER_FUNCTION_BT1886;
 	case ColorTransferFunction::GAMMA22:		return ct_COLOR_TRANSFER_FUNCTION_GAMMA22;
 	case ColorTransferFunction::GAMMA26:		return ct_COLOR_TRANSFER_FUNCTION_GAMMA26;
 	case ColorTransferFunction::GAMMA28:		return ct_COLOR_TRANSFER_FUNCTION_GAMMA28;
@@ -413,7 +410,7 @@ struct InputColorTransfer::Impl {
 				result = ct_SAMPLE_MODE_PASSTHOUGH;
 			} else if(samplerFilter == vk::Filter::eLinear) {
 				//Perform bicubic sampling using linear samplers
-				result = ct_SAMPLE_MODE_BILINEAR_TO_BICUBIC;
+				result = ct_SAMPLE_MODE_BICUBIC_FROM_BILINEAR;
 			} else {
 				//Perform bicubic sampling using nearest samplers
 				assert(samplerFilter == vk::Filter::eNearest);

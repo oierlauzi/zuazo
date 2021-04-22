@@ -899,7 +899,7 @@ constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction 
 		default: break;
 		}
 		break;
-	case ColorTransferFunction::BT709:
+	case ColorTransferFunction::BT1886:
 		//IEC61966_2_1 non linear encoding
 		switch(prim){
 		case ColorPrimaries::BT709: 		return vk::ColorSpaceKHR::eBt709NonlinearEXT;
@@ -944,7 +944,7 @@ constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::Color
 	case vk::ColorSpaceKHR::eDisplayP3LinearEXT:		return { ColorPrimaries::SMPTE432, 		ColorTransferFunction::LINEAR };
 	//case vk::ColorSpaceKHR::eDciP3NonlinearEXT:		return {}; /*NOT SUPPORTED: XYZ model expected*/
 	case vk::ColorSpaceKHR::eBt709LinearEXT:			return { ColorPrimaries::BT709, 		ColorTransferFunction::LINEAR };
-	case vk::ColorSpaceKHR::eBt709NonlinearEXT:			return { ColorPrimaries::BT709, 		ColorTransferFunction::BT709 };
+	case vk::ColorSpaceKHR::eBt709NonlinearEXT:			return { ColorPrimaries::BT709, 		ColorTransferFunction::BT1886 };
 	case vk::ColorSpaceKHR::eBt2020LinearEXT:			return { ColorPrimaries::BT2020, 		ColorTransferFunction::LINEAR };
 	case vk::ColorSpaceKHR::eHdr10St2084EXT:			return { ColorPrimaries::BT2020, 		ColorTransferFunction::SMPTE2084 };
 	//case vk::ColorSpaceKHR::eDolbyvisionEXT:			return {}; /*NOT SUPPORTED*/

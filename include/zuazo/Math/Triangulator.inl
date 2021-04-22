@@ -221,7 +221,7 @@ inline void Triangulator<T, Index>::operator()(	const polygon_type& polygon,
 					}
 				}
 
-				//Perform the second visibility check
+				//Perform the second visibility check //TODO maybe redundant
 				{
 					//Extract the third and fourth points from the polygon
 					const auto& p2 = polygon.getPoint(jm1);

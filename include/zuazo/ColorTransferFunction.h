@@ -14,10 +14,13 @@ enum class ColorTransferFunction {
 	NONE = -1,					///<Not supported
 
 	LINEAR,						///<Linearly encoded
-	BT601,						///<Transfer function defined by ITU-R BT.601. Used on PAL, SECAM and NTSC SDTV systems. \see https://www.itu.int/rec/R-REC-BT.601/en
-	BT709,						///<Transfer function defined by ITU-R BT.709. Used on HDTV systems. Functionaly equivalent to the above one. \see https://www.itu.int/rec/R-REC-BT.709/en
-	BT2020_10,					///<Transfer function defined by ITU-R BT.2020 for 10bits per component. Functionaly equivalent to the above one. Used on UHDTV systems. \see https://www.itu.int/rec/R-REC-BT.2020/en
-	BT2020_12,					///<Transfer function defined by ITU-R BT.2020 for 12bits per component. Used on UHDTV systems. Functionaly similar to the above one, higher precision constants used. \see https://www.itu.int/rec/R-REC-BT.2020/en
+	BT1886,						///<Transfer function defined by ITU-R BT.1886. 
+								///<Used by BT.601, BT.709, BT.2020. 
+								///<\note Although the original standard is specified for 
+								///<depths upto 10bits, the extendended version provided by
+								///<BT.2020 has been adopted. 
+								///<\see https://www.itu.int/rec/R-REC-BT.1886/en
+								///<\see https://www.itu.int/rec/R-REC-BT.2020/en
 	GAMMA22,					///<2.2 gamma function
 	GAMMA26,					///<2.6 gamma function
 	GAMMA28,					///<2.8 gamma function
