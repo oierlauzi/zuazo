@@ -22,7 +22,7 @@ public:
 	using HasChangedCallback = std::function<bool(const LayerBase&, const RendererBase&)>;
 	using HasAlphaCallback = std::function<bool(const LayerBase&)>;
 	using DrawCallback = std::function<void(const LayerBase&, const RendererBase&, Graphics::CommandBuffer&)>;
-	using RenderPassCallback = std::function<void(LayerBase&, Graphics::RenderPass)>;
+	using RenderPassCallback = std::function<void(LayerBase&, const Graphics::RenderPass&)>;
 
 
 	LayerBase(	const RendererBase* renderer,
@@ -60,7 +60,7 @@ public:
 	bool								hasChanged(const RendererBase& renderer) const;
 	void								draw(const RendererBase& renderer, Graphics::CommandBuffer& cmd) const;
 
-	Graphics::RenderPass				getRenderPass() const noexcept;
+	const Graphics::RenderPass&			getRenderPass() const noexcept;
 
 protected:
 	void								setTransformCallback(TransformCallback cbk);

@@ -1,12 +1,11 @@
 #include <zuazo/Graphics/Downloader.h>
-
+/* //TODO
 #include <zuazo/Graphics/ColorTransfer.h>
 #include <zuazo/Graphics/Buffer.h>
 #include <zuazo/Graphics/RenderPass.h>
 #include <zuazo/Graphics/VulkanConversions.h>
 #include <zuazo/Utils/Pool.h>
 #include <zuazo/Utils/StaticId.h>
-#include <zuazo/shaders/color_transfer.h>
 
 #include <utility>
 #include <memory>
@@ -14,15 +13,15 @@
 #include <algorithm>
 
 namespace Zuazo::Graphics {
-
+*/
 /*
  * Downloader::Impl
  */
-
+/*
 struct Downloader::Impl {
 	const Vulkan&									vulkan;
 	std::shared_ptr<Frame::Descriptor>				frameDescriptor;
-	OutputColorTransfer								colorTransfer;
+	ColorTransferWrite								colorTransfer;
 	std::vector<Image::Plane>						planeDescriptors;
 	vk::Format										intermediaryFormat;
 
@@ -80,7 +79,7 @@ struct Downloader::Impl {
 		return *frameDescriptor;
 	}
 
-	const OutputColorTransfer& getOutputColorTransfer() const {
+	const ColorTransferWrite& getColorTransfer() const noexcept {
 		return colorTransfer;
 	}
 
@@ -289,8 +288,8 @@ struct Downloader::Impl {
 									const Frame::Descriptor& frameDesc,
 									DepthStencilFormat depthStencilFmt )
 	{
-		OutputColorTransfer inputColorTransfer(frameDesc);
-		const auto planeDescriptors = createPlaneDescriptors(vulkan, frameDesc, inputColorTransfer);
+		ColorTransferWrite colorTransfer(frameDesc);
+		const auto planeDescriptors = createPlaneDescriptors(vulkan, frameDesc, colorTransfer);
 		return RenderPass(vulkan, planeDescriptors, depthStencilFmt, vk::Format::eUndefined, vk::ImageLayout::eTransferSrcOptimal); //TODO intermediary
 	}
 
@@ -458,9 +457,9 @@ private:
 
 	static std::vector<Image::Plane> createPlaneDescriptors(const Vulkan& vulkan, 
 															const Frame::Descriptor& desc,
-															OutputColorTransfer& colorTransfer )
+															ColorTransferWrite& colorTransfer )
 	{
-		std::vector<Image::Plane> result = Frame::getPlaneDescriptors(desc);
+		std::vector<Image::Plane> result = desc.getPlanes();
 
 		//Try to optimize it
 		const auto& supportedFormats = getVulkanFormatSupport(vulkan);
@@ -565,7 +564,7 @@ private:
 											const Image& image,
 											const Image* intermediaryImage,
 											const DepthStencil* depthStencil,
-											RenderPass renderPass )
+											const RenderPass& renderPass )
 	{
 		return Framebuffer(
 			vulkan,
@@ -649,11 +648,11 @@ private:
 };
 
 
-
+*/
 /*
  * Downloader
  */
-
+/*
 Downloader::Downloader(	const Vulkan& vulkan, 
 						const Frame::Descriptor& frameDesc,
 						DepthStencilFormat depthStencilFmt )
@@ -677,8 +676,8 @@ const Frame::Descriptor& Downloader::getFrameDescriptor() const noexcept {
 	return m_impl->getFrameDescriptor();
 }
 
-const OutputColorTransfer& Downloader::getOutputColorTransfer() const {
-	return m_impl->getOutputColorTransfer();
+const ColorTransferWrite& Downloader::getColorTransfer() const noexcept {
+	return m_impl->getColorTransfer();
 }
 
 
@@ -731,3 +730,4 @@ RenderPass Downloader::getRenderPass(const Vulkan& vulkan,
 }
 
 }
+*/

@@ -10,19 +10,16 @@
 
 namespace Zuazo::Graphics {
 
-class Uploader {
+class StagedFramePool {
 public:
-	Uploader(	const Vulkan& vulkan, 
+	StagedFramePool(	const Vulkan& vulkan, 
 				const Frame::Descriptor& desc );
-	Uploader(	const Vulkan& vulkan, 
-				const Frame::Descriptor& desc,
-				const Chromaticities& customPrimaries );
-	Uploader(const Uploader& other) = delete;
-	Uploader(Uploader&& other) noexcept;
-	~Uploader();
+	StagedFramePool(const StagedFramePool& other) = delete;
+	StagedFramePool(StagedFramePool&& other) noexcept;
+	~StagedFramePool();
 
-	Uploader& 										operator=(const Uploader& other) = delete;
-	Uploader& 										operator=(Uploader&& other) noexcept;
+	StagedFramePool& 								operator=(const StagedFramePool& other) = delete;
+	StagedFramePool& 								operator=(StagedFramePool&& other) noexcept;
 
 	const Vulkan&									getVulkan() const noexcept;
 	const Frame::Descriptor& 						getFrameDescriptor() const noexcept;	
@@ -32,8 +29,6 @@ public:
 	size_t											getSpareCount() const noexcept;
 
 	std::shared_ptr<StagedFrame>					acquireFrame() const;
-
-	static Utils::Discrete<ColorFormat>				getSupportedFormats(const Vulkan& vulkan);
 
 private:
 	struct Impl;

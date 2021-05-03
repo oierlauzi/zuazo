@@ -1,7 +1,7 @@
 #include "Hasher.h"
 
 #include <utility>
-#include <algorithm>
+#include <numeric>
 
 namespace Zuazo::Utils {
 

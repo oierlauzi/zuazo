@@ -24,11 +24,10 @@ public:
 
 	using DepthStencilFormatCallback = std::function<void(RendererBase&, DepthStencilFormat)>;
 	using CameraCallback = std::function<void(RendererBase&, const Camera& camera)>;
-	using RenderPassQueryCallback = std::function<Graphics::RenderPass(const RendererBase&)>;
+	using RenderPassQueryCallback = std::function<const Graphics::RenderPass&(const RendererBase&)>;
 
 	enum DescriptorBindings {
 		DESCRIPTOR_BINDING_PROJECTION_MATRIX,
-		DESCRIPTOR_BINDING_OUTPUT_COLOR_TRANSFER,
 
 		DESCRIPTOR_BINDING_COUNT,
 	};
@@ -65,7 +64,7 @@ public:
 	bool									layersHaveChanged() const;
 	void									draw(Graphics::CommandBuffer& cmd);
 
-	Graphics::RenderPass					getRenderPass() const;
+	const Graphics::RenderPass&				getRenderPass() const;
 
 	static UniformBufferSizes				getUniformBufferSizes() noexcept;
 	static DescriptorPoolSizes				getDescriptorPoolSizes() noexcept;

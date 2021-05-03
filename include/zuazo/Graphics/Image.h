@@ -94,6 +94,9 @@ private:
 
 
 
+void optimizeSwizzle(	Utils::BufferView<Image::Plane> planes,
+						Utils::BufferView<const vk::Format> supportedFormats ) noexcept;
+
 void copy(	const Vulkan& vulkan,
 			vk::CommandBuffer cmd, 
 			const Image& src, 

@@ -285,4 +285,19 @@ std::ostream& operator<<(std::ostream& os, const Mat<T, M, N>& m);
 
 }
 
+namespace Zuazo::Utils {
+
+template<typename T, typename H>
+struct Hasher;
+
+template <typename T, size_t N, size_t M, typename H>
+struct Hasher<Math::Mat<T, N, M>, H> {
+	using value_type = Math::Mat<T, N, M>;
+	using hash_type = H;
+
+	constexpr hash_type operator()(const value_type& v) const noexcept;
+};
+
+}
+
 #include "Matrix.inl"

@@ -2,7 +2,8 @@
 
 #include "Vulkan.h"
 #include "Frame.h"
-#include "Image.h"
+
+#include "../Utils/Pimpl.h"
 
 namespace Zuazo::Graphics {
 
@@ -10,48 +11,35 @@ class StagedFrame
 	: public Frame 
 {
 public:
+	class Cache;
+
 	using PixelData = Utils::BufferView<const Utils::BufferView<std::byte>>;
 	using ConstPixelData = Utils::BufferView<const Utils::BufferView<const std::byte>>;
 
 	StagedFrame(const Vulkan& vulkan,
 				std::shared_ptr<const Descriptor> desc,
-				std::shared_ptr<const Buffer> colorTransferBuffer,
-				std::shared_ptr<const Samplers> samplers,
-				Utils::BufferView<const Image::Plane> planes,
-				Utils::BufferView<const Image::Plane> optimizedPlanes,
-				std::shared_ptr<const vk::UniqueCommandPool> cmdPool );
+				std::shared_ptr<const Cache> cache = nullptr,
+				std::shared_ptr<void> usrPtr = nullptr  );
 	StagedFrame(const StagedFrame& other) = delete;
-	StagedFrame(StagedFrame&& other) noexcept = default;
+	StagedFrame(StagedFrame&& other) noexcept;
 	virtual ~StagedFrame(); 
 
 	StagedFrame& 								operator=(const StagedFrame& other) noexcept = delete;
+	StagedFrame&								operator=(StagedFrame&& other) noexcept;
 
 	PixelData									getPixelData() noexcept;
 	ConstPixelData								getPixelData() const noexcept;
 	void										flush();
 	bool										waitCompletion(uint64_t timeo) const;
 
-	static std::shared_ptr<vk::UniqueCommandPool> createCommandPool(const Vulkan& vulkan);
+	static std::shared_ptr<const Cache>			createCache(const Vulkan& vulkan, 
+															const Frame::Descriptor& frameDesc );
+
+	static Utils::Discrete<ColorFormat>			getSupportedFormats(const Vulkan& vulkan);
 
 private:
-	Image										m_stagingImage;
-	std::vector<Utils::BufferView<std::byte>> 	m_pixelData;
-		
-	std::shared_ptr<const vk::UniqueCommandPool>m_commandPool;
-	vk::UniqueCommandBuffer						m_commandBuffer;
-	vk::SubmitInfo 								m_commandBufferSubmit;
-	vk::UniqueFence								m_uploadComplete;
-
-	void										transitionStagingimageLayout();
-	void										recordCommandBuffer();
-
-	static Image								createStagingImage(	const Vulkan& vulkan,
-																	Utils::BufferView<const Image::Plane> planes );
-	static std::vector<Utils::BufferView<std::byte>> getPixelData(	const Vulkan& vulkan,
-																	const Image& stagingImage );
-	static vk::UniqueCommandBuffer				createCommandBuffer(const Vulkan& vulkan,
-																	vk::CommandPool cmdPool );
-	static vk::SubmitInfo						createSubmitInfo(const vk::CommandBuffer& cmdBuffer);
+	struct Impl;
+	Utils::Pimpl<Impl>							m_impl;
 
 };
 

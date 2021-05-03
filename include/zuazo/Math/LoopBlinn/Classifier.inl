@@ -85,20 +85,18 @@ constexpr typename Classifier<T>::Result Classifier<T>::operator()(const curve_t
 					//d1 and d2 = 0, d3 != 0: quadratic
 					result.type = CurveType::QUADRATIC;
 				}
+			} else if(!result.d1) {
+				//d=1 but term1 != 0: Special case of cusp
+				result.type = CurveType::CUSP;
 			} else {
-				if(!result.d1) {
-					//d=1 but term1 != 0: Special case of cusp
-					result.type = CurveType::CUSP;
+				//disc=0: Cusp, edge case of serpentine or loop
+				//As term1 will not be exactly 0, decide between 
+				//loop and serpentine to avoid NaN as a result of
+				//sqrt. Source: Apple's WebCore
+				if(result.discriminantTerm1 < 0) {
+					result.type = CurveType::LOOP;
 				} else {
-					//disc=0: Cusp, edge case of serpentine or loop
-					//As term1 will not be exactly 0, decide between 
-					//loop and serpentine to avoid NaN as a result of
-					//sqrt. Source: Apple's WebCore
-					if(result.discriminantTerm1 < 0) {
-						result.type = CurveType::LOOP;
-					} else {
-						result.type = CurveType::SERPENTINE;
-					}
+					result.type = CurveType::SERPENTINE;
 				}
 			}
 		} else if(discriminant < 0) {

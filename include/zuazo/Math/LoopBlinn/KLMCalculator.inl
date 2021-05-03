@@ -89,7 +89,7 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(const c
 				ms*ms*Msmt										//ms^2*(ms-mt)
 			), 			
 			Vec3<value_type>(
-				(3*ls*ms - 2*ls*mt - 2*lt*ms + lt*mt)/3,		//ls*ms - 2/3*ls*mt - 2/3*lt*ms - 1/3*lt*mt
+				(3*ls*ms - 2*ls*mt - 2*lt*ms + lt*mt)/3,		//ls*ms - 2/3*ls*mt - 2/3*lt*ms + 1/3*lt*mt
 				ls*Lsmt*Lsmt, 									//ls*(ls-lt)^2
 				ms*Msmt*Msmt									//ms*(ms-mt)^2
 			), 

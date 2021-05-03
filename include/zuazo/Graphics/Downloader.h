@@ -1,5 +1,5 @@
 #pragma once
-
+/* //TODO
 #include "Vulkan.h"
 #include "TargetFrame.h"
 #include "ColorTransfer.h"
@@ -28,7 +28,7 @@ public:
 
 	const Vulkan&									getVulkan() const noexcept;
 	const Frame::Descriptor& 						getFrameDescriptor() const noexcept;	
-	const OutputColorTransfer&						getOutputColorTransfer() const;
+	const ColorTransferWrite&						getColorTransfer() const noexcept;
 
 	const Framebuffer&								getFramebuffer() const noexcept;
 	void											beginRenderPass(vk::CommandBuffer cmd, 
@@ -55,3 +55,4 @@ private:
 };
 
 }
+*/

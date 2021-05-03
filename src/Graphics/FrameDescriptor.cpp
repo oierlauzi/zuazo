@@ -101,4 +101,27 @@ Math::Vec2f Frame::Descriptor::calculateSize() const noexcept {
 	);
 }
 
+std::vector<Image::Plane> Frame::Descriptor::getPlanes() const {
+	std::vector<Image::Plane> result;
+
+	const auto planeCount = getPlaneCount(m_colorFormat);
+	result.reserve(planeCount);
+
+	const auto formats = toVulkan(m_colorFormat);
+	const auto extent = toVulkan(m_resolution);
+	const auto subsampledExtent = toVulkan(getSubsampledResolution(m_colorSubsampling, m_resolution));
+
+	assert(planeCount <= formats.size());
+
+	for(size_t i = 0; i < planeCount; i++) {
+		result.emplace_back(
+			to3D((i == 0 || i == 3) ? extent : subsampledExtent), //FIXME decide better, in order to give support to G_BR_A
+			std::get<vk::Format>(formats[i]),
+			std::get<vk::ComponentMapping>(formats[i])
+		);
+	}
+
+	return result;
+}
+
 }

@@ -14,7 +14,7 @@ struct LayerBase::Impl {
 	BlendingMode									blendingMode;
 	RenderingLayer									renderingLayer;
 
-	Graphics::RenderPass							renderPass;
+	std::reference_wrapper<const Graphics::RenderPass> renderPass;
 
 	TransformCallback								transformCallback;
 	OpacityCallback									opacityCallback;
@@ -24,6 +24,8 @@ struct LayerBase::Impl {
 	HasAlphaCallback								hasAlphaCallback;
 	DrawCallback									drawCallback;
 	RenderPassCallback								renderPassCallback;
+
+	static const Graphics::RenderPass NO_RENDER_PASS;
 
 
 	Impl(	const RendererBase* renderer,
@@ -40,7 +42,7 @@ struct LayerBase::Impl {
 		, opacity(1.0f)
 		, blendingMode(BlendingMode::OPACITY)
 		, renderingLayer(RenderingLayer::SCENE)
-		, renderPass(renderer ? renderer->getRenderPass() : Graphics::RenderPass())
+		, renderPass(renderer ? renderer->getRenderPass() : NO_RENDER_PASS)
 		, transformCallback(std::move(transformCbk))
 		, opacityCallback(std::move(opacityCbk))
 		, blendingModeCallback(std::move(blendingModeCbk))
@@ -57,9 +59,10 @@ struct LayerBase::Impl {
 
 	void setRenderer(LayerBase& base, const RendererBase* rend) {
 		renderer = rend;
-		const auto rendPass = renderer ? renderer->getRenderPass() : Graphics::RenderPass();
 
-		if(renderPass != rendPass) {
+		const auto& rendPass = renderer ? renderer->getRenderPass() : NO_RENDER_PASS;
+
+		if(renderPass.get().get() != rendPass.get()) {
 			renderPass = rendPass;
 			Utils::invokeIf(renderPassCallback, base, renderPass);
 		}
@@ -156,7 +159,7 @@ struct LayerBase::Impl {
 	}
 
 
-	Graphics::RenderPass getRenderPass() const noexcept {
+	const Graphics::RenderPass& getRenderPass() const noexcept {
 		return renderPass;
 	}
 
@@ -264,6 +267,9 @@ private:
 
 };
 
+const Graphics::RenderPass LayerBase::Impl::NO_RENDER_PASS;
+
+
 
 LayerBase::LayerBase(	const RendererBase* renderer,
 						TransformCallback transformCbk,
@@ -350,7 +356,7 @@ void LayerBase::draw(const RendererBase& renderer, Graphics::CommandBuffer& cmd)
 }
 
 
-Graphics::RenderPass LayerBase::getRenderPass() const noexcept {
+const Graphics::RenderPass& LayerBase::getRenderPass() const noexcept {
 	return m_impl->getRenderPass();
 }
 

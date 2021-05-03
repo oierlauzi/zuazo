@@ -23,6 +23,7 @@ struct RendererBase::Impl {
 	std::vector<LayerRef>								sortedLayers;
 	bool												hasChanged;
 
+	static const Graphics::RenderPass NO_RENDER_PASS;
 	static constexpr Math::Vec2f DUMMY_SIZE = Math::Vec2f(1.0f, 1.0f);
 
 
@@ -150,22 +151,18 @@ struct RendererBase::Impl {
 	}
 
 
-	Graphics::RenderPass getRenderPass(const RendererBase& base) const {
-		Graphics::RenderPass result;
+	const Graphics::RenderPass& getRenderPass(const RendererBase& base) const {
 
-		if(renderPassQueryCallback) {
-			result = renderPassQueryCallback(base);
-		}
-
-		return result;
+		return 	renderPassQueryCallback ?
+				renderPassQueryCallback(base) :
+				NO_RENDER_PASS ;
 	}
 
 
 
 	static UniformBufferSizes getUniformBufferSizes() noexcept {
 		static const std::array uniformBufferSizes = {
-			std::make_pair(static_cast<uint32_t>(DESCRIPTOR_BINDING_PROJECTION_MATRIX), 	sizeof(Math::Mat4x4f)),
-			std::make_pair(static_cast<uint32_t>(DESCRIPTOR_BINDING_OUTPUT_COLOR_TRANSFER),	Graphics::OutputColorTransfer::size())
+			std::make_pair(static_cast<uint32_t>(DESCRIPTOR_BINDING_PROJECTION_MATRIX), 	sizeof(Math::Mat4x4f))
 		};
 
 		return uniformBufferSizes;
@@ -196,14 +193,7 @@ struct RendererBase::Impl {
 					1,												//Count
 					vk::ShaderStageFlagBits::eVertex,				//Shader stage
 					nullptr											//Immutable samplers
-				), 
-				vk::DescriptorSetLayoutBinding(	//UBO binding
-					DESCRIPTOR_BINDING_OUTPUT_COLOR_TRANSFER,		//Binding
-					vk::DescriptorType::eUniformBuffer,				//Type
-					1,												//Count
-					vk::ShaderStageFlagBits::eFragment,				//Shader stage
-					nullptr											//Immutable samplers
-				), 
+				)
 			};
 
 			const vk::DescriptorSetLayoutCreateInfo createInfo(
@@ -323,6 +313,8 @@ private:
 
 };
 
+const Graphics::RenderPass RendererBase::Impl::NO_RENDER_PASS;
+
 
 
 RendererBase::RendererBase(	DepthStencilFormatCallback depthStencilFormatCbk,
@@ -391,7 +383,7 @@ Utils::BufferView<const RendererBase::LayerRef> RendererBase::getLayers() const 
 }
 
 
-Graphics::RenderPass RendererBase::getRenderPass() const {
+const Graphics::RenderPass& RendererBase::getRenderPass() const {
 	return m_impl->getRenderPass(*this);
 }
 

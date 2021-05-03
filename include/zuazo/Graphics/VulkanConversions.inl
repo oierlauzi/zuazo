@@ -116,16 +116,16 @@ constexpr ColorModel fromVulkan(vk::SamplerYcbcrModelConversion model) noexcept 
 
 constexpr vk::SamplerYcbcrRange toVulkan(ColorRange colorRange) noexcept {
 	switch(colorRange) {
-	case ColorRange::FULL:			return vk::SamplerYcbcrRange::eItuFull;
-	case ColorRange::ITU_NARROW:	return vk::SamplerYcbcrRange::eItuNarrow;
-	default:						return static_cast<vk::SamplerYcbcrRange>(-1);
+	case ColorRange::FULL:					return vk::SamplerYcbcrRange::eItuFull;
+	case ColorRange::ITU_NARROW_FULL_ALPHA:	return vk::SamplerYcbcrRange::eItuNarrow;
+	default:								return static_cast<vk::SamplerYcbcrRange>(-1);
 	}
 }
 
 constexpr ColorRange fromVulkan(vk::SamplerYcbcrRange range) noexcept {
 	switch(range) {
 	case vk::SamplerYcbcrRange::eItuFull:	return ColorRange::FULL;
-	case vk::SamplerYcbcrRange::eItuNarrow:	return ColorRange::ITU_NARROW;
+	case vk::SamplerYcbcrRange::eItuNarrow:	return ColorRange::ITU_NARROW_FULL_ALPHA;
 	default:								return ColorRange::NONE;
 	}
 }
@@ -677,6 +677,108 @@ inline std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(	const std::t
 	}
 
 	return fmt;
+}
+
+
+
+inline vk::Format getAdequateFloatingPointFormat(	vk::Format format, 
+													bool alphaRequired, 
+													Utils::BufferView<const vk::Format> supportedFormats )
+{
+	auto result = vk::Format::eUndefined;
+
+	if(format != vk::Format::eUndefined) {
+		enum IntermediateFormatPrecision {
+			INTERMEDIATE_FORMAT_PRECISION_16f_ALPHA,
+			INTERMEDIATE_FORMAT_PRECISION_16f,
+			INTERMEDIATE_FORMAT_PRECISION_32f_ALPHA,
+			INTERMEDIATE_FORMAT_PRECISION_32f,
+			INTERMEDIATE_FORMAT_PRECISION_64f_ALPHA,
+			INTERMEDIATE_FORMAT_PRECISION_64f,
+
+			INTERMEDIATE_FORMAT_PRECISION_COUNT,
+			ALPHA_STRIDE = 2
+		};
+
+		constexpr std::array<vk::Format, INTERMEDIATE_FORMAT_PRECISION_COUNT> FORMAT_LUT = {
+			vk::Format::eR16G16B16A16Sfloat,
+			vk::Format::eR16G16B16Sfloat,
+			vk::Format::eR32G32B32A32Sfloat,
+			vk::Format::eR32G32B32Sfloat,
+			vk::Format::eR64G64B64A64Sfloat,
+			vk::Format::eR64G64B64Sfloat
+		};
+
+		//Decide which precision will be needed
+		int minimumPrecision;
+		switch(format) {
+		//64f used:
+		case vk::Format::eR64G64B64A64Sfloat:
+		case vk::Format::eR64G64B64Sfloat:
+		case vk::Format::eR64G64Sfloat:
+		case vk::Format::eR64Sfloat:
+			minimumPrecision = 	alphaRequired ? 
+								INTERMEDIATE_FORMAT_PRECISION_64f_ALPHA : 
+								INTERMEDIATE_FORMAT_PRECISION_64f ;
+			break;
+
+		//32f used:
+		case vk::Format::eR32G32B32A32Sfloat:
+		case vk::Format::eR32G32B32Sfloat:
+		case vk::Format::eR32G32Sfloat:
+		case vk::Format::eR32Sfloat:
+		case vk::Format::eR16G16B16A16Unorm:
+		case vk::Format::eR16G16B16Unorm:
+		case vk::Format::eR16G16Unorm:
+		case vk::Format::eR16Unorm:
+		case vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16:
+		case vk::Format::eR12X4G12X4Unorm2Pack16:
+		case vk::Format::eR12X4UnormPack16:
+		case vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16:
+		case vk::Format::eR10X6G10X6Unorm2Pack16:
+		case vk::Format::eR10X6UnormPack16:
+		case vk::Format::eA2R10G10B10UnormPack32:
+		case vk::Format::eA2B10G10R10UnormPack32:
+			minimumPrecision = 	alphaRequired ? 
+								INTERMEDIATE_FORMAT_PRECISION_32f_ALPHA : 
+								INTERMEDIATE_FORMAT_PRECISION_32f ;
+			break;
+
+		//16f used:
+		default:
+			minimumPrecision = 	alphaRequired ? 
+								INTERMEDIATE_FORMAT_PRECISION_16f_ALPHA : 
+								INTERMEDIATE_FORMAT_PRECISION_16f ;
+			break;
+		}
+
+		//Decide which format to use based on the minimum precision. If not available,
+		//lower the precision. This is useful to fallback into a alpha-ed format if the
+		//alphaless variant is not supported. 64 bit formats may not be supported, so it
+		//will also provide a fallback 32bit format.
+		while(minimumPrecision >= 0) {
+			const auto desiredFormat = FORMAT_LUT[minimumPrecision];
+			if(std::binary_search(supportedFormats.cbegin(), supportedFormats.cend(), desiredFormat)) {
+				//It is supported
+				break;
+			}
+
+			//Not supported. Lower the precision. If alpha is required, skip the alphaless
+			minimumPrecision -= alphaRequired ? ALPHA_STRIDE : 1;
+		}
+
+		//Evaluate if the intermediary format was found
+		if(minimumPrecision < 0) {
+			throw Exception("Unable to find a suitable intermediate format");
+		} else {
+			result = FORMAT_LUT[minimumPrecision];
+		}
+
+		//At this point, we should have succeeded at finding an intermediary format
+		assert(result != vk::Format::eUndefined);
+	}
+
+	return result;
 }
 
 

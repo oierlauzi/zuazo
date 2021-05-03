@@ -176,6 +176,22 @@ vk::UniqueImageView Image::createImageView(	const Vulkan& vulkan,
 
 
 
+void optimizeSwizzle(	Utils::BufferView<Image::Plane> planes,
+						Utils::BufferView<const vk::Format> supportedFormats ) noexcept
+{
+	//In order to use binary_search:
+	assert(std::is_sorted(supportedFormats.cbegin(), supportedFormats.cend()));
+
+	for(auto& plane : planes) {
+		const auto [format, swizzle] = optimizeFormat(std::make_tuple(plane.getFormat(), plane.getSwizzle()));
+		
+		if(std::binary_search(supportedFormats.cbegin(), supportedFormats.cend(), format)) {
+			plane.setFormat(format);
+			plane.setSwizzle(swizzle);
+		}
+	}
+}
+
 void copy(	const Vulkan& vulkan, 
 			vk::CommandBuffer cmd,
 			const Image& src, 

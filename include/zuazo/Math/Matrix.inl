@@ -1,5 +1,7 @@
 #include "Matrix.h"
 
+#include "../Utils/Hasher.h"
+
 namespace Zuazo::Math {
 
 /*
@@ -818,6 +820,18 @@ inline std::ostream& operator<<(std::ostream& os, const Mat<T, M, N>& m) {
 	}
 
 	return os << "]";
+}
+
+}
+
+
+
+namespace Zuazo::Utils {
+
+template <typename T, size_t N, size_t M, typename H>
+constexpr typename Hasher<Math::Mat<T, N, M>, H>::hash_type 
+Hasher<Math::Mat<T, N, M>, H>::operator()(const value_type& v) const noexcept {
+	return hashAccumulate(v.cbegin(), v.cend());
 }
 
 }

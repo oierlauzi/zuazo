@@ -16,10 +16,11 @@ enum class ColorRange {
 
 	FULL,						///<Components use all the available range in [0, 1], [-0.5, 0.5] if chroma samples
 								///<  (Cb and Cr)
-	ITU_NARROW,					///<Compoents leave a headroom and footroom according to the ITU standard. 
+	ITU_NARROW,					///<Components leave a headroom and footroom according to the ITU standard. 
 								///<This means that components encompass a range from 16/255 to 235/255 or 16/255 
 								///< to 240/255 for chroma samples (Cb and Cr)
 								///<\see https://www.itu.int/rec/R-REC-BT.601/en
+	ITU_NARROW_FULL_ALPHA,		///<Same as above but alpha channel uses all the available range
 
 	//Add here
 

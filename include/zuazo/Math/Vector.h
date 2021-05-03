@@ -361,4 +361,19 @@ std::ostream& operator<<(std::ostream& os, const Vec<T, N>& m);
 
 }
 
+namespace Zuazo::Utils {
+
+template<typename T, typename H>
+struct Hasher;
+
+template <typename T, size_t N, typename H>
+struct Hasher<Math::Vec<T, N>, H> {
+	using value_type = Math::Vec<T, N>;
+	using hash_type = H;
+
+	constexpr hash_type operator()(const value_type& v) const noexcept;
+};
+
+}
+
 #include "Vector.inl"

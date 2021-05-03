@@ -46,15 +46,22 @@ std::pair<Math::Vec2f, Math::Vec2f> Frame::Geometry::calculateSurfaceSize() cons
 
 
 bool Frame::Geometry::useFrame(const Frame& frame) {
-	const auto frameSize = frame.getDescriptor().calculateSize();
+	bool result;
 
-	if(m_sourceSize != frameSize) {
+	//Obtain the size of the frame. Best way is to use its descriptor.
+	//If it is not available, fall back into using its resolution. 
+	const auto& desc = frame.getDescriptor();
+	const auto frameSize = 	desc ? 
+							desc->calculateSize() : 
+							fromVulkan(to2D(frame.getImage().getPlanes().front().getExtent()));
+
+	//Check if it has canged
+	result = m_sourceSize != frameSize;
+	if(result) {
 		m_sourceSize = frameSize;
-
-		return true;
-	} else {
-		return false;
 	}
+
+	return result;
 }
 
 void Frame::Geometry::writeQuadVertices(Math::Vec2f* position,

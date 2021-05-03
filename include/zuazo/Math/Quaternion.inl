@@ -1,5 +1,7 @@
 #include "Quaternion.h"
 
+#include "../Utils/Hasher.h"
+
 namespace Zuazo::Math {
 
 template<typename T>
@@ -399,6 +401,18 @@ constexpr typename Quaternion<T>::value_type getRoll(const Quaternion<T>& q) noe
 	const typename Quaternion<T>::value_type sinr_cosp = 	 2*(q.w*q.x + q.y*q.z);
 	const typename Quaternion<T>::value_type cosr_cosp = 1 - 2*(q.x*q.x + q.y*q.y);
 	return atan(sinr_cosp, cosr_cosp);
+}
+
+}
+
+
+
+namespace Zuazo::Utils {
+
+template <typename T, typename H>
+constexpr typename Hasher<Math::Quaternion<T>, H>::hash_type 
+Hasher<Math::Quaternion<T>, H>::operator()(const value_type& v) const noexcept {
+	return hashAccumulate(v.cbegin(), v.cend());
 }
 
 }

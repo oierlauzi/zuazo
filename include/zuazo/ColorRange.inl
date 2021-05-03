@@ -11,6 +11,7 @@ constexpr std::string_view toString(ColorRange colorRange) noexcept {
 
 	ZUAZO_ENUM2STR_CASE( ColorRange, FULL )
 	ZUAZO_ENUM2STR_CASE( ColorRange, ITU_NARROW )
+	ZUAZO_ENUM2STR_CASE( ColorRange, ITU_NARROW_FULL_ALPHA )
 
 	default: return "";
 	}

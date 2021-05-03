@@ -1,5 +1,7 @@
 #include "Vector.h"
 
+#include "../Utils/Hasher.h"
+
 #include <algorithm>
 #include <utility>
 #include <cassert>
@@ -749,6 +751,18 @@ inline std::ostream& operator<<(std::ostream& os, const Vec<T, N>& v) {
 	}
 
 	return os << "]";
+}
+
+}
+
+
+
+namespace Zuazo::Utils {
+
+template <typename T, size_t N, typename H>
+constexpr typename Hasher<Math::Vec<T, N>, H>::hash_type 
+Hasher<Math::Vec<T, N>, H>::operator()(const value_type& v) const noexcept {
+	return hashAccumulate(v.cbegin(), v.cend());
 }
 
 }

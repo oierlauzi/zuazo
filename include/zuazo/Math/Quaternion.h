@@ -138,4 +138,19 @@ constexpr typename Quaternion<T>::value_type getRoll(const Quaternion<T>& q) noe
 
 }
 
+namespace Zuazo::Utils {
+
+template<typename T, typename H>
+struct Hasher;
+
+template <typename T, typename H>
+struct Hasher<Math::Quaternion<T>, H> {
+	using value_type = Math::Quaternion<T>;
+	using hash_type = H;
+
+	constexpr hash_type operator()(const value_type& v) const noexcept;
+};
+
+}
+
 #include "Quaternion.inl"

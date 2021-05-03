@@ -2,11 +2,9 @@
 
 #include "Vulkan.h"
 #include "Frame.h"
-#include "CommandBuffer.h"
-#include "DepthStencil.h"
-#include "Framebuffer.h"
 #include "RenderPass.h"
-#include "../Utils/BufferView.h"
+#include "CommandBuffer.h"
+#include "../Utils/Pimpl.h"
 
 #include <vector>
 
@@ -16,20 +14,21 @@ class TargetFrame
 	: public Frame 
 {
 public:
+	class Cache;
+
 	TargetFrame(const Vulkan& vulkan,
 				std::shared_ptr<const Descriptor> desc,
-				std::shared_ptr<const Buffer> colorTransferBuffer,
-				std::shared_ptr<const Samplers> samplers,
-				Utils::BufferView<const Image::Plane> planes,
-				std::shared_ptr<const DepthStencil> depthStencil,
-				RenderPass renderPass );
+				std::shared_ptr<const Cache> cache = nullptr,
+				std::shared_ptr<void> usrPtr = nullptr  );
 	TargetFrame(const TargetFrame& other) = delete;
-	TargetFrame(TargetFrame&& other) noexcept = default;
+	TargetFrame(TargetFrame&& other) noexcept;
 	virtual ~TargetFrame(); 
 
 	TargetFrame& 								operator=(const TargetFrame& other) = delete;
+	TargetFrame&								operator=(TargetFrame&& other) noexcept;
 
-	const Framebuffer&							getFramebuffer() const noexcept;
+	bool										waitCompletion(uint64_t timeo) const;
+
 	void										beginRenderPass(	vk::CommandBuffer cmd, 
 																	vk::Rect2D renderArea,
 																	Utils::BufferView<const vk::ClearValue> clearValues,
@@ -37,19 +36,17 @@ public:
 	void										endRenderPass(vk::CommandBuffer cmd) const noexcept;
 	void										draw(std::shared_ptr<const CommandBuffer> cmd);
 
+	static std::shared_ptr<const Cache>			createCache(const Vulkan& vulkan, 
+															const Frame::Descriptor& frameDesc,
+															DepthStencilFormat depthStencilFmt  );
+	static const RenderPass&					getRenderPass(const Cache& cache) noexcept;
+
+	static Utils::Discrete<ColorFormat> 		getSupportedFormats(const Vulkan& vulkan);
+	static Utils::Discrete<ColorFormat> 		getSupportedSrgbFormats(const Vulkan& vulkan);
+
 private:
-	std::shared_ptr<const DepthStencil> 		m_depthStencil;
-	RenderPass 									m_renderPass;
-	Framebuffer									m_framebuffer;
-	vk::UniqueFence								m_renderComplete;
-
-	std::shared_ptr<const CommandBuffer>		m_commandBuffer;
-
-
-	static Framebuffer							createFramebuffer(	const Vulkan& vulkan,
-																	const Image& image,
-																	const DepthStencil* depthStencil,
-																	RenderPass renderPass );
+	struct Impl;
+	Utils::Pimpl<Impl>							m_impl;
 
 };
 

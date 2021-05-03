@@ -2,9 +2,6 @@
 
 #include "Vulkan.h"
 #include "Image.h"
-#include "Sampler.h"
-#include "Buffer.h"
-#include "StagedBuffer.h"
 #include "VulkanConversions.h"
 #include "../ScalingMode.h"
 #include "../Utils/BufferView.h"
@@ -25,22 +22,18 @@
 
 namespace Zuazo::Graphics {
 
-class InputColorTransfer;
-
 class Frame {
 public:
 	class Descriptor;
 	class Geometry;
-
-	using Samplers =std::array<Sampler, static_cast<size_t>(ScalingFilter::COUNT)>;
-
+	class Cache;
 
 	Frame(	const Vulkan& vulkan,
+			const Image::Plane& plane,
+			vk::ImageUsageFlags usage,
 			std::shared_ptr<const Descriptor> desc,
-			std::shared_ptr<const Buffer> colorTransferBuffer,
-			std::shared_ptr<const Samplers> samplers,
-			Utils::BufferView<const Image::Plane> planes,
-			vk::ImageUsageFlags usage );
+			std::shared_ptr<const Cache> cache = nullptr,
+			std::shared_ptr<void> usrPtr = nullptr );
 	Frame(const Frame& other) = delete;
 	Frame(Frame&& other) noexcept;
 	virtual ~Frame();
@@ -49,21 +42,22 @@ public:
 	Frame&									operator=(Frame&& other) noexcept;													
 
 	const Vulkan&							getVulkan() const noexcept;
-	const Descriptor&						getDescriptor() const noexcept;
+	const std::shared_ptr<const Descriptor>&getDescriptor() const noexcept;
+	const std::shared_ptr<const Cache>&		getCache() const noexcept;
 	const Image&							getImage() const noexcept;
 
 	vk::DescriptorSetLayout					getDescriptorSetLayout(ScalingFilter filter) const noexcept;
+	uint32_t								getSamplingMode(ScalingFilter filter) const noexcept;
 	void									bind(	vk::CommandBuffer cmd,
 													vk::PipelineLayout layout,
 													uint32_t index,
 													ScalingFilter filter ) const noexcept;
 
-	static std::shared_ptr<StagedBuffer>	createColorTransferBuffer(	const Vulkan& vulkan,
-																		const InputColorTransfer& colorTransfer );
-	static std::shared_ptr<Samplers>		createSamplers(	const Vulkan& vulkan,
-															InputColorTransfer& colorTransfer,
-															Utils::BufferView<const Image::Plane> planes );
-	static std::vector<Image::Plane> 		getPlaneDescriptors(const Descriptor& desc);
+	void									setUserPointer(std::shared_ptr<void> usrPtr);
+	void*									getUserPointer() const noexcept;
+
+	static std::shared_ptr<const Cache>		createCache(const Vulkan& vulkan,
+														const Image::Plane& plane );
 
 private:
 	struct Impl;
@@ -112,6 +106,7 @@ public:
 	ColorFormat								getColorFormat() const noexcept;
 
 	Math::Vec2f								calculateSize() const noexcept;
+	std::vector<Image::Plane>				getPlanes() const;
 
 private:
 	Resolution								m_resolution;

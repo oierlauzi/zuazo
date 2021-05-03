@@ -2,90 +2,95 @@
 
 #include "Vulkan.h"
 #include "Frame.h"
-#include "../Utils/BufferView.h"
+#include "Sampler.h"
 #include "../Utils/Pimpl.h"
-#include "../Resolution.h"
-#include "../ColorFormat.h"
-#include "../ColorSubsampling.h"
-#include "../ColorRange.h"
-#include "../ColorTransferFunction.h"
-#include "../ColorModel.h"
-#include "../ColorPrimaries.h"
+#include "../Utils/BufferView.h"
 
-#include <utility>
-#include <vector>
+#include <cstdint>
 
 namespace Zuazo::Graphics {
 
-class InputColorTransfer {
-	friend class OutputColorTransfer;
+class ColorTransferRead {
 public:
-	InputColorTransfer();
-	explicit InputColorTransfer(const Frame::Descriptor& desc);
-	InputColorTransfer(const Frame::Descriptor& desc, const Chromaticities& customPrimaries);
-	InputColorTransfer(const InputColorTransfer& other) = delete;
-	InputColorTransfer(InputColorTransfer&& other) noexcept;
-	~InputColorTransfer();
+	ColorTransferRead();
+	explicit ColorTransferRead(const Frame::Descriptor& desc);
+	ColorTransferRead(const ColorTransferRead& other) = delete;
+	ColorTransferRead(ColorTransferRead&& other);
+	~ColorTransferRead();
 
-	InputColorTransfer&					operator=(const InputColorTransfer& other) = delete;
-	InputColorTransfer&					operator=(InputColorTransfer&& other) noexcept;
+	ColorTransferRead& operator=(const ColorTransferRead& other) = delete;
+	ColorTransferRead& operator=(ColorTransferRead&& other);
 
-	bool								operator==(const InputColorTransfer& other) const noexcept;
-	bool								operator!=(const InputColorTransfer& other) const noexcept;
+	bool operator==(const ColorTransferRead& rhs) const noexcept;
+	bool operator!=(const ColorTransferRead& rhs) const noexcept;
 
-	void								optimize(	Utils::BufferView<Image::Plane> planes,
-													Utils::BufferView<const vk::Format> supportedFormats ) noexcept;
-	void								optimize(const Sampler& sampler) noexcept;
+	size_t size() const noexcept;
+	std::byte* data() noexcept;
+	const std::byte* data() const noexcept;
 
-	const std::byte*					data() const noexcept;
+	void optimize(	Utils::BufferView<Image::Plane> planes,
+					Utils::BufferView<const vk::Format> supportedFormats ) noexcept;
+	void optimize(const Sampler& sampler) noexcept;
 
-	bool								isPassthough() const noexcept;
-	bool								isLinear() const noexcept;
+	bool isPassthough() const noexcept;
+	bool isLinear() const noexcept;
+	size_t getPlaneCount() const noexcept;
 
-	vk::SamplerYcbcrRange				getYCbCrSamplerRange() const noexcept;
-	vk::SamplerYcbcrModelConversion		getYCbCrSamplerModel() const noexcept;
 
-	static int32_t						getSamplingMode(ScalingFilter filter,
-														vk::Filter samplerFilter ) noexcept;
+	vk::DescriptorSetLayout createDescriptorSetLayout(	const Vulkan& vulkan,
+														const Sampler& sampler ) const;
 
-	static size_t						size() noexcept;
+	static Utils::BufferView<const vk::SpecializationMapEntry> getSpecializationMap() noexcept;
+
+	static Utils::BufferView<const uint32_t> getSPIRV() noexcept;
+
+	static size_t getSamplerBinding() noexcept;
 
 private:
 	struct Impl;
-	Utils::Pimpl<Impl>					m_impl;	
+	Utils::Pimpl<Impl>	m_impl;
+
 };
 
 
 
-class OutputColorTransfer {
+class ColorTransferWrite {
 public:
-	OutputColorTransfer();
-	explicit OutputColorTransfer(const Frame::Descriptor& desc);
-	OutputColorTransfer(const Frame::Descriptor& desc, const Chromaticities& customPrimaries);
-	explicit OutputColorTransfer(const InputColorTransfer& inputTransfer);
-	OutputColorTransfer(const OutputColorTransfer& other) = delete;
-	OutputColorTransfer(OutputColorTransfer&& other) noexcept;
-	~OutputColorTransfer();
+	ColorTransferWrite();
+	explicit ColorTransferWrite(const Frame::Descriptor& desc);
+	ColorTransferWrite(const ColorTransferWrite& other) = delete;
+	ColorTransferWrite(ColorTransferWrite&& other);
+	~ColorTransferWrite();
 
-	OutputColorTransfer&				operator=(const OutputColorTransfer& other) = delete;
-	OutputColorTransfer&				operator=(OutputColorTransfer&& other) noexcept;
+	ColorTransferWrite& operator=(const ColorTransferWrite& other) = delete;
+	ColorTransferWrite& operator=(ColorTransferWrite&& other);
 
-	bool								operator==(const OutputColorTransfer& other) const noexcept;
-	bool								operator!=(const OutputColorTransfer& other) const noexcept;
+	bool operator==(const ColorTransferWrite& rhs) const noexcept;
+	bool operator!=(const ColorTransferWrite& rhs) const noexcept;
 
-	void								optimize(	Utils::BufferView<Image::Plane> planes,
-													Utils::BufferView<const vk::Format> supportedFormats ) noexcept;
+	size_t size() const noexcept;
+	std::byte* data() noexcept;
+	const std::byte* data() const noexcept;
 
-	const std::byte*					data() const noexcept;
+	void optimize(	Utils::BufferView<Image::Plane> planes,
+					Utils::BufferView<const vk::Format> supportedFormats ) noexcept;
 
-	bool								isPassthough() const noexcept;
-	bool								isLinear() const noexcept;
+	bool isPassthough() const noexcept;
+	bool isLinear() const noexcept;
+	size_t getPlaneCount() const noexcept;
 
-	static size_t						size() noexcept;
+
+	static vk::DescriptorSetLayout createDescriptorSetLayout(const Vulkan& vulkan);
+
+	static Utils::BufferView<const vk::SpecializationMapEntry> getSpecializationMap() noexcept;
+
+	static Utils::BufferView<const uint32_t> getSPIRV() noexcept;
+
+	static size_t getInputAttachmentBinding() noexcept;
 
 private:
 	struct Impl;
-	Utils::Pimpl<Impl>					m_impl;	
+	Utils::Pimpl<Impl>	m_impl;
 };
 
 }

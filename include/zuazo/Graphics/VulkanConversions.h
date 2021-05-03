@@ -54,6 +54,10 @@ constexpr std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std:
 std::tuple<vk::Format, vk::ComponentMapping> optimizeFormat(const std::tuple<vk::Format, vk::ComponentMapping>& fmt,
 															Utils::BufferView<const vk::Format> supportedFormats ) noexcept;
 
+vk::Format getAdequateFloatingPointFormat(	vk::Format format, 
+											bool alphaRequired, 
+											Utils::BufferView<const vk::Format> supportedFormats );
+
 constexpr vk::Format toSrgb(vk::Format format) noexcept;
 constexpr vk::Format fromSrgb(vk::Format format) noexcept;
 
