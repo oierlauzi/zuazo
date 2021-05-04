@@ -290,8 +290,9 @@ struct VideoBase::Impl {
 	~Impl() = default;
 
 
-	void setVideoModeNegotiationCallback(VideoModeNegotiationCallback cbk) noexcept {
+	void setVideoModeNegotiationCallback(VideoBase& base, VideoModeNegotiationCallback cbk) noexcept {
 		videoModeNegotiationCallback = std::move(cbk);
+		setVideoModeCompatibility(base, std::move(videoModeCompatibility)); //Will invoke the callback
 	}
 
 	const VideoModeNegotiationCallback& getVideoModeNegotiationCallback() const noexcept {
@@ -376,7 +377,7 @@ VideoBase& VideoBase::operator=(VideoBase&& other) noexcept = default;
 
 
 void VideoBase::setVideoModeNegotiationCallback(VideoModeNegotiationCallback cbk) noexcept {
-	m_impl->setVideoModeNegotiationCallback(std::move(cbk));
+	m_impl->setVideoModeNegotiationCallback(*this, std::move(cbk));
 }
 
 const VideoBase::VideoModeNegotiationCallback& VideoBase::getVideoModeNegotiationCallback() const noexcept {

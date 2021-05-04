@@ -449,14 +449,14 @@ struct RenderPass::Impl {
 			//The next attachment is the intermediary or result attachment
 			static const std::array<vk::ClearValue, 2> cv = {
 				vk::ClearDepthStencilValue(1.0f, 0x00),
-				vk::ClearValue()
+				vk::ClearColorValue()
 			};
 
 			result = cv;
 		} else {
 			//Only the intermediary or result attachment
 			static const std::array<vk::ClearValue, 1> cv = {
-				vk::ClearValue()
+				vk::ClearColorValue()
 			};
 
 			result = cv;
