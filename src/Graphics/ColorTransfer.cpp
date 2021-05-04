@@ -343,7 +343,7 @@ struct ColorTransferRead::Impl {
 			planes,
 			supportedFormats
 		);
-
+		
 		colorTransferFunction = optimizeColorTransferFunction(
 			colorRange,
 			colorModel,
@@ -458,47 +458,47 @@ struct ColorTransferRead::Impl {
 				sizeof(Impl::colorTransferFunction)
 			),
 			vk::SpecializationMapEntry(
-				ct_COLOR_MODEL_MATRIX_BASE_ID + 0,
+				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M00_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m00),
 				sizeof(UnalignedMat3x3::m00)
 			),
 			vk::SpecializationMapEntry(
-				ct_COLOR_MODEL_MATRIX_BASE_ID + 1,
+				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M01_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m01),
 				sizeof(UnalignedMat3x3::m01)
 			),
 			vk::SpecializationMapEntry(
-				ct_COLOR_MODEL_MATRIX_BASE_ID + 2,
+				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M02_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m02),
 				sizeof(UnalignedMat3x3::m02)
 			),
 			vk::SpecializationMapEntry(
-				ct_COLOR_MODEL_MATRIX_BASE_ID + 3,
+				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M10_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m10),
 				sizeof(UnalignedMat3x3::m10)
 			),
 			vk::SpecializationMapEntry(
-				ct_COLOR_MODEL_MATRIX_BASE_ID + 4,
+				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M11_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m11),
 				sizeof(UnalignedMat3x3::m11)
 			),
 			vk::SpecializationMapEntry(
-				ct_COLOR_MODEL_MATRIX_BASE_ID + 5,
+				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M12_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m12),
 				sizeof(UnalignedMat3x3::m12)
 			),
 			vk::SpecializationMapEntry(
-				ct_COLOR_MODEL_MATRIX_BASE_ID + 6,
+				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M20_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m20),
 				sizeof(UnalignedMat3x3::m20)
 			),
 			vk::SpecializationMapEntry(
-				ct_COLOR_MODEL_MATRIX_BASE_ID + 7,
+				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M21_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m21),
 				sizeof(UnalignedMat3x3::m21)
 			),
 			vk::SpecializationMapEntry(
-				ct_COLOR_MODEL_MATRIX_BASE_ID + 9,
+				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M22_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m22),
 				sizeof(UnalignedMat3x3::m22)
 			)
@@ -746,47 +746,47 @@ struct ColorTransferWrite::Impl {
 				sizeof(Impl::colorTransferFunction)
 			),
 			vk::SpecializationMapEntry(
-				ct_COLOR_MODEL_MATRIX_BASE_ID + 0,
+				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M00_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m00),
 				sizeof(UnalignedMat3x3::m00)
 			),
 			vk::SpecializationMapEntry(
-				ct_COLOR_MODEL_MATRIX_BASE_ID + 1,
+				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M01_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m01),
 				sizeof(UnalignedMat3x3::m01)
 			),
 			vk::SpecializationMapEntry(
-				ct_COLOR_MODEL_MATRIX_BASE_ID + 2,
+				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M02_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m02),
 				sizeof(UnalignedMat3x3::m02)
 			),
 			vk::SpecializationMapEntry(
-				ct_COLOR_MODEL_MATRIX_BASE_ID + 3,
+				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M10_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m10),
 				sizeof(UnalignedMat3x3::m10)
 			),
 			vk::SpecializationMapEntry(
-				ct_COLOR_MODEL_MATRIX_BASE_ID + 4,
+				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M11_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m11),
 				sizeof(UnalignedMat3x3::m11)
 			),
 			vk::SpecializationMapEntry(
-				ct_COLOR_MODEL_MATRIX_BASE_ID + 5,
+				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M12_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m12),
 				sizeof(UnalignedMat3x3::m12)
 			),
 			vk::SpecializationMapEntry(
-				ct_COLOR_MODEL_MATRIX_BASE_ID + 6,
+				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M20_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m20),
 				sizeof(UnalignedMat3x3::m20)
 			),
 			vk::SpecializationMapEntry(
-				ct_COLOR_MODEL_MATRIX_BASE_ID + 7,
+				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M21_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m21),
 				sizeof(UnalignedMat3x3::m21)
 			),
 			vk::SpecializationMapEntry(
-				ct_COLOR_MODEL_MATRIX_BASE_ID + 9,
+				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M22_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m22),
 				sizeof(UnalignedMat3x3::m22)
 			)

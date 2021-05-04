@@ -52,4 +52,14 @@ ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_TRANSFER_FUNCTION_ARIB_STD_B
 
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_COLOR_MODEL_MATRIX_BASE_ID = 5;
 
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_MAT3x3_M00_OFFSET = 0;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_MAT3x3_M01_OFFSET = 1;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_MAT3x3_M02_OFFSET = 2;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_MAT3x3_M10_OFFSET = 3;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_MAT3x3_M11_OFFSET = 4;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_MAT3x3_M12_OFFSET = 5;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_MAT3x3_M20_OFFSET = 6;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_MAT3x3_M21_OFFSET = 7;
+ZUAZO_IF_CPP(constexpr int32_t, const int) ct_MAT3x3_M22_OFFSET = 8;
+
 ZUAZO_IF_CPP(constexpr int32_t, const int) ct_SAMPLER_BINDING = 0;

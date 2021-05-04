@@ -13,15 +13,15 @@ layout (constant_id = ct_COLOR_MODEL_ID) const int MODEL = ct_COLOR_MODEL_RGB;
 layout (constant_id = ct_COLOR_TRANSFER_FUNCTION_ID) const int TRANSFER_FUNCTION = ct_COLOR_TRANSFER_FUNCTION_LINEAR;
 
 //Model conversion matrix (also specialization constant)
-layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + 0) const float modelMatrix00 = 1.0f;
-layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + 1) const float modelMatrix01 = 0.0f;
-layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + 2) const float modelMatrix02 = 0.0f;
-layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + 3) const float modelMatrix10 = 0.0f;
-layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + 4) const float modelMatrix11 = 1.0f;
-layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + 5) const float modelMatrix12 = 0.0f;
-layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + 6) const float modelMatrix20 = 0.0f;
-layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + 7) const float modelMatrix21 = 0.0f;
-layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + 8) const float modelMatrix22 = 1.0f;
+layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M00_OFFSET) const float modelMatrix00 = 1.0f;
+layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M01_OFFSET) const float modelMatrix01 = 0.0f;
+layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M02_OFFSET) const float modelMatrix02 = 0.0f;
+layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M10_OFFSET) const float modelMatrix10 = 0.0f;
+layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M11_OFFSET) const float modelMatrix11 = 1.0f;
+layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M12_OFFSET) const float modelMatrix12 = 0.0f;
+layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M20_OFFSET) const float modelMatrix20 = 0.0f;
+layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M21_OFFSET) const float modelMatrix21 = 0.0f;
+layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M22_OFFSET) const float modelMatrix22 = 1.0f;
 
 //Vertex I/O
 layout(location = 0) out vec4 out_color[PLANE_COUNT];
