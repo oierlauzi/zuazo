@@ -306,12 +306,19 @@ struct VideoBase::Impl {
 
 	void setVideoMode(VideoBase& base, VideoMode vm) {
 		//Sanitize the videomode
+		bool valid = false;
 		for(const auto& compatibility : videoModeCompatibility) {
 			auto sanitizedVideoMode = compatibility.intersect(vm);
-			if(static_cast<bool>(sanitizedVideoMode)) {
+
+			valid = static_cast<bool>(sanitizedVideoMode);
+			if(valid) {
 				vm = std::move(sanitizedVideoMode);
 				break;
 			}
+		}
+		if(!valid) {
+			//Loop has finished without a valid video mode
+			vm = VideoMode();
 		}
 
 		//Write changes
@@ -345,8 +352,8 @@ struct VideoBase::Impl {
 				//Videomode negotiation callback is defined, use it
 				setVideoMode(base, videoModeNegotiationCallback(base, videoModeCompatibility));
 			} else {
-				//Use the first compatibility per-se
-				setVideoMode(base, videoModeCompatibility.front());
+				//Use the last video mode compatibility. Sanitizer will kick in if not supported
+				setVideoMode(base, videoMode);
 			}
 
 		} else {
