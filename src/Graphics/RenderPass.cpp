@@ -817,6 +817,10 @@ private:
  * RenderPass
  */
 
+const RenderPass RenderPass::NO_RENDERPASS;
+
+
+
 RenderPass::RenderPass()
 	: m_impl({})
 {

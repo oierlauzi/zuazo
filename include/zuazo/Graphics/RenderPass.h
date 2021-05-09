@@ -33,6 +33,8 @@ public:
 
 	static Utils::BufferView<const vk::ClearValue> getClearValues(DepthStencilFormat depthStencilFmt);
 
+	static const RenderPass NO_RENDERPASS;
+
 private:
 	struct Impl;
 	Utils::Pimpl<Impl>					m_impl;

@@ -8,36 +8,40 @@
 
 namespace Zuazo {
 
+/*
+ * RendererBase::Impl
+ */
+
 struct RendererBase::Impl {
 	Math::Vec2f											viewportSize;
+	vk::RenderPass										renderPass;
 	DepthStencilFormat									depthStencilFormat;
 	Camera												camera;	
 	std::vector<LayerRef>								layers;
 
 	ViewportSizeCallback								viewportSizeCallback;
+	RenderPassCallback									renderPassCallback;
+
 	DepthStencilFormatCallback							depthStencilFormatCallback;
 	CameraCallback										cameraCallback;
-	RenderPassQueryCallback								renderPassQueryCallback;
 
 	Math::Mat4x4f										projectionMatrix; //Precomputed for use in layerComp
 	std::vector<LayerRef>								sortedLayers;
 	bool												hasChanged;
 
-	static const Graphics::RenderPass NO_RENDER_PASS;
 	static constexpr Math::Vec2f DUMMY_SIZE = Math::Vec2f(1.0f, 1.0f);
 
 
 	Impl(	DepthStencilFormatCallback depthStencilFormatCbk, 
-			CameraCallback cameraCbk, 
-			RenderPassQueryCallback renderPassQueryCbk)
+			CameraCallback cameraCbk )
 		: viewportSize()
+		, renderPass()
 		, depthStencilFormat(DepthStencilFormat::D16)
 		, camera()
 		, layers()
 		, viewportSizeCallback()
 		, depthStencilFormatCallback(std::move(depthStencilFormatCbk))
 		, cameraCallback(std::move(cameraCbk))
-		, renderPassQueryCallback(std::move(renderPassQueryCbk))
 		, projectionMatrix(camera.calculateProjectionMatrix(DUMMY_SIZE))
 		, hasChanged(true)
 	{
@@ -50,7 +54,7 @@ struct RendererBase::Impl {
 	void setViewportSize(RendererBase& base, Math::Vec2f size) {
 		if(viewportSize != size) {
 			viewportSize = size;
-			Utils::invokeIf(viewportSizeCallback, base, size);
+			Utils::invokeIf(viewportSizeCallback, base, viewportSize);
 		}		
 	}
 
@@ -64,6 +68,26 @@ struct RendererBase::Impl {
 
 	const ViewportSizeCallback& getViewportSizeCallback() const noexcept {
 		return viewportSizeCallback;
+	}
+
+
+	void setRenderPass(RendererBase& base, vk::RenderPass pass) {
+		if(renderPass != pass) {
+			renderPass = pass;
+			Utils::invokeIf(renderPassCallback, base, renderPass);
+		}		
+	}
+
+	vk::RenderPass getRenderPass() const {
+		return renderPass;
+	}
+
+	void setRenderPassCallback(RenderPassCallback cbk) {
+		renderPassCallback = std::move(cbk);
+	}
+
+	const RenderPassCallback& getRenderPassCallback() const noexcept {
+		return renderPassCallback;
 	}
 
 
@@ -131,6 +155,16 @@ struct RendererBase::Impl {
 	void draw(const RendererBase& renderer, Graphics::CommandBuffer& cmd) {
 		assert(sortedLayers.empty());
 
+		//Ensure all layers have the correct renderpass.
+		//FIXME this will be very innefficient if two renderers
+		//with different renderPasses share the same layer.
+		std::for_each(
+			layers.cbegin(), layers.cend(),
+			[this] (LayerBase& layer)  {
+				layer.setRenderPass(renderPass);
+			}
+		);
+
 		//Insert all the layers
 		sortedLayers.insert(sortedLayers.cend(), layers.cbegin(), layers.cend());
 
@@ -148,14 +182,6 @@ struct RendererBase::Impl {
 		//Empty the sorted layers array. This should not deallocate it
 		sortedLayers.clear();
 		hasChanged = false;
-	}
-
-
-	const Graphics::RenderPass& getRenderPass(const RendererBase& base) const {
-
-		return 	renderPassQueryCallback ?
-				renderPassQueryCallback(base) :
-				NO_RENDER_PASS ;
 	}
 
 
@@ -251,15 +277,6 @@ struct RendererBase::Impl {
 	const CameraCallback& getCameraCallback() const {
 		return cameraCallback;
 	}
-
-
-	void setRenderPassQueryCallbackCallback(RenderPassQueryCallback cbk) {
-		renderPassQueryCallback = std::move(cbk);
-	}
-
-	const RenderPassQueryCallback& getRenderPassQueryCallback() const {
-		return renderPassQueryCallback;
-	}
 	
 private:
 	bool layerComp(const LayerBase& a, const LayerBase& b) const {
@@ -313,14 +330,17 @@ private:
 
 };
 
-const Graphics::RenderPass RendererBase::Impl::NO_RENDER_PASS;
 
 
+
+
+/*
+ * RendererBase
+ */
 
 RendererBase::RendererBase(	DepthStencilFormatCallback depthStencilFormatCbk,
-							CameraCallback cameraCbk,
-							RenderPassQueryCallback renderPassQueryCbk )
-	: m_impl({}, std::move(depthStencilFormatCbk), std::move(cameraCbk), std::move(renderPassQueryCbk))
+							CameraCallback cameraCbk )
+	: m_impl({}, std::move(depthStencilFormatCbk), std::move(cameraCbk))
 {
 }
 
@@ -342,6 +362,19 @@ void RendererBase::setViewportSizeCallback(ViewportSizeCallback cbk) {
 
 const RendererBase::ViewportSizeCallback& RendererBase::getViewportSizeCallback() const noexcept {
 	return m_impl->getViewportSizeCallback();
+}
+
+
+vk::RenderPass RendererBase::getRenderPass() const {
+	return m_impl->getRenderPass();
+}
+
+void RendererBase::setRenderPassCallback(RenderPassCallback cbk) {
+	m_impl->setRenderPassCallback(std::move(cbk));
+}
+
+const RendererBase::RenderPassCallback& RendererBase::getRenderPassCallback() const noexcept {
+	return m_impl->getRenderPassCallback();
 }
 
 
@@ -383,11 +416,6 @@ Utils::BufferView<const RendererBase::LayerRef> RendererBase::getLayers() const 
 }
 
 
-const Graphics::RenderPass& RendererBase::getRenderPass() const {
-	return m_impl->getRenderPass(*this);
-}
-
-
 
 RendererBase::UniformBufferSizes RendererBase::getUniformBufferSizes() noexcept {
 	return Impl::getUniformBufferSizes();
@@ -411,6 +439,11 @@ void RendererBase::setViewportSize(Math::Vec2f size) {
 	m_impl->setViewportSize(*this, size);
 }
 
+void RendererBase::setRenderPass(vk::RenderPass pass) {
+	m_impl->setRenderPass(*this, pass);
+}
+
+
 
 
 void RendererBase::setDepthStencilFormatCallback(DepthStencilFormatCallback cbk) {
@@ -428,15 +461,6 @@ void RendererBase::setCameraCallback(CameraCallback cbk) {
 
 const RendererBase::CameraCallback&	RendererBase::getCameraCallback() const {
 	return m_impl->getCameraCallback();
-}
-
-
-void RendererBase::setRenderPassQueryCallbackCallback(RenderPassQueryCallback cbk) {
-	m_impl->setRenderPassQueryCallbackCallback(std::move(cbk));
-}
-
-const RendererBase::RenderPassQueryCallback& RendererBase::getRenderPassQueryCallback() const {
-	return m_impl->getRenderPassQueryCallback();
 }
 
 }

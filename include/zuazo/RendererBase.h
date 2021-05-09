@@ -3,7 +3,6 @@
 #include "DepthStencilFormat.h"
 #include "Graphics/Vulkan.h"
 #include "Graphics/CommandBuffer.h"
-#include "Graphics/RenderPass.h"
 #include "Math/Transform.h"
 #include "Utils/Area.h"
 #include "Utils/Pimpl.h"
@@ -20,11 +19,10 @@ class LayerBase;
 class RendererBase {
 public:
 	class Camera;
-	using LayerRef = std::reference_wrapper<const LayerBase>;
+	using LayerRef = std::reference_wrapper<LayerBase>;
 
 	using DepthStencilFormatCallback = std::function<void(RendererBase&, DepthStencilFormat)>;
 	using CameraCallback = std::function<void(RendererBase&, const Camera& camera)>;
-	using RenderPassQueryCallback = std::function<const Graphics::RenderPass&(const RendererBase&)>;
 
 	enum DescriptorBindings {
 		DESCRIPTOR_BINDING_PROJECTION_MATRIX,
@@ -35,12 +33,12 @@ public:
 	using UniformBufferSizes = Utils::BufferView<const std::pair<uint32_t, size_t>>;
 	using DescriptorPoolSizes = Utils::BufferView<const vk::DescriptorPoolSize>;
 	using ViewportSizeCallback = std::function<void(RendererBase&, Math::Vec2f)>;
+	using RenderPassCallback = std::function<void(RendererBase&, vk::RenderPass)>;
 
 	static constexpr uint32_t DESCRIPTOR_SET = 0;
 
 	RendererBase(	DepthStencilFormatCallback depthStencilCbk = {},
-					CameraCallback cameraCbk = {},
-					RenderPassQueryCallback renderPassQueryCbk = {} );
+					CameraCallback cameraCbk = {} );
 	RendererBase(const RendererBase& other) = delete;
 	RendererBase(RendererBase&& other);
 	virtual ~RendererBase();
@@ -51,6 +49,10 @@ public:
 	Math::Vec2f								getViewportSize() const noexcept;
 	void									setViewportSizeCallback(ViewportSizeCallback cbk);
 	const ViewportSizeCallback&				getViewportSizeCallback() const noexcept;
+
+	vk::RenderPass							getRenderPass() const;
+	void									setRenderPassCallback(RenderPassCallback cbk);
+	const RenderPassCallback&				getRenderPassCallback() const noexcept;
 
 	void									setDepthStencilFormat(DepthStencilFormat fmt);
 	DepthStencilFormat						getDepthStencilFormat() const noexcept;
@@ -64,8 +66,6 @@ public:
 	bool									layersHaveChanged() const;
 	void									draw(Graphics::CommandBuffer& cmd);
 
-	const Graphics::RenderPass&				getRenderPass() const;
-
 	static UniformBufferSizes				getUniformBufferSizes() noexcept;
 	static DescriptorPoolSizes				getDescriptorPoolSizes() noexcept;
 	static vk::DescriptorSetLayout			getDescriptorSetLayout(const Graphics::Vulkan& vulkan);
@@ -73,15 +73,13 @@ public:
 
 protected:
 	void									setViewportSize(Math::Vec2f size);
+	void									setRenderPass(vk::RenderPass pass);
 
 	void									setDepthStencilFormatCallback(DepthStencilFormatCallback cbk);
 	const DepthStencilFormatCallback&		getDepthStencilFormatCallback() const;
 
 	void									setCameraCallback(CameraCallback cbk);
 	const CameraCallback&					getCameraCallback() const;
-
-	void									setRenderPassQueryCallbackCallback(RenderPassQueryCallback cbk);
-	const RenderPassQueryCallback&			getRenderPassQueryCallback() const;
 
 private:
 	struct Impl;

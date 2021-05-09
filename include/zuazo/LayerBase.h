@@ -22,11 +22,10 @@ public:
 	using HasChangedCallback = std::function<bool(const LayerBase&, const RendererBase&)>;
 	using HasAlphaCallback = std::function<bool(const LayerBase&)>;
 	using DrawCallback = std::function<void(const LayerBase&, const RendererBase&, Graphics::CommandBuffer&)>;
-	using RenderPassCallback = std::function<void(LayerBase&, const Graphics::RenderPass&)>;
+	using RenderPassCallback = std::function<void(LayerBase&, vk::RenderPass)>;
 
 
-	LayerBase(	const RendererBase* renderer,
-				TransformCallback transformCbk = {},
+	LayerBase(	TransformCallback transformCbk = {},
 				OpacityCallback opacityCbk = {},
 				BlendingModeCallback blendingModeCbk = {},
 				RenderingLayerCallback renderModeCbk = {},
@@ -40,9 +39,6 @@ public:
 
 	LayerBase&							operator=(const LayerBase& other) = delete;
 	LayerBase&							operator=(LayerBase&& other);
-
-	void								setRenderer(const RendererBase* renderer);
-	const RendererBase* 				getRenderer() const noexcept;
 
 	void								setTransform(const Math::Transformf& trans);
 	const Math::Transformf& 			getTransform() const noexcept;
@@ -60,7 +56,8 @@ public:
 	bool								hasChanged(const RendererBase& renderer) const;
 	void								draw(const RendererBase& renderer, Graphics::CommandBuffer& cmd) const;
 
-	const Graphics::RenderPass&			getRenderPass() const noexcept;
+	void								setRenderPass(vk::RenderPass pass);
+	vk::RenderPass						getRenderPass() const noexcept;
 
 protected:
 	void								setTransformCallback(TransformCallback cbk);

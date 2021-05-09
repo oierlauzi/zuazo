@@ -7,14 +7,12 @@
 namespace Zuazo {
 
 struct LayerBase::Impl {
-	const RendererBase*								renderer;
-
 	Math::Transformf								transform;
 	float											opacity;
 	BlendingMode									blendingMode;
 	RenderingLayer									renderingLayer;
 
-	std::reference_wrapper<const Graphics::RenderPass> renderPass;
+	vk::RenderPass 									renderPass;
 
 	TransformCallback								transformCallback;
 	OpacityCallback									opacityCallback;
@@ -25,11 +23,8 @@ struct LayerBase::Impl {
 	DrawCallback									drawCallback;
 	RenderPassCallback								renderPassCallback;
 
-	static const Graphics::RenderPass NO_RENDER_PASS;
 
-
-	Impl(	const RendererBase* renderer,
-			TransformCallback transformCbk,
+	Impl(	TransformCallback transformCbk,
 			OpacityCallback opacityCbk,
 			BlendingModeCallback blendingModeCbk,
 			RenderingLayerCallback renderingLayerCbk,
@@ -37,12 +32,11 @@ struct LayerBase::Impl {
 			HasAlphaCallback hasAlphaCbk,
 			DrawCallback drawCbk,
 			RenderPassCallback renderPassCbk )
-		: renderer(renderer)
-		, transform()
+		: transform()
 		, opacity(1.0f)
 		, blendingMode(BlendingMode::OPACITY)
 		, renderingLayer(RenderingLayer::SCENE)
-		, renderPass(renderer ? renderer->getRenderPass() : NO_RENDER_PASS)
+		, renderPass()
 		, transformCallback(std::move(transformCbk))
 		, opacityCallback(std::move(opacityCbk))
 		, blendingModeCallback(std::move(blendingModeCbk))
@@ -55,22 +49,6 @@ struct LayerBase::Impl {
 	}
 
 	~Impl() = default;
-
-
-	void setRenderer(LayerBase& base, const RendererBase* rend) {
-		renderer = rend;
-
-		const auto& rendPass = renderer ? renderer->getRenderPass() : NO_RENDER_PASS;
-
-		if(renderPass.get().get() != rendPass.get()) {
-			renderPass = rendPass;
-			Utils::invokeIf(renderPassCallback, base, renderPass);
-		}
-	}
-
-	const RendererBase* getRenderer() const noexcept {
-		return renderer;
-	}
 
 
 	void setTransform(LayerBase& base, const Math::Transformf& trans) {
@@ -159,9 +137,18 @@ struct LayerBase::Impl {
 	}
 
 
-	const Graphics::RenderPass& getRenderPass() const noexcept {
+
+	void setRenderPass(LayerBase& base, vk::RenderPass pass) {
+		if(renderPass != pass) {
+			renderPass = pass;
+			Utils::invokeIf(renderPassCallback, base, renderPass);
+		} 
+	}
+
+	vk::RenderPass getRenderPass() const noexcept {
 		return renderPass;
 	}
+
 
 
 	void setTransformCallback(TransformCallback cbk) {
@@ -267,12 +254,9 @@ private:
 
 };
 
-const Graphics::RenderPass LayerBase::Impl::NO_RENDER_PASS;
 
 
-
-LayerBase::LayerBase(	const RendererBase* renderer,
-						TransformCallback transformCbk,
+LayerBase::LayerBase(	TransformCallback transformCbk,
 						OpacityCallback opacityCbk,
 						BlendingModeCallback blendingModeCbk,
 						RenderingLayerCallback renderingLayerCbk,
@@ -280,7 +264,8 @@ LayerBase::LayerBase(	const RendererBase* renderer,
 						HasAlphaCallback hasAlphaCbk,
 						DrawCallback drawCbk,
 						RenderPassCallback renderPassCbk )
-	: m_impl(	{}, renderer, std::move(transformCbk), 
+	: m_impl(	{}, 
+				std::move(transformCbk), 
 				std::move(opacityCbk), 
 				std::move(blendingModeCbk), 
 				std::move(renderingLayerCbk), 
@@ -297,14 +282,6 @@ LayerBase::~LayerBase() = default;
 
 LayerBase& LayerBase::operator=(LayerBase&& other) = default;
 
-
-void LayerBase::setRenderer(const RendererBase* renderer) {
-	m_impl->setRenderer(*this, renderer);
-}
-
-const RendererBase* LayerBase::getRenderer() const noexcept {
-	return m_impl->getRenderer();
-}
 
 
 void LayerBase::setTransform(const Math::Transformf& trans) {
@@ -356,9 +333,14 @@ void LayerBase::draw(const RendererBase& renderer, Graphics::CommandBuffer& cmd)
 }
 
 
-const Graphics::RenderPass& LayerBase::getRenderPass() const noexcept {
+void LayerBase::setRenderPass(vk::RenderPass pass) {
+	m_impl->setRenderPass(*this, pass);
+}
+
+vk::RenderPass LayerBase::getRenderPass() const noexcept {
 	return m_impl->getRenderPass();
 }
+
 
 
 void LayerBase::setTransformCallback(TransformCallback cbk) {

@@ -216,6 +216,7 @@ constexpr std::string_view toString(ColorPrimaries colorPrim) noexcept {
 	ZUAZO_ENUM2STR_CASE( ColorPrimaries, BT2020 )
 	ZUAZO_ENUM2STR_CASE( ColorPrimaries, SMPTE431 )
 	ZUAZO_ENUM2STR_CASE( ColorPrimaries, SMPTE432 )
+	ZUAZO_ENUM2STR_CASE( ColorPrimaries, IEC61966_2_1 )
 	ZUAZO_ENUM2STR_CASE( ColorPrimaries, ADOBE_RGB )
 
 	default: return "";
