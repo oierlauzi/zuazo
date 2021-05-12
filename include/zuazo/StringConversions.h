@@ -8,24 +8,40 @@
 #include <typeindex>
 #include <utility>
 #include <tuple>
+#include <unordered_map>
 
 namespace Zuazo {
 
-//Default operators. At least one needs to be specialised
+//Default operators. At least one needs to be specialized
 template<typename T>
 std::string toString(const T& x);
 
 //Numeric types
 std::string	toString(uint8_t x);
+bool fromString(std::string_view str, uint8_t& x) noexcept;
 std::string	toString(int8_t x);
+bool fromString(std::string_view str, int8_t& x) noexcept;
 std::string	toString(uint16_t x);
+bool fromString(std::string_view str, uint16_t& x) noexcept;
 std::string	toString(int16_t x);
+bool fromString(std::string_view str, int16_t& x) noexcept;
 std::string	toString(uint32_t x);
+bool fromString(std::string_view str, uint32_t& x) noexcept;
 std::string	toString(int32_t x);
+bool fromString(std::string_view str, int32_t& x) noexcept;
 std::string	toString(uint64_t x);
+bool fromString(std::string_view str, uint64_t& x) noexcept;
 std::string	toString(int64_t x);
+bool fromString(std::string_view str, int64_t& x) noexcept;
 std::string	toString(float x);
+bool fromString(const std::string& str, float& x) noexcept;
 std::string	toString(double x);
+bool fromString(const std::string& str, double& x) noexcept;
+
+//Provide a specialization for string
+const std::string& toString(const std::string& str);
+std::string_view toString(std::string_view str);
+bool fromString(std::string_view str, std::string& x) noexcept;
 
 //Typeinfo-s
 std::string_view toString(const std::type_info& tinfo) noexcept;
@@ -42,6 +58,12 @@ template <typename... Types>
 std::ostream& operator<<(std::ostream& os, const std::tuple<Types...>& tuple);
 
 //Helper functions
+template<typename T>
+std::unordered_map<std::string_view, T> createStringToEnumLUT();
+
+template<typename T>
+bool enumFromString(std::string_view str, T& e);
+
 template<typename T>
 std::ostream& enquote(std::ostream& os, T&& x);
 

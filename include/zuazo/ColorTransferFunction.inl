@@ -1,5 +1,7 @@
 #include "ColorTransferFunction.h"
 
+#include "StringConversions.h"
+
 namespace Zuazo {
 	
 constexpr std::string_view toString(ColorTransferFunction colorTransferFunc) noexcept {
@@ -18,6 +20,10 @@ constexpr std::string_view toString(ColorTransferFunction colorTransferFunc) noe
 	default: return "";
 	}
 }	
+
+inline bool fromString(std::string_view str, ColorTransferFunction& trf) {
+	return enumFromString(str, trf);
+}
 
 inline std::ostream& operator<<(std::ostream& os, ColorTransferFunction colorTransferFunc) {
 	return os << toString(colorTransferFunc);

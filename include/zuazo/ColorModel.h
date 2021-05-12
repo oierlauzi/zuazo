@@ -44,6 +44,7 @@ constexpr Math::Mat3x3<T> constructRGB2YCbCrConversionMatrix(const T k_r,  const
 constexpr Math::Mat3x3f getRGB2YCbCrConversionMatrix(ColorModel colorModel) noexcept;
 
 constexpr std::string_view toString(ColorModel colorModel) noexcept;
+bool fromString(std::string_view str, ColorModel& model);
 std::ostream& operator<<(std::ostream& os, ColorModel model);
 
 namespace Utils {

@@ -1,5 +1,7 @@
 #include "ColorModel.h"
 
+#include "StringConversions.h"
+
 namespace Zuazo {
 
 constexpr bool isYCbCr(ColorModel colorModel) noexcept {
@@ -80,6 +82,10 @@ constexpr std::string_view toString(ColorModel colorModel) noexcept {
 
 	default: return "";
 	}
+}
+
+inline bool fromString(std::string_view str, ColorModel& model) {
+	return enumFromString(str, model);
 }
 
 inline std::ostream& operator<<(std::ostream& os, ColorModel model) {

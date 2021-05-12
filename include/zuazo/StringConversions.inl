@@ -1,6 +1,8 @@
 #include "StringConversions.h"
 
 #include <sstream>
+#include <charconv>
+#include <cstdlib>
 
 namespace Zuazo {
     	
@@ -17,40 +19,121 @@ inline std::string toString(uint8_t x) {
 	return std::to_string(x);
 }
 
+inline bool fromString(std::string_view str, uint8_t& x) noexcept {
+	return std::from_chars(str.cbegin(), str.cend(), x).ec == std::errc();
+}
+
 inline std::string toString(int8_t x) {
 	return std::to_string(x);
+}
+
+inline bool fromString(std::string_view str, int8_t& x) noexcept {
+	return std::from_chars(str.cbegin(), str.cend(), x).ec == std::errc();
 }
 
 inline std::string toString(uint16_t x) {
 	return std::to_string(x);
 }
 
+inline bool fromString(std::string_view str, uint16_t& x) noexcept {
+	return std::from_chars(str.cbegin(), str.cend(), x).ec == std::errc();
+}
+
 inline std::string toString(int16_t x) {
 	return std::to_string(x);
+}
+
+inline bool fromString(std::string_view str, int16_t& x) noexcept {
+	return std::from_chars(str.cbegin(), str.cend(), x).ec == std::errc();
 }
 
 inline std::string toString(uint32_t x) {
 	return std::to_string(x);
 }
 
+inline bool fromString(std::string_view str, uint32_t& x) noexcept {
+	return std::from_chars(str.cbegin(), str.cend(), x).ec == std::errc();
+}
+
 inline std::string toString(int32_t x) {
 	return std::to_string(x);
+}
+
+inline bool fromString(std::string_view str, int32_t& x) noexcept {
+	return std::from_chars(str.cbegin(), str.cend(), x).ec == std::errc();
 }
 
 inline std::string toString(uint64_t x) {
 	return std::to_string(x);
 }
 
+inline bool fromString(std::string_view str, uint64_t& x) noexcept {
+	return std::from_chars(str.cbegin(), str.cend(), x).ec == std::errc();
+}
+
 inline std::string toString(int64_t x) {
 	return std::to_string(x);
+}
+
+inline bool fromString(std::string_view str, int64_t& x) noexcept {
+	return std::from_chars(str.cbegin(), str.cend(), x).ec == std::errc();
 }
 
 inline std::string toString(float x) {
 	return std::to_string(x);
 }
 
+inline bool fromString(const std::string& str, float& x) noexcept {
+	//TODO Until all major compilers implement from_chars, 
+	//use the slower stof
+
+	bool success;
+	try {
+		x = std::stof(str);
+		success = true;
+	} catch (const std::invalid_argument&) {
+		success = false;
+	} catch (const std::out_of_range&) {
+		success = false;
+	}
+
+	return success;
+}
+
 inline std::string toString(double x) {
 	return std::to_string(x);
+}
+
+inline bool fromString(const std::string& str, double& x) noexcept {
+	//TODO Until all major compilers implement from_chars, 
+	//use the slower stod
+	
+	bool success;
+	try {
+		x = std::stod(str);
+		success = true;
+	} catch (const std::invalid_argument&) {
+		success = false;
+	} catch (const std::out_of_range&) {
+		success = false;
+	}
+
+	return success;
+}
+
+
+
+inline const std::string& toString(const std::string& str) {
+	return str;
+}
+
+inline std::string_view toString(std::string_view str) {
+	return str;
+}
+
+inline bool fromString(std::string_view str, std::string& x) noexcept {
+	x = str;
+	return true;
 }
 
 
@@ -91,6 +174,46 @@ inline std::ostream& operator<<(std::ostream& os, const std::tuple<Types...>& tu
 		tuple
 	);
 }
+
+
+
+//Forward declare EnumTraits
+namespace Utils {
+template<typename T>
+struct EnumTraits;
+}
+
+template<typename T>
+inline std::unordered_map<std::string_view, T> createStringToEnumLUT() {
+	std::unordered_map<std::string_view, T> result;
+
+	const auto first = Utils::EnumTraits<T>::first();
+	const auto last = Utils::EnumTraits<T>::last();
+	for(auto i = first; i != last; ++i) {
+		const auto str = toString(i);
+		static_assert(
+			std::is_same<	typename std::remove_const<decltype(str)>::type, 
+							typename decltype(result)::key_type >::value, 
+			"Key type must match"
+		);
+		result.emplace(str, i);
+	}
+
+	return result;
+}
+
+template<typename T>
+inline bool enumFromString(std::string_view str, T& e) {
+	static const auto LUT = createStringToEnumLUT<T>();
+
+	const auto ite = LUT.find(str);
+	const bool result = ite != LUT.cend();
+	if(result) {
+		e = ite->second;
+	}
+	return result;
+}
+
 
 
 template<typename T>

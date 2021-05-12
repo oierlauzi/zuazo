@@ -38,9 +38,6 @@ ZUAZO_ENUM_COMP_OPERATORS2(Severity, Verbosity)
 ZUAZO_ENUM_BIT_OPERATORS(Verbosity)
 ZUAZO_ENUM_BIT_OPERATORS2(Verbosity, Severity)
 
-}
-
-namespace Zuazo {
 	
 constexpr std::string_view toString(Severity severity) noexcept;
 std::ostream& operator<<(std::ostream& os, Severity severity);

@@ -1,5 +1,7 @@
 #include "DepthStencilFormat.h"
 
+#include "StringConversions.h"
+
 namespace Zuazo {
 
 constexpr std::string_view toString(DepthStencilFormat format) noexcept {
@@ -15,6 +17,10 @@ constexpr std::string_view toString(DepthStencilFormat format) noexcept {
 
 	default: return "";
 	}
+}
+
+inline bool fromString(std::string_view str, DepthStencilFormat& format) {
+	return enumFromString(str, format);
 }
 
 inline std::ostream& operator<<(std::ostream& os, DepthStencilFormat format) {

@@ -1,5 +1,7 @@
 #include "Keyboard.h"
 
+#include "StringConversions.h"
+
 namespace Zuazo {
 
 constexpr std::string_view toString(KeyboardKey key) noexcept {
@@ -133,6 +135,10 @@ constexpr std::string_view toString(KeyboardKey key) noexcept {
 	}
 }
 
+inline bool fromString(std::string_view str, KeyboardKey& key) {
+	return enumFromString(str, key);
+}
+
 constexpr std::string_view toString(MouseKey key) noexcept {
 	switch(key){
 
@@ -150,8 +156,12 @@ constexpr std::string_view toString(MouseKey key) noexcept {
 	}
 }
 
-constexpr std::string_view toString(KeyEvent evnt) noexcept {
-	switch(evnt){
+inline bool fromString(std::string_view str, MouseKey& key) {
+	return enumFromString(str, key);
+}
+
+constexpr std::string_view toString(KeyEvent event) noexcept {
+	switch(event){
 
 	ZUAZO_ENUM2STR_CASE( KeyEvent, RELEASE)
 	ZUAZO_ENUM2STR_CASE( KeyEvent, PRESS)
@@ -159,6 +169,10 @@ constexpr std::string_view toString(KeyEvent evnt) noexcept {
 
 	default: return "";
 	}
+}
+
+inline bool fromString(std::string_view str, KeyEvent& event) {
+	return enumFromString(str, event);
 }
 
 

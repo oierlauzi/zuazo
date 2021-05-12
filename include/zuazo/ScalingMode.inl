@@ -1,5 +1,6 @@
 #include "ScalingMode.h"
 
+#include "StringConversions.h"
 #include "Math/Comparisons.h"
 
 namespace Zuazo {
@@ -39,6 +40,10 @@ constexpr std::string_view toString(ScalingMode  mode) noexcept {
 
 	default: return "";
 	}
+}
+
+inline bool fromString(std::string_view str, ScalingMode& mode) {
+	return enumFromString(str, mode);
 }
 
 inline std::ostream& operator<<(std::ostream& os, ScalingMode scalingMode) {

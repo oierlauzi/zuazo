@@ -1,5 +1,7 @@
 #include "ScalingFilter.h"
 
+#include "StringConversions.h"
+
 namespace Zuazo {
 
 constexpr std::string_view toString(ScalingFilter filter) noexcept {
@@ -11,6 +13,10 @@ constexpr std::string_view toString(ScalingFilter filter) noexcept {
 
 	default: return "";
 	}
+}
+
+inline bool fromString(std::string_view str, ScalingFilter& filter) {
+	return enumFromString(str, filter);
 }
 
 inline std::ostream& operator<<(std::ostream& os, ScalingFilter filter) {

@@ -1,5 +1,7 @@
 #include "ColorPrimaries.h"
 
+#include "StringConversions.h"
+
 #include <tuple>
 
 namespace Zuazo {
@@ -221,6 +223,10 @@ constexpr std::string_view toString(ColorPrimaries colorPrim) noexcept {
 
 	default: return "";
 	}
+}
+
+inline bool fromString(std::string_view str, ColorPrimaries& primaries) {
+	return enumFromString(str, primaries);
 }
 
 inline std::ostream& operator<<(std::ostream& os, ColorPrimaries colorPrim) {

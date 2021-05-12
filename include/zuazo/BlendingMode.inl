@@ -1,5 +1,7 @@
 #include "BlendingMode.h"
 
+#include "StringConversions.h"
+
 namespace Zuazo {
 
 constexpr std::string_view toString(BlendingMode mode) noexcept {
@@ -17,6 +19,10 @@ constexpr std::string_view toString(BlendingMode mode) noexcept {
 
 	default: return "";
 	}
+}
+
+inline bool fromString(std::string_view str, BlendingMode& mode) {
+	return enumFromString(str, mode);
 }
 
 inline std::ostream& operator<<(std::ostream& os, BlendingMode mode) {

@@ -1,5 +1,7 @@
 #include "Verbosity.h"
 
+#include "StringConversions.h"
+
 namespace Zuazo {
 	
 constexpr std::string_view toString(Severity severity) noexcept {
@@ -12,6 +14,7 @@ constexpr std::string_view toString(Severity severity) noexcept {
 	default: return {};
 	}
 }
+
 
 inline std::ostream& operator<<(std::ostream& os, Severity severity) {
 	return os << toString(severity);

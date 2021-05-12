@@ -182,8 +182,11 @@ ZUAZO_ENUM_COMP_OPERATORS(KeyboardKey)
 ZUAZO_ENUM_COMP_OPERATORS(MouseKey)
 
 constexpr std::string_view toString(KeyboardKey key) noexcept;
+bool fromString(std::string_view str, KeyboardKey& key);
 constexpr std::string_view toString(MouseKey key) noexcept;
-constexpr std::string_view toString(KeyEvent evnt) noexcept;
+bool fromString(std::string_view str, MouseKey& key);
+constexpr std::string_view toString(KeyEvent event) noexcept;
+bool fromString(std::string_view str, KeyEvent& event);
 
 std::ostream& operator<<(std::ostream& os, KeyboardKey key);
 std::ostream& operator<<(std::ostream& os, MouseKey key);

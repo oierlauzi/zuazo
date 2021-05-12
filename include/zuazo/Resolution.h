@@ -62,6 +62,8 @@ struct Resolution{
 
 std::ostream& operator<<(std::ostream& os, Resolution res);
 
+bool fromString(std::string_view str, Resolution& res) noexcept;
+
 namespace Math {
 
 constexpr Resolution min(const Resolution& a, const Resolution& b) noexcept;

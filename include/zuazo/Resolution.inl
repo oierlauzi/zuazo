@@ -4,6 +4,7 @@
 #include "Math/Factor.h"
 
 #include <limits>
+#include <charconv>
 
 namespace Zuazo {
 
@@ -140,6 +141,34 @@ constexpr Resolution Resolution::max() {
 
 inline std::ostream& operator<<(std::ostream& os, Resolution res) {
     return os << res.width << 'x' << res.height;
+}
+
+inline bool fromString(std::string_view str, Resolution& res) noexcept {
+	uint width, height;
+	std::from_chars_result ret;
+	ret.ptr = str.cbegin();
+	
+	//Parse the width
+	ret = std::from_chars(ret.ptr, str.cend(), width);
+	if(ret.ec != std::errc()) {
+		return false;
+	}
+
+	//Expect a cross afterwards
+	if(ret.ptr != str.cend()) {
+		if(*(ret.ptr++) != 'x') {
+			return false;
+		}
+	}
+
+	//Parse the height
+	ret = std::from_chars(ret.ptr, str.cend(), height);
+	if(ret.ec != std::errc()) {
+		return false;
+	}
+
+	res = Resolution(width, height);
+	return true;
 }
 
 

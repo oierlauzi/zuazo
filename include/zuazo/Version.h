@@ -50,6 +50,8 @@ private:
 
 std::ostream& operator<<(std::ostream& os, Version ver);
 
+bool fromString(std::string_view str, Version& ver) noexcept;
+
 }
 
 #include "Version.inl"

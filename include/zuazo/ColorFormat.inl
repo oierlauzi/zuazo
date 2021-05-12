@@ -1,5 +1,7 @@
 #include "ColorFormat.h"
 
+#include "StringConversions.h"
+
 namespace Zuazo {
 
 constexpr size_t getPlaneCount(ColorFormat format) noexcept {
@@ -377,6 +379,10 @@ constexpr std::string_view toString(ColorFormat format) noexcept {
 
 	default: return "";
 	}
+}
+
+inline bool fromString(std::string_view str, ColorFormat& format) {
+	return enumFromString(str, format);
 }
 
 inline std::ostream& operator<<(std::ostream& os, ColorFormat format) {

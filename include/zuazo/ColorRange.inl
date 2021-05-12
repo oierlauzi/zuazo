@@ -1,5 +1,7 @@
 #include "ColorRange.h"
 
+#include "StringConversions.h"
+
 namespace Zuazo {
 
 }
@@ -15,6 +17,10 @@ constexpr std::string_view toString(ColorRange colorRange) noexcept {
 
 	default: return "";
 	}
+}
+
+inline bool fromString(std::string_view str, ColorRange& range) {
+	return enumFromString(str, range);
 }
 
 inline std::ostream& operator<<(std::ostream& os, ColorRange colorRange) {
