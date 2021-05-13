@@ -17,6 +17,8 @@ template<typename T>
 std::string toString(const T& x);
 
 //Numeric types
+constexpr std::string_view toString(bool x);
+bool fromString(std::string_view str, bool& x) noexcept;
 std::string	toString(uint8_t x);
 bool fromString(std::string_view str, uint8_t& x) noexcept;
 std::string	toString(int8_t x);
@@ -42,6 +44,7 @@ bool fromString(const std::string& str, double& x) noexcept;
 const std::string& toString(const std::string& str);
 std::string_view toString(std::string_view str);
 bool fromString(std::string_view str, std::string& x) noexcept;
+bool fromString(std::string_view str, std::string_view& x) noexcept;
 
 //Typeinfo-s
 std::string_view toString(const std::type_info& tinfo) noexcept;

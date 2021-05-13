@@ -3,6 +3,8 @@
 #include "Rounding.h"
 #include "Factor.h"
 
+#include <charconv>
+
 namespace Zuazo::Math {
 
 /*
@@ -293,6 +295,36 @@ inline std::ostream& operator<<(std::ostream& os, const Rational<num_t, den_t>& 
 	os << rat.getNumerator() << "/" << rat.getDenominator();
 
 	return os;
+}
+
+template<typename num_t, typename den_t>
+inline bool fromString(std::string_view str, Rational<num_t, den_t>& res) noexcept {
+	num_t num;
+	den_t den;
+	std::from_chars_result ret;
+	ret.ptr = str.cbegin();
+	
+	//Parse the numerator
+	ret = std::from_chars(ret.ptr, str.cend(), num);
+	if(ret.ec != std::errc()) {
+		return false;
+	}
+
+	//Expect a slash afterwards
+	if(ret.ptr != str.cend()) {
+		if(*(ret.ptr++) != '/') {
+			return false;
+		}
+	}
+
+	//Parse the denominator
+	ret = std::from_chars(ret.ptr, str.cend(), den);
+	if(ret.ec != std::errc()) {
+		return false;
+	}
+
+	res = Rational<num_t, den_t>(num, den);
+	return true;
 }
 
 }

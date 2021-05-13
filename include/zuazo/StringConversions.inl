@@ -15,6 +15,28 @@ inline std::string toString(const T& x) {
 	return ss.str();
 }
 
+
+constexpr std::string_view toString(bool x) {
+	return x ? "true" : "false";
+}
+
+inline bool fromString(std::string_view str, bool& x) noexcept {
+	bool result;
+
+	if(str == "false" || str == "0") {
+		x = false;
+		result = true;
+	} else if(str == "true" || str == "1") {
+		x = true;
+		result = true;
+	} else {
+		//No match
+		result = false;
+	}
+
+	return result;
+}
+
 inline std::string toString(uint8_t x) {
 	return std::to_string(x);
 }
@@ -136,6 +158,10 @@ inline bool fromString(std::string_view str, std::string& x) noexcept {
 	return true;
 }
 
+inline bool fromString(std::string_view str, std::string_view& x) noexcept {
+	x = str;
+	return true;	
+}
 
 
 
