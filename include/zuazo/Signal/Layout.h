@@ -35,12 +35,16 @@ public:
 	std::vector<std::reference_wrapper<const PadProxy<T>>>	getPads() const;
 
 	template<typename T>
-	PadProxy<T>&											getPad(std::string_view name);
+	PadProxy<T>*											getPad(std::string_view name) noexcept;
 	template<typename T>
-	const PadProxy<T>&										getPad(std::string_view name) const;
+	const PadProxy<T>*										getPad(std::string_view name) const noexcept;
 
 	template<typename T>
+	static PadProxy<T>*										makeProxy(T* pad) noexcept;
+	template<typename T>
 	static PadProxy<T>&										makeProxy(T& pad) noexcept;
+	template<typename T>
+	static const PadProxy<T>*								makeProxy(const T* pad) noexcept;
 	template<typename T>
 	static const PadProxy<T>&								makeProxy(const T& pad) noexcept;
 
@@ -60,7 +64,7 @@ private:
 	std::vector<PadRef>										m_pads;
 
 	template<typename T>
-	T&														findPad(std::string_view name) const;
+	T*														findPad(std::string_view name) const noexcept;
 	template<typename T>
 	std::vector<std::reference_wrapper<T>>					findPads() const;
 	

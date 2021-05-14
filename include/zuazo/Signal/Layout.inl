@@ -1,7 +1,6 @@
 #include "Layout.h"
 
 #include "PadBase.h"
-#include "../Exception.h"
 
 #include <type_traits>
 #include <cassert>
@@ -73,12 +72,12 @@ inline std::vector<std::reference_wrapper<const Layout::PadProxy<T>>> Layout::ge
 }
 
 template<typename T>
-inline Layout::PadProxy<T>& Layout::getPad(std::string_view name) {
+inline Layout::PadProxy<T>* Layout::getPad(std::string_view name) noexcept {
 	return makeProxy(findPad<T>(name));
 }
 
 template<typename T>
-inline const Layout::PadProxy<T>& Layout::getPad(std::string_view name) const {
+inline const Layout::PadProxy<T>* Layout::getPad(std::string_view name) const noexcept {
 	return makeProxy(findPad<T>(name));
 }
 
@@ -90,10 +89,19 @@ inline Layout::PadProxy<T>& Layout::makeProxy(T& pad) noexcept {
 }
 
 template<typename T>
+inline Layout::PadProxy<T>* Layout::makeProxy(T* pad) noexcept {
+	return static_cast<PadProxy<T>*>(pad);
+}
+
+template<typename T>
 inline const Layout::PadProxy<T>& Layout::makeProxy(const T& pad) noexcept {
 	return static_cast<const PadProxy<T>&>(pad);
 }
 
+template<typename T>
+inline const Layout::PadProxy<T>* Layout::makeProxy(const T* pad) noexcept {
+	return static_cast<const PadProxy<T>*>(pad);
+}
 
 
 inline void Layout::registerPad(PadRef pad) {
@@ -127,16 +135,21 @@ inline void Layout::removePad(PadProxy<T>& pad) {
 
 
 template <typename T>
-inline T& Layout::findPad(std::string_view str) const {
-	static_assert(std::is_base_of<PadBase, T>::value, "T must inherit from PadBase");
-	for(const auto& pad : m_pads) {
-		if(pad.get().getName() == str){
-			auto* p = dynamic_cast<T*>(&(pad.get()));
-			if(p) return *p;
+inline T* Layout::findPad(std::string_view str) const noexcept {
+	T* result = nullptr;
+
+	for(PadBase& pad : m_pads) {
+		if(pad.getName() == str) {
+			//Name match. Check if type also matches
+			result = dynamic_cast<T*>(&pad);
+			if(result) {
+				//Found!
+				break;
+			}
 		}
 	}
 
-	throw Exception("Requested pad not found");
+	return result;
 }
 
 template <typename T>
@@ -144,9 +157,11 @@ inline std::vector<std::reference_wrapper<T>> Layout::findPads() const {
 	static_assert(std::is_base_of<PadBase, T>::value, "T must inherit from PadBase");
 	std::vector<T> result;
 
-	for(const auto& pad : m_pads) {
-		auto* p = dynamic_cast<T*>(pad.get());
-		if(p) result.emplace_back(*p);
+	for(PadBase& pad : m_pads) {
+		auto* ptr = dynamic_cast<T*>(&pad);
+		if(ptr) {
+			result.emplace_back(*ptr);
+		}
 	}
 
 	return result;

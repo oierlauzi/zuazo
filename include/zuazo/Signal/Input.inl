@@ -1,5 +1,7 @@
 #include "Input.h"
 
+#include "../Exception.h"
+
 namespace Zuazo::Signal {
 
 /*
@@ -92,12 +94,24 @@ inline void Layout::PadProxy<Input<T>>::operator<<(Source& src) noexcept {
 
 template<typename T>
 inline Layout::PadProxy<Input<T>>& getInput(Layout& layout, std::string_view name) {
-	return layout.getPad<Input<T>>(name);
+	auto* input = layout.getPad<Input<T>>(name);
+	
+	if(!input) {
+		throw Exception("Requested input not found");
+	}
+
+	return *input;
 }
 
 template<typename T>
 inline const Layout::PadProxy<Input<T>>& getInput(const Layout& layout, std::string_view name) {
-	return layout.getPad<Input<T>>(name);
+	const auto* input = layout.getPad<Input<T>>(name);
+	
+	if(!input) {
+		throw Exception("Requested input not found");
+	}
+
+	return *input;
 }
 
 }

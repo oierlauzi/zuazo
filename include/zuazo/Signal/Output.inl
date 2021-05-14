@@ -105,12 +105,24 @@ inline typename Layout::PadProxy<Output<T>>::Consumers Layout::PadProxy<Output<T
 
 template<typename T>
 inline Layout::PadProxy<Output<T>>& getOutput(Layout& layout, std::string_view name) {
-	return layout.getPad<Output<T>>(name);
+	auto* output = layout.getPad<Output<T>>(name);
+	
+	if(!output) {
+		throw Exception("Requested output not found");
+	}
+
+	return *output;
 }
 
 template<typename T>
 inline const Layout::PadProxy<Output<T>>& getOutput(const Layout& layout, std::string_view name) {
-	return layout.getPad<Output<T>>(name);
+	const auto* output = layout.getPad<Output<T>>(name);
+	
+	if(!output) {
+		throw Exception("Requested output not found");
+	}
+
+	return *output;
 }
 
 }
