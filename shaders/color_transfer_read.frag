@@ -11,6 +11,8 @@ layout (constant_id = ct_PLANE_FORMAT_ID) const int PLANE_FORMAT = ct_PLANE_FORM
 layout (constant_id = ct_COLOR_RANGE_ID) const int RANGE = ct_COLOR_RANGE_FULL_RGB;
 layout (constant_id = ct_COLOR_MODEL_ID) const int MODEL = ct_COLOR_MODEL_RGB;
 layout (constant_id = ct_COLOR_TRANSFER_FUNCTION_ID) const int TRANSFER_FUNCTION = ct_COLOR_TRANSFER_FUNCTION_LINEAR;
+layout (constant_id = ct_CHROMA_SAMPLE_OFFSET_X_ID) const float CHROMA_SAMPLE_OFFSET_X = 0.0f;
+layout (constant_id = ct_CHROMA_SAMPLE_OFFSET_Y_ID) const float CHROMA_SAMPLE_OFFSET_Y = 0.0f;
 
 //Model conversion matrix (also specialization constant)
 layout (constant_id = ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M00_OFFSET) const float modelMatrix00 = 1.0f;
@@ -35,7 +37,7 @@ layout(binding = ct_SAMPLER_BINDING) uniform sampler2D samplers[PLANE_COUNT];
 /*
  * Performs a potentially multiplanar texture read
  */
-vec4 load(in int planeFormat, in sampler2D images[PLANE_COUNT], in vec2 texCoords) {
+vec4 load(in int planeFormat, in sampler2D images[PLANE_COUNT], in vec2 texCoords, in vec2 chromaOffset) {
 	vec4 result;
 	//TODO proper chroma reconstruction
 	//TODO consider chroma size when interp.
@@ -43,24 +45,24 @@ vec4 load(in int planeFormat, in sampler2D images[PLANE_COUNT], in vec2 texCoord
 	switch(planeFormat){
 	case ct_PLANE_FORMAT_G_BR:
 		result.g = texture(images[0], texCoords).r;
-		result.br = texture(images[1], texCoords).rg;
+		result.br = texture(images[1], texCoords + chromaOffset).rg;
 		result.a = 1.0f;
 		break;
 	case ct_PLANE_FORMAT_G_BR_A:
 		result.g = texture(images[0], texCoords).r;
-		result.br = texture(images[1], texCoords).rg;
+		result.br = texture(images[1], texCoords + chromaOffset).rg;
 		result.a = texture(images[2], texCoords).r;
 		break;
 	case ct_PLANE_FORMAT_G_B_R:
 		result.g = texture(images[0], texCoords).r;
-		result.b = texture(images[1], texCoords).r;
-		result.r = texture(images[2], texCoords).r;
+		result.b = texture(images[1], texCoords + chromaOffset).r;
+		result.r = texture(images[2], texCoords + chromaOffset).r;
 		result.a = 1.0f;
 		break;
 	case ct_PLANE_FORMAT_G_B_R_A:
 		result.g = texture(images[0], texCoords).r;
-		result.b = texture(images[1], texCoords).r;
-		result.r = texture(images[2], texCoords).r;
+		result.b = texture(images[1], texCoords + chromaOffset).r;
+		result.r = texture(images[2], texCoords + chromaOffset).r;
 		result.a = texture(images[3], texCoords).r;
 		break;
 	
@@ -217,8 +219,10 @@ vec3 linearize(in int encoding, in vec3 color){
 
 
 void main() {
+	const vec2 chromaOffset = vec2(CHROMA_SAMPLE_OFFSET_X, CHROMA_SAMPLE_OFFSET_Y);
+
 	//Sample the texture(s)
-	out_color = load(PLANE_FORMAT, samplers, in_uv);
+	out_color = load(PLANE_FORMAT, samplers, in_uv, chromaOffset);
 
 	//Expand the range
 	out_color = expand(RANGE, out_color);

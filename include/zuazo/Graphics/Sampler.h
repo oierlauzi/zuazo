@@ -5,6 +5,7 @@
 #include "../ColorRange.h"
 #include "../ColorModel.h"
 #include "../ColorTransferFunction.h"
+#include "../ColorChromaLocation.h"
 #include "../ScalingFilter.h"
 
 namespace Zuazo::Graphics {
@@ -19,6 +20,7 @@ public:
 			ColorRange range,
 			ColorModel model,
 			ColorTransferFunction colorTransferFunction,
+			Math::Vec2<ColorChromaLocation> colorChromaLocation,
 			ScalingFilter filter );
 	Sampler(const Sampler& other) = default;
 	~Sampler() = default;
@@ -27,6 +29,8 @@ public:
 
 	vk::SamplerYcbcrModelConversion		getModel() const noexcept;
 	vk::SamplerYcbcrRange				getRange() const noexcept;
+	vk::ChromaLocation					getXChromaLocation() const noexcept;
+	vk::ChromaLocation					getYChromaLocation() const noexcept;
 	vk::Filter							getFilter() const noexcept;
 	vk::SamplerYcbcrConversion			getSamplerYCbCrConversion() const noexcept;
 	vk::Sampler							getSampler() const noexcept;
@@ -36,12 +40,15 @@ public:
 private:
 	vk::SamplerYcbcrModelConversion		m_model;
 	vk::SamplerYcbcrRange				m_range;
+	vk::ChromaLocation					m_xChromaLocation;
+	vk::ChromaLocation					m_yChromaLocation;
 	vk::Filter							m_filter;
 	vk::SamplerYcbcrConversion			m_samplerYCbCrConversion;
 	vk::Sampler							m_sampler;
 
 
 	static bool							usesYCbCrSampler(vk::Format format, vk::SamplerYcbcrModelConversion model) noexcept;
+	static bool							sanitizeChromaLocation(vk::ChromaLocation& loc, const vk::FormatProperties& prop) noexcept;
 	static vk::SamplerYcbcrModelConversion	getModel(ColorModel model) noexcept;
 	static vk::SamplerYcbcrRange		getRange(	ColorRange range, 
 													vk::SamplerYcbcrModelConversion& model ) noexcept;
@@ -55,6 +62,8 @@ private:
 																		const Image::Plane& plane,
 																		vk::SamplerYcbcrModelConversion model,
 																		vk::SamplerYcbcrRange range,
+																		vk::ChromaLocation& xChromaLoc,
+																		vk::ChromaLocation& yChromaLoc,
 																		vk::Filter filter );
 	static vk::Sampler					createSampler(	const Vulkan& vulkan,
 														vk::Filter filter,

@@ -3,6 +3,8 @@
 #include <zuazo/StringConversions.h>
 #include <zuazo/Utils/Functions.h>
 
+#include <tuple>
+
 namespace Zuazo {
 
 /*
@@ -30,60 +32,69 @@ VideoMode::VideoMode(	Utils::Limit<Rate> frameRate,
 						Utils::Limit<ColorSubsampling> colorSubsampling,
 						Utils::Limit<ColorRange> colorRange,
 						Utils::Limit<ColorFormat> colorFormat )
-	: m_data {
-		std::move(frameRate),
-		std::move(resolution),
-		std::move(pixelAspectRatio),
-		std::move(colorPrimaries),
-		std::move(colorModel),
-		std::move(colorTransferFunction),
-		std::move(colorSubsampling),
-		std::move(colorRange),
-		std::move(colorFormat)
-	}
+		: m_frameRate(std::move(frameRate))
+		, m_resolution(std::move(resolution))
+		, m_pixelAspectRatio(std::move(pixelAspectRatio))
+		, m_colorPrimaries(std::move(colorPrimaries))
+		, m_colorModel(std::move(colorModel))
+		, m_colorTransferFunction(std::move(colorTransferFunction))
+		, m_colorSubsampling(std::move(colorSubsampling))
+		, m_colorRange(std::move(colorRange))
+		, m_colorFormat(std::move(colorFormat))
 {
 }
 
-int VideoMode::operator==(const VideoMode& other) const {
-	return m_data == other.m_data;
+bool VideoMode::operator==(const VideoMode& other) const {
+	return
+		std::tie(
+			m_frameRate,
+			m_resolution,
+			m_pixelAspectRatio,
+			m_colorPrimaries,
+			m_colorModel,
+			m_colorTransferFunction,
+			m_colorSubsampling,
+			m_colorRange,
+			m_colorFormat
+		)
+		==
+		std::tie(
+			other.m_frameRate,
+			other.m_resolution,
+			other.m_pixelAspectRatio,
+			other.m_colorPrimaries,
+			other.m_colorModel,
+			other.m_colorTransferFunction,
+			other.m_colorSubsampling,
+			other.m_colorRange,
+			other.m_colorFormat
+		) ;
 }
 
-int VideoMode::operator!=(const VideoMode& other) const {
-	return m_data != other.m_data;
-}
-
-int VideoMode::operator<(const VideoMode& other) const {
-	return m_data < other.m_data;
-}
-
-int VideoMode::operator<=(const VideoMode& other) const {
-	return m_data <= other.m_data;
-}
-
-int VideoMode::operator>(const VideoMode& other) const {
-	return m_data > other.m_data;
-}
-
-int VideoMode::operator>=(const VideoMode& other) const {
-	return m_data >= other.m_data;
+bool VideoMode::operator!=(const VideoMode& other) const {
+	return !operator==(other);
 }
 
 
 VideoMode::operator bool() const {
-	return std::apply(
-		[] (const auto&... x) -> bool {
-			return (static_cast<bool>(x) && ...);
-		},
-		m_data
-	);
+	return 
+		static_cast<bool>(m_frameRate) &&
+		static_cast<bool>(m_resolution) &&
+		static_cast<bool>(m_pixelAspectRatio) &&
+		static_cast<bool>(m_colorPrimaries) &&
+		static_cast<bool>(m_colorModel) &&
+		static_cast<bool>(m_colorTransferFunction) &&
+		static_cast<bool>(m_colorSubsampling) &&
+		static_cast<bool>(m_colorRange) &&
+		static_cast<bool>(m_colorFormat) ;
 }
 
 void VideoMode::setFrameRate(Utils::Limit<Rate> frameRate) {
-	std::get<m_frameRate>(m_data) = std::move(frameRate);
+	m_frameRate = std::move(frameRate);
 }
 
 const Utils::Limit<Rate>& VideoMode::getFrameRate() const {
-	return std::get<m_frameRate>(m_data);
+	return m_frameRate;
 }
 
 Rate VideoMode::getFrameRateValue() const {
@@ -92,11 +103,11 @@ Rate VideoMode::getFrameRateValue() const {
 
 
 void VideoMode::setResolution(Utils::Limit<Resolution> resolution) {
-	std::get<m_resolution>(m_data) = std::move(resolution);
+	m_resolution = std::move(resolution);
 }
 
 const Utils::Limit<Resolution>& VideoMode::getResolution() const {
-	return std::get<m_resolution>(m_data);
+	return m_resolution;
 }
 
 Resolution VideoMode::getResolutionValue() const {
@@ -105,11 +116,11 @@ Resolution VideoMode::getResolutionValue() const {
 
 
 void VideoMode::setPixelAspectRatio(Utils::Limit<AspectRatio> pixelAspectRatio) {
-	std::get<m_pixelAspectRatio>(m_data) = std::move(pixelAspectRatio);
+	m_pixelAspectRatio = std::move(pixelAspectRatio);
 }
 
 const Utils::Limit<AspectRatio>& VideoMode::getPixelAspectRatio() const {
-	return std::get<m_pixelAspectRatio>(m_data);
+	return m_pixelAspectRatio;
 }
 
 AspectRatio VideoMode::getPixelAspectRatioValue() const {
@@ -118,11 +129,11 @@ AspectRatio VideoMode::getPixelAspectRatioValue() const {
 
 
 void VideoMode::setColorPrimaries(Utils::Limit<ColorPrimaries> colorPrimaries) {
-	std::get<m_colorPrimaries>(m_data) = std::move(colorPrimaries);
+	m_colorPrimaries = std::move(colorPrimaries);
 }
 
 const Utils::Limit<ColorPrimaries>& VideoMode::getColorPrimaries() const {
-	return std::get<m_colorPrimaries>(m_data);
+	return m_colorPrimaries;
 }
 
 ColorPrimaries VideoMode::getColorPrimariesValue() const {
@@ -131,11 +142,11 @@ ColorPrimaries VideoMode::getColorPrimariesValue() const {
 
 
 void VideoMode::setColorModel(Utils::Limit<ColorModel> colorModel) {
-	std::get<m_colorModel>(m_data) = std::move(colorModel);
+	m_colorModel = std::move(colorModel);
 }
 
 const Utils::Limit<ColorModel>& VideoMode::getColorModel() const {
-	return std::get<m_colorModel>(m_data);
+	return m_colorModel;
 }
 
 ColorModel VideoMode::getColorModelValue() const {
@@ -144,11 +155,11 @@ ColorModel VideoMode::getColorModelValue() const {
 
 
 void VideoMode::setColorTransferFunction(Utils::Limit<ColorTransferFunction> colorTransferFunction) {
-	std::get<m_colorTransferFunction>(m_data) = std::move(colorTransferFunction);
+	m_colorTransferFunction = std::move(colorTransferFunction);
 }
 
 const Utils::Limit<ColorTransferFunction>& VideoMode::getColorTransferFunction() const {
-	return std::get<m_colorTransferFunction>(m_data);
+	return m_colorTransferFunction;
 }
 
 ColorTransferFunction VideoMode::getColorTransferFunctionValue() const {
@@ -157,11 +168,11 @@ ColorTransferFunction VideoMode::getColorTransferFunctionValue() const {
 
 
 void VideoMode::setColorSubsampling(Utils::Limit<ColorSubsampling> colorSubsampling) {
-	std::get<m_colorSubsampling>(m_data) = std::move(colorSubsampling);
+	m_colorSubsampling = std::move(colorSubsampling);
 }
 
 const Utils::Limit<ColorSubsampling>& VideoMode::getColorSubsampling() const {
-	return std::get<m_colorSubsampling>(m_data);
+	return m_colorSubsampling;
 }
 
 ColorSubsampling VideoMode::getColorSubsamplingValue() const {
@@ -170,11 +181,11 @@ ColorSubsampling VideoMode::getColorSubsamplingValue() const {
 
 
 void VideoMode::setColorRange(Utils::Limit<ColorRange> colorRange) {
-	std::get<m_colorRange>(m_data) = std::move(colorRange);
+	m_colorRange = std::move(colorRange);
 }
 
 const Utils::Limit<ColorRange>& VideoMode::getColorRange() const {
-	return std::get<m_colorRange>(m_data);
+	return m_colorRange;
 }
 
 ColorRange VideoMode::getColorRangeValue() const {
@@ -183,11 +194,11 @@ ColorRange VideoMode::getColorRangeValue() const {
 
 
 void VideoMode::setColorFormat(Utils::Limit<ColorFormat> colorFormat) {
-	std::get<m_colorFormat>(m_data) = std::move(colorFormat);
+	m_colorFormat = std::move(colorFormat);
 }
 
 const Utils::Limit<ColorFormat>& VideoMode::getColorFormat() const {
-	return std::get<m_colorFormat>(m_data);
+	return m_colorFormat;
 }
 
 ColorFormat VideoMode::getColorFormatValue() const {
@@ -261,6 +272,7 @@ Graphics::Frame::Descriptor VideoMode::getFrameDescriptor() const {
 		getColorModelValue(),
 		getColorTransferFunctionValue(),
 		getColorSubsamplingValue(),
+		Math::Vec2<ColorChromaLocation>(ColorChromaLocation::COSITED_0, ColorChromaLocation::COSITED_0), //TODO
 		getColorRangeValue(),
 		getColorFormatValue()
 	};

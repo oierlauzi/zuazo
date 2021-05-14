@@ -82,6 +82,7 @@ private:
 				ColorRange::FULL,
 				ColorModel::RGB,
 				ColorTransferFunction::LINEAR,
+				Math::Vec2<ColorChromaLocation>(ColorChromaLocation::COSITED_0, ColorChromaLocation::COSITED_0),
 				static_cast<ScalingFilter>(i)
 			);
 		}

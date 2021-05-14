@@ -135,10 +135,6 @@ constexpr std::string_view toString(KeyboardKey key) noexcept {
 	}
 }
 
-inline bool fromString(std::string_view str, KeyboardKey& key) {
-	return enumFromString(str, key);
-}
-
 constexpr std::string_view toString(MouseKey key) noexcept {
 	switch(key){
 
@@ -156,10 +152,6 @@ constexpr std::string_view toString(MouseKey key) noexcept {
 	}
 }
 
-inline bool fromString(std::string_view str, MouseKey& key) {
-	return enumFromString(str, key);
-}
-
 constexpr std::string_view toString(KeyEvent event) noexcept {
 	switch(event){
 
@@ -170,11 +162,6 @@ constexpr std::string_view toString(KeyEvent event) noexcept {
 	default: return "";
 	}
 }
-
-inline bool fromString(std::string_view str, KeyEvent& event) {
-	return enumFromString(str, event);
-}
-
 
 
 inline std::ostream& operator<<(std::ostream& os, KeyboardKey key) {

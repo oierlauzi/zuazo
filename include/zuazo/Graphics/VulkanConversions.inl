@@ -131,6 +131,30 @@ constexpr ColorRange fromVulkan(vk::SamplerYcbcrRange range) noexcept {
 }
 
 
+constexpr vk::ChromaLocation toVulkan(ColorChromaLocation colorChromaLoc) noexcept {
+	switch(colorChromaLoc) {
+	case ColorChromaLocation::COSITED_0:	return vk::ChromaLocation::eCositedEven;
+	case ColorChromaLocation::MIDPOINT:		return vk::ChromaLocation::eMidpoint;
+	default:								return static_cast<vk::ChromaLocation>(-1);
+	}
+}
+
+constexpr ColorChromaLocation fromVulkan(vk::ChromaLocation chromaLoc) noexcept {
+	switch(chromaLoc) {
+	case vk::ChromaLocation::eCositedEven:	return ColorChromaLocation::COSITED_0;
+	case vk::ChromaLocation::eMidpoint:		return ColorChromaLocation::MIDPOINT;
+	default:								return ColorChromaLocation::NONE;
+	}
+}
+
+constexpr vk::FormatFeatureFlags getFormatFeatureFlags(vk::ChromaLocation chromaLoc) noexcept {
+	switch(chromaLoc) {
+	case vk::ChromaLocation::eCositedEven:	return vk::FormatFeatureFlagBits::eCositedChromaSamples;
+	case vk::ChromaLocation::eMidpoint:		return vk::FormatFeatureFlagBits::eMidpointChromaSamples;
+	default:								return vk::FormatFeatureFlags();
+	}
+}
+
 
 constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COUNT> toVulkan(ColorFormat fmt) noexcept {
 	switch(fmt){

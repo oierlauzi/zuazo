@@ -15,11 +15,14 @@ Sampler::Sampler(	const Vulkan& vulkan,
 					ColorRange range,
 					ColorModel model,
 					ColorTransferFunction colorTransferFunction,
+					Math::Vec2<ColorChromaLocation> colorChromaLocation,
 					ScalingFilter filter )
 	: m_model(getModel(model))
 	, m_range(getRange(range, m_model))
+	, m_xChromaLocation(toVulkan(colorChromaLocation.x))
+	, m_yChromaLocation(toVulkan(colorChromaLocation.y))
 	, m_filter(getFilter(vulkan, plane, colorTransferFunction, filter, m_model))
-	, m_samplerYCbCrConversion(createSamplerYCbCrConversion(vulkan, plane, m_model, m_range, m_filter))
+	, m_samplerYCbCrConversion(createSamplerYCbCrConversion(vulkan, plane, m_model, m_range, m_xChromaLocation, m_yChromaLocation, m_filter))
 	, m_sampler(createSampler(vulkan, m_filter, m_samplerYCbCrConversion))
 {
 	if(!m_samplerYCbCrConversion) {
@@ -27,6 +30,8 @@ Sampler::Sampler(	const Vulkan& vulkan,
 		//model conversion will be performed
 		m_range = vk::SamplerYcbcrRange::eItuFull;
 		m_model = vk::SamplerYcbcrModelConversion::eRgbIdentity;
+		m_xChromaLocation = vk::ChromaLocation::eCositedEven;
+ 		m_yChromaLocation = vk::ChromaLocation::eCositedEven;
 	}
 }
 
@@ -37,6 +42,14 @@ vk::SamplerYcbcrModelConversion Sampler::getModel() const noexcept {
 
 vk::SamplerYcbcrRange Sampler::getRange() const noexcept {
 	return m_range;
+}
+
+vk::ChromaLocation Sampler::getXChromaLocation() const noexcept {
+	return m_xChromaLocation;
+}
+
+vk::ChromaLocation Sampler::getYChromaLocation() const noexcept {
+	return m_yChromaLocation;
 }
 
 vk::Filter Sampler::getFilter() const noexcept {
@@ -65,6 +78,31 @@ bool Sampler::usesYCbCrSampler(vk::Format format, vk::SamplerYcbcrModelConversio
 	//because it is a planar or interleaved format.
 	return 	model != vk::SamplerYcbcrModelConversion::eRgbIdentity ||
 			requiresYCbCrSamplerConversion(format) ;
+}
+
+bool Sampler::sanitizeChromaLocation(vk::ChromaLocation& loc, const vk::FormatProperties& prop) noexcept {
+	bool result = false;
+
+	if(!(getFormatFeatureFlags(loc) & prop.optimalTilingFeatures)) {
+		//Not supported
+		result = true;
+
+		switch (loc) {
+		case vk::ChromaLocation::eMidpoint:
+			loc = vk::ChromaLocation::eCositedEven;
+			break;
+		
+		default: //vk::ChromaLocation::eCositedEven
+			loc = vk::ChromaLocation::eMidpoint;
+			break;
+		}
+
+		//At this point it should be supported, as otherwise the
+		//format has no YCbCr sampler conversion support
+		assert(getFormatFeatureFlags(loc) & prop.optimalTilingFeatures);
+	}
+
+	return result;
 }
 
 vk::SamplerYcbcrModelConversion	Sampler::getModel(ColorModel model) noexcept {
@@ -165,6 +203,8 @@ vk::SamplerYcbcrConversion Sampler::createSamplerYCbCrConversion(	const Vulkan& 
 																	const Image::Plane& plane,
 																	vk::SamplerYcbcrModelConversion model,
 																	vk::SamplerYcbcrRange range,
+																	vk::ChromaLocation& xChromaLoc,
+																	vk::ChromaLocation& yChromaLoc,
 																	vk::Filter filter )
 {
 	vk::SamplerYcbcrConversion result;
@@ -174,11 +214,19 @@ vk::SamplerYcbcrConversion Sampler::createSamplerYCbCrConversion(	const Vulkan& 
 
 	//Determine if the YCbCr sampler will be required.
 	bool create;
-	if(usesYCbCrSampler(format, model))	{
+	if(requiresYCbCrSamplerConversion(format))	{
+		//YCbCr sampler is compulsory for this format. It should be supported if we got here
+		create = true;
+
+		//Sanitize the chroma location values, as they might not be supported
+		sanitizeChromaLocation(xChromaLoc, formatSupport);
+		sanitizeChromaLocation(yChromaLoc, formatSupport);
+	} else if(model != vk::SamplerYcbcrModelConversion::eRgbIdentity) {
 		//A YCbCr sampler may become handy to perform color model conversions. Check for support.
-		//Any of those two flags will signal that it is supported
-		constexpr auto desiredFlags = 	vk::FormatFeatureFlagBits::eCositedChromaSamples |
-										vk::FormatFeatureFlagBits::eMidpointChromaSamples ;
+		const vk::FormatFeatureFlags desiredFlags =
+			getFormatFeatureFlags(xChromaLoc) |
+			getFormatFeatureFlags(yChromaLoc) ;
+
 		create = static_cast<bool>(formatSupport.optimalTilingFeatures & desiredFlags);
 	} else {
 		//No need to create it
@@ -194,6 +242,8 @@ vk::SamplerYcbcrConversion Sampler::createSamplerYCbCrConversion(	const Vulkan& 
 									vk::ComponentSwizzle,
 									vk::SamplerYcbcrModelConversion,
 									vk::SamplerYcbcrRange,
+									vk::ChromaLocation,
+									vk::ChromaLocation,
 									vk::Filter >;	
 		
 		static std::unordered_map<Index, const Utils::StaticId, Utils::Hasher<Index>> ids; 
@@ -207,6 +257,8 @@ vk::SamplerYcbcrConversion Sampler::createSamplerYCbCrConversion(	const Vulkan& 
 			swizzle.a,
 			model,
 			range,
+			xChromaLoc,
+			yChromaLoc,
 			filter
 		);
 		const auto& id = ids[index]; //TODO concurrent access
@@ -215,15 +267,6 @@ vk::SamplerYcbcrConversion Sampler::createSamplerYCbCrConversion(	const Vulkan& 
 		result = vulkan.createSamplerYcbcrConversion(id);
 		if(!result) {
 			//No luck, create it
-			//Decide where to sample. It is ensured that one of both is supported. See above
-			//FIXME this is not colorimetrically correct. It must be sampled where specified.
-			vk::ChromaLocation chromaLocation;
-			if(formatSupport.optimalTilingFeatures & vk::FormatFeatureFlagBits::eCositedChromaSamples) {
-				chromaLocation = vk::ChromaLocation::eCositedEven;
-			} else {
-				assert(formatSupport.optimalTilingFeatures & vk::FormatFeatureFlagBits::eMidpointChromaSamples);
-				chromaLocation = vk::ChromaLocation::eMidpoint;
-			}
 			constexpr bool forceExplicitReconstruction = false;			
 
 			const vk::SamplerYcbcrConversionCreateInfo createInfo(
@@ -231,8 +274,8 @@ vk::SamplerYcbcrConversion Sampler::createSamplerYCbCrConversion(	const Vulkan& 
 				model,						//Model
 				range,						//Range
 				swizzle,					//Component swizzle
-				chromaLocation,				//X Chroma location
-				chromaLocation,				//Y Chroma location
+				xChromaLoc,					//X Chroma location
+				yChromaLoc,					//Y Chroma location
 				filter,						//Chrominance reconstruction filter
 				forceExplicitReconstruction	//Force explicit chroma reconstruction
 			);

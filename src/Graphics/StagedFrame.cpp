@@ -171,6 +171,7 @@ private:
 				frameDesc.getColorRange(),
 				frameDesc.getColorModel(),
 				frameDesc.getColorTransferFunction(),
+				frameDesc.getColorChromaLocation(),
 				reconstructionFilter
 			);
 

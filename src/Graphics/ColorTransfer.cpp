@@ -77,6 +77,16 @@ constexpr int32_t getColorTransferFunction(ColorTransferFunction transferFunctio
 	}
 }
 
+constexpr float getChromaOffset(ColorChromaLocation location, size_t size) {
+	float result = 0.0f;
+
+	if(location == ColorChromaLocation::MIDPOINT) {
+		result = 0.5f / size;
+	}
+
+	return result;
+}
+
 
 
 
@@ -296,6 +306,8 @@ struct ColorTransferRead::Impl {
 	uint32_t 		colorModel;
 	uint32_t 		colorTransferFunction;
 	UnalignedMat3x3	colorModelConversion;
+	float			colorChromaOffsetX;
+	float			colorChromaOffsetY;
 
 	Impl() 
 		: planeCount(1)
@@ -304,6 +316,8 @@ struct ColorTransferRead::Impl {
 		, colorModel(ct_COLOR_MODEL_RGB)
 		, colorTransferFunction(ct_COLOR_TRANSFER_FUNCTION_LINEAR)
 		, colorModelConversion(Math::Mat3x3f(1.0f))
+		, colorChromaOffsetX(0.0f)
+		, colorChromaOffsetY(0.0f)
 	{
 		assert(isPassthough());
 	}
@@ -315,6 +329,8 @@ struct ColorTransferRead::Impl {
 		, colorModel(getColorModel(desc.getColorModel()))
 		, colorTransferFunction(getColorTransferFunction(desc.getColorTransferFunction()))
 		, colorModelConversion(Math::inv(getRGB2YCbCrConversionMatrix(desc.getColorModel())))
+		, colorChromaOffsetX(getChromaOffset(desc.getColorChromaLocation().x, desc.getResolution().x))
+		, colorChromaOffsetY(getChromaOffset(desc.getColorChromaLocation().y, desc.getResolution().y))
 	{
 	}
 	~Impl() = default;
@@ -355,9 +371,11 @@ struct ColorTransferRead::Impl {
 
 	void optimize(const Sampler& sampler) noexcept {
 		//If a YCbCr sampler is used, the shader will only sample 
-		//one plane
+		//one plane and sumsampling offset is already considered
 		if(sampler.getSamplerYCbCrConversion()) {
 			planeCount = 1;
+			colorChromaOffsetX = 0.0f;
+			colorChromaOffsetY = 0.0f;
 		}
 
 		//Modify the specialization constants to match the
@@ -381,7 +399,9 @@ struct ColorTransferRead::Impl {
 		return 	planeFormat == ct_PLANE_FORMAT_RGBA &&
 				colorRange == ct_COLOR_RANGE_FULL_RGB &&
 				colorModel == ct_COLOR_MODEL_RGB &&
-				colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_LINEAR ;
+				colorTransferFunction == ct_COLOR_TRANSFER_FUNCTION_LINEAR &&
+				colorChromaOffsetX == 0.0f &&
+				colorChromaOffsetY == 0.0f;
 	}
 	
 	bool isLinear() const noexcept {
@@ -431,7 +451,7 @@ struct ColorTransferRead::Impl {
 	}
 
 	static Utils::BufferView<const vk::SpecializationMapEntry> getSpecializationMap() noexcept {
-		static const std::array<vk::SpecializationMapEntry, 14> fragmentShaderSpecializationMap = {
+		static const std::array<vk::SpecializationMapEntry, 16> fragmentShaderSpecializationMap = {
 			vk::SpecializationMapEntry(
 				ct_PLANE_COUNT_ID,
 				offsetof(Impl, planeCount),
@@ -501,7 +521,17 @@ struct ColorTransferRead::Impl {
 				ct_COLOR_MODEL_MATRIX_BASE_ID + ct_MAT3x3_M22_OFFSET,
 				offsetof(Impl, colorModelConversion) + offsetof(UnalignedMat3x3, m22),
 				sizeof(UnalignedMat3x3::m22)
-			)
+			),
+			vk::SpecializationMapEntry(
+				ct_CHROMA_SAMPLE_OFFSET_X_ID,
+				offsetof(Impl, colorChromaOffsetX),
+				sizeof(Impl::colorChromaOffsetX)
+			),
+			vk::SpecializationMapEntry(
+				ct_CHROMA_SAMPLE_OFFSET_Y_ID,
+				offsetof(Impl, colorChromaOffsetY),
+				sizeof(Impl::colorChromaOffsetY)
+			),
 		};
 
 		return fragmentShaderSpecializationMap;

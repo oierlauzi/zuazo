@@ -9,6 +9,7 @@
 #include "../Math/Vector.h"
 #include "../Resolution.h"
 #include "../ColorSubsampling.h"
+#include "../ColorChromaLocation.h"
 #include "../ColorFormat.h"
 #include "../ColorRange.h"
 #include "../ColorTransferFunction.h"
@@ -71,9 +72,10 @@ public:
 	Descriptor(	Resolution resolution, 
 				AspectRatio pixelAspectRatio, 
 				ColorPrimaries colorPrimaries, 
-				ColorModel colorModel, 
+				ColorModel colorModel,
 				ColorTransferFunction colorTransferFunction, 
 				ColorSubsampling colorSubsampling, 
+				Math::Vec2<ColorChromaLocation> colorChromaLocation,
 				ColorRange colorRange, 
 				ColorFormat colorFormat ) noexcept;
 	Descriptor(const Descriptor& other) noexcept = default;
@@ -99,6 +101,9 @@ public:
 	void									setColorSubsampling(ColorSubsampling colorSubsampling) noexcept;
 	ColorSubsampling						getColorSubsampling() const noexcept;
 
+	void									setColorChromaLocation(Math::Vec2<ColorChromaLocation> colorChromaLocation) noexcept;
+	Math::Vec2<ColorChromaLocation>			getColorChromaLocation() const noexcept;
+
 	void									setColorRange(ColorRange colorRange) noexcept;
 	ColorRange								getColorRange() const noexcept;
 
@@ -115,6 +120,7 @@ private:
 	ColorModel								m_colorModel;
 	ColorTransferFunction					m_colorTransferFunction;
 	ColorSubsampling						m_colorSubsampling;
+	Math::Vec2<ColorChromaLocation>			m_colorChromaLocation;
 	ColorRange								m_colorRange;
 	ColorFormat								m_colorFormat;
 

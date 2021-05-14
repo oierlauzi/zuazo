@@ -8,6 +8,7 @@ Frame::Descriptor::Descriptor(	Resolution resolution,
 								ColorModel colorModel, 
 								ColorTransferFunction colorTransferFunction, 
 								ColorSubsampling colorSubsampling, 
+								Math::Vec2<ColorChromaLocation> colorChromaLocation,
 								ColorRange colorRange, 
 								ColorFormat colorFormat ) noexcept
 	: m_resolution(resolution)
@@ -16,6 +17,7 @@ Frame::Descriptor::Descriptor(	Resolution resolution,
 	, m_colorModel(colorModel)
 	, m_colorTransferFunction(colorTransferFunction)
 	, m_colorSubsampling(colorSubsampling)
+	, m_colorChromaLocation(colorChromaLocation)
 	, m_colorRange(colorRange)
 	, m_colorFormat(colorFormat)
 {
@@ -73,6 +75,14 @@ void Frame::Descriptor::setColorSubsampling(ColorSubsampling colorSubsampling) n
 
 ColorSubsampling Frame::Descriptor::getColorSubsampling() const noexcept {
 	return m_colorSubsampling;
+}
+
+void Frame::Descriptor::setColorChromaLocation(Math::Vec2<ColorChromaLocation> colorChromaLocation) noexcept {
+	m_colorChromaLocation = colorChromaLocation;
+}
+
+Math::Vec2<ColorChromaLocation> Frame::Descriptor::getColorChromaLocation() const noexcept {
+	return m_colorChromaLocation;
 }
 
 

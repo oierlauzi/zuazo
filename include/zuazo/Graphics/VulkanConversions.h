@@ -8,6 +8,7 @@
 #include "../ColorFormat.h"
 #include "../ColorRange.h"
 #include "../ColorSubsampling.h"
+#include "../ColorChromaLocation.h"
 #include "../ColorTransferFunction.h"
 #include "../ColorModel.h"
 #include "../ColorPrimaries.h"
@@ -43,6 +44,10 @@ constexpr ColorModel fromVulkan(vk::SamplerYcbcrModelConversion model) noexcept;
 
 constexpr vk::SamplerYcbcrRange toVulkan(ColorRange colorRange) noexcept;
 constexpr ColorRange fromVulkan(vk::SamplerYcbcrRange range) noexcept;
+
+constexpr vk::ChromaLocation toVulkan(ColorChromaLocation colorChromaLoc) noexcept;
+constexpr ColorChromaLocation fromVulkan(vk::ChromaLocation chromaLoc) noexcept;
+constexpr vk::FormatFeatureFlags getFormatFeatureFlags(vk::ChromaLocation chromaLoc) noexcept;
 
 constexpr std::array<std::tuple<vk::Format, vk::ComponentMapping>, MAX_PLANE_COUNT> toVulkan(ColorFormat fmt) noexcept;
 constexpr std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format fmt) noexcept;

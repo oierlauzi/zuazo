@@ -19,7 +19,6 @@
 
 #include "Signal/NamingConventions.h"
 
-#include <tuple>
 #include <vector>
 
 namespace Zuazo {
@@ -44,12 +43,8 @@ public:
 	VideoMode& 									operator=(const VideoMode& other) = default;
 	VideoMode& 									operator=(VideoMode&& other) = default;
 	
-	int 										operator==(const VideoMode& other) const;
-	int 										operator!=(const VideoMode& other) const;
-	int 										operator<(const VideoMode& other) const;
-	int 										operator<=(const VideoMode& other) const;
-	int 										operator>(const VideoMode& other) const;
-	int 										operator>=(const VideoMode& other) const;
+	bool 										operator==(const VideoMode& other) const;
+	bool 										operator!=(const VideoMode& other) const;
 
 	operator bool() const;
 
@@ -57,35 +52,35 @@ public:
 	const Utils::Limit<Rate>&					getFrameRate() const;
 	Rate										getFrameRateValue() const;
 
-	void 										setResolution(Utils::Limit<Resolution> frameRate);
+	void 										setResolution(Utils::Limit<Resolution> resolution);
 	const Utils::Limit<Resolution>&				getResolution() const;
 	Resolution									getResolutionValue() const;
 
-	void 										setPixelAspectRatio(Utils::Limit<AspectRatio> frameRate);
+	void 										setPixelAspectRatio(Utils::Limit<AspectRatio> par);
 	const Utils::Limit<AspectRatio>&			getPixelAspectRatio() const;
 	AspectRatio									getPixelAspectRatioValue() const;
 
-	void 										setColorPrimaries(Utils::Limit<ColorPrimaries> frameRate);
+	void 										setColorPrimaries(Utils::Limit<ColorPrimaries> primaries);
 	const Utils::Limit<ColorPrimaries>&			getColorPrimaries() const;
 	ColorPrimaries								getColorPrimariesValue() const;
 
-	void 										setColorModel(Utils::Limit<ColorModel> frameRate);
+	void 										setColorModel(Utils::Limit<ColorModel> model);
 	const Utils::Limit<ColorModel>&				getColorModel() const;
 	ColorModel									getColorModelValue() const;
 
-	void 										setColorTransferFunction(Utils::Limit<ColorTransferFunction> frameRate);
+	void 										setColorTransferFunction(Utils::Limit<ColorTransferFunction> transferFunc);
 	const Utils::Limit<ColorTransferFunction>&	getColorTransferFunction() const;
 	ColorTransferFunction						getColorTransferFunctionValue() const;
 
-	void 										setColorSubsampling(Utils::Limit<ColorSubsampling> frameRate);
+	void 										setColorSubsampling(Utils::Limit<ColorSubsampling> subsampling);
 	const Utils::Limit<ColorSubsampling>&		getColorSubsampling() const;
 	ColorSubsampling							getColorSubsamplingValue() const;
 
-	void 										setColorRange(Utils::Limit<ColorRange> frameRate);
+	void 										setColorRange(Utils::Limit<ColorRange> range);
 	const Utils::Limit<ColorRange>&				getColorRange() const;
 	ColorRange									getColorRangeValue() const;
 
-	void 										setColorFormat(Utils::Limit<ColorFormat> frameRate);
+	void 										setColorFormat(Utils::Limit<ColorFormat> format);
 	const Utils::Limit<ColorFormat>&			getColorFormat() const;
 	ColorFormat									getColorFormatValue() const;
 
@@ -100,29 +95,15 @@ public:
 	static const VideoMode 						ANY;
 
 private:
-	using Data = std::tuple<Utils::Limit<Rate>,
-							Utils::Limit<Resolution>,
-							Utils::Limit<AspectRatio>,
-							Utils::Limit<ColorPrimaries>,
-							Utils::Limit<ColorModel>,
-							Utils::Limit<ColorTransferFunction>,
-							Utils::Limit<ColorSubsampling>,
-							Utils::Limit<ColorRange>,
-							Utils::Limit<ColorFormat> >;
-
-	enum Indices {
-		m_frameRate,
-		m_resolution,
-		m_pixelAspectRatio,
-		m_colorPrimaries,
-		m_colorModel,
-		m_colorTransferFunction,
-		m_colorSubsampling,
-		m_colorRange,
-		m_colorFormat
-	};
-
-	Data 										m_data;
+	Utils::Limit<Rate>							m_frameRate;
+	Utils::Limit<Resolution>					m_resolution;
+	Utils::Limit<AspectRatio>					m_pixelAspectRatio;
+	Utils::Limit<ColorPrimaries>				m_colorPrimaries;
+	Utils::Limit<ColorModel>					m_colorModel;
+	Utils::Limit<ColorTransferFunction>			m_colorTransferFunction;
+	Utils::Limit<ColorSubsampling>				m_colorSubsampling;
+	Utils::Limit<ColorRange>					m_colorRange;
+	Utils::Limit<ColorFormat>					m_colorFormat;
 
 };
 
