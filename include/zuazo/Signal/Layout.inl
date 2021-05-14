@@ -39,36 +39,12 @@ inline const std::string& Layout::getName() const noexcept {
 
 template<typename T>
 inline std::vector<std::reference_wrapper<Layout::PadProxy<T>>> Layout::getPads() {
-	const auto pads = findPads<T>();
-	std::vector<std::reference_wrapper<PadProxy<T>>> result;
-	result.reserve(pads.size());
-
-	std::transform(
-		pads.cbegin(), pads.cend(),
-		std::back_inserter(result),
-		[] (T& pad) -> PadProxy<T>& {
-			return makeProxy(pad);
-		}
-	);
-	
-	return result;
+	return reinterpret_cast<std::vector<std::reference_wrapper<Layout::PadProxy<T>>>&&>(findPads<T>()); //HACK
 }
 
 template<typename T>
 inline std::vector<std::reference_wrapper<const Layout::PadProxy<T>>> Layout::getPads() const {
-	const auto pads = findPads<T>();
-	std::vector<std::reference_wrapper<PadProxy<T>>> result;
-	result.reserve(pads.size());
-
-	std::transform(
-		pads.cbegin(), pads.cend(),
-		std::back_inserter(result),
-		[] (const T& pad) -> const PadProxy<T>& {
-			return makeProxy(pad);
-		}
-	);
-	
-	return result;
+	return reinterpret_cast<std::vector<std::reference_wrapper<const Layout::PadProxy<T>>>&&>(findPads<T>()); //HACK
 }
 
 template<typename T>
@@ -155,7 +131,7 @@ inline T* Layout::findPad(std::string_view str) const noexcept {
 template <typename T>
 inline std::vector<std::reference_wrapper<T>> Layout::findPads() const {
 	static_assert(std::is_base_of<PadBase, T>::value, "T must inherit from PadBase");
-	std::vector<T> result;
+	std::vector<std::reference_wrapper<T>> result;
 
 	for(PadBase& pad : m_pads) {
 		auto* ptr = dynamic_cast<T*>(&pad);
