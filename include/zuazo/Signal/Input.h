@@ -26,7 +26,8 @@ public:
 	using Element = T;
 	using Source = Output<Element>; friend Source;
 
-	explicit Input(std::string name = std::string(makeInputName<Element>())) noexcept;
+	explicit Input(	const Layout& layout, 
+					std::string name = std::string(makeInputName<Element>())) noexcept;
 	Input(const Input& other) = default;
 	Input(Input&& other) noexcept = default;
 	virtual ~Input() = default;
@@ -39,6 +40,9 @@ public:
 
 	void						setSource(Source* src) noexcept;
 	Source*						getSource() const noexcept;
+
+	PadProxy<Input>&			getProxy() noexcept;
+	const PadProxy<Input>&		getProxy() const noexcept;
 
 	void						reset() noexcept;
 	const Element&				pull() noexcept;
@@ -53,12 +57,12 @@ private:
 };
 
 template<typename T>
-class Layout::PadProxy<Input<T>>
+class PadProxy<Input<T>>
 	: Input<T>
 {
-public:
+	friend Input<T>;
 	friend Layout;
-
+public:
 	using Source = PadProxy<Output<T>>; friend Source;
 
 	PadProxy() = delete;
@@ -73,6 +77,7 @@ public:
 	using Input<T>::operator>;
 	using Input<T>::operator>=;
 	using Input<T>::operator<<;
+	using PadBase::getLayout;
 	using Input<T>::getName;
 
 	void						setSource(Source* src) noexcept;
@@ -86,10 +91,10 @@ private:
 };
 
 template<typename T>
-Layout::PadProxy<Input<T>>& getInput(Layout& layout, std::string_view name = makeInputName<T>());
+PadProxy<Input<T>>& getInput(Layout& layout, std::string_view name = makeInputName<T>());
 
 template<typename T>
-const Layout::PadProxy<Input<T>>& getInput(const Layout& layout, std::string_view name = makeInputName<T>());
+const PadProxy<Input<T>>& getInput(const Layout& layout, std::string_view name = makeInputName<T>());
 
 }
 

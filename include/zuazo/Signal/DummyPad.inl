@@ -5,11 +5,24 @@
 namespace Zuazo::Signal {
 
 template<typename T>
-inline DummyPad<T>::DummyPad(std::string name)
-	: ProcessorLayout<T, T>(Layout::makeProxy(m_input), Layout::makeProxy(m_output))
-	, m_input(name)
-	, m_output(std::move(name), makePullCallback(m_input))
+inline DummyPad<T>::DummyPad(const Layout& layout, std::string name)
+	: ProcessorLayout<T, T>(m_input.getProxy(), m_output.getProxy())
+	, m_input(layout, name)
+	, m_output(layout, std::move(name), makePullCallback(m_input))
 {
+}
+
+
+
+template<typename T>
+inline void DummyPad<T>::setLayout(const Layout& layout) noexcept {
+	m_input.setLayout(layout);
+	m_output.setLayout(layout);	
+}
+
+template<typename T>
+inline const Layout& DummyPad<T>::getLayout() const noexcept {
+	return m_input.getLayout();
 }
 
 

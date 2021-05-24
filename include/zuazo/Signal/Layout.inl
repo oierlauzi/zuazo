@@ -38,46 +38,27 @@ inline const std::string& Layout::getName() const noexcept {
 
 
 template<typename T>
-inline std::vector<std::reference_wrapper<Layout::PadProxy<T>>> Layout::getPads() {
-	return reinterpret_cast<std::vector<std::reference_wrapper<Layout::PadProxy<T>>>&&>(findPads<T>()); //HACK
+inline std::vector<std::reference_wrapper<PadProxy<T>>> Layout::getPads() {
+	return reinterpret_cast<std::vector<std::reference_wrapper<PadProxy<T>>>&&>(findPads<T>()); //HACK
 }
 
 template<typename T>
-inline std::vector<std::reference_wrapper<const Layout::PadProxy<T>>> Layout::getPads() const {
-	return reinterpret_cast<std::vector<std::reference_wrapper<const Layout::PadProxy<T>>>&&>(findPads<T>()); //HACK
+inline std::vector<std::reference_wrapper<const PadProxy<T>>> Layout::getPads() const {
+	return reinterpret_cast<std::vector<std::reference_wrapper<const PadProxy<T>>>&&>(findPads<T>()); //HACK
 }
 
 template<typename T>
-inline Layout::PadProxy<T>* Layout::getPad(std::string_view name) noexcept {
-	return makeProxy(findPad<T>(name));
+inline PadProxy<T>* Layout::getPad(std::string_view name) noexcept {
+	auto* pad = findPad<T>(name);
+	return pad ? &(pad->getProxy()) : nullptr;
 }
 
 template<typename T>
-inline const Layout::PadProxy<T>* Layout::getPad(std::string_view name) const noexcept {
-	return makeProxy(findPad<T>(name));
+inline const PadProxy<T>* Layout::getPad(std::string_view name) const noexcept {
+	const auto* pad = findPad<T>(name);
+	return pad ? &(pad->getProxy()) : nullptr;
 }
 
-
-
-template<typename T>
-inline Layout::PadProxy<T>& Layout::makeProxy(T& pad) noexcept {
-	return static_cast<PadProxy<T>&>(pad);
-}
-
-template<typename T>
-inline Layout::PadProxy<T>* Layout::makeProxy(T* pad) noexcept {
-	return static_cast<PadProxy<T>*>(pad);
-}
-
-template<typename T>
-inline const Layout::PadProxy<T>& Layout::makeProxy(const T& pad) noexcept {
-	return static_cast<const PadProxy<T>&>(pad);
-}
-
-template<typename T>
-inline const Layout::PadProxy<T>* Layout::makeProxy(const T* pad) noexcept {
-	return static_cast<const PadProxy<T>*>(pad);
-}
 
 
 inline void Layout::registerPad(PadRef pad) {

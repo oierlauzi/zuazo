@@ -9,11 +9,11 @@ namespace Zuazo::Signal {
 
 class PadBase;
 
+template<typename T>
+class PadProxy;
+
 class Layout {
 public:
-	template<typename T>
-	class PadProxy;
-
 	using PadRef = std::reference_wrapper<PadBase>;
 	
 	explicit Layout(std::string name);
@@ -38,15 +38,6 @@ public:
 	PadProxy<T>*											getPad(std::string_view name) noexcept;
 	template<typename T>
 	const PadProxy<T>*										getPad(std::string_view name) const noexcept;
-
-	template<typename T>
-	static PadProxy<T>*										makeProxy(T* pad) noexcept;
-	template<typename T>
-	static PadProxy<T>&										makeProxy(T& pad) noexcept;
-	template<typename T>
-	static const PadProxy<T>*								makeProxy(const T* pad) noexcept;
-	template<typename T>
-	static const PadProxy<T>&								makeProxy(const T& pad) noexcept;
 
 protected:
 	void													registerPad(PadRef pad);

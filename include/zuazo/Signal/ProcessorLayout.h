@@ -11,8 +11,8 @@ class ProcessorLayout
 	, public SourceLayout<Tout>
 {
 public:
-	ProcessorLayout(Layout::PadProxy<typename ConsumerLayout<Tin>::Input>& input,
-					Layout::PadProxy<typename SourceLayout<Tout>::Output>& output ) noexcept;
+	ProcessorLayout(PadProxy<typename ConsumerLayout<Tin>::Input>& input,
+					PadProxy<typename SourceLayout<Tout>::Output>& output ) noexcept;
 	ProcessorLayout(const ProcessorLayout& other) noexcept = default;
 	ProcessorLayout(ProcessorLayout&& other) noexcept = default;
 	virtual ~ProcessorLayout() = default;
@@ -24,7 +24,7 @@ public:
 
 //Magic operator in order to concatenate
 template <typename Tin, typename Tout>
-ProcessorLayout<Tin, Tout>& operator<<(Layout::PadProxy<Input<Tout>>& dst, ProcessorLayout<Tin, Tout>& src) noexcept;
+ProcessorLayout<Tin, Tout>& operator<<(PadProxy<Input<Tout>>& dst, ProcessorLayout<Tin, Tout>& src) noexcept;
 
 template <typename Tin, typename Tout>
 ProcessorLayout<Tin, Tout>& operator<<(ConsumerLayout<Tout>& dst, ProcessorLayout<Tin, Tout>& src) noexcept;

@@ -24,7 +24,9 @@ public:
 
 	using PullCallback = std::function<void(Output<T>&)>;
 
-	explicit Output(std::string name = std::string(makeOutputName<Element>()), PullCallback pullCbk = {}) noexcept;
+	explicit Output(const Layout& layout, 
+					std::string name = std::string(makeOutputName<Element>()), 
+					PullCallback pullCbk = {} ) noexcept;
 	Output(const Output& other) = default;
 	Output(Output&& other) noexcept = default;
 	virtual ~Output() = default;
@@ -33,6 +35,9 @@ public:
 	Output&						operator=(Output&& other) noexcept = default;
 
 	Consumers					getConsumers() const;
+
+	PadProxy<Output>&			getProxy() noexcept;
+	const PadProxy<Output>&		getProxy() const noexcept;
 
 	void						setPullCallback(PullCallback cbk) noexcept;
 	const PullCallback&			getPullCallback() const noexcept;
@@ -50,13 +55,15 @@ private:
 
 };
 
-template<typename T>
-class Layout::PadProxy<Output<T>>
-	: Output<T>
-{
-public:
-	friend Layout;
 
+
+template<typename T>
+class PadProxy<Output<T>>
+	: private Output<T>
+{
+	friend Output<T>;
+	friend Layout;
+public:
 	using Consumer = PadProxy<Input<T>>; friend Consumer;
 	using Consumers = std::vector<std::reference_wrapper<Consumer>>;
 
@@ -71,6 +78,7 @@ public:
 	using Output<T>::operator<=;
 	using Output<T>::operator>;
 	using Output<T>::operator>=;
+	using PadBase::getLayout;
 	using Output<T>::getName;
 	using Output<T>::getLastElement;
 
@@ -82,10 +90,10 @@ private:
 };
 
 template<typename T>
-Layout::PadProxy<Output<T>>& getOutput(Layout& layout, std::string_view name = makeOutputName<T>());
+PadProxy<Output<T>>& getOutput(Layout& layout, std::string_view name = makeOutputName<T>());
 
 template<typename T>
-const Layout::PadProxy<Output<T>>& getOutput(const Layout& layout, std::string_view name = makeOutputName<T>());
+const PadProxy<Output<T>>& getOutput(const Layout& layout, std::string_view name = makeOutputName<T>());
 
 }
 

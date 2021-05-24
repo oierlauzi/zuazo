@@ -9,8 +9,8 @@ namespace Zuazo::Signal {
  */
 
 template <typename T>
-inline Input<T>::Input(std::string name) noexcept
-	: PadBase(std::move(name))
+inline Input<T>::Input(const Layout& layout, std::string name) noexcept
+	: PadBase(layout, std::move(name))
 {
 }
 
@@ -36,6 +36,16 @@ inline typename Input<T>::Source* Input<T>::getSource() const noexcept {
 	return static_cast<Source*>(getSubject());
 }
 
+
+template <typename T>
+inline PadProxy<Input<T>>& Input<T>::getProxy() noexcept {
+	return static_cast<PadProxy<Input>&>(*this);
+}
+
+template <typename T>
+inline const PadProxy<Input<T>>& Input<T>::getProxy() const noexcept {
+	return static_cast<const PadProxy<Input>&>(*this);
+}
 
 
 template <typename T>
@@ -70,21 +80,21 @@ inline const typename Input<T>::Element& Input<T>::pullFromSource() const noexce
 
 
 /*
- * Layout::PadProxy<Input<T>>
+ * PadProxy<Input<T>>
  */
 
 template <typename T>
-inline void Layout::PadProxy<Input<T>>::setSource(Source* src) noexcept {
+inline void PadProxy<Input<T>>::setSource(Source* src) noexcept {
 	Input<T>::setSource(src);
 }
 
 template <typename T>
-inline typename Layout::PadProxy<Input<T>>::Source* Layout::PadProxy<Input<T>>::getSource() const noexcept {
+inline typename PadProxy<Input<T>>::Source* PadProxy<Input<T>>::getSource() const noexcept {
 	return static_cast<Source*>(Input<T>::getSource());
 }
 
 template <typename T>
-inline void Layout::PadProxy<Input<T>>::operator<<(Source& src) noexcept {
+inline void PadProxy<Input<T>>::operator<<(Source& src) noexcept {
 	setSource(&src);
 }
 
@@ -93,7 +103,7 @@ inline void Layout::PadProxy<Input<T>>::operator<<(Source& src) noexcept {
  */
 
 template<typename T>
-inline Layout::PadProxy<Input<T>>& getInput(Layout& layout, std::string_view name) {
+inline PadProxy<Input<T>>& getInput(Layout& layout, std::string_view name) {
 	auto* input = layout.getPad<Input<T>>(name);
 	
 	if(!input) {
@@ -104,7 +114,7 @@ inline Layout::PadProxy<Input<T>>& getInput(Layout& layout, std::string_view nam
 }
 
 template<typename T>
-inline const Layout::PadProxy<Input<T>>& getInput(const Layout& layout, std::string_view name) {
+inline const PadProxy<Input<T>>& getInput(const Layout& layout, std::string_view name) {
 	const auto* input = layout.getPad<Input<T>>(name);
 	
 	if(!input) {

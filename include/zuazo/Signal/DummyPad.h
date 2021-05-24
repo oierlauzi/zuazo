@@ -11,13 +11,16 @@ class DummyPad
 	: public ProcessorLayout<T, T>
 {
 public:
-	explicit DummyPad(std::string name);
+	DummyPad(const Layout& layout, std::string name);
 	DummyPad(const DummyPad& other) = delete;
 	DummyPad(DummyPad&& other) = default;
 	~DummyPad() = default;
 
 	DummyPad&								operator=(const DummyPad& other) = delete;
 	DummyPad&								operator=(DummyPad&& other) = default;
+
+	void                					setLayout(const Layout& layout) noexcept;
+	const Layout&							getLayout() const noexcept;
 
 	void									setName(std::string name);
 	const std::string&						getName() const noexcept;
