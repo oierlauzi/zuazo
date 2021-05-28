@@ -48,7 +48,7 @@ Triangulator<T, Index>::TriangleListGenerator::operator()(	const Diagonal& diago
 
 	result.insert(result.cend(), triangle.cbegin(), triangle.cend());
 
-	return TriangleSideFlags::NONE; //We do not care about the next side
+	return TriangleSideFlags::none; //We do not care about the next side
 }
 
 
@@ -60,7 +60,7 @@ constexpr Triangulator<T, Index>::TriangleStripGenerator::TriangleStripGenerator
 	: m_result(result)
 	, m_startIndex(startIndex)
 	, m_restartIndex(restartIndex)
-	, m_stripingSide(TriangleSideFlags::NONE)
+	, m_stripingSide(TriangleSideFlags::none)
 {
 }
 
@@ -75,7 +75,7 @@ Triangulator<T, Index>::TriangleStripGenerator::operator()(	const Diagonal& diag
 	auto& result = m_result.get();
 
 	//Check if we can use tri-striping
-	if(m_stripingSide != TriangleSideFlags::NONE) {
+	if(m_stripingSide != TriangleSideFlags::none) {
 		//We only need to push 1 index, as the previous
 		//2 are part of the previous triangle. Push
 		//the last index of the new triangle
@@ -95,26 +95,26 @@ Triangulator<T, Index>::TriangleStripGenerator::operator()(	const Diagonal& diag
 		result.insert(result.cend(), triangle.cbegin(), triangle.cend());
 
 		//We have arbitrarily chosen to do so
-		m_stripingSide = TriangleSideFlags::LEFT;
+		m_stripingSide = TriangleSideFlags::left;
 	}
 
 	//Segment for the next iteration. Stripe in alternating sides
-	if(m_stripingSide == TriangleSideFlags::LEFT) {
-		if((adjointDiagonals & TriangleSideFlags::RIGHT) != TriangleSideFlags::NONE) {
+	if(m_stripingSide == TriangleSideFlags::left) {
+		if((adjointDiagonals & TriangleSideFlags::right) != TriangleSideFlags::none) {
 			//Only if this diagonal is on the front
 			//triangle can be stripped
-			m_stripingSide = queueLength == 0 ? TriangleSideFlags::RIGHT : TriangleSideFlags::NONE;
+			m_stripingSide = queueLength == 0 ? TriangleSideFlags::right : TriangleSideFlags::none;
 		} else {
-			m_stripingSide = TriangleSideFlags::NONE;
+			m_stripingSide = TriangleSideFlags::none;
 		}
 
-	} else { assert(m_stripingSide == TriangleSideFlags::RIGHT);
-		if((adjointDiagonals & TriangleSideFlags::LEFT) != TriangleSideFlags::NONE) {
+	} else { assert(m_stripingSide == TriangleSideFlags::right);
+		if((adjointDiagonals & TriangleSideFlags::left) != TriangleSideFlags::none) {
 			//Only if this diagonal is on the front
 			//triangle can be stripped
-			m_stripingSide = queueLength == 0 ? TriangleSideFlags::LEFT : TriangleSideFlags::NONE;
+			m_stripingSide = queueLength == 0 ? TriangleSideFlags::left : TriangleSideFlags::none;
 		} else {
-			m_stripingSide = TriangleSideFlags::NONE;
+			m_stripingSide = TriangleSideFlags::none;
 		}
 	}
 
@@ -133,7 +133,7 @@ inline void Triangulator<T, Index>::operator()(	const polygon_type& polygon,
 		std::forward<F>(triangleCallback)(
 			Diagonal(0, 2), 			//First and last vertices
 			1,							//The only remaining vertex
-			TriangleSideFlags::NONE,
+			TriangleSideFlags::none,
 			0,
 			true
 		);
@@ -156,7 +156,7 @@ inline void Triangulator<T, Index>::operator()(	const polygon_type& polygon,
 		std::forward<F>(triangleCallback)(
 			Diagonal(indices[1], indices[0]),
 			indices[2],
-			TriangleSideFlags::RIGHT,
+			TriangleSideFlags::right,
 			0,
 			true
 		);
@@ -165,7 +165,7 @@ inline void Triangulator<T, Index>::operator()(	const polygon_type& polygon,
 		std::forward<F>(triangleCallback)(
 			Diagonal(indices[4], indices[3]),
 			indices[5],
-			TriangleSideFlags::NONE,
+			TriangleSideFlags::none,
 			0,
 			false
 		);
@@ -359,12 +359,12 @@ inline void Triangulator<T, Index>::operator()(	const polygon_type& polygon,
 			// second X-----X first
 
 			//Check which sides are available for this triangle
-			auto nextDiagonals = TriangleSideFlags::NONE;
+			auto nextDiagonals = TriangleSideFlags::none;
 			if(visibility.bestVertex > diagonal.first+1) {
-				nextDiagonals |= TriangleSideFlags::RIGHT;
+				nextDiagonals |= TriangleSideFlags::right;
 			}
 			if(diagonal.second > visibility.bestVertex+1) {
-				nextDiagonals |= TriangleSideFlags::LEFT;
+				nextDiagonals |= TriangleSideFlags::left;
 			}
 
 			//Call the given function with the available parameters
@@ -378,23 +378,23 @@ inline void Triangulator<T, Index>::operator()(	const polygon_type& polygon,
 			isFalseDiagonal = false; //Only the first one will be fake
 
 			//Add the new diagonals in the desired order
-			if((first & TriangleSideFlags::LEFT) != TriangleSideFlags::NONE) {
+			if((first & TriangleSideFlags::left) != TriangleSideFlags::none) {
 				//Left first
-				if((nextDiagonals & TriangleSideFlags::LEFT) != TriangleSideFlags::NONE) {
+				if((nextDiagonals & TriangleSideFlags::left) != TriangleSideFlags::none) {
 					m_diagonals.emplace_back(visibility.bestVertex, diagonal.second);
 				}
 
-				if((nextDiagonals & TriangleSideFlags::RIGHT) != TriangleSideFlags::NONE){
+				if((nextDiagonals & TriangleSideFlags::right) != TriangleSideFlags::none){
 					m_diagonals.emplace_back(diagonal.first, visibility.bestVertex);
 				}
 
 			} else {
 				//Right first
-				if((nextDiagonals & TriangleSideFlags::RIGHT) != TriangleSideFlags::NONE) {
+				if((nextDiagonals & TriangleSideFlags::right) != TriangleSideFlags::none) {
 					m_diagonals.emplace_back(diagonal.first, visibility.bestVertex);
 				}
 
-				if((nextDiagonals & TriangleSideFlags::LEFT) != TriangleSideFlags::NONE) {
+				if((nextDiagonals & TriangleSideFlags::left) != TriangleSideFlags::none) {
 					m_diagonals.emplace_back(visibility.bestVertex, diagonal.second);
 				}
 

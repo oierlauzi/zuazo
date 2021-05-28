@@ -32,7 +32,7 @@ bool RendererBase::Camera::operator==(const Camera& other) const {
 					m_nearClip == other.m_nearClip &&
 					m_farClip == other.m_farClip ;
 
-	if(m_projection == Projection::FRUSTUM) {
+	if(m_projection == Projection::frustum) {
 		result = result && m_fieldOfView == other.m_fieldOfView; //Field of view is only used for frustum
 	}
 
@@ -103,14 +103,14 @@ Math::Mat4x4f RendererBase::Camera::calculateViewMatrix() const {
 
 Math::Mat4x4f RendererBase::Camera::calculateProjectionMatrix(const Math::Vec2f& size) const {
 	switch(getProjection()) {
-	case Projection::ORTHOGONAL:
+	case Projection::orthogonal:
 		return Math::ortho(
 			-size.x / 2.0f, +size.x / 2.0f,	//Left, Right
 			-size.y / 2.0f, +size.y / 2.0f,	//Bottom, Top
 			getNearClip(), getFarClip()		//Clipping planes
 		);
 
-	case Projection::FRUSTUM:
+	case Projection::frustum:
 		return Math::perspective(
 			Math::deg2rad(getFieldOfView()),//Vertical FOV
 			size.x / size.y,				//Aspect ratio

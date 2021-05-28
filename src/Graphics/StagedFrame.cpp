@@ -160,10 +160,10 @@ private:
 										ColorTransferRead& colorTransfer )
 		{
 			//Use linear filter only if subsampled
-			const auto chromaReconstruction = frameDesc.getColorSubsampling() != ColorSubsampling::RB_444;
+			const auto chromaReconstruction = frameDesc.getColorSubsampling() > ColorSubsampling::rb444;
 			const auto reconstructionFilter = 	chromaReconstruction ? 
-												ScalingFilter::LINEAR : 
-												ScalingFilter::NONE ;
+												ScalingFilter::linear : 
+												ScalingFilter::none ;
 
 			const Sampler result(
 				vulkan,
@@ -417,7 +417,7 @@ private:
 				);
 
 				constexpr std::array<vk::PipelineColorBlendAttachmentState, 1> colorBlendAttachments = {
-					Graphics::getBlendingConfiguration(BlendingMode::WRITE)
+					Graphics::getBlendingConfiguration(BlendingMode::write)
 				};
 
 				const vk::PipelineColorBlendStateCreateInfo colorBlend(

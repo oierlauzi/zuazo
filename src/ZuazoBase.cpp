@@ -67,9 +67,9 @@ struct ZuazoBase::Impl {
 			Utils::invokeIf(openCallback, base);
 			opened = true;
 
-			ZUAZO_BASE_LOG(base, Severity::VERBOSE, "Opened");
+			ZUAZO_BASE_LOG(base, Severity::verbose, "Opened");
 		} else {
-			ZUAZO_BASE_LOG(base, Severity::ERROR, "Opening an already opened element");
+			ZUAZO_BASE_LOG(base, Severity::error, "Opening an already opened element");
 		}
 
 		assert(opened == true);
@@ -86,9 +86,9 @@ struct ZuazoBase::Impl {
 			}
 			opened = true;
 
-			ZUAZO_BASE_LOG(base, Severity::VERBOSE, "Opened asynchronously");
+			ZUAZO_BASE_LOG(base, Severity::verbose, "Opened asynchronously");
 		} else {
-			ZUAZO_BASE_LOG(base, Severity::ERROR, "Opening asynchronously an already opened element");
+			ZUAZO_BASE_LOG(base, Severity::error, "Opening asynchronously an already opened element");
 		}
 
 		assert(opened == true);
@@ -100,9 +100,9 @@ struct ZuazoBase::Impl {
 			Utils::invokeIf(closeCallback, base);
 			opened = false;
 
-			ZUAZO_BASE_LOG(base, Severity::VERBOSE, "Closed");
+			ZUAZO_BASE_LOG(base, Severity::verbose, "Closed");
 		} else {
-			ZUAZO_BASE_LOG(base, Severity::ERROR, "Closing an already closed element");
+			ZUAZO_BASE_LOG(base, Severity::error, "Closing an already closed element");
 		}
 
 		assert(opened == false);
@@ -119,9 +119,9 @@ struct ZuazoBase::Impl {
 			}
 			opened = false;
 
-			ZUAZO_BASE_LOG(base, Severity::VERBOSE, "Closed asynchronously");
+			ZUAZO_BASE_LOG(base, Severity::verbose, "Closed asynchronously");
 		} else {
-			ZUAZO_BASE_LOG(base, Severity::ERROR, "Closing asynchronously an already opened element");
+			ZUAZO_BASE_LOG(base, Severity::error, "Closing asynchronously an already opened element");
 		}
 
 		assert(opened == false);
@@ -246,7 +246,7 @@ ZuazoBase::ZuazoBase(	Instance& instance,
 	: Signal::Layout(std::move(name), pads.begin(), pads.end())
 	, m_impl({}, instance, std::move(moveCbk), std::move(openCbk), std::move(asyncOpenCbk), std::move(closeCbk), std::move(asyncCloseCbk), std::move(updateCbk))
 {
-	ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Constructed");
+	ZUAZO_BASE_LOG(*this, Severity::verbose, "Constructed");
 }
 
 ZuazoBase::ZuazoBase(ZuazoBase&& other) noexcept
@@ -255,13 +255,13 @@ ZuazoBase::ZuazoBase(ZuazoBase&& other) noexcept
 {
 	if(m_impl) {
 		m_impl->moved(*this);
-		ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Moved");
+		ZUAZO_BASE_LOG(*this, Severity::verbose, "Moved");
 	}
 }
 
 ZuazoBase::~ZuazoBase() {
 	if(m_impl) {
-		ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Destroyed");
+		ZUAZO_BASE_LOG(*this, Severity::verbose, "Destroyed");
 	}
 }
 
@@ -272,7 +272,7 @@ ZuazoBase& ZuazoBase::operator=(ZuazoBase&& other) noexcept {
 
 	if(m_impl) {
 		m_impl->moved(*this);
-		ZUAZO_BASE_LOG(*this, Severity::VERBOSE, "Move assigned");
+		ZUAZO_BASE_LOG(*this, Severity::verbose, "Move assigned");
 	}
 
 	return *this;

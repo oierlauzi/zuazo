@@ -20,22 +20,22 @@ constexpr uint32_t toVulkan(Version version) noexcept {
 constexpr vk::DebugUtilsMessageSeverityFlagsEXT toVulkan(Verbosity ver) noexcept {
 	vk::DebugUtilsMessageSeverityFlagsEXT result = {};
 
-	if((ver & Verbosity::VERBOSE) != Verbosity::SILENT)	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose;
-	if((ver & Verbosity::INFO) != Verbosity::SILENT) 	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
-	if((ver & Verbosity::WARNING) != Verbosity::SILENT)	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
-	if((ver & Verbosity::ERROR) != Verbosity::SILENT) 	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
+	if((ver & Verbosity::verbose) != Verbosity::silent)	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose;
+	if((ver & Verbosity::info) != Verbosity::silent) 	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
+	if((ver & Verbosity::warning) != Verbosity::silent)	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
+	if((ver & Verbosity::error) != Verbosity::silent) 	result |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
 
 	return result;
 }
 
 constexpr Verbosity fromVulkan(vk::DebugUtilsMessageSeverityFlagsEXT ver) noexcept {
 	constexpr auto silent = vk::DebugUtilsMessageSeverityFlagsEXT();
-	Verbosity result = Verbosity::SILENT;
+	Verbosity result = Verbosity::silent;
 
-	if((ver & vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose) != silent)	result |= Verbosity::VERBOSE;
-	if((ver & vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo) != silent)		result |= Verbosity::INFO;
-	if((ver & vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning) != silent)	result |= Verbosity::WARNING;
-	if((ver & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError) != silent)		result |= Verbosity::ERROR;
+	if((ver & vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose) != silent)	result |= Verbosity::verbose;
+	if((ver & vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo) != silent)		result |= Verbosity::info;
+	if((ver & vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning) != silent)	result |= Verbosity::warning;
+	if((ver & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError) != silent)		result |= Verbosity::error;
 	
 	
 
@@ -47,10 +47,10 @@ constexpr vk::DebugUtilsMessageSeverityFlagBitsEXT toVulkan(Severity sev) noexce
 	constexpr auto FAILURE = static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>(0);
 
 	switch(sev) {
-	case Severity::VERBOSE:	return vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose;
-	case Severity::INFO:	return vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
-	case Severity::WARNING:	return vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
-	case Severity::ERROR:	return vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
+	case Severity::verbose:	return vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose;
+	case Severity::info:	return vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
+	case Severity::warning:	return vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
+	case Severity::error:	return vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
 	default: return FAILURE;
 	}
 }
@@ -59,10 +59,10 @@ constexpr Severity fromVulkan(vk::DebugUtilsMessageSeverityFlagBitsEXT sev) noex
 	constexpr auto FAILURE = static_cast<Severity>(0);
 
 	switch(sev) {
-	case vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose:	return Severity::VERBOSE;
-	case vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo:		return Severity::INFO;
-	case vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning:	return Severity::WARNING;
-	case vk::DebugUtilsMessageSeverityFlagBitsEXT::eError:		return Severity::ERROR;
+	case vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose:	return Severity::verbose;
+	case vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo:		return Severity::info;
+	case vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning:	return Severity::warning;
+	case vk::DebugUtilsMessageSeverityFlagBitsEXT::eError:		return Severity::error;
 	default: return FAILURE;
 	}
 }
@@ -95,55 +95,55 @@ constexpr vk::Extent3D to3D(vk::Extent2D ext) noexcept {
 
 constexpr vk::SamplerYcbcrModelConversion toVulkan(ColorModel colorModel) noexcept {
 	switch(colorModel) {
-	case ColorModel::RGB:		return vk::SamplerYcbcrModelConversion::eRgbIdentity;
-	case ColorModel::BT601:		return vk::SamplerYcbcrModelConversion::eYcbcr601;
-	case ColorModel::BT709:		return vk::SamplerYcbcrModelConversion::eYcbcr709;
-	case ColorModel::BT2020:	return vk::SamplerYcbcrModelConversion::eYcbcr2020;
+	case ColorModel::rgb:		return vk::SamplerYcbcrModelConversion::eRgbIdentity;
+	case ColorModel::bt601:		return vk::SamplerYcbcrModelConversion::eYcbcr601;
+	case ColorModel::bt709:		return vk::SamplerYcbcrModelConversion::eYcbcr709;
+	case ColorModel::bt2020:	return vk::SamplerYcbcrModelConversion::eYcbcr2020;
 	default:					return static_cast<vk::SamplerYcbcrModelConversion>(-1);
 	}
 }
 
 constexpr ColorModel fromVulkan(vk::SamplerYcbcrModelConversion model) noexcept {
 	switch(model) {
-	case vk::SamplerYcbcrModelConversion::eRgbIdentity:	return ColorModel::RGB;
-	case vk::SamplerYcbcrModelConversion::eYcbcr601:	return ColorModel::BT601;
-	case vk::SamplerYcbcrModelConversion::eYcbcr709:	return ColorModel::BT709;
-	case vk::SamplerYcbcrModelConversion::eYcbcr2020:	return ColorModel::BT2020;
-	default:											return ColorModel::NONE;
+	case vk::SamplerYcbcrModelConversion::eRgbIdentity:	return ColorModel::rgb;
+	case vk::SamplerYcbcrModelConversion::eYcbcr601:	return ColorModel::bt601;
+	case vk::SamplerYcbcrModelConversion::eYcbcr709:	return ColorModel::bt709;
+	case vk::SamplerYcbcrModelConversion::eYcbcr2020:	return ColorModel::bt2020;
+	default:											return ColorModel::none;
 	}
 }
 
 
 constexpr vk::SamplerYcbcrRange toVulkan(ColorRange colorRange) noexcept {
 	switch(colorRange) {
-	case ColorRange::FULL:					return vk::SamplerYcbcrRange::eItuFull;
-	case ColorRange::ITU_NARROW_FULL_ALPHA:	return vk::SamplerYcbcrRange::eItuNarrow;
+	case ColorRange::full:					return vk::SamplerYcbcrRange::eItuFull;
+	case ColorRange::ituNarrowFullAlpha:	return vk::SamplerYcbcrRange::eItuNarrow;
 	default:								return static_cast<vk::SamplerYcbcrRange>(-1);
 	}
 }
 
 constexpr ColorRange fromVulkan(vk::SamplerYcbcrRange range) noexcept {
 	switch(range) {
-	case vk::SamplerYcbcrRange::eItuFull:	return ColorRange::FULL;
-	case vk::SamplerYcbcrRange::eItuNarrow:	return ColorRange::ITU_NARROW_FULL_ALPHA;
-	default:								return ColorRange::NONE;
+	case vk::SamplerYcbcrRange::eItuFull:	return ColorRange::full;
+	case vk::SamplerYcbcrRange::eItuNarrow:	return ColorRange::ituNarrowFullAlpha;
+	default:								return ColorRange::none;
 	}
 }
 
 
 constexpr vk::ChromaLocation toVulkan(ColorChromaLocation colorChromaLoc) noexcept {
 	switch(colorChromaLoc) {
-	case ColorChromaLocation::COSITED_0:	return vk::ChromaLocation::eCositedEven;
-	case ColorChromaLocation::MIDPOINT:		return vk::ChromaLocation::eMidpoint;
+	case ColorChromaLocation::cosited0:	return vk::ChromaLocation::eCositedEven;
+	case ColorChromaLocation::midpoint:		return vk::ChromaLocation::eMidpoint;
 	default:								return static_cast<vk::ChromaLocation>(-1);
 	}
 }
 
 constexpr ColorChromaLocation fromVulkan(vk::ChromaLocation chromaLoc) noexcept {
 	switch(chromaLoc) {
-	case vk::ChromaLocation::eCositedEven:	return ColorChromaLocation::COSITED_0;
-	case vk::ChromaLocation::eMidpoint:		return ColorChromaLocation::MIDPOINT;
-	default:								return ColorChromaLocation::NONE;
+	case vk::ChromaLocation::eCositedEven:	return ColorChromaLocation::cosited0;
+	case vk::ChromaLocation::eMidpoint:		return ColorChromaLocation::midpoint;
+	default:								return ColorChromaLocation::none;
 	}
 }
 
@@ -533,7 +533,7 @@ constexpr DepthStencilFormat fromVulkanDepthStencil(vk::Format fmt) noexcept {
 	case vk::Format::eD16UnormS8Uint:	return DepthStencilFormat::D16S8;
 	case vk::Format::eD24UnormS8Uint:	return DepthStencilFormat::D24S8;
 	case vk::Format::eD32SfloatS8Uint:	return DepthStencilFormat::D32fS8;
-	default:							return DepthStencilFormat::NONE;
+	default:							return DepthStencilFormat::none;
 	}
 }
 
@@ -542,57 +542,57 @@ constexpr DepthStencilFormat fromVulkanDepthStencil(vk::Format fmt) noexcept {
 constexpr std::tuple<ColorFormat, ColorTransferFunction> fromVulkan(vk::Format fmt) noexcept {
 	switch(fmt){
 	//4 bit formats
-	case vk::Format::eR4G4B4A4UnormPack16: 	return { ColorFormat::R4G4B4A4_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eB4G4R4A4UnormPack16: 	return { ColorFormat::B4G4R4A4_16, ColorTransferFunction::LINEAR };
+	case vk::Format::eR4G4B4A4UnormPack16: 	return { ColorFormat::R4G4B4A4_16, ColorTransferFunction::linear };
+	case vk::Format::eB4G4R4A4UnormPack16: 	return { ColorFormat::B4G4R4A4_16, ColorTransferFunction::linear };
 
 	//5 bits formats
-	case vk::Format::eR5G5B5A1UnormPack16: 	return { ColorFormat::R5G5B5A1_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eB5G5R5A1UnormPack16: 	return { ColorFormat::B5G5R5A1_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eA1R5G5B5UnormPack16: 	return { ColorFormat::A1R5G5B5_16, ColorTransferFunction::LINEAR };
+	case vk::Format::eR5G5B5A1UnormPack16: 	return { ColorFormat::R5G5B5A1_16, ColorTransferFunction::linear };
+	case vk::Format::eB5G5R5A1UnormPack16: 	return { ColorFormat::B5G5R5A1_16, ColorTransferFunction::linear };
+	case vk::Format::eA1R5G5B5UnormPack16: 	return { ColorFormat::A1R5G5B5_16, ColorTransferFunction::linear };
 
 	//6 bit formats
-	case vk::Format::eR5G6B5UnormPack16:	return { ColorFormat::R5G6B5_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eB5G6R5UnormPack16:	return { ColorFormat::B5G6R5_16, ColorTransferFunction::LINEAR };
+	case vk::Format::eR5G6B5UnormPack16:	return { ColorFormat::R5G6B5_16, ColorTransferFunction::linear };
+	case vk::Format::eB5G6R5UnormPack16:	return { ColorFormat::B5G6R5_16, ColorTransferFunction::linear };
 
 	//8bit formats
-	case vk::Format::eR8G8B8Unorm:			return { ColorFormat::R8G8B8, ColorTransferFunction::LINEAR };
-	case vk::Format::eR8G8B8Srgb:			return { ColorFormat::R8G8B8, ColorTransferFunction::IEC61966_2_1 };
-	case vk::Format::eB8G8R8Unorm:			return { ColorFormat::B8G8R8, ColorTransferFunction::LINEAR };
-	case vk::Format::eB8G8R8Srgb:			return { ColorFormat::B8G8R8, ColorTransferFunction::IEC61966_2_1 };
-	case vk::Format::eR8G8B8A8Unorm:		return { ColorFormat::R8G8B8A8, ColorTransferFunction::LINEAR };
-	case vk::Format::eR8G8B8A8Srgb:			return { ColorFormat::R8G8B8A8, ColorTransferFunction::IEC61966_2_1 };
-	case vk::Format::eB8G8R8A8Unorm:		return { ColorFormat::B8G8R8A8, ColorTransferFunction::LINEAR };
-	case vk::Format::eB8G8R8A8Srgb:			return { ColorFormat::B8G8R8A8, ColorTransferFunction::IEC61966_2_1 };
-	case vk::Format::eG8B8G8R8422Unorm:		return { ColorFormat::G8B8G8R8, ColorTransferFunction::LINEAR };
-	case vk::Format::eB8G8R8G8422Unorm:		return { ColorFormat::B8G8R8G8, ColorTransferFunction::LINEAR };
+	case vk::Format::eR8G8B8Unorm:			return { ColorFormat::R8G8B8, ColorTransferFunction::linear };
+	case vk::Format::eR8G8B8Srgb:			return { ColorFormat::R8G8B8, ColorTransferFunction::iec61966_2_1 };
+	case vk::Format::eB8G8R8Unorm:			return { ColorFormat::B8G8R8, ColorTransferFunction::linear };
+	case vk::Format::eB8G8R8Srgb:			return { ColorFormat::B8G8R8, ColorTransferFunction::iec61966_2_1 };
+	case vk::Format::eR8G8B8A8Unorm:		return { ColorFormat::R8G8B8A8, ColorTransferFunction::linear };
+	case vk::Format::eR8G8B8A8Srgb:			return { ColorFormat::R8G8B8A8, ColorTransferFunction::iec61966_2_1 };
+	case vk::Format::eB8G8R8A8Unorm:		return { ColorFormat::B8G8R8A8, ColorTransferFunction::linear };
+	case vk::Format::eB8G8R8A8Srgb:			return { ColorFormat::B8G8R8A8, ColorTransferFunction::iec61966_2_1 };
+	case vk::Format::eG8B8G8R8422Unorm:		return { ColorFormat::G8B8G8R8, ColorTransferFunction::linear };
+	case vk::Format::eB8G8R8G8422Unorm:		return { ColorFormat::B8G8R8G8, ColorTransferFunction::linear };
 
 	//10 bit formats
-	case vk::Format::eA2R10G10B10UnormPack32:	return { ColorFormat::A2R10G10B10_32, ColorTransferFunction::LINEAR };
-	case vk::Format::eA2B10G10R10UnormPack32:	return { ColorFormat::A2B10G10R10_32, ColorTransferFunction::LINEAR };
-	case vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16:		return { ColorFormat::R10X6G10X6B10X6A10X6_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16:	return { ColorFormat::G10X6B10X6G10X6R10X6_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eB10X6G10X6R10X6G10X6422Unorm4Pack16:	return { ColorFormat::B10X6G10X6R10X6G10X6_16, ColorTransferFunction::LINEAR };
+	case vk::Format::eA2R10G10B10UnormPack32:	return { ColorFormat::A2R10G10B10_32, ColorTransferFunction::linear };
+	case vk::Format::eA2B10G10R10UnormPack32:	return { ColorFormat::A2B10G10R10_32, ColorTransferFunction::linear };
+	case vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16:		return { ColorFormat::R10X6G10X6B10X6A10X6_16, ColorTransferFunction::linear };
+	case vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16:	return { ColorFormat::G10X6B10X6G10X6R10X6_16, ColorTransferFunction::linear };
+	case vk::Format::eB10X6G10X6R10X6G10X6422Unorm4Pack16:	return { ColorFormat::B10X6G10X6R10X6G10X6_16, ColorTransferFunction::linear };
 
 	//12 bit formats
-	case vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16:		return { ColorFormat::R12X4G12X4B12X4A12X4_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eG12X4B12X4G12X4R12X4422Unorm4Pack16:	return { ColorFormat::G12X4B12X4G12X4R12X4_16, ColorTransferFunction::LINEAR };
-	case vk::Format::eB12X4G12X4R12X4G12X4422Unorm4Pack16:	return { ColorFormat::B12X4G12X4R12X4G12X4_16, ColorTransferFunction::LINEAR };
+	case vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16:		return { ColorFormat::R12X4G12X4B12X4A12X4_16, ColorTransferFunction::linear };
+	case vk::Format::eG12X4B12X4G12X4R12X4422Unorm4Pack16:	return { ColorFormat::G12X4B12X4G12X4R12X4_16, ColorTransferFunction::linear };
+	case vk::Format::eB12X4G12X4R12X4G12X4422Unorm4Pack16:	return { ColorFormat::B12X4G12X4R12X4G12X4_16, ColorTransferFunction::linear };
 
 	//16 bit formats
-	case vk::Format::eR16G16B16Unorm:			return { ColorFormat::R16G16B16, ColorTransferFunction::LINEAR };
-	case vk::Format::eR16G16B16Sfloat:			return { ColorFormat::R16fG16fB16f, ColorTransferFunction::LINEAR };
-	case vk::Format::eR16G16B16A16Unorm:		return { ColorFormat::R16G16B16A16, ColorTransferFunction::LINEAR };
-	case vk::Format::eR16G16B16A16Sfloat:		return { ColorFormat::R16fG16fB16fA16f, ColorTransferFunction::LINEAR };
-	case vk::Format::eG16B16G16R16422Unorm:		return { ColorFormat::G16B16G16R16, ColorTransferFunction::LINEAR };
-	case vk::Format::eB16G16R16G16422Unorm:		return { ColorFormat::B16G16R16G16, ColorTransferFunction::LINEAR };
+	case vk::Format::eR16G16B16Unorm:			return { ColorFormat::R16G16B16, ColorTransferFunction::linear };
+	case vk::Format::eR16G16B16Sfloat:			return { ColorFormat::R16fG16fB16f, ColorTransferFunction::linear };
+	case vk::Format::eR16G16B16A16Unorm:		return { ColorFormat::R16G16B16A16, ColorTransferFunction::linear };
+	case vk::Format::eR16G16B16A16Sfloat:		return { ColorFormat::R16fG16fB16fA16f, ColorTransferFunction::linear };
+	case vk::Format::eG16B16G16R16422Unorm:		return { ColorFormat::G16B16G16R16, ColorTransferFunction::linear };
+	case vk::Format::eB16G16R16G16422Unorm:		return { ColorFormat::B16G16R16G16, ColorTransferFunction::linear };
 
 	//32 bit formats
-	case vk::Format::eR32G32B32Sfloat:		return { ColorFormat::R32fG32fB32f, ColorTransferFunction::LINEAR };
-	case vk::Format::eR32G32B32A32Sfloat:	return { ColorFormat::R32fG32fB32fA32f, ColorTransferFunction::LINEAR };
+	case vk::Format::eR32G32B32Sfloat:		return { ColorFormat::R32fG32fB32f, ColorTransferFunction::linear };
+	case vk::Format::eR32G32B32A32Sfloat:	return { ColorFormat::R32fG32fB32fA32f, ColorTransferFunction::linear };
 
 	//64 bit formats
-	case vk::Format::eR64G64B64Sfloat:		return { ColorFormat::R64fG64fB64f, ColorTransferFunction::LINEAR };
-	case vk::Format::eR64G64B64A64Sfloat:	return { ColorFormat::R64fG64fB64fA64f, ColorTransferFunction::LINEAR };
+	case vk::Format::eR64G64B64Sfloat:		return { ColorFormat::R64fG64fB64f, ColorTransferFunction::linear };
+	case vk::Format::eR64G64B64A64Sfloat:	return { ColorFormat::R64fG64fB64fA64f, ColorTransferFunction::linear };
 
 	default: return {};
 	}
@@ -1015,42 +1015,42 @@ constexpr vk::ComponentMapping swizzle(std::string_view vulkanFromat, std::strin
 
 constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction enc) noexcept {
 	switch(enc){
-	case ColorTransferFunction::LINEAR:
+	case ColorTransferFunction::linear:
 		//Linear encoding
 		switch(prim){
-		case ColorPrimaries::BT709: 		return vk::ColorSpaceKHR::eBt709LinearEXT;
-		case ColorPrimaries::BT2020:		return vk::ColorSpaceKHR::eBt2020LinearEXT;
-		case ColorPrimaries::SMPTE432:		return vk::ColorSpaceKHR::eDisplayP3LinearEXT;
-		case ColorPrimaries::ADOBE_RGB:		return vk::ColorSpaceKHR::eAdobergbLinearEXT;
+		case ColorPrimaries::bt709: 		return vk::ColorSpaceKHR::eBt709LinearEXT;
+		case ColorPrimaries::bt2020:		return vk::ColorSpaceKHR::eBt2020LinearEXT;
+		case ColorPrimaries::smpte432:		return vk::ColorSpaceKHR::eDisplayP3LinearEXT;
+		case ColorPrimaries::adobeRGB:		return vk::ColorSpaceKHR::eAdobergbLinearEXT;
 		default: break;
 		}
 		break;
-	case ColorTransferFunction::BT1886:
-		//IEC61966_2_1 non linear encoding
+	case ColorTransferFunction::bt1886:
+		//iec61966_2_1 non linear encoding
 		switch(prim){
-		case ColorPrimaries::BT709: 		return vk::ColorSpaceKHR::eBt709NonlinearEXT;
+		case ColorPrimaries::bt709: 		return vk::ColorSpaceKHR::eBt709NonlinearEXT;
 		default: break;
 		}
 		break;
-	case ColorTransferFunction::IEC61966_2_1:
-		//IEC61966_2_1 non linear encoding
+	case ColorTransferFunction::iec61966_2_1:
+		//iec61966_2_1 non linear encoding
 		switch(prim){
-		case ColorPrimaries::IEC61966_2_1: 	return vk::ColorSpaceKHR::eSrgbNonlinear;
-		case ColorPrimaries::SMPTE432:		return vk::ColorSpaceKHR::eDisplayP3NonlinearEXT;
+		case ColorPrimaries::iec61966_2_1: 	return vk::ColorSpaceKHR::eSrgbNonlinear;
+		case ColorPrimaries::smpte432:		return vk::ColorSpaceKHR::eDisplayP3NonlinearEXT;
 		default: break;
 		}
 		break;
-	case ColorTransferFunction::SMPTE2084:
-		//IEC61966_2_1 non linear encoding
+	case ColorTransferFunction::smpte2084:
+		//iec61966_2_1 non linear encoding
 		switch(prim){
-		case ColorPrimaries::BT2020: 		return vk::ColorSpaceKHR::eHdr10St2084EXT;
+		case ColorPrimaries::bt2020: 		return vk::ColorSpaceKHR::eHdr10St2084EXT;
 		default: break;
 		}
 		break;
-	case ColorTransferFunction::ARIB_STD_B67:
-		//IEC61966_2_1 non linear encoding
+	case ColorTransferFunction::aribStdB67:
+		//iec61966_2_1 non linear encoding
 		switch(prim){
-		case ColorPrimaries::BT2020: 		return vk::ColorSpaceKHR::eHdr10HlgEXT;
+		case ColorPrimaries::bt2020: 		return vk::ColorSpaceKHR::eHdr10HlgEXT;
 		default: break;
 		}
 		break;
@@ -1064,23 +1064,23 @@ constexpr vk::ColorSpaceKHR toVulkan(ColorPrimaries prim, ColorTransferFunction 
 constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::ColorSpaceKHR space) noexcept {
 	switch(space){
 
-	case vk::ColorSpaceKHR::eSrgbNonlinear:				return { ColorPrimaries::IEC61966_2_1, 	ColorTransferFunction::IEC61966_2_1 };
-	case vk::ColorSpaceKHR::eDisplayP3NonlinearEXT:		return { ColorPrimaries::SMPTE432, 		ColorTransferFunction::IEC61966_2_1 };
+	case vk::ColorSpaceKHR::eSrgbNonlinear:				return { ColorPrimaries::iec61966_2_1, 	ColorTransferFunction::iec61966_2_1 };
+	case vk::ColorSpaceKHR::eDisplayP3NonlinearEXT:		return { ColorPrimaries::smpte432, 		ColorTransferFunction::iec61966_2_1 };
 	//case vk::ColorSpaceKHR::eExtendedSrgbLinearEXT:	return {}; /*NOT SUPPORTED*/
-	case vk::ColorSpaceKHR::eDisplayP3LinearEXT:		return { ColorPrimaries::SMPTE432, 		ColorTransferFunction::LINEAR };
+	case vk::ColorSpaceKHR::eDisplayP3LinearEXT:		return { ColorPrimaries::smpte432, 		ColorTransferFunction::linear };
 	//case vk::ColorSpaceKHR::eDciP3NonlinearEXT:		return {}; /*NOT SUPPORTED: XYZ model expected*/
-	case vk::ColorSpaceKHR::eBt709LinearEXT:			return { ColorPrimaries::BT709, 		ColorTransferFunction::LINEAR };
-	case vk::ColorSpaceKHR::eBt709NonlinearEXT:			return { ColorPrimaries::BT709, 		ColorTransferFunction::BT1886 };
-	case vk::ColorSpaceKHR::eBt2020LinearEXT:			return { ColorPrimaries::BT2020, 		ColorTransferFunction::LINEAR };
-	case vk::ColorSpaceKHR::eHdr10St2084EXT:			return { ColorPrimaries::BT2020, 		ColorTransferFunction::SMPTE2084 };
+	case vk::ColorSpaceKHR::eBt709LinearEXT:			return { ColorPrimaries::bt709, 		ColorTransferFunction::linear };
+	case vk::ColorSpaceKHR::eBt709NonlinearEXT:			return { ColorPrimaries::bt709, 		ColorTransferFunction::bt1886 };
+	case vk::ColorSpaceKHR::eBt2020LinearEXT:			return { ColorPrimaries::bt2020, 		ColorTransferFunction::linear };
+	case vk::ColorSpaceKHR::eHdr10St2084EXT:			return { ColorPrimaries::bt2020, 		ColorTransferFunction::smpte2084 };
 	//case vk::ColorSpaceKHR::eDolbyvisionEXT:			return {}; /*NOT SUPPORTED*/
-	case vk::ColorSpaceKHR::eHdr10HlgEXT:				return { ColorPrimaries::BT2020, 		ColorTransferFunction::ARIB_STD_B67 };
-	case vk::ColorSpaceKHR::eAdobergbLinearEXT:			return { ColorPrimaries::ADOBE_RGB, 	ColorTransferFunction::LINEAR };
-	case vk::ColorSpaceKHR::eAdobergbNonlinearEXT:		return { ColorPrimaries::ADOBE_RGB, 	ColorTransferFunction::GAMMA22 };
+	case vk::ColorSpaceKHR::eHdr10HlgEXT:				return { ColorPrimaries::bt2020, 		ColorTransferFunction::aribStdB67 };
+	case vk::ColorSpaceKHR::eAdobergbLinearEXT:			return { ColorPrimaries::adobeRGB, 		ColorTransferFunction::linear };
+	case vk::ColorSpaceKHR::eAdobergbNonlinearEXT:		return { ColorPrimaries::adobeRGB, 		ColorTransferFunction::gamma22 };
 	//case vk::ColorSpaceKHR::ePassThroughEXT:			return {}; /*NOT SUPPORTED*/
 	//case vk::ColorSpaceKHR::eExtendedSrgbNonlinearEXT:return {}; /*NOT SUPPORTED*/
 	//case vk::ColorSpaceKHR::eDisplayNativeAMD:		return {}; /*NOT SUPPORTED*/
-	//case vk::ColorSpaceKHR::eVkColorspaceSrgbNonlinear:return { ColorPrimaries::BT709, 	ColorTransferFunction::IEC61966_2_1 };	
+	//case vk::ColorSpaceKHR::eVkColorspaceSrgbNonlinear:return { ColorPrimaries::bt709, 	ColorTransferFunction::iec61966_2_1 };	
 	//case vk::ColorSpaceKHR::eDciP3LinearEXT:			return {}; /*NOT SUPPORTED: wrongly named as DisplayP3*/
 	default: 											return {};
 	}
@@ -1090,19 +1090,19 @@ constexpr std::tuple<ColorPrimaries, ColorTransferFunction> fromVulkan(vk::Color
 
 constexpr vk::Filter toVulkan(ScalingFilter filt) noexcept {
 	switch(filt){
-	case ScalingFilter::NEAREST: return vk::Filter::eNearest;
-	case ScalingFilter::LINEAR: return vk::Filter::eLinear;
-	case ScalingFilter::CUBIC: return vk::Filter::eCubicEXT;
+	case ScalingFilter::nearest: return vk::Filter::eNearest;
+	case ScalingFilter::linear: return vk::Filter::eLinear;
+	case ScalingFilter::cubic: return vk::Filter::eCubicEXT;
 	default: return static_cast<vk::Filter>(-1);
 	}
 }
 
 constexpr ScalingFilter fromVulkan(vk::Filter filt) noexcept {
 	switch(filt){
-	case vk::Filter::eNearest: return ScalingFilter::NEAREST;
-	case vk::Filter::eLinear: return ScalingFilter::LINEAR;
-	case vk::Filter::eCubicEXT: return ScalingFilter::CUBIC;
-	default: return ScalingFilter::NONE;
+	case vk::Filter::eNearest: return ScalingFilter::nearest;
+	case vk::Filter::eLinear: return ScalingFilter::linear;
+	case vk::Filter::eCubicEXT: return ScalingFilter::cubic;
+	default: return ScalingFilter::none;
 	}
 }
 
@@ -1147,7 +1147,7 @@ constexpr vk::PipelineColorBlendAttachmentState getBlendingConfiguration(Blendin
 
 
 	switch(mode) {
-	case BlendingMode::WRITE:
+	case BlendingMode::write:
 		return vk::PipelineColorBlendAttachmentState(
 			false, //Don't blend
 			vk::BlendFactor::eOne,
@@ -1158,7 +1158,7 @@ constexpr vk::PipelineColorBlendAttachmentState getBlendingConfiguration(Blendin
 			vk::BlendOp::eAdd,
 			colorWriteMask
 		);
-	case BlendingMode::OPACITY:
+	case BlendingMode::opacity:
 		return vk::PipelineColorBlendAttachmentState(
 			true,
 			vk::BlendFactor::eOne,
@@ -1169,7 +1169,7 @@ constexpr vk::PipelineColorBlendAttachmentState getBlendingConfiguration(Blendin
 			vk::BlendOp::eAdd,
 			colorWriteMask
 		);
-	case BlendingMode::ADD:
+	case BlendingMode::add:
 		return vk::PipelineColorBlendAttachmentState(
 			true,
 			vk::BlendFactor::eOne,
@@ -1180,29 +1180,29 @@ constexpr vk::PipelineColorBlendAttachmentState getBlendingConfiguration(Blendin
 			vk::BlendOp::eAdd,
 			colorWriteMask
 		);
-	case BlendingMode::DIFFERENCE:
+	case BlendingMode::differenceInv:
 		return vk::PipelineColorBlendAttachmentState(
 			true,
 			vk::BlendFactor::eOne,
 			vk::BlendFactor::eOne,
-			vk::BlendOp::eReverseSubtract, //Contrary to our notation
+			vk::BlendOp::eReverseSubtract,
 			vk::BlendFactor::eOne,
 			vk::BlendFactor::eOne,
-			vk::BlendOp::eReverseSubtract, //Contrary to our notation
+			vk::BlendOp::eReverseSubtract,
 			colorWriteMask
 		);
-	case BlendingMode::DIFFERENCE_1:
+	case BlendingMode::difference:
 		return vk::PipelineColorBlendAttachmentState(
 			true,
 			vk::BlendFactor::eOne,
 			vk::BlendFactor::eOne,
-			vk::BlendOp::eSubtract, //Contrary to our notation
+			vk::BlendOp::eSubtract,
 			vk::BlendFactor::eOne,
 			vk::BlendFactor::eOne,
-			vk::BlendOp::eSubtract, //Contrary to our notation
+			vk::BlendOp::eSubtract,
 			colorWriteMask
 		);
-	case BlendingMode::DARKEN:
+	case BlendingMode::darken:
 		return vk::PipelineColorBlendAttachmentState(
 			true,
 			vk::BlendFactor::eOne,
@@ -1213,7 +1213,7 @@ constexpr vk::PipelineColorBlendAttachmentState getBlendingConfiguration(Blendin
 			vk::BlendOp::eMin,
 			colorWriteMask
 		);
-	case BlendingMode::LIGHTEN:
+	case BlendingMode::lighten:
 		return vk::PipelineColorBlendAttachmentState(
 			true,
 			vk::BlendFactor::eOne,
@@ -1224,7 +1224,7 @@ constexpr vk::PipelineColorBlendAttachmentState getBlendingConfiguration(Blendin
 			vk::BlendOp::eMax,
 			colorWriteMask
 		);
-	case BlendingMode::MULTIPLY:
+	case BlendingMode::multiply:
 		return vk::PipelineColorBlendAttachmentState(
 			true,
 			vk::BlendFactor::eDstColor,
@@ -1235,7 +1235,7 @@ constexpr vk::PipelineColorBlendAttachmentState getBlendingConfiguration(Blendin
 			vk::BlendOp::eAdd,
 			colorWriteMask
 		);
-	case BlendingMode::SCREEN:
+	case BlendingMode::screen:
 		return vk::PipelineColorBlendAttachmentState(
 			true,
 			vk::BlendFactor::eOne,
@@ -1252,7 +1252,7 @@ constexpr vk::PipelineColorBlendAttachmentState getBlendingConfiguration(Blendin
 }
 
 constexpr vk::PipelineDepthStencilStateCreateInfo getDepthStencilConfiguration(RenderingLayer layer) noexcept {
-	const auto enableDepthTesting = (layer == RenderingLayer::SCENE);
+	const auto enableDepthTesting = (layer == RenderingLayer::scene);
 	return vk::PipelineDepthStencilStateCreateInfo(
 		{},													//Flags
 		enableDepthTesting, enableDepthTesting, 			//Depth test enable, write

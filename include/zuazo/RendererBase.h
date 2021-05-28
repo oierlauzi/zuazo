@@ -92,12 +92,12 @@ private:
 class RendererBase::Camera {
 public:
 	enum class Projection {
-		ORTHOGONAL,
-		FRUSTUM
+		orthogonal,
+		frustum
 	};
 
 	explicit Camera(const Math::Transformf& trf = Math::Transformf(),
-					Projection projection		= Projection::ORTHOGONAL,
+					Projection projection		= Projection::orthogonal,
 					float nearClip				= -10e3,
 					float farClip 				= +10e3,
 					float fov					= 0.0f ); // FOV Unused for orthogonal

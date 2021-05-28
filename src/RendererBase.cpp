@@ -293,7 +293,7 @@ private:
 			//Prioritize background, then scene and finally foreground
 			result = static_cast<int>(a.getRenderingLayer()) < static_cast<int>(b.getRenderingLayer());
 
-		} else if(a.getRenderingLayer() == RenderingLayer::SCENE) {
+		} else if(a.getRenderingLayer() == RenderingLayer::scene) {
 			const auto aHasBlending = a.hasBlending();
 			const auto bHasBlending = b.hasBlending();
 

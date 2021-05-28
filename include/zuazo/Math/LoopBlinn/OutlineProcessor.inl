@@ -157,7 +157,7 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 		const auto baseIndex = m_vertices.size();
 		const auto bezierTriangulation = m_segmentTriangulator(
 			m_ccwContour.getSegment(i),
-			FillSide::LEFT,				//We are CCW, so the inner side is to the left
+			FillSide::left,				//We are CCW, so the inner side is to the left
 			baseIndex,
 			m_primitiveRestartIndex
 		);
@@ -168,14 +168,14 @@ inline void OutlineProcessor<T, I>::addContour(const contour_type& contour) {
 		//The last one will be provided by the next segment.
 		for(size_t j = 0; j < vertices.size(); ++j) {
 			const auto& vertexData = vertices[j];
-			if(vertexData.type == VertexType::FIRST || vertexData.type == VertexType::CONTROL_PROTRUDING) {
+			if(vertexData.type == VertexType::first || vertexData.type == VertexType::controlProtruding) {
 				//Add the vertex to the inner hull
 				m_innerHull.lineTo(vertexData.vertex.pos);
 				
 				//Add its reference to reference it from the inner hull
 				/*const auto vertexIndex = baseIndex + j; //TODO uncomment when solved
 				const auto helperIndex = vertexData.helperIndex;
-				if(vertexData.type == VertexType::FIRST) {
+				if(vertexData.type == VertexType::first) {
 					//This is the first vertex, which has 2 references.
 					//Note that the first one will be incorrect, as it 
 					//actually refers to the last one. We'll correct it 

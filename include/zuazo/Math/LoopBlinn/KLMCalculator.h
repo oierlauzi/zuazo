@@ -7,12 +7,12 @@
 
 namespace Zuazo::Math::LoopBlinn {
 
-enum DegeneratedCurveType {
-	UNKNOWN = -1,
-	POINT,
-	LINE,
-	QUADRATIC,
-	CUBIC,	
+enum class DegeneratedCurveType {
+	unknown = -1,
+	point,
+	line,
+	quadratic,
+	cubic,	
 };
 
 template<typename T>
@@ -25,7 +25,7 @@ struct KLMCalculator {
 	struct Result {
 		constexpr Result(	const std::array<klm_type, curve_type::size()>& values = {},
 							value_type subdivisionParameter = std::numeric_limits<value_type>::quiet_NaN(),
-							DegeneratedCurveType degeneratedType = DegeneratedCurveType::UNKNOWN,
+							DegeneratedCurveType degeneratedType = DegeneratedCurveType::unknown,
 							bool reverse = false ) noexcept;
 
 		std::array<klm_type, curve_type::size()>values;	

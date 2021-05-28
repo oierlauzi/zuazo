@@ -29,13 +29,13 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(const c
 	Result result;
 
 	switch (c.type) {
-	case CurveType::POINT: {
-		result.degeneratedType = DegeneratedCurveType::POINT;
+	case CurveType::point: {
+		result.degeneratedType = DegeneratedCurveType::point;
 
 		break;
 	}
-	case CurveType::LINE: {
-		result.degeneratedType = DegeneratedCurveType::LINE;
+	case CurveType::line: {
+		result.degeneratedType = DegeneratedCurveType::line;
 
 		constexpr auto NOT_USED = std::numeric_limits<value_type>::quiet_NaN();
 		result.values = {
@@ -49,8 +49,8 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(const c
 
 		break;
 	}
-	case CurveType::QUADRATIC: {
-		result.degeneratedType = DegeneratedCurveType::QUADRATIC;
+	case CurveType::quadratic: {
+		result.degeneratedType = DegeneratedCurveType::quadratic;
 
 		constexpr auto THIRD = value_type(1) / value_type(3);
 		result.values = {
@@ -64,8 +64,8 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(const c
 
 		break;
 	}
-	case CurveType::SERPENTINE: {
-		result.degeneratedType = DegeneratedCurveType::CUBIC;
+	case CurveType::serpentine: {
+		result.degeneratedType = DegeneratedCurveType::cubic;
 
 		assert(c.discriminantTerm1 >= 0); //To avoid NaNs
 		const auto sqrt3DiscTerm1 = sqrt(3*c.discriminantTerm1);
@@ -104,8 +104,8 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(const c
 
 		break;
 	}
-	case CurveType::CUSP: {
-		result.degeneratedType = DegeneratedCurveType::CUBIC;
+	case CurveType::cusp: {
+		result.degeneratedType = DegeneratedCurveType::cubic;
 
 		const auto ls = c.d3;
 		const auto lt = 3*c.d2;
@@ -138,8 +138,8 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(const c
 
 		break;
 	}
-	case CurveType::LOOP: {
-		result.degeneratedType = DegeneratedCurveType::CUBIC;
+	case CurveType::loop: {
+		result.degeneratedType = DegeneratedCurveType::cubic;
 
 		assert(c.discriminantTerm1 < 0); //To avoid NaNs
 		const auto sqrtDisc = sqrt(-c.discriminantTerm1);
@@ -197,7 +197,7 @@ constexpr typename KLMCalculator<T>::Result KLMCalculator<T>::operator()(const c
 		break;
 	}
 
-	assert(result.degeneratedType != DegeneratedCurveType::UNKNOWN);
+	assert(result.degeneratedType != DegeneratedCurveType::unknown);
 	return result;
 }
 

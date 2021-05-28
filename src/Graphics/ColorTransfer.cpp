@@ -47,8 +47,9 @@ constexpr int32_t getPlaneFormat(ColorFormat format) noexcept {
 
 constexpr int32_t getColorRange(ColorRange range, ColorModel model) noexcept {
 	switch(range){
-	case ColorRange::ITU_NARROW: 		return isYCbCr(model) ? ct_COLOR_RANGE_ITU_NARROW_YCBCR : ct_COLOR_RANGE_ITU_NARROW_RGB;
-	default: /*ColorRange::FULL*/		return isYCbCr(model) ? ct_COLOR_RANGE_FULL_YCBCR : ct_COLOR_RANGE_FULL_RGB;
+	case ColorRange::ituNarrow: 		return isYCbCr(model) ? ct_COLOR_RANGE_ITU_NARROW_YCBCR : ct_COLOR_RANGE_ITU_NARROW_RGB;
+	case ColorRange::ituNarrowFullAlpha:return isYCbCr(model) ? ct_COLOR_RANGE_ITU_NARROW_FULL_ALPHA_YCBCR : ct_COLOR_RANGE_ITU_NARROW_FULL_ALPHA_RGB;
+	default: /*ColorRange::full*/		return isYCbCr(model) ? ct_COLOR_RANGE_FULL_YCBCR : ct_COLOR_RANGE_FULL_RGB;
 	}
 }
 
@@ -64,15 +65,15 @@ constexpr int32_t getColorModel(ColorModel model) {
 
 constexpr int32_t getColorTransferFunction(ColorTransferFunction transferFunction) noexcept {
 	switch(transferFunction){		
-	case ColorTransferFunction::BT1886:			return ct_COLOR_TRANSFER_FUNCTION_BT1886;
-	case ColorTransferFunction::GAMMA22:		return ct_COLOR_TRANSFER_FUNCTION_GAMMA22;
-	case ColorTransferFunction::GAMMA26:		return ct_COLOR_TRANSFER_FUNCTION_GAMMA26;
-	case ColorTransferFunction::GAMMA28:		return ct_COLOR_TRANSFER_FUNCTION_GAMMA28;
-	case ColorTransferFunction::IEC61966_2_1:	return ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_1;
-	case ColorTransferFunction::IEC61966_2_4:	return ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_4;
-	case ColorTransferFunction::SMPTE240M:		return ct_COLOR_TRANSFER_FUNCTION_SMPTE240M;
-	case ColorTransferFunction::SMPTE2084:		return ct_COLOR_TRANSFER_FUNCTION_SMPTE2084;
-	case ColorTransferFunction::ARIB_STD_B67:	return ct_COLOR_TRANSFER_FUNCTION_ARIB_STD_B67;
+	case ColorTransferFunction::bt1886:			return ct_COLOR_TRANSFER_FUNCTION_BT1886;
+	case ColorTransferFunction::gamma22:		return ct_COLOR_TRANSFER_FUNCTION_GAMMA22;
+	case ColorTransferFunction::gamma26:		return ct_COLOR_TRANSFER_FUNCTION_GAMMA26;
+	case ColorTransferFunction::gamma28:		return ct_COLOR_TRANSFER_FUNCTION_GAMMA28;
+	case ColorTransferFunction::iec61966_2_1:	return ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_1;
+	case ColorTransferFunction::iec61966_2_4:	return ct_COLOR_TRANSFER_FUNCTION_IEC61966_2_4;
+	case ColorTransferFunction::smpte240M:		return ct_COLOR_TRANSFER_FUNCTION_SMPTE240M;
+	case ColorTransferFunction::smpte2084:		return ct_COLOR_TRANSFER_FUNCTION_SMPTE2084;
+	case ColorTransferFunction::aribStdB67:	return ct_COLOR_TRANSFER_FUNCTION_ARIB_STD_B67;
 	default: /*ColorTransferFunction::LINEAR*/	return ct_COLOR_TRANSFER_FUNCTION_LINEAR;
 	}
 }
@@ -80,7 +81,7 @@ constexpr int32_t getColorTransferFunction(ColorTransferFunction transferFunctio
 constexpr float getChromaOffset(ColorChromaLocation location, size_t size) {
 	float result = 0.0f;
 
-	if(location == ColorChromaLocation::MIDPOINT) {
+	if(location == ColorChromaLocation::midpoint) {
 		result = 0.5f / size;
 	}
 

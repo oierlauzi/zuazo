@@ -9,12 +9,12 @@
 namespace Zuazo::Utils {
 
 enum class LimitType {
-	NONE,
-	MUST_BE,
-	DISCRETE,
-	DISCRETE_RANGE,
-	RANGE,
-	ANY
+	none,
+	mustBe,
+	discrete,
+	discreteRange,
+	range,
+	any
 };
 
 

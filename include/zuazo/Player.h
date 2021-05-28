@@ -10,7 +10,7 @@ class Player {
 public:
 	Player(	Instance& instance, 
 			ClipBase* clip = nullptr,
-			Instance::Priority priority = Instance::PLAYER_PRIORITY);
+			Instance::Priority priority = Instance::playerPriority);
 	Player(const Player& other) = delete;
 	Player(Player&& other);
 	~Player();

@@ -34,8 +34,8 @@ struct LayerBase::Impl {
 			RenderPassCallback renderPassCbk )
 		: transform()
 		, opacity(1.0f)
-		, blendingMode(BlendingMode::OPACITY)
-		, renderingLayer(RenderingLayer::SCENE)
+		, blendingMode(BlendingMode::opacity)
+		, renderingLayer(RenderingLayer::scene)
 		, renderPass()
 		, transformCallback(std::move(transformCbk))
 		, opacityCallback(std::move(opacityCbk))
@@ -102,13 +102,13 @@ struct LayerBase::Impl {
 	bool hasBlending(const LayerBase& base) const {
 		bool result;
 
-		if(blendingMode == BlendingMode::NONE) {
+		if(blendingMode == BlendingMode::none) {
 			//This blending mode does not write anything, so it can be considered as alphaless
 			result = false;
-		} else if(blendingMode == BlendingMode::WRITE) {
+		} else if(blendingMode == BlendingMode::write) {
 			//This blending mode overwrites the framebuffer, so it can be considered as alphaless
 			result = false;
-		} else if(blendingMode == BlendingMode::OPACITY) {
+		} else if(blendingMode == BlendingMode::opacity) {
 			//This blending mode will overwrite the framebuffer for alpha == 1
 			if(opacity != 1) {
 				result = true;
@@ -229,16 +229,16 @@ private:
 		//with an alpha value of zero, the framebuffer will not be
 		//altered. Demonstration of each format on its comment.
 		constexpr std::array<BlendingMode, 4> A0_NOPS = {
-			BlendingMode::OPACITY,			//C = C_src * 0 + C_dst * (1 - 0) = C_dst
-			BlendingMode::ADD,				//C = C_src * 0 + C_dst = C_dst
-			BlendingMode::DIFFERENCE,		//C = C_dst - C_src * 0 = C_dst
-			BlendingMode::SCREEN			//C = C_src * 0 + C_dst * (1 - C_src * 0) = C_dst
+			BlendingMode::opacity,			//C = C_src * 0 + C_dst * (1 - 0) = C_dst
+			BlendingMode::add,				//C = C_src * 0 + C_dst = C_dst
+			BlendingMode::differenceInv,	//C = C_dst - C_src * 0 = C_dst
+			BlendingMode::screen			//C = C_src * 0 + C_dst * (1 - C_src * 0) = C_dst
 		};
 
 		//For binary search:
 		assert(std::is_sorted(A0_NOPS.cbegin(), A0_NOPS.cend()));
 
-		if(blendingMode == BlendingMode::NONE) {
+		if(blendingMode == BlendingMode::none) {
 			//Write is disabled
 			result = false;
 		} else if(opacity == 0.0f && std::binary_search(A0_NOPS.cbegin(), A0_NOPS.cend(), blendingMode)) {

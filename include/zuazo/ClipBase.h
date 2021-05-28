@@ -14,14 +14,14 @@ public:
 	using RefreshCallback = std::function<void(ClipBase&)>;
 
 	enum class State {
-		PAUSED,
-		PLAYING,
+		paused,
+		playing,
 	};
 
 	enum class Repeat {
-		NONE = -1,
-		REPEAT,
-		PING_PONG
+		none = -1,
+		repeat,
+		pingPong
 	};
 
 	ClipBase(	Duration duration = {},
@@ -105,14 +105,14 @@ struct EnumTraits;
 
 template<>
 struct EnumTraits<ClipBase::State> {
-	static constexpr ClipBase::State first() noexcept { return ClipBase::State::PAUSED; }
-	static constexpr ClipBase::State last() noexcept { return ClipBase::State::PLAYING; }
+	static constexpr ClipBase::State first() noexcept { return ClipBase::State::paused; }
+	static constexpr ClipBase::State last() noexcept { return ClipBase::State::playing; }
 };
 
 template<>
 struct EnumTraits<ClipBase::Repeat> {
-	static constexpr ClipBase::Repeat first() noexcept { return ClipBase::Repeat::REPEAT; }
-	static constexpr ClipBase::Repeat last() noexcept { return ClipBase::Repeat::PING_PONG; }
+	static constexpr ClipBase::Repeat first() noexcept { return ClipBase::Repeat::repeat; }
+	static constexpr ClipBase::Repeat last() noexcept { return ClipBase::Repeat::pingPong; }
 };
 
 }

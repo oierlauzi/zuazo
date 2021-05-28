@@ -7,129 +7,129 @@ namespace Zuazo {
 constexpr std::string_view toString(KeyboardKey key) noexcept {
 	switch(key){
 
-	case KeyboardKey::SPACE:			return " ";
-	case KeyboardKey::APOSTROPHE:		return "\'";
-	case KeyboardKey::COMMA:			return ",";
-	case KeyboardKey::MINUS:			return "-";
-	case KeyboardKey::PERIOD:			return ".";
-	case KeyboardKey::SLASH:			return "/";
-	case KeyboardKey::NB0:				return "0";
-	case KeyboardKey::NB1:				return "1";
-	case KeyboardKey::NB2:				return "2";
-	case KeyboardKey::NB3:				return "3";
-	case KeyboardKey::NB4:				return "4";
-	case KeyboardKey::NB5:				return "5";
-	case KeyboardKey::NB6:				return "6";
-	case KeyboardKey::NB7:				return "7";
-	case KeyboardKey::NB8:				return "8";
-	case KeyboardKey::NB9:				return "9";
-	case KeyboardKey::SEMICOLON:		return ";";
-	case KeyboardKey::EQUAL:			return "=";
-	case KeyboardKey::A:				return "A";
-	case KeyboardKey::B:				return "B";
-	case KeyboardKey::C:				return "C";
-	case KeyboardKey::D:				return "D";
-	case KeyboardKey::E:				return "E";
-	case KeyboardKey::F:				return "F";
-	case KeyboardKey::G:				return "G";
-	case KeyboardKey::H:				return "H";
-	case KeyboardKey::I:				return "I";
-	case KeyboardKey::J:				return "J";
-	case KeyboardKey::K:				return "K";
-	case KeyboardKey::L:				return "L";
-	case KeyboardKey::M:				return "M";
-	case KeyboardKey::N:				return "N";
-	case KeyboardKey::O:				return "O";
-	case KeyboardKey::P:				return "P";
-	case KeyboardKey::Q:				return "Q";
-	case KeyboardKey::R:				return "R";
-	case KeyboardKey::S:				return "S";
-	case KeyboardKey::T:				return "T";
-	case KeyboardKey::U:				return "U";
-	case KeyboardKey::V:				return "V";
-	case KeyboardKey::W:				return "W";
-	case KeyboardKey::X:				return "X";
-	case KeyboardKey::Y:				return "Y";
-	case KeyboardKey::Z:				return "Z";
-	case KeyboardKey::LEFT_BRACKET:		return "[";
-	case KeyboardKey::BACKSLASH:		return "\\";
-	case KeyboardKey::RIGHT_BRACKET:	return "]";
-	case KeyboardKey::GRAVE_ACCENT:		return "`";
+	case KeyboardKey::space:			return " ";
+	case KeyboardKey::apostrophe:		return "\'";
+	case KeyboardKey::comma:			return ",";
+	case KeyboardKey::minus:			return "-";
+	case KeyboardKey::period:			return ".";
+	case KeyboardKey::slash:			return "/";
+	case KeyboardKey::nb0:				return "0";
+	case KeyboardKey::nb1:				return "1";
+	case KeyboardKey::nb2:				return "2";
+	case KeyboardKey::nb3:				return "3";
+	case KeyboardKey::nb4:				return "4";
+	case KeyboardKey::nb5:				return "5";
+	case KeyboardKey::nb6:				return "6";
+	case KeyboardKey::nb7:				return "7";
+	case KeyboardKey::nb8:				return "8";
+	case KeyboardKey::nb9:				return "9";
+	case KeyboardKey::semicolon:		return ";";
+	case KeyboardKey::equal:			return "=";
+	case KeyboardKey::a:				return "A";
+	case KeyboardKey::b:				return "B";
+	case KeyboardKey::c:				return "C";
+	case KeyboardKey::d:				return "D";
+	case KeyboardKey::e:				return "E";
+	case KeyboardKey::f:				return "F";
+	case KeyboardKey::g:				return "G";
+	case KeyboardKey::h:				return "H";
+	case KeyboardKey::i:				return "I";
+	case KeyboardKey::j:				return "J";
+	case KeyboardKey::k:				return "K";
+	case KeyboardKey::l:				return "L";
+	case KeyboardKey::m:				return "M";
+	case KeyboardKey::n:				return "N";
+	case KeyboardKey::o:				return "O";
+	case KeyboardKey::p:				return "P";
+	case KeyboardKey::q:				return "Q";
+	case KeyboardKey::r:				return "R";
+	case KeyboardKey::s:				return "S";
+	case KeyboardKey::t:				return "T";
+	case KeyboardKey::u:				return "U";
+	case KeyboardKey::v:				return "V";
+	case KeyboardKey::w:				return "W";
+	case KeyboardKey::x:				return "X";
+	case KeyboardKey::y:				return "Y";
+	case KeyboardKey::z:				return "Z";
+	case KeyboardKey::leftBracket:		return "[";
+	case KeyboardKey::backSlash:		return "\\";
+	case KeyboardKey::rightBracket:		return "]";
+	case KeyboardKey::graveAccent:		return "`";
 
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, ESCAPE)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, ENTER)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, TAB)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, BACKSPACE)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, INSERT)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, DELETE)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, RIGHT)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, LEFT)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, DOWN)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, UP)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, PAGE_UP)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, PAGE_DOWN)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, HOME)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, END)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, escape)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, enter)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, tab)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, backspace)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, insert)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, del)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, right)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, left)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, down)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, up)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, pageUp)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, pageDown)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, home)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, end)
 
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, CAPS_LOCK)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, SCROLL_LOCK)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, NUM_LOCK)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, PRINT_SCREEN)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, PAUSE)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, capsLock)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, scrollLock)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, numLock)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, printScreen)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, pause)
 
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F1)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F2)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F3)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F4)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F5)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F6)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F7)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F8)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F9)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F10)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F11)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F12)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F13)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F14)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F15)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F16)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F17)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F18)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F19)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F20)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F21)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F22)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F23)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F24)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, F25)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f1)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f2)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f3)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f4)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f5)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f6)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f7)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f8)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f9)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f10)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f11)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f12)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f13)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f14)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f15)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f16)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f17)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f18)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f19)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f20)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f21)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f22)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f23)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f24)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, f25)
 
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, KP_0)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, KP_1)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, KP_2)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, KP_3)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, KP_4)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, KP_5)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, KP_6)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, KP_7)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, KP_8)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, KP_9)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, KP_DECIMAL)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, KP_DIVIDE)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, KP_MULTIPLY)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, KP_SUBTRACT)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, KP_ADD)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, KP_ENTER)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, KP_EQUAL)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, kp0)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, kp1)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, kp2)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, kp3)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, kp4)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, kp5)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, kp6)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, kp7)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, kp8)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, kp9)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, kpDecimal)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, kpDivide)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, kpMultiply)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, kpSubstract)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, kpAdd)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, kpEnter)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, kpEqual)
 
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, LEFT_SHIFT)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, LEFT_CONTROL)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, LEFT_ALT)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, LEFT_SUPER)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, RIGHT_SHIFT)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, RIGHT_CONTROL)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, RIGHT_ALT)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, RIGHT_SUPER)
-	ZUAZO_ENUM2STR_CASE( KeyboardKey, MENU)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, leftShift)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, leftControl)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, leftAlt)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, leftSuper)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, rightShift)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, rightControl)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, rightAlt)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, rightSuper)
+	ZUAZO_ENUM2STR_CASE( KeyboardKey, menu)
 
 	default: return "";
 	}
@@ -138,15 +138,14 @@ constexpr std::string_view toString(KeyboardKey key) noexcept {
 constexpr std::string_view toString(MouseKey key) noexcept {
 	switch(key){
 
-	case MouseKey::LEFT:	return "LEFT";
-	case MouseKey::RIGHT:	return "RIGHT";
-	case MouseKey::MIDDLE:	return "MIDDLE";
-
-	ZUAZO_ENUM2STR_CASE( MouseKey, NB4)
-	ZUAZO_ENUM2STR_CASE( MouseKey, NB5)
-	ZUAZO_ENUM2STR_CASE( MouseKey, NB6)
-	ZUAZO_ENUM2STR_CASE( MouseKey, NB7)
-	ZUAZO_ENUM2STR_CASE( MouseKey, NB8)
+	ZUAZO_ENUM2STR_CASE( MouseKey, left)
+	ZUAZO_ENUM2STR_CASE( MouseKey, right)
+	ZUAZO_ENUM2STR_CASE( MouseKey, middle)
+	ZUAZO_ENUM2STR_CASE( MouseKey, nb4)
+	ZUAZO_ENUM2STR_CASE( MouseKey, nb5)
+	ZUAZO_ENUM2STR_CASE( MouseKey, nb6)
+	ZUAZO_ENUM2STR_CASE( MouseKey, nb7)
+	ZUAZO_ENUM2STR_CASE( MouseKey, nb8)
 
 	default: return "";
 	}
@@ -155,9 +154,9 @@ constexpr std::string_view toString(MouseKey key) noexcept {
 constexpr std::string_view toString(KeyEvent event) noexcept {
 	switch(event){
 
-	ZUAZO_ENUM2STR_CASE( KeyEvent, RELEASE)
-	ZUAZO_ENUM2STR_CASE( KeyEvent, PRESS)
-	ZUAZO_ENUM2STR_CASE( KeyEvent, REPEAT)
+	ZUAZO_ENUM2STR_CASE( KeyEvent, release)
+	ZUAZO_ENUM2STR_CASE( KeyEvent, press)
+	ZUAZO_ENUM2STR_CASE( KeyEvent, repeat)
 
 	default: return "";
 	}

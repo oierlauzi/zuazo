@@ -13,16 +13,16 @@
 namespace Zuazo::Math::LoopBlinn {
 
 enum class FillSide {
-	LEFT,
-	RIGHT
+	left,
+	right
 };
 
 enum class VertexType {
-	UNKNOWN = -1,
-	FIRST,
-	LAST,
-	CONTROL_PROTRUDING,
-	CONTROL,
+	unknown = -1,
+	first,
+	last,
+	controlProtruding,
+	control,
 };
 
 template<typename T, typename I = uint32_t>
@@ -40,7 +40,7 @@ public:
 	struct VertexData {
 		constexpr VertexData(	const position_vector_type& position = position_vector_type(0),
 								const klm_vector_type& klm = klm_vector_type(-1),
-								VertexType type = VertexType::UNKNOWN,
+								VertexType type = VertexType::unknown,
 								index_type helperIndex = ~index_type(0) ) noexcept;
 
 		vertex_type 	vertex;

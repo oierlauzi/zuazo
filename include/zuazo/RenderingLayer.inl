@@ -5,9 +5,9 @@ namespace Zuazo {
 constexpr std::string_view toString(RenderingLayer layer) noexcept {
 	switch(layer){
 
-	ZUAZO_ENUM2STR_CASE( RenderingLayer, BACKGROUND )
-	ZUAZO_ENUM2STR_CASE( RenderingLayer, SCENE )
-	ZUAZO_ENUM2STR_CASE( RenderingLayer, FOREGROUND )
+	ZUAZO_ENUM2STR_CASE( RenderingLayer, background )
+	ZUAZO_ENUM2STR_CASE( RenderingLayer, scene )
+	ZUAZO_ENUM2STR_CASE( RenderingLayer, foreground )
 
 	default: return "";
 	}

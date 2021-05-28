@@ -71,7 +71,7 @@ constexpr typename Classifier<T>::Result Classifier<T>::operator()(const curve_t
 		!approxZero(distance2(curve[1], curve[2]), EPSILON) &&
 		!approxZero(distance2(curve[2], curve[3]), EPSILON) )
 	{
-		result.type = CurveType::POINT;
+		result.type = CurveType::point;
 	} else {
 		result.discriminantTerm1 = 3*D.y*D.y - 4*D.x*D.z; //3d2^2 - 4d1d3
 		const auto discriminant = approxZero(D.x*D.x*result.discriminantTerm1, EPSILON); //d1^2 * above
@@ -80,33 +80,33 @@ constexpr typename Classifier<T>::Result Classifier<T>::operator()(const curve_t
 			if(!result.d1 && !result.d2) {
 				if(!result.d3) {
 					//All zero: line
-					result.type = CurveType::LINE;
+					result.type = CurveType::line;
 				} else {
 					//d1 and d2 = 0, d3 != 0: quadratic
-					result.type = CurveType::QUADRATIC;
+					result.type = CurveType::quadratic;
 				}
 			} else if(!result.d1) {
 				//d=1 but term1 != 0: Special case of cusp
-				result.type = CurveType::CUSP;
+				result.type = CurveType::cusp;
 			} else {
 				//disc=0: Cusp, edge case of serpentine or loop
 				//As term1 will not be exactly 0, decide between 
 				//loop and serpentine to avoid NaN as a result of
 				//sqrt. Source: Apple's WebCore
 				if(result.discriminantTerm1 < 0) {
-					result.type = CurveType::LOOP;
+					result.type = CurveType::loop;
 				} else {
-					result.type = CurveType::SERPENTINE;
+					result.type = CurveType::serpentine;
 				}
 			}
 		} else if(discriminant < 0) {
-			result.type = CurveType::LOOP;
+			result.type = CurveType::loop;
 		} else {
-			result.type = CurveType::SERPENTINE;
+			result.type = CurveType::serpentine;
 		}
 	}
 
-	assert(result.type != CurveType::UNKNOWN); //Ensure it has been written
+	assert(result.type != CurveType::unknown); //Ensure it has been written
 	return result;
 }
 

@@ -14,20 +14,20 @@ namespace Zuazo {
  * sythetise color. This influences the range of representable range of colors
  */
 enum class ColorPrimaries {
-	NONE = -1,					///<Not supported
+	none = -1,					///<Not supported
 
-	BT601_625,					///<Used in PAL and SECAM \see https://www.itu.int/rec/R-REC-BT.601/en
-	BT601_525,					///<Used in NTSC \see https://www.itu.int/rec/R-REC-BT.601/en
-	BT709,						///<Used in HDTV and sRGB color space\see https://www.itu.int/rec/R-REC-BT.709/en
-	BT2020,						///<Used in UHDTV \see https://www.itu.int/rec/R-REC-BT.2020/en
-	SMPTE431,					///<Used in DCI-P3 color space
-	SMPTE432,					///<Used in Display P3 color space
-	IEC61966_2_1,				///<Used by sRGB
-	ADOBE_RGB,					///<Used in Adobe RGB color space
+	bt601_625,					///<Used in PAL and SECAM \see https://www.itu.int/rec/R-REC-BT.601/en
+	bt601_525,					///<Used in NTSC \see https://www.itu.int/rec/R-REC-BT.601/en
+	bt709,						///<Used in HDTV and sRGB color space\see https://www.itu.int/rec/R-REC-BT.709/en
+	bt2020,						///<Used in UHDTV \see https://www.itu.int/rec/R-REC-BT.2020/en
+	smpte431,					///<Used in DCI-P3 color space
+	smpte432,					///<Used in Display P3 color space
+	iec61966_2_1,				///<Used by sRGB
+	adobeRGB,					///<Used in Adobe RGB color space
 
 	//Add here
 
-	COUNT
+	count
 };
 
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorPrimaries)

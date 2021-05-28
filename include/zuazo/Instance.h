@@ -36,16 +36,16 @@ public:
 	using Priority = int32_t;
 
 	enum {
-		LOWEST_PRIORITY = std::numeric_limits<Priority>::min(),
-		HIGHEST_PRIORITY = std::numeric_limits<Priority>::max(),
+		lowestPriority = std::numeric_limits<Priority>::min(),
+		highestPriority = std::numeric_limits<Priority>::max(),
 
-		OUTPUT_PRIORITY = LOWEST_PRIORITY / 2,
-		PROCESSOR_PRIORITY = 0,
-		INPUT_PRIORITY = HIGHEST_PRIORITY / 2,
+		consumerPriority = lowestPriority / 2,
+		processorPriority = 0,
+		sourcePriority = highestPriority / 2,
 
-		PLAYER_PRIORITY = OUTPUT_PRIORITY - 2048,
-		PRESENT_PRIORITY = OUTPUT_PRIORITY - 1024,
-		EVENT_HANDLING_PRIORITY = INPUT_PRIORITY + 1024,
+		playerPriority = consumerPriority - 2048,
+		presentPriority = consumerPriority - 1024,
+		eventHandlingPriority = sourcePriority + 1024,
 	};
 
 	Instance(	ApplicationInfo applicationInfo, 
@@ -136,7 +136,7 @@ public:
 
 	explicit ApplicationInfo(	std::string name = "Zuazo Application",
 								Version version = Version(0, 1, 0),
-								Verbosity verbosity = ZUAZO_IS_DEBUG ? Verbosity::GEQ_INFO : Verbosity::SILENT,
+								Verbosity verbosity = ZUAZO_IS_DEBUG ? Verbosity::geqInfo : Verbosity::silent,
 								Modules modules = {},
 								InstanceLogFunc	instanceLogFunc = defaultInstanceLogFunc,
 								ElementLogFunc elementLogFunc = defaultElementLogFunc ) noexcept;
@@ -175,7 +175,7 @@ private:
 
 #define ZUAZO_LOG(instance, severity, message)													\
 	if(	(instance).getApplicationInfo().getInstanceLogFunc() && 								\
-		(((instance).getApplicationInfo().getVerbosity()) & (severity)) != Verbosity::SILENT ) 	\
+		(((instance).getApplicationInfo().getVerbosity()) & (severity)) != Verbosity::silent ) 	\
 	{																							\
 		(instance).getApplicationInfo().getInstanceLogFunc()(instance, severity, message);		\
 	}

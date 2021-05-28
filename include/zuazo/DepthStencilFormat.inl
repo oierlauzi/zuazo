@@ -30,11 +30,11 @@ inline std::ostream& operator<<(std::ostream& os, DepthStencilFormat format) {
 namespace Utils {
 
 constexpr DepthStencilFormat EnumTraits<DepthStencilFormat>::first() noexcept {
-	return DepthStencilFormat::NONE + static_cast<DepthStencilFormat>(1);
+	return DepthStencilFormat::none + static_cast<DepthStencilFormat>(1);
 }
 
 constexpr DepthStencilFormat EnumTraits<DepthStencilFormat>::last() noexcept {
-	return DepthStencilFormat::COUNT - static_cast<DepthStencilFormat>(1);
+	return DepthStencilFormat::count - static_cast<DepthStencilFormat>(1);
 }
 
 }

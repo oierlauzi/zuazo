@@ -14,7 +14,7 @@ namespace Zuazo::Graphics {
 /*
  * Constants
  */
-static constexpr auto FILTER_COUNT = static_cast<size_t>(ScalingFilter::COUNT);
+static constexpr auto FILTER_COUNT = static_cast<size_t>(ScalingFilter::count);
 
 
 /*
@@ -36,12 +36,12 @@ public:
 	~Cache() = default;
 
 	const Sampler& getSampler(ScalingFilter filter) const noexcept {
-		assert(Math::isInRangeExclusive(filter, ScalingFilter::NONE, ScalingFilter::COUNT));
+		assert(Math::isInRangeExclusive(filter, ScalingFilter::none, ScalingFilter::count));
 		return m_samplers[static_cast<size_t>(filter)];
 	}
 
 	vk::DescriptorSetLayout getDescriptorSetLayout(ScalingFilter filter) const noexcept {
-		assert(Math::isInRangeExclusive(filter, ScalingFilter::NONE, ScalingFilter::COUNT));
+		assert(Math::isInRangeExclusive(filter, ScalingFilter::none, ScalingFilter::count));
 		return m_descriptorSetLayouts[static_cast<size_t>(filter)];
 	}
 
@@ -57,7 +57,7 @@ public:
 	}
 
 	uint32_t getSamplingMode(ScalingFilter filter) const noexcept {
-		assert(Math::isInRangeExclusive(filter, ScalingFilter::NONE, ScalingFilter::COUNT));
+		assert(Math::isInRangeExclusive(filter, ScalingFilter::none, ScalingFilter::count));
 		return m_samplingModes[static_cast<size_t>(filter)];
 	}
 
@@ -79,10 +79,10 @@ private:
 			result[i] = Sampler(
 				vulkan,
 				plane,
-				ColorRange::FULL,
-				ColorModel::RGB,
-				ColorTransferFunction::LINEAR,
-				Math::Vec2<ColorChromaLocation>(ColorChromaLocation::COSITED_0, ColorChromaLocation::COSITED_0),
+				ColorRange::full,
+				ColorModel::rgb,
+				ColorTransferFunction::linear,
+				Math::Vec2<ColorChromaLocation>(ColorChromaLocation::cosited0, ColorChromaLocation::cosited0),
 				static_cast<ScalingFilter>(i)
 			);
 		}
@@ -156,7 +156,7 @@ private:
 			//and the desired sampling mode
 			uint32_t samplingMode = 0;
 			switch (static_cast<ScalingFilter>(i)) {
-			case ScalingFilter::CUBIC:
+			case ScalingFilter::cubic:
 				switch (sampler.getFilter()) {
 				case vk::Filter::eCubicEXT:
 					samplingMode = frame_SAMPLE_MODE_PASSTHOUGH;
@@ -176,7 +176,7 @@ private:
 				}
 				break;
 
-			case ScalingFilter::LINEAR:
+			case ScalingFilter::linear:
 				switch (sampler.getFilter()) {
 				case vk::Filter::eLinear:
 					samplingMode = frame_SAMPLE_MODE_PASSTHOUGH;
@@ -192,7 +192,7 @@ private:
 				}
 				break;
 
-			case ScalingFilter::NEAREST:
+			case ScalingFilter::nearest:
 				switch (sampler.getFilter()) {
 				case vk::Filter::eNearest:
 					samplingMode = frame_SAMPLE_MODE_PASSTHOUGH;
@@ -289,7 +289,7 @@ struct Frame::Impl {
 				uint32_t index,
 				ScalingFilter filter ) const noexcept
 	{
-		assert(Math::isInRangeExclusive(filter, ScalingFilter::NONE, ScalingFilter::COUNT));
+		assert(Math::isInRangeExclusive(filter, ScalingFilter::none, ScalingFilter::count));
 		const auto descriptorSet = descriptorSets[static_cast<size_t>(filter)];
 
 		vulkan.get().bindDescriptorSets(
@@ -341,7 +341,7 @@ private:
 			usage,
 			tiling,
 			memory,
-			&cache.getSampler(ScalingFilter::NEAREST) //Actually not needed, just for convenience
+			&cache.getSampler(ScalingFilter::nearest) //Actually not needed, just for convenience
 		);
 	}
 

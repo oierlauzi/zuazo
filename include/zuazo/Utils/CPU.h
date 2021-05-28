@@ -7,9 +7,9 @@
 namespace Zuazo::Utils {
 
 enum class Endianess {
-	LITTLE,
-	BIG,
-	UNKNOWN
+	little,
+	big,
+	unknown
 };
 
 constexpr Endianess getEndianess() noexcept;

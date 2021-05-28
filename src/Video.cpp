@@ -272,7 +272,7 @@ Graphics::Frame::Descriptor VideoMode::getFrameDescriptor() const {
 		getColorModelValue(),
 		getColorTransferFunctionValue(),
 		getColorSubsamplingValue(),
-		Math::Vec2<ColorChromaLocation>(ColorChromaLocation::COSITED_0, ColorChromaLocation::COSITED_0), //TODO
+		Math::Vec2<ColorChromaLocation>(ColorChromaLocation::cosited0, ColorChromaLocation::cosited0), //TODO
 		getColorRangeValue(),
 		getColorFormatValue()
 	};
@@ -446,8 +446,8 @@ struct VideoScalerBase::Impl {
 	ScalingFilterCallback						scalingFilterCallback;
 
 	Impl(ScalingModeCallback modeCbk, ScalingFilterCallback filterCbk)
-		: scalingMode(ScalingMode::STRETCH)
-		, scalingFilter(ScalingFilter::NEAREST)
+		: scalingMode(ScalingMode::stretch)
+		, scalingFilter(ScalingFilter::nearest)
 		, scalingModeCallback(std::move(modeCbk))
 		, scalingFilterCallback(std::move(filterCbk))
 	{

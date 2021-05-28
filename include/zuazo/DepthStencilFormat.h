@@ -10,7 +10,7 @@ namespace Zuazo {
 
 
 enum class DepthStencilFormat {
-	NONE = -1,
+	none = -1,
 
 	D16,
 	X8D24_32,
@@ -22,7 +22,7 @@ enum class DepthStencilFormat {
 
 	//Add here
 
-	COUNT
+	count
 };
 
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(DepthStencilFormat)

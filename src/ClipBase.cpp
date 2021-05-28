@@ -28,8 +28,8 @@ struct ClipBase::Impl {
 		: time()
 		, duration(duration)
 		, timeStep(timeStep)
-		, state(State::PAUSED)
-		, repeat(Repeat::NONE)
+		, state(State::paused)
+		, repeat(Repeat::none)
 		, playSpeed(1.0)
 		, refreshCallback(std::move(refreshCbk))
 	{
@@ -62,12 +62,12 @@ struct ClipBase::Impl {
 
 		//Ensure time point is within bounds
 		switch(repeat) {
-		case Repeat::REPEAT:
+		case Repeat::repeat:
 			//Add duration to account for negative time values
 			tp = TimePoint(Math::sawtooth(duration, tp.time_since_epoch()));
 			break;
 
-		case Repeat::PING_PONG:
+		case Repeat::pingPong:
 			//Similar to the above one, but with double of the duration. If tp falls in the "second" duration,
 			//it gets inverted to simulate the ping-pong behaviour. playSpeed also gets inverted
 			if(tp < minTime) playSpeed = Math::abs(playSpeed);
@@ -111,7 +111,7 @@ struct ClipBase::Impl {
 
 
 	void advance(ClipBase& base, Duration delta) noexcept {
-		if(state == State::PLAYING){
+		if(state == State::playing){
 			advanceNormalSpeed(base, Duration(static_cast<Duration::rep>(delta.count() * playSpeed)));
 		} 
 	}
@@ -137,20 +137,20 @@ struct ClipBase::Impl {
 	}
 
 	void play() noexcept {
-		setState(State::PLAYING);
+		setState(State::playing);
 	}
 
 	void pause() noexcept {
-		setState(State::PAUSED);
+		setState(State::paused);
 	}
 
 	void stop(ClipBase& base) noexcept {
-		setState(State::PAUSED);
+		setState(State::paused);
 		setTime(base, TimePoint());
 	}
 
 	bool isPlaying() const noexcept {
-		return getState() == State::PLAYING;
+		return getState() == State::playing;
 	}
 
 
@@ -325,8 +325,8 @@ void ClipBase::setDuration(Duration dur) noexcept {
 std::string_view toString(ClipBase::State state) noexcept {
 	switch(state){
 
-	ZUAZO_ENUM2STR_CASE( ClipBase::State, PAUSED )
-	ZUAZO_ENUM2STR_CASE( ClipBase::State, PLAYING )
+	ZUAZO_ENUM2STR_CASE( ClipBase::State, paused )
+	ZUAZO_ENUM2STR_CASE( ClipBase::State, playing )
 
 	default: return "";
 	}
@@ -345,8 +345,8 @@ std::ostream& operator<<(std::ostream& os, ClipBase::State state) {
 std::string_view toString(ClipBase::Repeat repeat) noexcept {
 	switch(repeat){
 
-	ZUAZO_ENUM2STR_CASE( ClipBase::Repeat, REPEAT )
-	ZUAZO_ENUM2STR_CASE( ClipBase::Repeat, PING_PONG )
+	ZUAZO_ENUM2STR_CASE( ClipBase::Repeat, repeat )
+	ZUAZO_ENUM2STR_CASE( ClipBase::Repeat, pingPong )
 
 	default: return "";
 	}

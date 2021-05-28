@@ -13,19 +13,19 @@ namespace Zuazo {
  * ColorModel represents how color gets encoded on a tuple of values or components
  */
 enum class ColorModel {
-	NONE = -1,					///<Not supported
+	none = -1,					///<Not supported
 
-	RGB,						///<RGB color model
-	YIQ,						///<YIQ color encoding, used in NTSC
-	YUV,						///<YUV color encoding, used in PAL
-	BT601,						///<YCbCr color model used in SDTV \see https://www.itu.int/rec/R-REC-BT.601/en
-	BT709,						///<YCbCr color model used in HDTV \see https://www.itu.int/rec/R-REC-BT.709/en
-	BT2020,						///<YCbCr color model used in UHDTV \see https://www.itu.int/rec/R-REC-BT.2020/en
-	SMPTE240M,
+	rgb,						///<RGB color model
+	yiq,						///<YIQ color encoding, used in NTSC
+	yuv,						///<YUV color encoding, used in PAL
+	bt601,						///<YCbCr color model used in SDTV \see https://www.itu.int/rec/R-REC-BT.601/en
+	bt709,						///<YCbCr color model used in HDTV \see https://www.itu.int/rec/R-REC-BT.709/en
+	bt2020,						///<YCbCr color model used in UHDTV \see https://www.itu.int/rec/R-REC-BT.2020/en
+	smpte240M,
 
 	//Add here
 
-	COUNT
+	count
 };
 
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorModel)

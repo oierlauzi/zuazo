@@ -11,9 +11,9 @@ namespace Zuazo {
 constexpr std::string_view toString(ColorRange colorRange) noexcept {
 	switch(colorRange){
 
-	ZUAZO_ENUM2STR_CASE( ColorRange, FULL )
-	ZUAZO_ENUM2STR_CASE( ColorRange, ITU_NARROW )
-	ZUAZO_ENUM2STR_CASE( ColorRange, ITU_NARROW_FULL_ALPHA )
+	ZUAZO_ENUM2STR_CASE( ColorRange, full )
+	ZUAZO_ENUM2STR_CASE( ColorRange, ituNarrow )
+	ZUAZO_ENUM2STR_CASE( ColorRange, ituNarrowFullAlpha )
 
 	default: return "";
 	}
@@ -31,11 +31,11 @@ inline std::ostream& operator<<(std::ostream& os, ColorRange colorRange) {
 namespace Utils {
 
 constexpr ColorRange EnumTraits<ColorRange>::first() noexcept {
-	return ColorRange::NONE + static_cast<ColorRange>(1);
+	return ColorRange::none + static_cast<ColorRange>(1);
 }
 
 constexpr ColorRange EnumTraits<ColorRange>::last() noexcept {
-	return ColorRange::COUNT - static_cast<ColorRange>(1);
+	return ColorRange::count - static_cast<ColorRange>(1);
 }
 
 }

@@ -10,40 +10,40 @@ constexpr Endianess getEndianess() noexcept {
 	//Detect with GCC 4.6's macro.
 	#if defined(__BYTE_ORDER__)
 		#if (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
-			return Endianess::LITTLE;
+			return Endianess::little;
 		#elif (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
-			return Endianess::BIG;
+			return Endianess::big;
 		#else
-			return Endianess::UNKNOWN;
+			return Endianess::unknown;
 		#endif
 
     // Detect with _LITTLE_ENDIAN and _BIG_ENDIAN macro.
 	#elif defined(_LITTLE_ENDIAN) || defined(_BIG_ENDIAN)
 		#if defined(_LITTLE_ENDIAN)
-			return Endianess::LITTLE;
+			return Endianess::little;
 		#elif defined(_BIG_ENDIAN)
-			return Endianess::BIG;
+			return Endianess::big;
 		#else
-			return Endianess::UNKNOWN;
+			return Endianess::unknown;
 		#endif
 
 	#else
-		return Endianess::UNKNOWN;
+		return Endianess::unknown;
 	#endif
 }
 
 template<typename T>
 constexpr T& bele(T& be, T& le) noexcept {
 	constexpr auto endianess = getEndianess();
-	static_assert(endianess == Endianess::LITTLE || endianess == Endianess::BIG, "Endianess must be LE or BE");
-	return endianess == Endianess::BIG ? be : le;
+	static_assert(endianess == Endianess::little || endianess == Endianess::big, "Endianess must be LE or BE");
+	return endianess == Endianess::big ? be : le;
 }
 
 template<typename T>
 constexpr const T& bele(const T& be, const T& le) noexcept {
 	constexpr auto endianess = getEndianess();
-	static_assert(endianess == Endianess::LITTLE || endianess == Endianess::BIG, "Endianess must be LE or BE");
-	return endianess == Endianess::BIG ? be : le;
+	static_assert(endianess == Endianess::little || endianess == Endianess::big, "Endianess must be LE or BE");
+	return endianess == Endianess::big ? be : le;
 }
 
 constexpr void swapEndianess(std::byte* begin, std::byte* end) noexcept {

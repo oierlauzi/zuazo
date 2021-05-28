@@ -42,7 +42,7 @@ public:
 	void									clear();
 
 	void									addBezier(	const bezier_type& bezier, 
-														FillSide fillSide = FillSide::LEFT);
+														FillSide fillSide = FillSide::left);
 	void									addPolygon(const polygon_type& polygon);
 	void									addContour(const contour_type& contour);
 	void									addOutline(Utils::BufferView<const contour_type> outline);

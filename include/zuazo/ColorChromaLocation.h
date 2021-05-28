@@ -11,14 +11,14 @@ namespace Zuazo {
  * if they are subsampled. This value should be specified per axis
  */
 enum class ColorChromaLocation {
-	NONE = -1,					///<Not supported
+	none = -1,					///<Not supported
 
-	COSITED_0,					///<The chroma sample is on the same spot as the first luma samples (modulo subsampling factor).
-	MIDPOINT,					///<The chroma sample halfway between the even and odd (0-based) luma samples.
+	cosited0,					///<The chroma sample is on the same spot as the first luma samples (modulo subsampling factor).
+	midpoint,					///<The chroma sample halfway between the even and odd (0-based) luma samples.
 
 	//Add here
 
-	COUNT
+	count
 };
 
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorChromaLocation)

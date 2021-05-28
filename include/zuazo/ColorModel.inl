@@ -6,12 +6,12 @@ namespace Zuazo {
 
 constexpr bool isYCbCr(ColorModel colorModel) noexcept {
 	switch(colorModel){
-	case ColorModel::YIQ:
-	case ColorModel::YUV:
-	case ColorModel::BT601:
-	case ColorModel::BT709: 
-	case ColorModel::BT2020:
-	case ColorModel::SMPTE240M:
+	case ColorModel::yiq:
+	case ColorModel::yuv:
+	case ColorModel::bt601:
+	case ColorModel::bt709: 
+	case ColorModel::bt2020:
+	case ColorModel::smpte240M:
 		return true;
 	default: 
 		return false;
@@ -46,23 +46,23 @@ constexpr Math::Mat3x3f getRGB2YCbCrConversionMatrix(ColorModel colorModel) noex
 	switch(colorModel){
 	
 	//From https://en.wikipedia.org/wiki/YCbCr
-	case ColorModel::RGB: return Math::Mat3x3f(1.0f); //Identity
-	case ColorModel::YIQ: 
+	case ColorModel::rgb: return Math::Mat3x3f(1.0f); //Identity
+	case ColorModel::yiq: 
 		return constructRGB2YCbCrConversionMatrix(
 			0.299f, 	0.587f, 	0.114f,
 			+0.595716f,	-0.274453f,	-0.321263f,
 			+0.211456f,	-0.522591f,	+0.311135f
 		);
-	case ColorModel::YUV: 
+	case ColorModel::yuv: 
 		return constructRGB2YCbCrConversionMatrix(
 			0.299f, 	0.587f, 	0.114f,
 			-0.14713f,	-0.28886f,	+0.436f,
 			+0.615f,	-0.51499f,	-0.10001f
 		);
-	case ColorModel::BT601: return constructRGB2YCbCrConversionMatrix(0.299f, 0.114f);
-	case ColorModel::BT709: return constructRGB2YCbCrConversionMatrix(0.2126f, 0.0722f);
-	case ColorModel::BT2020: return constructRGB2YCbCrConversionMatrix(0.2627f, 0.0593f);
-	case ColorModel::SMPTE240M: return constructRGB2YCbCrConversionMatrix(0.212f, 0.087f);
+	case ColorModel::bt601: return constructRGB2YCbCrConversionMatrix(0.299f, 0.114f);
+	case ColorModel::bt709: return constructRGB2YCbCrConversionMatrix(0.2126f, 0.0722f);
+	case ColorModel::bt2020: return constructRGB2YCbCrConversionMatrix(0.2627f, 0.0593f);
+	case ColorModel::smpte240M: return constructRGB2YCbCrConversionMatrix(0.212f, 0.087f);
 	default: return Math::Mat3x3f(0.0f);
 	}
 }
@@ -72,13 +72,13 @@ constexpr Math::Mat3x3f getRGB2YCbCrConversionMatrix(ColorModel colorModel) noex
 constexpr std::string_view toString(ColorModel colorModel) noexcept {
 	switch(colorModel){
 
-	ZUAZO_ENUM2STR_CASE( ColorModel, RGB )
-	ZUAZO_ENUM2STR_CASE( ColorModel, YIQ )
-	ZUAZO_ENUM2STR_CASE( ColorModel, YUV )
-	ZUAZO_ENUM2STR_CASE( ColorModel, BT601 )
-	ZUAZO_ENUM2STR_CASE( ColorModel, BT709 )
-	ZUAZO_ENUM2STR_CASE( ColorModel, BT2020 )
-	ZUAZO_ENUM2STR_CASE( ColorModel, SMPTE240M )
+	ZUAZO_ENUM2STR_CASE( ColorModel, rgb )
+	ZUAZO_ENUM2STR_CASE( ColorModel, yiq )
+	ZUAZO_ENUM2STR_CASE( ColorModel, yuv )
+	ZUAZO_ENUM2STR_CASE( ColorModel, bt601 )
+	ZUAZO_ENUM2STR_CASE( ColorModel, bt709 )
+	ZUAZO_ENUM2STR_CASE( ColorModel, bt2020 )
+	ZUAZO_ENUM2STR_CASE( ColorModel, smpte240M )
 
 	default: return "";
 	}
@@ -96,11 +96,11 @@ inline std::ostream& operator<<(std::ostream& os, ColorModel model) {
 namespace Utils {
 
 constexpr ColorModel EnumTraits<ColorModel>::first() noexcept {
-	return ColorModel::NONE + static_cast<ColorModel>(1);
+	return ColorModel::none + static_cast<ColorModel>(1);
 }
 
 constexpr ColorModel EnumTraits<ColorModel>::last() noexcept {
-	return ColorModel::COUNT - static_cast<ColorModel>(1);
+	return ColorModel::count - static_cast<ColorModel>(1);
 }
 
 }

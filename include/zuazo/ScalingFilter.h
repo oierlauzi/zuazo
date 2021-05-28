@@ -5,13 +5,13 @@
 namespace Zuazo {
 
 enum class ScalingFilter {
-	NONE = -1,
+	none = -1,
 
-	NEAREST,
-	LINEAR,
-	CUBIC,
+	nearest,
+	linear,
+	cubic,
 
-	COUNT
+	count
 };
 
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ScalingFilter)

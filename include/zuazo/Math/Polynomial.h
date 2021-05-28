@@ -55,9 +55,9 @@ private:
 
 };
 
-enum class SolutionCount {
-	INFINITE = -1,
-	NONE = 0,
+enum class SolutionCount : int {
+	infinite = -1,
+	none = 0,
 };
 
 ZUAZO_ENUM_COMP_OPERATORS(SolutionCount)

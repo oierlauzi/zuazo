@@ -61,8 +61,8 @@ struct Instance::Impl {
 		, presentImagesCallback(createPresentCallback(vulkan))
 	{
 		std::lock_guard<Impl> lock(*this);
-		addRegularCallback(processEventsCallback, EVENT_HANDLING_PRIORITY);
-		addRegularCallback(presentImagesCallback, PRESENT_PRIORITY);
+		addRegularCallback(processEventsCallback, eventHandlingPriority);
+		addRegularCallback(presentImagesCallback, presentPriority);
 
 		for(const Module& module : applicationInfo.getModules()) {
 			module.initialize(instance);
@@ -104,25 +104,25 @@ struct Instance::Impl {
 	void addRegularCallback(const ScheduledCallback& cbk, Priority prior) {
 		scheduler.addRegularCallback(cbk, prior);
 		loop.interrupt();
-		ZUAZO_LOG(instance, Severity::VERBOSE, generateAddRegularEventMessage(cbk, prior));
+		ZUAZO_LOG(instance, Severity::verbose, generateAddRegularEventMessage(cbk, prior));
 	}
 
 	void removeRegularCallback(const ScheduledCallback& cbk) {
 		scheduler.removeRegularCallback(cbk);
 		loop.interrupt();
-		ZUAZO_LOG(instance, Severity::VERBOSE, generateRemoveRegularEventMessage(cbk));
+		ZUAZO_LOG(instance, Severity::verbose, generateRemoveRegularEventMessage(cbk));
 	}
 
 	void addPeriodicCallback(const ScheduledCallback& cbk, Priority prior, Duration period) {
 		scheduler.addPeriodicCallback(cbk, prior, period);
 		loop.interrupt();
-		ZUAZO_LOG(instance, Severity::VERBOSE, generateAddPeriodicEventMessage(cbk, prior, period));
+		ZUAZO_LOG(instance, Severity::verbose, generateAddPeriodicEventMessage(cbk, prior, period));
 	}
 
 	void removePeriodicCallback(const ScheduledCallback& cbk) {
 		scheduler.removePeriodicCallback(cbk);
 		loop.interrupt();
-		ZUAZO_LOG(instance, Severity::VERBOSE, generateRemovePeriodicEventMessage(cbk));
+		ZUAZO_LOG(instance, Severity::verbose, generateRemovePeriodicEventMessage(cbk));
 	}
 
 	void addEvent(size_t emitterId, ScheduledCallback cbk) {
@@ -330,7 +330,7 @@ private:
 		result.reserve(supportedFormats.size());
 		for(const auto& format : supportedFormats) {
 			const auto conversion = Graphics::fromVulkanDepthStencil(format);
-			if(conversion != DepthStencilFormat::NONE) {
+			if(conversion != DepthStencilFormat::none) {
 				result.push_back(conversion);
 			}
 		}
@@ -363,11 +363,11 @@ Instance::Instance(	ApplicationInfo applicationInfo,
 					const DeviceScoreFunc& deviceScoreFunc )
 	: m_impl({}, *this, std::move(applicationInfo), deviceScoreFunc)
 {
-	ZUAZO_LOG(*this, Severity::INFO, m_impl->generateInitMessage());
+	ZUAZO_LOG(*this, Severity::info, m_impl->generateInitMessage());
 }
 
 Instance::~Instance() {
-	ZUAZO_LOG(*this, Severity::INFO, "Terminated");
+	ZUAZO_LOG(*this, Severity::info, "Terminated");
 }
 
 const Instance::ApplicationInfo& Instance::getApplicationInfo() const noexcept {

@@ -330,10 +330,10 @@ constexpr std::array<T, 0> solve(const Polynomial<T, 0>& poly, SolutionCount* cn
 	std::array<T, 0> result = {};
 
 	if(poly[0] == typename Polynomial<T, 0>::value_type()) {
-		if(cnt) *cnt = SolutionCount::INFINITE;
+		if(cnt) *cnt = SolutionCount::infinite;
 
 	} else {
-		if(cnt) *cnt = SolutionCount::NONE;
+		if(cnt) *cnt = SolutionCount::none;
 
 	}
 
@@ -385,7 +385,7 @@ constexpr std::array<T, 2> solve(const Polynomial<T, 2>& poly, SolutionCount* cn
 			if(cnt)	*cnt = static_cast<SolutionCount>(2);
 		} else {
 			//No real solution
-			if(cnt) *cnt = SolutionCount::NONE;
+			if(cnt) *cnt = SolutionCount::none;
 		}
 
 	} else {

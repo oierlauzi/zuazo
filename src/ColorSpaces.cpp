@@ -19,14 +19,14 @@ VideoMode makeVideoMode(ColorPrimaries prim, ColorModel model, ColorTransferFunc
 namespace ColorSpaces {
 
 //ITU-R
-const VideoMode BT601_625 = makeVideoMode(ColorPrimaries::BT601_625, ColorModel::BT601, ColorTransferFunction::BT1886);
-const VideoMode BT601_525 = makeVideoMode(ColorPrimaries::BT601_525, ColorModel::BT601, ColorTransferFunction::BT1886);
-const VideoMode BT709 = makeVideoMode(ColorPrimaries::BT709, ColorModel::BT709, ColorTransferFunction::BT1886);
-const VideoMode BT2020 = makeVideoMode(ColorPrimaries::BT2020, ColorModel::BT2020, ColorTransferFunction::BT1886);
+const VideoMode BT601_625 = makeVideoMode(ColorPrimaries::bt601_625, ColorModel::bt601, ColorTransferFunction::bt1886);
+const VideoMode BT601_525 = makeVideoMode(ColorPrimaries::bt601_525, ColorModel::bt601, ColorTransferFunction::bt1886);
+const VideoMode BT709 = makeVideoMode(ColorPrimaries::bt709, ColorModel::bt709, ColorTransferFunction::bt1886);
+const VideoMode BT2020 = makeVideoMode(ColorPrimaries::bt2020, ColorModel::bt2020, ColorTransferFunction::bt1886);
 
 //Others
-const VideoMode SRGB = makeVideoMode(ColorPrimaries::BT709, ColorModel::RGB, ColorTransferFunction::IEC61966_2_1);
-const VideoMode DISPLAY_P3 = makeVideoMode(ColorPrimaries::SMPTE432, ColorModel::RGB, ColorTransferFunction::IEC61966_2_1);
+const VideoMode SRGB = makeVideoMode(ColorPrimaries::bt709, ColorModel::rgb, ColorTransferFunction::iec61966_2_1);
+const VideoMode DISPLAY_P3 = makeVideoMode(ColorPrimaries::smpte432, ColorModel::rgb, ColorTransferFunction::iec61966_2_1);
 
 }
 

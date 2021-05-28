@@ -7,8 +7,8 @@ namespace Zuazo {
 constexpr std::string_view toString(ColorChromaLocation chromaLoc) noexcept {
 	switch(chromaLoc){
 
-	ZUAZO_ENUM2STR_CASE( ColorChromaLocation, COSITED_0 )
-	ZUAZO_ENUM2STR_CASE( ColorChromaLocation, MIDPOINT )
+	ZUAZO_ENUM2STR_CASE( ColorChromaLocation, cosited0 )
+	ZUAZO_ENUM2STR_CASE( ColorChromaLocation, midpoint )
 
 	default: return "";
 	}
@@ -26,11 +26,11 @@ inline std::ostream& operator<<(std::ostream& os, ColorChromaLocation location) 
 namespace Utils {
 
 constexpr ColorChromaLocation EnumTraits<ColorChromaLocation>::first() noexcept {
-	return ColorChromaLocation::NONE + static_cast<ColorChromaLocation>(1);
+	return ColorChromaLocation::none + static_cast<ColorChromaLocation>(1);
 }
 
 constexpr ColorChromaLocation EnumTraits<ColorChromaLocation>::last() noexcept {
-	return ColorChromaLocation::COUNT - static_cast<ColorChromaLocation>(1);
+	return ColorChromaLocation::count - static_cast<ColorChromaLocation>(1);
 }
 
 }

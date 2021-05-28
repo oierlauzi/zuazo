@@ -12,19 +12,19 @@ namespace Zuazo {
  * ColorSubsampling defines how less "important" color components are subsampled
  */
 enum class ColorSubsampling {
-	NONE = -1,					///<Not supported
+	none = -1,					///<Not supported
 
-	RB_444,						///<No subsampling
-	RB_440,						///<1 G (or Y) sample per 4 R (or Cr) and B (or Cb) samples on even lines. No R and B samples on odd lines.
-	RB_422,						///<1 G (or Y) sample per 2 R (or Cr) and B (or Cb) samples on even and odd lines.
-	RB_420,						///<1 G (or Y) sample per 2 R (or Cr) and B (or Cb) samples on even lines. No R and B samples on odd lines.
-	RB_411,						///<1 G (or Y) sample per 4 R (or Cr) and B (or Cb) samples on even and odd lines.
-	RB_410,						///<1 G (or Y) sample per 4 R (or Cr) and B (or Cb) samples on even lines. No R and B samples on odd lines.
-	RB_311,						///<1 G (or Y) sample per 3 R (or Cr) and B (or Cb) samples on even and odd lines.
+	rb444,						///<No subsampling
+	rb440,						///<1 G (or Y) sample per 4 R (or Cr) and B (or Cb) samples on even lines. No R and B samples on odd lines.
+	rb422,						///<1 G (or Y) sample per 2 R (or Cr) and B (or Cb) samples on even and odd lines.
+	rb420,						///<1 G (or Y) sample per 2 R (or Cr) and B (or Cb) samples on even lines. No R and B samples on odd lines.
+	rb411,						///<1 G (or Y) sample per 4 R (or Cr) and B (or Cb) samples on even and odd lines.
+	rb410,						///<1 G (or Y) sample per 4 R (or Cr) and B (or Cb) samples on even lines. No R and B samples on odd lines.
+	rb311,						///<1 G (or Y) sample per 3 R (or Cr) and B (or Cb) samples on even and odd lines.
 
 	//Add here
 
-	COUNT
+	count
 };
 
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorSubsampling)

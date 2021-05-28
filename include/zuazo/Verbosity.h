@@ -7,29 +7,29 @@
 namespace Zuazo {
 
 enum class Severity {
-	VERBOSE		= Utils::bit(0),
-	INFO		= Utils::bit(1),
-	WARNING		= Utils::bit(2),
-	ERROR		= Utils::bit(3),
+	verbose		= Utils::bit(0),
+	info		= Utils::bit(1),
+	warning		= Utils::bit(2),
+	error		= Utils::bit(3),
 };
 
 enum class Verbosity {
-	SILENT 		= 0,
-	ERROR		= static_cast<int>(Severity::ERROR),
-	WARNING		= static_cast<int>(Severity::WARNING),
-	INFO		= static_cast<int>(Severity::INFO),
-	VERBOSE		= static_cast<int>(Severity::VERBOSE),
+	silent 		= 0,
+	error		= static_cast<int>(Severity::error),
+	warning		= static_cast<int>(Severity::warning),
+	info		= static_cast<int>(Severity::info),
+	verbose		= static_cast<int>(Severity::verbose),
 
-	GE_ERROR	= SILENT,
-	GEQ_ERROR	= GE_ERROR | ERROR,
-	GE_WARINING	= GEQ_ERROR,
-	GEQ_WARNING	= GE_WARINING | WARNING,
-	GE_INFO		= GEQ_WARNING,
-	GEQ_INFO	= GE_INFO | INFO,
-	GE_VERBOSE	= GEQ_INFO,
-	GEQ_VERBOSE	= GE_VERBOSE | VERBOSE,
+	geError		= silent,
+	geqError	= geError | error,
+	geWarning	= geqError,
+	geqWarning	= geWarning | warning,
+	geInfo		= geqWarning,
+	geqInfo		= geInfo | info,
+	geVerbose	= geqInfo,
+	geqVerbose	= geVerbose | verbose,
 
-	ALL			= GEQ_VERBOSE
+	all			= geqVerbose
 };
 
 ZUAZO_ENUM_COMP_OPERATORS(Verbosity)

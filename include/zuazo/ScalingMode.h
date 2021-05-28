@@ -7,15 +7,15 @@
 namespace Zuazo {
 
 enum class ScalingMode {
-	NONE = -1,
+	none = -1,
 
-	STRETCH,
-	BOXED,
-	CROPPED,
-	CLAMP_HORIZONTALLY,
-	CLAMP_VERTICALLY,
+	stretch,
+	box,
+	crop,
+	clampHorizontally,
+	clampVertically,
 
-	COUNT
+	count
 };
 
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(ScalingMode)

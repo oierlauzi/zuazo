@@ -7,13 +7,13 @@ namespace Zuazo {
 constexpr Math::Vec2i getSubsamplingFactor(ColorSubsampling subs) noexcept {
 	switch(subs){
 
-	case ColorSubsampling::RB_444: 	return Math::Vec2i(1, 1);
-	case ColorSubsampling::RB_440:  return Math::Vec2i(1, 2);
-	case ColorSubsampling::RB_422:	return Math::Vec2i(2, 1);
-	case ColorSubsampling::RB_420:	return Math::Vec2i(2, 2);
-	case ColorSubsampling::RB_411:	return Math::Vec2i(4, 1);
-	case ColorSubsampling::RB_410:	return Math::Vec2i(4, 2);
-	case ColorSubsampling::RB_311:	return Math::Vec2i(3, 1);
+	case ColorSubsampling::rb444: 	return Math::Vec2i(1, 1);
+	case ColorSubsampling::rb440: 	return Math::Vec2i(1, 2);
+	case ColorSubsampling::rb422:	return Math::Vec2i(2, 1);
+	case ColorSubsampling::rb420:	return Math::Vec2i(2, 2);
+	case ColorSubsampling::rb411:	return Math::Vec2i(4, 1);
+	case ColorSubsampling::rb410:	return Math::Vec2i(4, 2);
+	case ColorSubsampling::rb311:	return Math::Vec2i(3, 1);
 	default: 						return Math::Vec2i(0, 0);
 	}
 }
@@ -28,13 +28,13 @@ constexpr Resolution getSubsampledResolution(ColorSubsampling subs, Resolution r
 constexpr std::string_view toString(ColorSubsampling colorSubsampling) noexcept {
 	switch(colorSubsampling){
 
-	case ColorSubsampling::RB_444: return "4:4:4";
-	case ColorSubsampling::RB_440: return "4:4:0";
-	case ColorSubsampling::RB_422: return "4:2:2";
-	case ColorSubsampling::RB_420: return "4:2:0";
-	case ColorSubsampling::RB_411: return "4:1:1";
-	case ColorSubsampling::RB_410: return "4:1:0";
-	case ColorSubsampling::RB_311: return "3:1:1";
+	case ColorSubsampling::rb444: return "4:4:4";
+	case ColorSubsampling::rb440: return "4:4:0";
+	case ColorSubsampling::rb422: return "4:2:2";
+	case ColorSubsampling::rb420: return "4:2:0";
+	case ColorSubsampling::rb411: return "4:1:1";
+	case ColorSubsampling::rb410: return "4:1:0";
+	case ColorSubsampling::rb311: return "3:1:1";
 
 	default: return "";
 	}
@@ -52,11 +52,11 @@ inline std::ostream& operator<<(std::ostream& os, ColorSubsampling colorSubsampl
 namespace Utils {
 
 constexpr ColorSubsampling EnumTraits<ColorSubsampling>::first() noexcept {
-	return ColorSubsampling::NONE + static_cast<ColorSubsampling>(1);
+	return ColorSubsampling::none + static_cast<ColorSubsampling>(1);
 }
 
 constexpr ColorSubsampling EnumTraits<ColorSubsampling>::last() noexcept {
-	return ColorSubsampling::COUNT - static_cast<ColorSubsampling>(1);
+	return ColorSubsampling::count - static_cast<ColorSubsampling>(1);
 }
 
 }

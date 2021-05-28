@@ -7,13 +7,13 @@
 namespace Zuazo::Math::LoopBlinn {
 
 enum class CurveType {
-	UNKNOWN = -1,
-	POINT,
-	LINE,
-	QUADRATIC,
-	SERPENTINE,
-	CUSP,
-	LOOP,
+	unknown = -1,
+	point,
+	line,
+	quadratic,
+	serpentine,
+	cusp,
+	loop,
 };
 
 template<typename T>
@@ -22,7 +22,7 @@ struct Classifier {
 	using curve_type = CubicBezier<Vec2<value_type>>;
 
 	struct Result {
-		constexpr Result(	CurveType type = CurveType::UNKNOWN,
+		constexpr Result(	CurveType type = CurveType::unknown,
 							value_type d1 = std::numeric_limits<value_type>::quiet_NaN(),
 							value_type d2 = std::numeric_limits<value_type>::quiet_NaN(),
 							value_type d3 = std::numeric_limits<value_type>::quiet_NaN(),

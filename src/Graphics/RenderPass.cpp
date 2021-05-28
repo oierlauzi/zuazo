@@ -285,7 +285,7 @@ struct RenderPass::Impl {
 
 				const std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachments(
 					colorTransfer.getPlaneCount(),
-					Graphics::getBlendingConfiguration(BlendingMode::WRITE)
+					Graphics::getBlendingConfiguration(BlendingMode::write)
 				);
 
 				const vk::PipelineColorBlendStateCreateInfo colorBlend(
@@ -444,7 +444,7 @@ struct RenderPass::Impl {
 	static Utils::BufferView<const vk::ClearValue> getClearValues(DepthStencilFormat depthStencilFmt) {
 		Utils::BufferView<const vk::ClearValue> result;
 
-		if(Math::isInRangeExclusive(depthStencilFmt, DepthStencilFormat::NONE, DepthStencilFormat::COUNT)) {
+		if(Math::isInRangeExclusive(depthStencilFmt, DepthStencilFormat::none, DepthStencilFormat::count)) {
 			//First attachment is the depth/stencil
 			//The next attachment is the intermediary or result attachment
 			static const std::array<vk::ClearValue, 2> cv = {
@@ -756,7 +756,7 @@ private:
 	{
 		std::unique_ptr<Image> result;
 
-		if(Math::isInRangeExclusive(depthStencilFmt, DepthStencilFormat::NONE, DepthStencilFormat::COUNT)) {
+		if(Math::isInRangeExclusive(depthStencilFmt, DepthStencilFormat::none, DepthStencilFormat::count)) {
 			const Image::Plane plane(
 				planeDescriptors.front().getExtent(),
 				toVulkan(depthStencilFmt),

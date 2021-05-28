@@ -211,7 +211,7 @@ struct TargetFrame::Impl {
 	{
 		//Ensure that the cache exists
 		if(!cache) {
-			cache = createCache(vulkan, *desc, DepthStencilFormat::NONE);
+			cache = createCache(vulkan, *desc, DepthStencilFormat::none);
 		}
 		assert(cache);
 

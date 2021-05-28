@@ -131,7 +131,7 @@ constexpr Math::Mat3x3f Chromaticities::calculateXYZ2RGBConversionMatrix() const
 
 constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept {
 	switch(colorPrim){
-	case ColorPrimaries::BT601_625: return Chromaticities(
+	case ColorPrimaries::bt601_625: return Chromaticities(
 		//https://en.wikipedia.org/wiki/Rec._601
 		Math::Vec2f(0.640f,		0.330f),
 		Math::Vec2f(0.290f, 	0.600f),
@@ -140,7 +140,7 @@ constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept {
 		100.0f
 	);
 
-	case ColorPrimaries::BT601_525: return Chromaticities(
+	case ColorPrimaries::bt601_525: return Chromaticities(
 		//https://en.wikipedia.org/wiki/Rec._601
 		Math::Vec2f(0.630f, 	0.340f),
 		Math::Vec2f(0.310f, 	0.595f),
@@ -149,7 +149,7 @@ constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept {
 		100.0f
 	);
 
-	case ColorPrimaries::BT709: return Chromaticities(
+	case ColorPrimaries::bt709: return Chromaticities(
 		//https://en.wikipedia.org/wiki/Rec._709
 		Math::Vec2f(0.64f,		0.33f),
 		Math::Vec2f(0.30f,	 	0.60f),
@@ -158,7 +158,7 @@ constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept {
 		100.0f
 	);
 
-	case ColorPrimaries::BT2020: return Chromaticities(
+	case ColorPrimaries::bt2020: return Chromaticities(
 		//https://en.wikipedia.org/wiki/Rec._2020
 		Math::Vec2f(0.708f, 	0.292f),
 		Math::Vec2f(0.17f, 		0.797f),
@@ -167,7 +167,7 @@ constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept {
 		100.0f //Actually not specified.
 	);
 
-	case ColorPrimaries::SMPTE431: return Chromaticities(
+	case ColorPrimaries::smpte431: return Chromaticities(
 		//https://en.wikipedia.org/wiki/DCI-P3
 		Math::Vec2f(0.680f, 	0.320f),
 		Math::Vec2f(0.265f, 	0.690f),
@@ -176,7 +176,7 @@ constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept {
 		48.0f
 	);
 
-	case ColorPrimaries::SMPTE432: return Chromaticities(
+	case ColorPrimaries::smpte432: return Chromaticities(
 		//https://en.wikipedia.org/wiki/DCI-P3 Just like the above one w/ different white point
 		Math::Vec2f(0.680f, 	0.320f),
 		Math::Vec2f(0.265f, 	0.690f),
@@ -185,7 +185,7 @@ constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept {
 		48.0f
 	);
 
-	case ColorPrimaries::IEC61966_2_1: return Chromaticities(
+	case ColorPrimaries::iec61966_2_1: return Chromaticities(
 		//https://en.wikipedia.org/wiki/Rec._709
 		Math::Vec2f(0.64f,		0.33f),
 		Math::Vec2f(0.30f,	 	0.60f),
@@ -194,7 +194,7 @@ constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept {
 		80.0f
 	);
 
-	case ColorPrimaries::ADOBE_RGB: return Chromaticities(
+	case ColorPrimaries::adobeRGB: return Chromaticities(
 		//https://en.wikipedia.org/wiki/Adobe_RGB_color_space
 		Math::Vec2f(0.6400f, 	0.3300f), 
 		Math::Vec2f(0.2100f, 	0.7100f), 
@@ -212,14 +212,14 @@ constexpr Chromaticities getChromaticities(ColorPrimaries colorPrim) noexcept {
 constexpr std::string_view toString(ColorPrimaries colorPrim) noexcept {
 	switch(colorPrim){
 
-	ZUAZO_ENUM2STR_CASE( ColorPrimaries, BT601_625 )
-	ZUAZO_ENUM2STR_CASE( ColorPrimaries, BT601_525 )
-	ZUAZO_ENUM2STR_CASE( ColorPrimaries, BT709 )
-	ZUAZO_ENUM2STR_CASE( ColorPrimaries, BT2020 )
-	ZUAZO_ENUM2STR_CASE( ColorPrimaries, SMPTE431 )
-	ZUAZO_ENUM2STR_CASE( ColorPrimaries, SMPTE432 )
-	ZUAZO_ENUM2STR_CASE( ColorPrimaries, IEC61966_2_1 )
-	ZUAZO_ENUM2STR_CASE( ColorPrimaries, ADOBE_RGB )
+	ZUAZO_ENUM2STR_CASE( ColorPrimaries, bt601_625 )
+	ZUAZO_ENUM2STR_CASE( ColorPrimaries, bt601_525 )
+	ZUAZO_ENUM2STR_CASE( ColorPrimaries, bt709 )
+	ZUAZO_ENUM2STR_CASE( ColorPrimaries, bt2020 )
+	ZUAZO_ENUM2STR_CASE( ColorPrimaries, smpte431 )
+	ZUAZO_ENUM2STR_CASE( ColorPrimaries, smpte432 )
+	ZUAZO_ENUM2STR_CASE( ColorPrimaries, iec61966_2_1 )
+	ZUAZO_ENUM2STR_CASE( ColorPrimaries, adobeRGB )
 
 	default: return "";
 	}
@@ -237,11 +237,11 @@ inline std::ostream& operator<<(std::ostream& os, ColorPrimaries colorPrim) {
 namespace Utils {
 
 constexpr ColorPrimaries EnumTraits<ColorPrimaries>::first() noexcept {
-	return ColorPrimaries::NONE + static_cast<ColorPrimaries>(1);
+	return ColorPrimaries::none + static_cast<ColorPrimaries>(1);
 }
 
 constexpr ColorPrimaries EnumTraits<ColorPrimaries>::last() noexcept {
-	return ColorPrimaries::COUNT - static_cast<ColorPrimaries>(1);
+	return ColorPrimaries::count - static_cast<ColorPrimaries>(1);
 }
 
 }

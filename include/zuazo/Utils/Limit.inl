@@ -1004,12 +1004,12 @@ constexpr Limit<T>::operator bool() const {
 
 template <typename T>
 constexpr LimitType Limit<T>::getType() const {
-	static_assert(std::is_same<typename std::variant_alternative<static_cast<int>(LimitType::NONE), Data>::type, 			None<T>>::value, "None index does not match");
-	static_assert(std::is_same<typename std::variant_alternative<static_cast<int>(LimitType::MUST_BE), Data>::type, 		MustBe<T>>::value, "MustBe index does not match");
-	static_assert(std::is_same<typename std::variant_alternative<static_cast<int>(LimitType::DISCRETE), Data>::type, 		Discrete<T>>::value, "Discrete index does not match");
-	static_assert(std::is_same<typename std::variant_alternative<static_cast<int>(LimitType::DISCRETE_RANGE), Data>::type, 	DiscreteRange<T>>::value, "DiscreteRange index does not match");
-	static_assert(std::is_same<typename std::variant_alternative<static_cast<int>(LimitType::RANGE), Data>::type, 			Range<T>>::value, "Range index does not match");
-	static_assert(std::is_same<typename std::variant_alternative<static_cast<int>(LimitType::ANY), Data>::type, 			Any<T>>::value, "Any index does not match");
+	static_assert(std::is_same<typename std::variant_alternative<static_cast<int>(LimitType::none), Data>::type, 			None<T>>::value, "None index does not match");
+	static_assert(std::is_same<typename std::variant_alternative<static_cast<int>(LimitType::mustBe), Data>::type, 		MustBe<T>>::value, "MustBe index does not match");
+	static_assert(std::is_same<typename std::variant_alternative<static_cast<int>(LimitType::discrete), Data>::type, 		Discrete<T>>::value, "Discrete index does not match");
+	static_assert(std::is_same<typename std::variant_alternative<static_cast<int>(LimitType::discreteRange), Data>::type, 	DiscreteRange<T>>::value, "DiscreteRange index does not match");
+	static_assert(std::is_same<typename std::variant_alternative<static_cast<int>(LimitType::range), Data>::type, 			Range<T>>::value, "Range index does not match");
+	static_assert(std::is_same<typename std::variant_alternative<static_cast<int>(LimitType::any), Data>::type, 			Any<T>>::value, "Any index does not match");
 
 	return static_cast<LimitType>(m_data.index());
 }
@@ -1207,7 +1207,7 @@ template <typename T>
 inline std::ostream& operator<<(std::ostream& os, const Limit<T>& limit) {
 	const auto type = limit.getType();
 	switch(type) {
-	case LimitType::NONE:
+	case LimitType::none:
 		return Zuazo::operator<<(
 			os, 
 			std::forward_as_tuple(
@@ -1215,7 +1215,7 @@ inline std::ostream& operator<<(std::ostream& os, const Limit<T>& limit) {
 				std::make_pair("data", std::cref(limit.getNone()))
 			)
 		);
-	case LimitType::MUST_BE:
+	case LimitType::mustBe:
 		return Zuazo::operator<<(
 			os, 
 			std::forward_as_tuple(
@@ -1223,7 +1223,7 @@ inline std::ostream& operator<<(std::ostream& os, const Limit<T>& limit) {
 				std::make_pair("data", std::cref(limit.getMustBe()))
 			)
 		);
-	case LimitType::DISCRETE:
+	case LimitType::discrete:
 		return Zuazo::operator<<(
 			os, 
 			std::forward_as_tuple(
@@ -1231,7 +1231,7 @@ inline std::ostream& operator<<(std::ostream& os, const Limit<T>& limit) {
 				std::make_pair("data", std::cref(limit.getDiscrete()))
 			)
 		);
-	case LimitType::DISCRETE_RANGE:
+	case LimitType::discreteRange:
 		return Zuazo::operator<<(
 			os, 
 			std::forward_as_tuple(
@@ -1239,7 +1239,7 @@ inline std::ostream& operator<<(std::ostream& os, const Limit<T>& limit) {
 				std::make_pair("data", std::cref(limit.getDiscreteRange()))
 			)
 		);
-	case LimitType::RANGE:
+	case LimitType::range:
 		return Zuazo::operator<<(
 			os, 
 			std::forward_as_tuple(
@@ -1247,7 +1247,7 @@ inline std::ostream& operator<<(std::ostream& os, const Limit<T>& limit) {
 				std::make_pair("data", std::cref(limit.getRange()))
 			)
 		);
-	case LimitType::ANY:
+	case LimitType::any:
 		return Zuazo::operator<<(
 			os, 
 			std::forward_as_tuple(
@@ -1267,12 +1267,12 @@ namespace Zuazo {
 constexpr std::string_view toString(Utils::LimitType type) noexcept {
 	switch(type){
 
-	ZUAZO_ENUM2STR_CASE( Utils::LimitType, NONE )
-	ZUAZO_ENUM2STR_CASE( Utils::LimitType, MUST_BE )
-	ZUAZO_ENUM2STR_CASE( Utils::LimitType, DISCRETE )
-	ZUAZO_ENUM2STR_CASE( Utils::LimitType, DISCRETE_RANGE )
-	ZUAZO_ENUM2STR_CASE( Utils::LimitType, RANGE )
-	ZUAZO_ENUM2STR_CASE( Utils::LimitType, ANY )
+	ZUAZO_ENUM2STR_CASE( Utils::LimitType, none )
+	ZUAZO_ENUM2STR_CASE( Utils::LimitType, mustBe )
+	ZUAZO_ENUM2STR_CASE( Utils::LimitType, discrete )
+	ZUAZO_ENUM2STR_CASE( Utils::LimitType, discreteRange )
+	ZUAZO_ENUM2STR_CASE( Utils::LimitType, range )
+	ZUAZO_ENUM2STR_CASE( Utils::LimitType, any )
 
 	default: return "";
 	}

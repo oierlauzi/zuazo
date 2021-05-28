@@ -129,7 +129,7 @@ private:
 
 class Frame::Geometry {
 public:
-	Geometry(	ScalingMode scaling = ScalingMode::STRETCH,
+	Geometry(	ScalingMode scaling = ScalingMode::stretch,
 				Math::Vec2f targetSize = Math::Vec2f() ) noexcept;
 	Geometry(const Geometry& other) noexcept = default;
 	~Geometry() = default;

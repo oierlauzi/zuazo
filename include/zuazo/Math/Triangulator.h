@@ -12,10 +12,10 @@
 namespace Zuazo::Math {
 
 enum class TriangleSideFlags {
-	NONE		= 0,
-	LEFT		= 1 << 0,
-	RIGHT		= 1 << 1,
-	BOTH		= LEFT | RIGHT
+	none		= 0,
+	left		= 1 << 0,
+	right		= 1 << 1,
+	both		= left | right
 };
 
 ZUAZO_ENUM_BIT_OPERATORS(TriangleSideFlags)

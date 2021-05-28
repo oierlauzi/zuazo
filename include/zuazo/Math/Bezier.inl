@@ -403,7 +403,7 @@ constexpr std::array<typename Bezier<T, Deg>::value_type, Deg> solve(	const Bezi
 	const auto polynomial = toPolynomial(s);
 	auto solution = solve(polynomial, &solutionCount);
 
-	if(solutionCount > SolutionCount::NONE) {
+	if(solutionCount > SolutionCount::none) {
 		//Remove all invalid solutions
 		const auto ite = std::remove_if(
 			solution.begin(),

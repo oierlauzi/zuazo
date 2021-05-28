@@ -10,9 +10,9 @@ namespace Zuazo {
 enum class RenderingLayer {
 	NONE = -1,
 	
-	BACKGROUND,
-	SCENE,
-	FOREGROUND,
+	background,
+	scene,
+	foreground,
 
 	//Add here
 

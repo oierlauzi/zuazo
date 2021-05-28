@@ -39,7 +39,7 @@ constexpr size_t getPlaneCount(ColorFormat format) noexcept {
 		case ColorFormat::G16_R16B16:
 		case ColorFormat::G16_B16R16:
 			return 2;
-		case ColorFormat::NONE:
+		case ColorFormat::none:
 			return 0;
 		default:
 			return 1;
@@ -392,11 +392,11 @@ inline std::ostream& operator<<(std::ostream& os, ColorFormat format) {
 namespace Utils {
 
 constexpr ColorFormat EnumTraits<ColorFormat>::first() noexcept {
-	return ColorFormat::NONE + static_cast<ColorFormat>(1);
+	return ColorFormat::none + static_cast<ColorFormat>(1);
 }
 
 constexpr ColorFormat EnumTraits<ColorFormat>::last() noexcept {
-	return ColorFormat::COUNT - static_cast<ColorFormat>(1);
+	return ColorFormat::count - static_cast<ColorFormat>(1);
 }
 
 }

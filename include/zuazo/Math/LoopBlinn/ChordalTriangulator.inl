@@ -71,7 +71,7 @@ inline TriangleSideFlags ChordalTriangulator<T, I>::operator()(	const typename t
 	if(falseDiag) {
 		//Treat specially the first tri, as its diagonal is actually an edge
 		switch (adjointDiagonals) {
-		case TriangleSideFlags::NONE: {
+		case TriangleSideFlags::none: {
 			//This triangle has no adjacent diagonals
 			//There is only one possible ordering
 			//Draw 4 triangles:
@@ -117,7 +117,7 @@ inline TriangleSideFlags ChordalTriangulator<T, I>::operator()(	const typename t
 
 			break;
 		}
-		case TriangleSideFlags::LEFT: {
+		case TriangleSideFlags::left: {
 			//This diagonal has another adjacent diagonal
 			//Draw 2 triangles:
 			//
@@ -155,7 +155,7 @@ inline TriangleSideFlags ChordalTriangulator<T, I>::operator()(	const typename t
 
 			break;
 		}
-		case TriangleSideFlags::RIGHT: {
+		case TriangleSideFlags::right: {
 			//This diagonal has another adjacent diagonal
 			//Draw 2 triangles:
 			//
@@ -193,7 +193,7 @@ inline TriangleSideFlags ChordalTriangulator<T, I>::operator()(	const typename t
 
 			break;
 		}
-		case TriangleSideFlags::BOTH: {
+		case TriangleSideFlags::both: {
 			//This triangle has another 2 adjacent diagonals.
 			//There is only one possible ordering
 			//Draw 3 triangles:
@@ -258,7 +258,7 @@ inline TriangleSideFlags ChordalTriangulator<T, I>::operator()(	const typename t
 
 	} else {
 		switch (adjointDiagonals) {
-		case TriangleSideFlags::NONE: {
+		case TriangleSideFlags::none: {
 			//This diagonal is the last one for this chordal line.
 			//Draw 2 triangles:
 			//
@@ -295,7 +295,7 @@ inline TriangleSideFlags ChordalTriangulator<T, I>::operator()(	const typename t
 
 			break;
 		}
-		case TriangleSideFlags::LEFT: {
+		case TriangleSideFlags::left: {
 			//This diagonal has another adjacent diagonal
 			//Draw 3 triangles:
 			//
@@ -335,7 +335,7 @@ inline TriangleSideFlags ChordalTriangulator<T, I>::operator()(	const typename t
 
 			break;
 		}
-		case TriangleSideFlags::RIGHT: {
+		case TriangleSideFlags::right: {
 			//This diagonal has another adjacent diagonal
 			//Draw 3 triangles:
 			//
@@ -375,7 +375,7 @@ inline TriangleSideFlags ChordalTriangulator<T, I>::operator()(	const typename t
 
 			break;
 		}
-		case TriangleSideFlags::BOTH: {
+		case TriangleSideFlags::both: {
 			//This triangle has another 2 adjacent diagonals.
 			//There is only one possible ordering
 			//Draw 4 triangles:
@@ -450,7 +450,7 @@ inline TriangleSideFlags ChordalTriangulator<T, I>::operator()(	const typename t
 		}
 	}
 
-	return TriangleSideFlags::NONE; //We dont care about the next triangle 
+	return TriangleSideFlags::none; //We dont care about the next triangle 
 }
 
 

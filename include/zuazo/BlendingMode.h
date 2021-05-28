@@ -8,21 +8,21 @@
 namespace Zuazo {
 
 enum class BlendingMode {
-	NONE = -1,			///<C = C_dst
+	none = -1,			///<C = C_dst
 
-	WRITE,				///<C = C_src
-	OPACITY,			///<C = C_src * A_src + C_dst * (1 - A_src)
-	ADD,				///<C = C_src * A_src + C_dst
-	DIFFERENCE,			///<C = C_dst - C_src * A_src
-	DIFFERENCE_1,		///<C = C_src * A_src - C_dst
-	DARKEN,				///<C = min(C_src * A_src, C_dst)
-	LIGHTEN,			///<C = max(C_src * A_src, C_dst)
-	MULTIPLY,			///<C = (C_src * A_src) * C_dst
-	SCREEN,				///<1 - C = (1 - C_src * A_src) * (1 - C_dst) => C = C_src * A_src + C_dst * (1 - C_src * A_src)
+	write,				///<C = C_src
+	opacity,			///<C = C_src * A_src + C_dst * (1 - A_src)
+	add,				///<C = C_src * A_src + C_dst
+	differenceInv,		///<C = C_dst - C_src * A_src
+	difference,			///<C = C_src * A_src - C_dst
+	darken,				///<C = min(C_src * A_src, C_dst)
+	lighten,			///<C = max(C_src * A_src, C_dst)
+	multiply,			///<C = (C_src * A_src) * C_dst
+	screen,				///<1 - C = (1 - C_src * A_src) * (1 - C_dst) => C = C_src * A_src + C_dst * (1 - C_src * A_src)
 
 	//Add here
 
-	COUNT
+	count
 };
 
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(BlendingMode)
@@ -48,3 +48,4 @@ struct EnumTraits<BlendingMode> {
 }
 
 #include "BlendingMode.inl"
+

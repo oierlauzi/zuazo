@@ -142,18 +142,18 @@ vk::Filter Sampler::getFilter(	const Vulkan& vulkan,
 {
 	//Nearest sampling is ensured to work in all cases. Avoid checking it
 	vk::Filter result = vk::Filter::eNearest;
-	if(filter != ScalingFilter::NEAREST) {
+	if(filter != ScalingFilter::nearest) {
 		//Check if we're using a sRGB format
 		if(fromSrgb(plane.getFormat()) != plane.getFormat()) {
 			//Using HW accelerated sRGB linearization
 			//From the shader's perspective, this is a linear format
-			colorTransferFunction = ColorTransferFunction::LINEAR;
+			colorTransferFunction = ColorTransferFunction::linear;
 		}
 
 		//We'll only be able to use a HW filter if there is no transfer function (or
 		//its linearization is supported by the TMU), as otherwise we'll need to 
 		//linearize before interpolating
-		if(colorTransferFunction == ColorTransferFunction::LINEAR) {
+		if(colorTransferFunction == ColorTransferFunction::linear) {
 			const auto format = plane.getFormat();
 
 			//There is a chance to optimize this
@@ -172,14 +172,14 @@ vk::Filter Sampler::getFilter(	const Vulkan& vulkan,
 				vk::FormatFeatureFlagBits::eSampledImageFilterLinear ;
 
 			switch (filter) {
-			case ScalingFilter::CUBIC:
+			case ScalingFilter::cubic:
 				if(optimalFeatures & CUBIC_FLAG){
 					result = vk::Filter::eCubicEXT;
 					break;
 				} 
 				ZUAZO_fallthrough; //else fall back into linear
 			
-			case ScalingFilter::LINEAR:
+			case ScalingFilter::linear:
 				if(optimalFeatures & LINEAR_FLAG) {
 					result = vk::Filter::eLinear;
 					break;

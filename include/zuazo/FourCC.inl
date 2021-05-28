@@ -15,53 +15,53 @@ constexpr std::tuple<ColorFormat, ColorSubsampling, ColorModel> fromFourCC(	Four
 
 	switch(fcc) {
 	case FourCC::RGBX:
-	case FourCC::RGBA:	return { ColorFormat::R8G8B8A8,											ColorSubsampling::RB_444, 	ColorModel::RGB };
+	case FourCC::RGBA:	return { ColorFormat::R8G8B8A8,											ColorSubsampling::rb444, 	ColorModel::rgb };
 	case FourCC::XRGB:
-	case FourCC::ARGB:	return { ColorFormat::A8R8G8B8,											ColorSubsampling::RB_444, 	ColorModel::RGB };
+	case FourCC::ARGB:	return { ColorFormat::A8R8G8B8,											ColorSubsampling::rb444, 	ColorModel::rgb };
 	case FourCC::BGRX:
-	case FourCC::BGRA:	return { ColorFormat::B8G8R8A8,											ColorSubsampling::RB_444, 	ColorModel::RGB };
+	case FourCC::BGRA:	return { ColorFormat::B8G8R8A8,											ColorSubsampling::rb444, 	ColorModel::rgb };
 	case FourCC::XBGR:
-	case FourCC::ABGR:	return { ColorFormat::A8B8G8R8,											ColorSubsampling::RB_444, 	ColorModel::RGB };
+	case FourCC::ABGR:	return { ColorFormat::A8B8G8R8,											ColorSubsampling::rb444, 	ColorModel::rgb };
 
 	case FourCC::Y800:																									
-	case FourCC::GREY:	return { ColorFormat::Y8, 												ColorSubsampling::NONE,		ColorModel::RGB };		
+	case FourCC::GREY:	return { ColorFormat::Y8, 												ColorSubsampling::none,		ColorModel::rgb };		
 
-	case FourCC::UYVY:	return { ColorFormat::B8G8R8G8,											ColorSubsampling::RB_422,	ycbcrModel };	
-	case FourCC::HDYC:	return { ColorFormat::B8G8R8G8,											ColorSubsampling::RB_422,	ColorModel::BT709 };	
-	case FourCC::YVYU:	return { ColorFormat::G8R8G8B8,											ColorSubsampling::RB_422,	ycbcrModel }; 	
+	case FourCC::UYVY:	return { ColorFormat::B8G8R8G8,											ColorSubsampling::rb422,	ycbcrModel };	
+	case FourCC::HDYC:	return { ColorFormat::B8G8R8G8,											ColorSubsampling::rb422,	ColorModel::bt709 };	
+	case FourCC::YVYU:	return { ColorFormat::G8R8G8B8,											ColorSubsampling::rb422,	ycbcrModel }; 	
 	case FourCC::YUYV:	
-	case FourCC::YUY2:	return { ColorFormat::G8B8G8R8,											ColorSubsampling::RB_422,	ycbcrModel };
+	case FourCC::YUY2:	return { ColorFormat::G8B8G8R8,											ColorSubsampling::rb422,	ycbcrModel };
 
-	case FourCC::Y216:	return { ColorFormat::G16B16G16R16,										ColorSubsampling::RB_422, 	ColorModel::RGB };
-	case FourCC::Y210:	return { ColorFormat::G10X6B10X6G10X6R10X6_16,							ColorSubsampling::RB_422, 	ColorModel::RGB };
-	case FourCC::Y416:	return { ColorFormat::A16R16G16B16,										ColorSubsampling::RB_444, 	ColorModel::RGB };
-	case FourCC::Y410:	return { ColorFormat::A2R10G10B10_32,									ColorSubsampling::RB_444, 	ColorModel::RGB };
+	case FourCC::Y216:	return { ColorFormat::G16B16G16R16,										ColorSubsampling::rb422, 	ColorModel::rgb };
+	case FourCC::Y210:	return { ColorFormat::G10X6B10X6G10X6R10X6_16,							ColorSubsampling::rb422, 	ColorModel::rgb };
+	case FourCC::Y416:	return { ColorFormat::A16R16G16B16,										ColorSubsampling::rb444, 	ColorModel::rgb };
+	case FourCC::Y410:	return { ColorFormat::A2R10G10B10_32,									ColorSubsampling::rb444, 	ColorModel::rgb };
 
-	//case FourCC::AYUV:	return { ColorFormat::A8G8B8R8,										ColorSubsampling::RB_444, 	ycbcrModel };
-	//case FourCC::UYVA:	return { ColorFormat::B8G8R8A8,										ColorSubsampling::RB_444, 	ycbcrModel };
+	//case FourCC::AYUV:	return { ColorFormat::A8G8B8R8,										ColorSubsampling::rb444, 	ycbcrModel };
+	//case FourCC::UYVA:	return { ColorFormat::B8G8R8A8,										ColorSubsampling::rb444, 	ycbcrModel };
 
-	case FourCC::NV12:	return { ColorFormat::G8_B8R8,											ColorSubsampling::RB_420,	ycbcrModel };
-	case FourCC::NV21:	return { ColorFormat::G8_R8B8,											ColorSubsampling::RB_420,	ycbcrModel };
-	case FourCC::NV16:	return { ColorFormat::G8_B8R8,											ColorSubsampling::RB_422,	ycbcrModel };
-	case FourCC::NV61:	return { ColorFormat::G8_R8B8,											ColorSubsampling::RB_422,	ycbcrModel };
-	case FourCC::NV24:	return { ColorFormat::G8_B8R8,											ColorSubsampling::RB_444,	ycbcrModel };
-	case FourCC::NV42:	return { ColorFormat::G8_R8B8,											ColorSubsampling::RB_444,	ycbcrModel };
+	case FourCC::NV12:	return { ColorFormat::G8_B8R8,											ColorSubsampling::rb420,	ycbcrModel };
+	case FourCC::NV21:	return { ColorFormat::G8_R8B8,											ColorSubsampling::rb420,	ycbcrModel };
+	case FourCC::NV16:	return { ColorFormat::G8_B8R8,											ColorSubsampling::rb422,	ycbcrModel };
+	case FourCC::NV61:	return { ColorFormat::G8_R8B8,											ColorSubsampling::rb422,	ycbcrModel };
+	case FourCC::NV24:	return { ColorFormat::G8_B8R8,											ColorSubsampling::rb444,	ycbcrModel };
+	case FourCC::NV42:	return { ColorFormat::G8_R8B8,											ColorSubsampling::rb444,	ycbcrModel };
 
-	case FourCC::P016:	return { ColorFormat::G16_B16R16,										ColorSubsampling::RB_420,	ycbcrModel };
-	case FourCC::P010:	return { ColorFormat::G10X6_B10X6R10X6_16,								ColorSubsampling::RB_420,	ycbcrModel };
-	case FourCC::P216:	return { ColorFormat::G16_B16R16,										ColorSubsampling::RB_422,	ycbcrModel };
-	case FourCC::P210:	return { ColorFormat::G10X6_B10X6R10X6_16,								ColorSubsampling::RB_422,	ycbcrModel };
+	case FourCC::P016:	return { ColorFormat::G16_B16R16,										ColorSubsampling::rb420,	ycbcrModel };
+	case FourCC::P010:	return { ColorFormat::G10X6_B10X6R10X6_16,								ColorSubsampling::rb420,	ycbcrModel };
+	case FourCC::P216:	return { ColorFormat::G16_B16R16,										ColorSubsampling::rb422,	ycbcrModel };
+	case FourCC::P210:	return { ColorFormat::G10X6_B10X6R10X6_16,								ColorSubsampling::rb422,	ycbcrModel };
 
-	case FourCC::PA16:	return { ColorFormat::G16_B16R16_A16,									ColorSubsampling::RB_422,	ycbcrModel };
+	case FourCC::PA16:	return { ColorFormat::G16_B16R16_A16,									ColorSubsampling::rb422,	ycbcrModel };
 
-	case FourCC::I420:	return { ColorFormat::G8_B8_R8,											ColorSubsampling::RB_420,	ycbcrModel }; 
-	case FourCC::I422:	return { ColorFormat::G8_B8_R8,											ColorSubsampling::RB_422,	ycbcrModel }; 
-	case FourCC::I444:	return { ColorFormat::G8_B8_R8,											ColorSubsampling::RB_444,	ycbcrModel }; 
+	case FourCC::I420:	return { ColorFormat::G8_B8_R8,											ColorSubsampling::rb420,	ycbcrModel }; 
+	case FourCC::I422:	return { ColorFormat::G8_B8_R8,											ColorSubsampling::rb422,	ycbcrModel }; 
+	case FourCC::I444:	return { ColorFormat::G8_B8_R8,											ColorSubsampling::rb444,	ycbcrModel }; 
 
 	//case FourCC::YV12:	/*TODO :NOT IMPLEMENTED*/
 	//case FourCC::YV16:	/*TODO :NOT IMPLEMENTED*/
 
-	default:			return { ColorFormat::NONE,												ColorSubsampling::NONE,		ColorModel::NONE }; 
+	default:			return { ColorFormat::none,												ColorSubsampling::none,		ColorModel::none }; 
 	}
 }
 
