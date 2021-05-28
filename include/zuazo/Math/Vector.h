@@ -357,11 +357,18 @@ constexpr Vec<T, N> proj(const Vec<T, N>& dir, const Vec<T, N>& p) noexcept;
 
 
 template<typename T, size_t N>
-std::ostream& operator<<(std::ostream& os, const Vec<T, N>& m);
+std::ostream& operator<<(std::ostream& os, const Vec<T, N>& v);
 
 }
 
-namespace Zuazo::Utils {
+
+
+namespace Zuazo {
+
+template<typename T, size_t N>
+bool fromString(std::string_view str, Math::Vec<T, N>& v, char separator = ',');
+
+namespace Utils {
 
 template<typename T, typename H>
 struct Hasher;
@@ -373,6 +380,8 @@ struct Hasher<Math::Vec<T, N>, H> {
 
 	constexpr hash_type operator()(const value_type& v) const noexcept;
 };
+
+}
 
 }
 

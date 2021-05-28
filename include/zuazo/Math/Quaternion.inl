@@ -1,5 +1,6 @@
 #include "Quaternion.h"
 
+#include "../StringConversions.h"
 #include "../Utils/Hasher.h"
 
 namespace Zuazo::Math {
@@ -403,16 +404,48 @@ constexpr typename Quaternion<T>::value_type getRoll(const Quaternion<T>& q) noe
 	return atan(sinr_cosp, cosr_cosp);
 }
 
+
+
+template<typename T>
+inline std::ostream& operator<<(std::ostream& os, const Quaternion<T>& q) {
+	for(size_t i = 0; i < q.size(); ++i) {
+		if(i > 0) os << ", ";
+		os << q[i];
+	}
+
+	return os;
+}
+
 }
 
 
 
-namespace Zuazo::Utils {
+namespace Zuazo {
+
+template<typename T>
+inline bool fromString(std::string_view str, Math::Quaternion<T>& q, char separator) {
+	Math::Vec4<T> temp;
+	
+	//Parse it as a vector
+	const auto result = fromString(str, temp, separator);
+
+	//Begin parsing
+	if(result) {
+		//Successfully parsed conver it to quaternion
+		q = Math::Quaternion<T>(temp.x, temp.y, temp.z, temp.w);
+	}
+
+	return result;
+}
+
+namespace Utils {
 
 template <typename T, typename H>
 constexpr typename Hasher<Math::Quaternion<T>, H>::hash_type 
-Hasher<Math::Quaternion<T>, H>::operator()(const value_type& v) const noexcept {
-	return hashAccumulate(v.cbegin(), v.cend());
+Hasher<Math::Quaternion<T>, H>::operator()(const value_type& q) const noexcept {
+	return hashAccumulate(q.cbegin(), q.cend());
+}
+
 }
 
 }

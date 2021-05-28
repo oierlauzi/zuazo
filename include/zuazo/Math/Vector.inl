@@ -1,5 +1,6 @@
 #include "Vector.h"
 
+#include "../StringConversions.h"
 #include "../Utils/Hasher.h"
 
 #include <algorithm>
@@ -743,26 +744,61 @@ constexpr Vec<T, N> proj(const Vec<T, N>& dir, const Vec<T, N>& p) noexcept {
 
 template<typename T, size_t N>
 inline std::ostream& operator<<(std::ostream& os, const Vec<T, N>& v) {
-	os << "[";
-
 	for(size_t i = 0; i < v.size(); ++i) {
 		if(i > 0) os << ", ";
 		os << v[i];
 	}
 
-	return os << "]";
+	return os;
 }
 
 }
 
 
 
-namespace Zuazo::Utils {
+namespace Zuazo {
+
+template<typename T, size_t N>
+inline bool fromString(std::string_view str, Math::Vec<T, N>& v, char separator) {
+	Math::Vec<T, N> temp;
+
+	//Begin parsing
+	for(auto& component : temp) {
+		//Determine the limits
+		const auto count = str.find(separator);
+
+		//Try to parse this component
+		if(!fromString(str.substr(0, count), component)) {
+			return false; //Fail
+		}
+
+		//Advance the read position
+		if(count < str.size()) {
+			str.remove_prefix(count + 1); //Skip the separator
+		} else {
+			//Nothing left
+			str = std::string_view();
+		}
+	}
+
+	//We should have reached the end
+	if(!str.empty()) {
+		return false;
+	}
+
+	//Successfully parsed
+	v = temp;
+	return true;
+}
+
+namespace Utils {
 
 template <typename T, size_t N, typename H>
 constexpr typename Hasher<Math::Vec<T, N>, H>::hash_type 
 Hasher<Math::Vec<T, N>, H>::operator()(const value_type& v) const noexcept {
 	return hashAccumulate(v.cbegin(), v.cend());
+}
+
 }
 
 }

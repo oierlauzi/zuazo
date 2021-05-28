@@ -1,5 +1,6 @@
 #include <zuazo/ClipBase.h>
 
+#include <zuazo/StringConversions.h>
 #include <zuazo/Utils/Functions.h>
 #include <zuazo/Math/Comparisons.h>
 #include <zuazo/Math/Periodic.h>
@@ -316,5 +317,48 @@ void ClipBase::setTimeStep(Duration step) noexcept {
 void ClipBase::setDuration(Duration dur) noexcept {
 	m_impl->setDuration(*this, dur);
 }
+
+
+
+
+
+std::string_view toString(ClipBase::State state) noexcept {
+	switch(state){
+
+	ZUAZO_ENUM2STR_CASE( ClipBase::State, PAUSED )
+	ZUAZO_ENUM2STR_CASE( ClipBase::State, PLAYING )
+
+	default: return "";
+	}
+}
+
+bool fromString(std::string_view str, ClipBase::State& state) {
+	return enumFromString(str, state);
+}
+
+std::ostream& operator<<(std::ostream& os, ClipBase::State state) {
+	return os << toString(state);
+}
+
+
+
+std::string_view toString(ClipBase::Repeat repeat) noexcept {
+	switch(repeat){
+
+	ZUAZO_ENUM2STR_CASE( ClipBase::Repeat, REPEAT )
+	ZUAZO_ENUM2STR_CASE( ClipBase::Repeat, PING_PONG )
+
+	default: return "";
+	}
+}
+
+bool fromString(std::string_view str, ClipBase::Repeat& repeat) {
+	return enumFromString(str, repeat);
+}
+
+std::ostream& operator<<(std::ostream& os, ClipBase::Repeat repeat) {
+	return os << toString(repeat);
+}
+
 
 }

@@ -122,6 +122,10 @@ inline bool fromString(const std::string& str, float& x) noexcept {
 	return success;
 }
 
+inline bool fromString(std::string_view str, float& x) noexcept {
+	return fromString(std::string(str), x);
+}
+
 inline std::string toString(double x) {
 	return std::to_string(x);
 }
@@ -141,6 +145,10 @@ inline bool fromString(const std::string& str, double& x) noexcept {
 	}
 
 	return success;
+}
+
+inline bool fromString(std::string_view str, double& x) noexcept {
+	return fromString(std::string(str), x);
 }
 
 
@@ -216,13 +224,7 @@ inline std::unordered_map<std::string_view, T> createStringToEnumLUT() {
 	const auto first = Utils::EnumTraits<T>::first();
 	const auto last = Utils::EnumTraits<T>::last();
 	for(auto i = first; i != last; ++i) {
-		const auto str = toString(i);
-		static_assert(
-			std::is_same<	typename std::remove_const<decltype(str)>::type, 
-							typename decltype(result)::key_type >::value, 
-			"Key type must match"
-		);
-		result.emplace(str, i);
+		result.emplace(toString(i), i);
 	}
 
 	return result;
@@ -243,7 +245,7 @@ inline bool enumFromString(std::string_view str, T& e) {
 
 
 template<typename T>
-inline std::ostream& enquote(std::ostream& os, T&& x) {
+inline std::ostream& quote(std::ostream& os, T&& x) {
     return os << '\"' << std::forward<T>(x) << '\"';
 }
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Macros.h"
 #include "Chrono.h"
 #include "Utils/Pimpl.h"
 
@@ -18,7 +19,7 @@ public:
 	};
 
 	enum class Repeat {
-		NONE,
+		NONE = -1,
 		REPEAT,
 		PING_PONG
 	};
@@ -74,5 +75,46 @@ private:
 	Utils::Pimpl<Impl>				m_impl;
 
 };
+
+
+
+ZUAZO_ENUM_ARITHMETIC_OPERATORS(ClipBase::State)
+ZUAZO_ENUM_COMP_OPERATORS(ClipBase::State)	
+
+std::string_view toString(ClipBase::State state) noexcept;
+bool fromString(std::string_view str, ClipBase::State& state);
+std::ostream& operator<<(std::ostream& os, ClipBase::State state);
+
+
+
+ZUAZO_ENUM_ARITHMETIC_OPERATORS(ClipBase::Repeat)
+ZUAZO_ENUM_COMP_OPERATORS(ClipBase::Repeat)	
+
+std::string_view toString(ClipBase::Repeat repeat) noexcept;
+bool fromString(std::string_view str, ClipBase::Repeat& repeat);
+std::ostream& operator<<(std::ostream& os, ClipBase::Repeat repeat);
+
+
+namespace Utils {
+
+template<typename T>
+class Any;
+
+template<typename T>
+struct EnumTraits;
+
+template<>
+struct EnumTraits<ClipBase::State> {
+	static constexpr ClipBase::State first() noexcept { return ClipBase::State::PAUSED; }
+	static constexpr ClipBase::State last() noexcept { return ClipBase::State::PLAYING; }
+};
+
+template<>
+struct EnumTraits<ClipBase::Repeat> {
+	static constexpr ClipBase::Repeat first() noexcept { return ClipBase::Repeat::REPEAT; }
+	static constexpr ClipBase::Repeat last() noexcept { return ClipBase::Repeat::PING_PONG; }
+};
+
+}
 
 }

@@ -279,13 +279,13 @@ constexpr Mat<T, N ,N> adj(const Mat<T, N, N>& m);
 template<typename T, size_t N>
 constexpr Mat<T, N ,N> inv(const Mat<T, N, N>& m);
 
-
-template<typename T, size_t M, size_t N>
-std::ostream& operator<<(std::ostream& os, const Mat<T, M, N>& m);
-
 }
 
-namespace Zuazo::Utils {
+
+
+namespace Zuazo {
+
+namespace Utils {
 
 template<typename T, typename H>
 struct Hasher;
@@ -297,6 +297,8 @@ struct Hasher<Math::Mat<T, N, M>, H> {
 
 	constexpr hash_type operator()(const value_type& v) const noexcept;
 };
+
+}
 
 }
 

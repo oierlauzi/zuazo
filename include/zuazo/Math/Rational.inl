@@ -297,8 +297,14 @@ inline std::ostream& operator<<(std::ostream& os, const Rational<num_t, den_t>& 
 	return os;
 }
 
+}
+
+
+
+namespace Zuazo {
+
 template<typename num_t, typename den_t>
-inline bool fromString(std::string_view str, Rational<num_t, den_t>& res) noexcept {
+inline bool fromString(std::string_view str, Math::Rational<num_t, den_t>& res) noexcept {
 	num_t num;
 	den_t den;
 	std::from_chars_result ret;
@@ -323,7 +329,12 @@ inline bool fromString(std::string_view str, Rational<num_t, den_t>& res) noexce
 		return false;
 	}
 
-	res = Rational<num_t, den_t>(num, den);
+	//We should have reached the end
+	if(ret.ptr != str.cend()) {
+		return false;
+	}
+
+	res = Math::Rational<num_t, den_t>(num, den);
 	return true;
 }
 

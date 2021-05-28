@@ -247,8 +247,14 @@ constexpr Rational<num_t, den_t>& operator/=(Rational<num_t, den_t>& lhs, const 
 template<typename num_t, typename den_t>
 std::ostream& operator<<(std::ostream& os, const Rational<num_t, den_t>& rat);
 
+}
+
+
+
+namespace Zuazo {
+
 template<typename num_t, typename den_t>
-bool fromString(std::string_view str, Rational<num_t, den_t>& res) noexcept;
+bool fromString(std::string_view str, Math::Rational<num_t, den_t>& res) noexcept;
 
 }
 

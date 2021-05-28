@@ -136,9 +136,20 @@ constexpr typename Quaternion<T>::value_type getPitch(const Quaternion<T>& q) no
 template<typename T>
 constexpr typename Quaternion<T>::value_type getRoll(const Quaternion<T>& q) noexcept;
 
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const Quaternion<T>& q);
+
 }
 
-namespace Zuazo::Utils {
+
+
+namespace Zuazo {
+
+template<typename T>
+bool fromString(std::string_view str, Math::Quaternion<T>& q, char separator = ',');
+
+namespace Utils {
 
 template<typename T, typename H>
 struct Hasher;
@@ -148,8 +159,10 @@ struct Hasher<Math::Quaternion<T>, H> {
 	using value_type = Math::Quaternion<T>;
 	using hash_type = H;
 
-	constexpr hash_type operator()(const value_type& v) const noexcept;
+	constexpr hash_type operator()(const value_type& q) const noexcept;
 };
+
+}
 
 }
 

@@ -37,8 +37,10 @@ std::string	toString(int64_t x);
 bool fromString(std::string_view str, int64_t& x) noexcept;
 std::string	toString(float x);
 bool fromString(const std::string& str, float& x) noexcept;
+bool fromString(std::string_view str, float& x) noexcept;
 std::string	toString(double x);
 bool fromString(const std::string& str, double& x) noexcept;
+bool fromString(std::string_view str, double& x) noexcept;
 
 //Provide a specialization for string
 const std::string& toString(const std::string& str);
@@ -68,7 +70,7 @@ template<typename T>
 bool enumFromString(std::string_view str, T& e);
 
 template<typename T>
-std::ostream& enquote(std::ostream& os, T&& x);
+std::ostream& quote(std::ostream& os, T&& x);
 
 template<typename... Types>
 std::ostream& printAsTuple(std::ostream& os, const Types&... elements);
