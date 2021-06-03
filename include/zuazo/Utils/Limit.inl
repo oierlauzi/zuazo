@@ -519,6 +519,14 @@ constexpr const None<T>& DiscreteRange<T>::intersect(const None<T>& other) const
  */
 
 template <typename T>
+constexpr Discrete<T>::Discrete(std::vector<T> vec)
+	: std::vector<T>(std::move(vec))
+{
+}
+
+
+
+template <typename T>
 constexpr bool Discrete<T>::operator==(const Discrete& other) const {
 	return std::equal(
 		std::vector<T>::cbegin(), std::vector<T>::cend(),

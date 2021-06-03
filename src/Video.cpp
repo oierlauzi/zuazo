@@ -292,10 +292,10 @@ struct VideoBase::Impl {
 
 
 	Impl( VideoModeCallback videoModeCbk) noexcept
-		: videoModeNegotiationCallback()
+		: videoModeNegotiationCallback(DefaultVideoModeNegotiator())
 		, videoModeCallback(std::move(videoModeCbk))
 		, videoModeCompatibility()
-		, videoMode(VideoMode::ANY)
+		, videoMode()
 	{
 	}
 
@@ -436,6 +436,21 @@ void VideoBase::setVideoModeCompatibility(std::vector<VideoMode> comp) noexcept 
 
 
 /*
+ * DefaultVideoModeNegotiator
+ */
+
+DefaultVideoModeNegotiator::DefaultVideoModeNegotiator(VideoMode videoMode)
+	: VideoMode(std::move(videoMode))
+{
+}
+
+VideoMode DefaultVideoModeNegotiator::operator()(VideoBase&, const std::vector<VideoMode>&) const {
+	return static_cast<const VideoMode&>(*this);
+}
+
+
+
+/*
  * VideoScalerBase::Impl
  */
 struct VideoScalerBase::Impl {	
@@ -496,6 +511,7 @@ struct VideoScalerBase::Impl {
 		return scalingFilterCallback;
 	}
 };
+
 
 
 /*

@@ -107,6 +107,8 @@ private:
 
 };
 
+
+
 class VideoBase {
 public:
 	using VideoModeCallback = std::function<void(VideoBase&, const VideoMode&)>;
@@ -139,6 +141,20 @@ private:
 	Utils::Pimpl<Impl>							m_impl;
 
 };
+
+
+
+struct DefaultVideoModeNegotiator 
+	: VideoMode
+{
+	explicit DefaultVideoModeNegotiator(VideoMode videoMode = VideoMode::ANY);
+	using VideoMode::VideoMode;
+	using VideoMode::operator=;
+
+	VideoMode operator()(VideoBase& base, const std::vector<VideoMode>& videoModes) const;
+};
+
+
 
 class VideoScalerBase {
 public:

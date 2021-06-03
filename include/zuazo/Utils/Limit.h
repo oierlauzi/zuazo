@@ -180,6 +180,7 @@ class Discrete
 	: public std::vector<T> 
 {
 public:
+	constexpr explicit Discrete(std::vector<T> vec);
 	using std::vector<T>::vector;
 	using std::vector<T>::operator=;
 
