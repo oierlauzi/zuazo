@@ -223,7 +223,7 @@ inline std::unordered_map<std::string_view, T> createStringToEnumLUT() {
 
 	const auto first = Utils::EnumTraits<T>::first();
 	const auto last = Utils::EnumTraits<T>::last();
-	for(auto i = first; i != last; ++i) {
+	for(auto i = first; i <= last; ++i) {
 		result.emplace(toString(i), i);
 	}
 
