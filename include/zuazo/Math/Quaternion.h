@@ -147,7 +147,7 @@ std::ostream& operator<<(std::ostream& os, const Quaternion<T>& q);
 namespace Zuazo {
 
 template<typename T>
-bool fromString(std::string_view str, Math::Quaternion<T>& q, char separator = ',');
+size_t fromString(std::string_view str, Math::Quaternion<T>& q, char separator = ',');
 
 namespace Utils {
 

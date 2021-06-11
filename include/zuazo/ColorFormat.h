@@ -305,7 +305,7 @@ constexpr size_t getPlaneCount(ColorFormat format) noexcept;
 constexpr bool hasAlpha(ColorFormat format) noexcept;
 
 constexpr std::string_view toString(ColorFormat format) noexcept;
-bool fromString(std::string_view str, ColorFormat& format);
+size_t fromString(std::string_view str, ColorFormat& format);
 std::ostream& operator<<(std::ostream& os, ColorFormat format);
 
 namespace Utils {

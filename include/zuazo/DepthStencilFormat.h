@@ -29,7 +29,7 @@ ZUAZO_ENUM_ARITHMETIC_OPERATORS(DepthStencilFormat)
 ZUAZO_ENUM_COMP_OPERATORS(DepthStencilFormat)	
 
 constexpr std::string_view toString(DepthStencilFormat format) noexcept;
-bool fromString(std::string_view str, DepthStencilFormat& format);
+size_t fromString(std::string_view str, DepthStencilFormat& format);
 std::ostream& operator<<(std::ostream& os, DepthStencilFormat format);
 
 namespace Utils {

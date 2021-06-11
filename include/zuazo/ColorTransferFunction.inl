@@ -21,7 +21,7 @@ constexpr std::string_view toString(ColorTransferFunction colorTransferFunc) noe
 	}
 }	
 
-inline bool fromString(std::string_view str, ColorTransferFunction& trf) {
+inline size_t fromString(std::string_view str, ColorTransferFunction& trf) {
 	return enumFromString(str, trf);
 }
 

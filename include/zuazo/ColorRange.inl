@@ -19,7 +19,7 @@ constexpr std::string_view toString(ColorRange colorRange) noexcept {
 	}
 }
 
-inline bool fromString(std::string_view str, ColorRange& range) {
+inline size_t fromString(std::string_view str, ColorRange& range) {
 	return enumFromString(str, range);
 }
 

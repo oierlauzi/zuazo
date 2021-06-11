@@ -254,7 +254,7 @@ std::ostream& operator<<(std::ostream& os, const Rational<num_t, den_t>& rat);
 namespace Zuazo {
 
 template<typename num_t, typename den_t>
-bool fromString(std::string_view str, Math::Rational<num_t, den_t>& res) noexcept;
+size_t fromString(std::string_view str, Math::Rational<num_t, den_t>& res) noexcept;
 
 }
 

@@ -15,7 +15,7 @@ constexpr std::string_view toString(ScalingFilter filter) noexcept {
 	}
 }
 
-inline bool fromString(std::string_view str, ScalingFilter& filter) {
+inline size_t fromString(std::string_view str, ScalingFilter& filter) {
 	return enumFromString(str, filter);
 }
 

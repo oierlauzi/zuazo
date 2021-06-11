@@ -423,13 +423,13 @@ inline std::ostream& operator<<(std::ostream& os, const Quaternion<T>& q) {
 namespace Zuazo {
 
 template<typename T>
-inline bool fromString(std::string_view str, Math::Quaternion<T>& q, char separator) {
+inline size_t fromString(std::string_view str, Math::Quaternion<T>& q, char separator) {
 	Math::Vec4<T> temp;
 	
 	//Parse it as a vector
 	const auto result = fromString(str, temp, separator);
 
-	//Begin parsing
+	//Write if successfully parsed
 	if(result) {
 		//Successfully parsed conver it to quaternion
 		q = Math::Quaternion<T>(temp.x, temp.y, temp.z, temp.w);

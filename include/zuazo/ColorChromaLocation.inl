@@ -14,7 +14,7 @@ constexpr std::string_view toString(ColorChromaLocation chromaLoc) noexcept {
 	}
 }
 
-inline bool fromString(std::string_view str, ColorChromaLocation& location) {
+inline size_t fromString(std::string_view str, ColorChromaLocation& location) {
 	return enumFromString(str, location);
 }
 

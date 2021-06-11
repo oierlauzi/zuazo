@@ -25,7 +25,7 @@ template<typename T>
 constexpr Math::Vec2<T> scale(const Math::Vec2<T>& srcSize, const Math::Vec2<T>& dstSize, ScalingMode mode) noexcept;
 
 constexpr std::string_view toString(ScalingMode mode) noexcept;
-bool fromString(std::string_view str, ScalingMode& mode);
+size_t fromString(std::string_view str, ScalingMode& mode);
 std::ostream& operator<<(std::ostream& os, ScalingMode scalingMode);
 
 namespace Utils {

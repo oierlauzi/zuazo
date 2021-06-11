@@ -143,32 +143,32 @@ inline std::ostream& operator<<(std::ostream& os, Resolution res) {
     return os << res.width << 'x' << res.height;
 }
 
-inline bool fromString(std::string_view str, Resolution& res) noexcept {
+inline size_t fromString(std::string_view str, Resolution& res) noexcept {
+	size_t read, result = 0;
 	uint width, height;
-	std::from_chars_result ret;
-	ret.ptr = str.cbegin();
+	char separator;
 	
 	//Parse the width
-	ret = std::from_chars(ret.ptr, str.cend(), width);
-	if(ret.ec != std::errc()) {
-		return false;
+	result += (read = fromString(str.substr(result), width));
+	if(!read) {
+		return 0;
 	}
 
 	//Expect a cross afterwards
-	if(ret.ptr != str.cend()) {
-		if(*(ret.ptr++) != 'x') {
-			return false;
-		}
+	result += (read = fromString(str.substr(result), separator));
+	if(!read || separator != 'x') {
+		return 0;
 	}
 
 	//Parse the height
-	ret = std::from_chars(ret.ptr, str.cend(), height);
-	if(ret.ec != std::errc()) {
-		return false;
+	result += (read = fromString(str.substr(result), height));
+	if(!read) {
+		return 0;
 	}
 
+	//Elaborate the result
 	res = Resolution(width, height);
-	return true;
+	return result;
 }
 
 

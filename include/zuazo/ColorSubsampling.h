@@ -34,7 +34,7 @@ constexpr Math::Vec2i getSubsamplingFactor(ColorSubsampling subs) noexcept;
 constexpr Resolution getSubsampledResolution(ColorSubsampling subs, Resolution res) noexcept;
 
 constexpr std::string_view toString(ColorSubsampling colorSubsampling) noexcept;
-bool fromString(std::string_view str, ColorSubsampling& subsampling);
+size_t fromString(std::string_view str, ColorSubsampling& subsampling);
 std::ostream& operator<<(std::ostream& os, ColorSubsampling colorSubsampling);
 
 namespace Utils {

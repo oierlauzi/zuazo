@@ -40,7 +40,7 @@ ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorTransferFunction)
 ZUAZO_ENUM_COMP_OPERATORS(ColorTransferFunction)	
 	
 constexpr std::string_view toString(ColorTransferFunction colorTransferFunc) noexcept;
-bool fromString(std::string_view str, ColorTransferFunction& trf);
+size_t fromString(std::string_view str, ColorTransferFunction& trf);
 std::ostream& operator<<(std::ostream& os, ColorTransferFunction colorTransferFunc);
 
 namespace Utils {

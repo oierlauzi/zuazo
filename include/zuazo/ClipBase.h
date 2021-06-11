@@ -82,7 +82,7 @@ ZUAZO_ENUM_ARITHMETIC_OPERATORS(ClipBase::State)
 ZUAZO_ENUM_COMP_OPERATORS(ClipBase::State)	
 
 std::string_view toString(ClipBase::State state) noexcept;
-bool fromString(std::string_view str, ClipBase::State& state);
+size_t fromString(std::string_view str, ClipBase::State& state);
 std::ostream& operator<<(std::ostream& os, ClipBase::State state);
 
 
@@ -91,7 +91,7 @@ ZUAZO_ENUM_ARITHMETIC_OPERATORS(ClipBase::Repeat)
 ZUAZO_ENUM_COMP_OPERATORS(ClipBase::Repeat)	
 
 std::string_view toString(ClipBase::Repeat repeat) noexcept;
-bool fromString(std::string_view str, ClipBase::Repeat& repeat);
+size_t fromString(std::string_view str, ClipBase::Repeat& repeat);
 std::ostream& operator<<(std::ostream& os, ClipBase::Repeat repeat);
 
 

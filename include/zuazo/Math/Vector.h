@@ -366,7 +366,7 @@ std::ostream& operator<<(std::ostream& os, const Vec<T, N>& v);
 namespace Zuazo {
 
 template<typename T, size_t N>
-bool fromString(std::string_view str, Math::Vec<T, N>& v, char separator = ',');
+size_t fromString(std::string_view str, Math::Vec<T, N>& v, char separatorCharacter = ',');
 
 namespace Utils {
 

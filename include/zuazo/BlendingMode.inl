@@ -21,7 +21,7 @@ constexpr std::string_view toString(BlendingMode mode) noexcept {
 	}
 }
 
-inline bool fromString(std::string_view str, BlendingMode& mode) {
+inline size_t fromString(std::string_view str, BlendingMode& mode) {
 	return enumFromString(str, mode);
 }
 

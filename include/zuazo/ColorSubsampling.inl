@@ -40,7 +40,7 @@ constexpr std::string_view toString(ColorSubsampling colorSubsampling) noexcept 
 	}
 }
 
-inline bool fromString(std::string_view str, ColorSubsampling& subsampling) {
+inline size_t fromString(std::string_view str, ColorSubsampling& subsampling) {
 	return enumFromString(str, subsampling);
 }
 

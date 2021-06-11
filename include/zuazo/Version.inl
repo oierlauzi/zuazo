@@ -1,8 +1,7 @@
 #include "Version.h"
 
+#include "StringConversions.h"
 #include "Utils/Functions.h"
-
-#include <charconv>
 
 namespace Zuazo {
 
@@ -57,44 +56,43 @@ inline std::ostream& operator<<(std::ostream& os, Version ver) {
 }
 
 inline bool fromString(std::string_view str, Version& ver) noexcept {
+	size_t read, result = 0;
 	uint major, minor, patch;
-	std::from_chars_result ret;
-	ret.ptr = str.cbegin();
+	char separator;
 	
 	//Parse the major version
-	ret = std::from_chars(ret.ptr, str.cend(), major);
-	if(ret.ec != std::errc()) {
-		return false;
+	result += (read = fromString(str.substr(result), major));
+	if(!read) {
+		return 0;
 	}
 
 	//Expect a point afterwards
-	if(ret.ptr != str.cend()) {
-		if(*(ret.ptr++) != '.') {
-			return false;
-		}
+	result += (read = fromString(str.substr(result), separator));
+	if(!read || separator != '.') {
+		return 0;
 	}
 
 	//Parse the minor version
-	ret = std::from_chars(ret.ptr, str.cend(), minor);
-	if(ret.ec  != std::errc()) {
-		return false;
+	result += (read = fromString(str.substr(result), minor));
+	if(!read) {
+		return 0;
 	}
 
 	//Expect a point afterwards
-	if(ret.ptr != str.cend()) {
-		if(*(ret.ptr++) != '.') {
-			return false;
-		}
+	result += (read = fromString(str.substr(result), separator));
+	if(!read || separator != '.') {
+		return 0;
 	}
 
 	//Parse the patch
-	ret = std::from_chars(ret.ptr, str.cend(), patch);
-	if(ret.ec  != std::errc()) {
-		return false;
+	result += (read = fromString(str.substr(result), patch));
+	if(!read) {
+		return 0;
 	}
 
+	//Elaborate the result
 	ver = Version(major, minor, patch);
-	return true;
+	return result;
 }	
 
 }

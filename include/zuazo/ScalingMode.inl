@@ -42,7 +42,7 @@ constexpr std::string_view toString(ScalingMode  mode) noexcept {
 	}
 }
 
-inline bool fromString(std::string_view str, ScalingMode& mode) {
+inline size_t fromString(std::string_view str, ScalingMode& mode) {
 	return enumFromString(str, mode);
 }
 

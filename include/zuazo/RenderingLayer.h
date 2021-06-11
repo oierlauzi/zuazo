@@ -8,7 +8,7 @@
 namespace Zuazo {
 
 enum class RenderingLayer {
-	NONE = -1,
+	none = -1,
 	
 	background,
 	scene,
@@ -16,13 +16,14 @@ enum class RenderingLayer {
 
 	//Add here
 
-	COUNT
+	count
 };
 
 ZUAZO_ENUM_ARITHMETIC_OPERATORS(RenderingLayer)
 ZUAZO_ENUM_COMP_OPERATORS(RenderingLayer)	
 
 constexpr std::string_view toString(RenderingLayer layer) noexcept;
+size_t fromString(std::string_view str, RenderingLayer& layer);
 std::ostream& operator<<(std::ostream& os, RenderingLayer layer);
 
 namespace Utils {

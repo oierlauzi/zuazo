@@ -75,7 +75,7 @@ struct ClipBase::Impl {
 			tp = TimePoint(Math::triangle(duration * 2, tp.time_since_epoch()) / 2);
 			break;
 
-		default: //Repeat::NONE
+		default: //Repeat::none
 			tp = Math::clamp(tp, minTime, maxTime);
 			break;
 		}
@@ -332,7 +332,7 @@ std::string_view toString(ClipBase::State state) noexcept {
 	}
 }
 
-bool fromString(std::string_view str, ClipBase::State& state) {
+size_t fromString(std::string_view str, ClipBase::State& state) {
 	return enumFromString(str, state);
 }
 
@@ -352,7 +352,7 @@ std::string_view toString(ClipBase::Repeat repeat) noexcept {
 	}
 }
 
-bool fromString(std::string_view str, ClipBase::Repeat& repeat) {
+size_t fromString(std::string_view str, ClipBase::Repeat& repeat) {
 	return enumFromString(str, repeat);
 }
 

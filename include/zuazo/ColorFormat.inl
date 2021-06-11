@@ -381,7 +381,7 @@ constexpr std::string_view toString(ColorFormat format) noexcept {
 	}
 }
 
-inline bool fromString(std::string_view str, ColorFormat& format) {
+inline size_t fromString(std::string_view str, ColorFormat& format) {
 	return enumFromString(str, format);
 }
 

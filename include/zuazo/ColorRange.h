@@ -31,7 +31,7 @@ ZUAZO_ENUM_ARITHMETIC_OPERATORS(ColorRange)
 ZUAZO_ENUM_COMP_OPERATORS(ColorRange)	
 
 constexpr std::string_view toString(ColorRange colorRange) noexcept;
-bool fromString(std::string_view str, ColorRange& range);
+size_t fromString(std::string_view str, ColorRange& range);
 std::ostream& operator<<(std::ostream& os, ColorRange colorRange);
 
 namespace Utils {

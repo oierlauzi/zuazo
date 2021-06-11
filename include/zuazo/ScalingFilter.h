@@ -18,7 +18,7 @@ ZUAZO_ENUM_ARITHMETIC_OPERATORS(ScalingFilter)
 ZUAZO_ENUM_COMP_OPERATORS(ScalingFilter)
 
 constexpr std::string_view toString(ScalingFilter filter) noexcept;
-bool fromString(std::string_view str, ScalingFilter& filter);
+size_t fromString(std::string_view str, ScalingFilter& filter);
 std::ostream& operator<<(std::ostream& os, ScalingFilter res);
 
 namespace Utils {

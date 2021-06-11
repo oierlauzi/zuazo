@@ -225,7 +225,7 @@ constexpr std::string_view toString(ColorPrimaries colorPrim) noexcept {
 	}
 }
 
-inline bool fromString(std::string_view str, ColorPrimaries& primaries) {
+inline size_t fromString(std::string_view str, ColorPrimaries& primaries) {
 	return enumFromString(str, primaries);
 }
 

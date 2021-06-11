@@ -89,7 +89,7 @@ constexpr Math::Mat3x3<T> constructRGB2XYZConversionMatrix(	const T red_x,	const
 
 
 constexpr std::string_view toString(ColorPrimaries colorPrim) noexcept;
-bool fromString(std::string_view str, ColorPrimaries& primaries);
+size_t fromString(std::string_view str, ColorPrimaries& primaries);
 std::ostream& operator<<(std::ostream& os, ColorPrimaries colorPrim);
 
 namespace Utils {

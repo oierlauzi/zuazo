@@ -84,7 +84,7 @@ constexpr std::string_view toString(ColorModel colorModel) noexcept {
 	}
 }
 
-inline bool fromString(std::string_view str, ColorModel& model) {
+inline size_t fromString(std::string_view str, ColorModel& model) {
 	return enumFromString(str, model);
 }
 

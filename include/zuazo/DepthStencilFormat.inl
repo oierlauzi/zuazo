@@ -19,7 +19,7 @@ constexpr std::string_view toString(DepthStencilFormat format) noexcept {
 	}
 }
 
-inline bool fromString(std::string_view str, DepthStencilFormat& format) {
+inline size_t fromString(std::string_view str, DepthStencilFormat& format) {
 	return enumFromString(str, format);
 }
 

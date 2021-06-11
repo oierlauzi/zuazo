@@ -759,36 +759,31 @@ inline std::ostream& operator<<(std::ostream& os, const Vec<T, N>& v) {
 namespace Zuazo {
 
 template<typename T, size_t N>
-inline bool fromString(std::string_view str, Math::Vec<T, N>& v, char separator) {
+inline size_t fromString(std::string_view str, Math::Vec<T, N>& v, char separatorCharacter) {
+	size_t read, result = 0;
 	Math::Vec<T, N> temp;
+	char separator;
 
-	//Begin parsing
-	for(auto& component : temp) {
-		//Determine the limits
-		const auto count = str.find(separator);
-
-		//Try to parse this component
-		if(!fromString(str.substr(0, count), component)) {
-			return false; //Fail
+	//Parse component by component
+	for(size_t i = 0; i < temp.size(); ++i) {
+		//Except for the first one, expect a separator
+		if(i > 0) {
+			result += (read = fromString(str.substr(result), separator));
+			if(!read || separator != separatorCharacter) {
+				return 0;
+			}	
 		}
 
-		//Advance the read position
-		if(count < str.size()) {
-			str.remove_prefix(count + 1); //Skip the separator
-		} else {
-			//Nothing left
-			str = std::string_view();
+		//Try to parse a component
+		result += (read = fromString(str.substr(result), temp[i]));
+		if(!read) {
+			return 0;
 		}
 	}
 
-	//We should have reached the end
-	if(!str.empty()) {
-		return false;
-	}
-
-	//Successfully parsed
+	//Elaborate the result
 	v = temp;
-	return true;
+	return result;
 }
 
 namespace Utils {

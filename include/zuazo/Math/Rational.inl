@@ -304,38 +304,33 @@ inline std::ostream& operator<<(std::ostream& os, const Rational<num_t, den_t>& 
 namespace Zuazo {
 
 template<typename num_t, typename den_t>
-inline bool fromString(std::string_view str, Math::Rational<num_t, den_t>& res) noexcept {
+inline size_t fromString(std::string_view str, Math::Rational<num_t, den_t>& res) noexcept {
+	size_t read, result = 0;
 	num_t num;
 	den_t den;
-	std::from_chars_result ret;
-	ret.ptr = str.cbegin();
+	char separator;
 	
 	//Parse the numerator
-	ret = std::from_chars(ret.ptr, str.cend(), num);
-	if(ret.ec != std::errc()) {
-		return false;
+	result += (read = fromString(str.substr(result), num));
+	if(!read) {
+		return 0;
 	}
 
 	//Expect a slash afterwards
-	if(ret.ptr != str.cend()) {
-		if(*(ret.ptr++) != '/') {
-			return false;
-		}
+	result += (read = fromString(str.substr(result), separator));
+	if(!read || separator != '/') {
+		return 0;
 	}
 
 	//Parse the denominator
-	ret = std::from_chars(ret.ptr, str.cend(), den);
-	if(ret.ec != std::errc()) {
-		return false;
+	result += (read = fromString(str.substr(result), den));
+	if(!read) {
+		return 0;
 	}
 
-	//We should have reached the end
-	if(ret.ptr != str.cend()) {
-		return false;
-	}
-
+	//Elaborate the result
 	res = Math::Rational<num_t, den_t>(num, den);
-	return true;
+	return result;
 }
 
 }

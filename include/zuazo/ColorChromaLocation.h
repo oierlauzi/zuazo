@@ -27,7 +27,7 @@ ZUAZO_ENUM_COMP_OPERATORS(ColorChromaLocation)
 
 
 constexpr std::string_view toString(ColorChromaLocation colorChromaLoc) noexcept;
-bool fromString(std::string_view str, ColorChromaLocation& location);
+size_t fromString(std::string_view str, ColorChromaLocation& location);
 std::ostream& operator<<(std::ostream& os, ColorChromaLocation location);
 
 namespace Utils {
