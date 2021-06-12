@@ -57,7 +57,7 @@ constexpr void Transform<T>::setScale(const Vec3<T>& scale) noexcept {
 
 template<typename T>
 constexpr const Vec3<T>& Transform<T>::getScale() const noexcept {
-	return m_position;
+	return m_scale;
 }
 
 
