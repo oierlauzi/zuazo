@@ -35,7 +35,7 @@ struct LayerBase::Impl {
 		: transform()
 		, opacity(1.0f)
 		, blendingMode(BlendingMode::opacity)
-		, renderingLayer(RenderingLayer::scene)
+		, renderingLayer(RenderingLayer::background)
 		, renderPass()
 		, transformCallback(std::move(transformCbk))
 		, opacityCallback(std::move(opacityCbk))
