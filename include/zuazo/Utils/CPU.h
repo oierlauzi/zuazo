@@ -31,8 +31,14 @@ constexpr size_t getByteSize() noexcept;
 
 
 
+constexpr uintptr_t alignLower(uintptr_t ptr, size_t alignment) noexcept;
+constexpr uintptr_t alignUpper(uintptr_t ptr, size_t alignment) noexcept;
 constexpr uintptr_t align(uintptr_t ptr, size_t alignment) noexcept;
 
+template<typename T>
+T* alignLower(T* ptr, size_t alignment) noexcept;
+template<typename T>
+T* alignUpper(T* ptr, size_t alignment) noexcept;
 template<typename T>
 T* align(T* ptr, size_t alignment) noexcept;
 

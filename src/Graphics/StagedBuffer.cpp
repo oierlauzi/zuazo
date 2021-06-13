@@ -64,8 +64,8 @@ void StagedBuffer::flushData(	const Vulkan& vulkan,
 		const auto& limits = vulkan.getPhysicalDeviceProperties().limits;
 		const vk::MappedMemoryRange range(
 			m_stagingBuffer.getDeviceMemory(),
-			area.offset(), 
-			Utils::align(area.size(), limits.nonCoherentAtomSize)
+			Utils::alignLower(area.offset(), limits.nonCoherentAtomSize),
+			Utils::alignUpper(area.size(), limits.nonCoherentAtomSize)
 		);
 		vulkan.flushMappedMemory(range);
 

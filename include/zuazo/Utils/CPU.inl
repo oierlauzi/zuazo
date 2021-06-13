@@ -72,8 +72,29 @@ constexpr size_t getByteSize() noexcept {
 
 
 
-constexpr uintptr_t align(uintptr_t ptr, size_t alignment) noexcept {
+constexpr uintptr_t alignLower(uintptr_t ptr, size_t alignment) noexcept {
+	return (ptr / alignment) * alignment;
+}
+
+constexpr uintptr_t alignUpper(uintptr_t ptr, size_t alignment) noexcept {
 	return ((ptr + alignment - 1) / alignment) * alignment;
+}
+
+constexpr uintptr_t align(uintptr_t ptr, size_t alignment) noexcept {
+	return alignUpper(ptr, alignment);
+}
+
+
+template<typename T>
+inline T* alignLower(T* ptr, size_t alignment) noexcept {
+	static_assert(sizeof(T*) == sizeof(uintptr_t));
+	return reinterpret_cast<T*>(alignLower(reinterpret_cast<uintptr_t>(ptr), alignment));
+}
+
+template<typename T>
+inline T* alignUpper(T* ptr, size_t alignment) noexcept {
+	static_assert(sizeof(T*) == sizeof(uintptr_t));
+	return reinterpret_cast<T*>(alignUpper(reinterpret_cast<uintptr_t>(ptr), alignment));
 }
 
 template<typename T>
