@@ -5,13 +5,13 @@ vec3 rgb2hsv(vec3 rgb) {
 	const vec4 K = vec4(0.0, -1.0/3.0, 2.0/3.0, -1.0);
 	const float epsilon = 1.0e-10;
 
-	const vec4 p = rgb.g < rgb.b ? vec4(rgb.bg, K.wz) : vec4(rgb.gb, K.xy);
-	const vec4 q = rgb.r < p.x   ? vec4(p.xyw, rgb.r) : vec4(rgb.r, p.yzx);
+	const vec4 p = (rgb.g < rgb.b) ? vec4(rgb.bg, K.wz) : vec4(rgb.gb, K.xy);
+	const vec4 q = (rgb.r < p.x)   ? vec4(p.xyw, rgb.r) : vec4(rgb.r, p.yzx);
 
 	//Calculate the final result
 	const float d = q.x - min(q.w, q.y);
 	return vec3(
-		60.0 * abs(q.z + (q.w - q.y) / (d + epsilon)), //Unlike the original, hue 0 to 360
+		abs(q.z + (q.w - q.y) / (6.0*d + epsilon)),
 		d / (q.x + epsilon), 
 		q.x
 	);
@@ -20,10 +20,9 @@ vec3 rgb2hsv(vec3 rgb) {
 //Based on:
 //http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
 vec3 hsv2rgb(vec3 hsv) {
-	const float angleNorm = 1.0/60.0; //Used to turn 0-360 into 0-6
 	const vec4 K = vec4(1.0, 2.0/3.0, 1.0/3.0, 3.0);
 
-	const vec3 p = abs(angleNorm*fract(hsv.xxx + K.xyz) - K.www);
+	const vec3 p = abs(6.0*fract(hsv.xxx + K.xyz) - K.www);
 	return hsv.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), hsv.y);
 }
 
