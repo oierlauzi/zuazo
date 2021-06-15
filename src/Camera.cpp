@@ -102,25 +102,38 @@ Math::Mat4x4f RendererBase::Camera::calculateViewMatrix() const {
 }
 
 Math::Mat4x4f RendererBase::Camera::calculateProjectionMatrix(const Math::Vec2f& size) const {
-	switch(getProjection()) {
+	Math::Mat4x4f result;
+
+	switch(m_projection) {
 	case Projection::orthogonal:
-		return Math::ortho(
+		result = Math::ortho(
 			-size.x / 2.0f, +size.x / 2.0f,	//Left, Right
 			-size.y / 2.0f, +size.y / 2.0f,	//Bottom, Top
-			getNearClip(), getFarClip()		//Clipping planes
+			m_nearClip, m_farClip			//Clipping planes
 		);
+
+		break;
 
 	case Projection::frustum:
-		return Math::perspective(
-			Math::deg2rad(getFieldOfView()),//Vertical FOV
-			size.x / size.y,				//Aspect ratio
-			getNearClip(), getFarClip()		//Clipping planes
-		);
+		if(std::isinf(m_farClip)) {
+			result = Math::perspective(
+				getFieldOfView(),				//Vertical FOV
+				size.x / size.y,				//Aspect ratio
+				m_nearClip						//Clipping plane
+			);
+		} else {
+			result = Math::perspective(
+				getFieldOfView(),				//Vertical FOV
+				size.x / size.y,				//Aspect ratio
+				m_nearClip, m_farClip			//Clipping planes
+			);
+		}
 
-	default:
-		return Math::Mat4x4f(1.0f);
+		break;
 
 	}
+
+	return result;
 }
 
 }
