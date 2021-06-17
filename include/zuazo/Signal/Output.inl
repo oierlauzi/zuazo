@@ -17,6 +17,9 @@ inline Output<T>::Output(	const Layout& layout,
 							PullCallback pullCbk ) noexcept
 	: PadBase(layout, std::move(name))
 	, m_pullCallback(std::move(pullCbk))
+	, m_maxRecursion(1)
+	, m_recursion(0)
+	, m_lastElement()
 {
 }
 
@@ -63,6 +66,23 @@ inline const typename Output<T>::PullCallback& Output<T>::getPullCallback() cons
 }
 
 
+template <typename T>
+inline void Output<T>::setMaxRecursion(size_t rec) noexcept {
+	m_maxRecursion = rec;
+}
+
+template <typename T>
+inline size_t Output<T>::getMaxRecursion() const noexcept {
+	return m_maxRecursion;
+}
+
+template <typename T>
+inline size_t Output<T>::getRecursion() const noexcept {
+	return m_recursion;
+}
+
+
+
 
 template <typename T>
 inline void Output<T>::reset() noexcept {
@@ -76,8 +96,11 @@ void Output<T>::push(Element element) noexcept {
 
 template <typename T>
 inline const typename Output<T>::Element& Output<T>::pull() noexcept {
-	if(m_pullCallback) {
+	//Only invoke the callback if not exceeding the maximum recursion
+	if(m_pullCallback && m_recursion < m_maxRecursion) {
+		++m_recursion;
 		m_pullCallback(*this);
+		--m_recursion;
 	}
 
 	return m_lastElement;

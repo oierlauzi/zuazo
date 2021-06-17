@@ -42,6 +42,10 @@ public:
 	void						setPullCallback(PullCallback cbk) noexcept;
 	const PullCallback&			getPullCallback() const noexcept;
 
+	void						setMaxRecursion(size_t rec) noexcept;
+	size_t						getMaxRecursion() const noexcept;
+	size_t						getRecursion() const noexcept;
+
 	void						reset() noexcept;
 	void						push(Element element) noexcept;
 	const Element&				pull() noexcept;
@@ -51,6 +55,8 @@ public:
 
 private:
 	PullCallback				m_pullCallback;
+	size_t						m_maxRecursion;
+	size_t						m_recursion;
 	T							m_lastElement;
 
 };
@@ -81,6 +87,10 @@ public:
 	using PadBase::getLayout;
 	using Output<T>::getName;
 	using Output<T>::getLastElement;
+
+	using Output<T>::setMaxRecursion;
+	using Output<T>::getMaxRecursion;
+	using Output<T>::getRecursion;
 
 	Consumers					getConsumers() const;
 
