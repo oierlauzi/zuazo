@@ -514,9 +514,17 @@ struct Vulkan::Impl {
 		}
 
 		if(i < memoryProperties.memoryTypeCount){
+			size_t size = requirements.size;
+
+			if(properties | vk::MemoryPropertyFlagBits::eHostVisible) {
+				//As it is host visible, align it to the non-coherent atom size
+				const auto nonCoherentAtomSize = getPhysicalDeviceProperties().limits.nonCoherentAtomSize;
+				size = Utils::align(requirements.size, nonCoherentAtomSize);
+			}
+
 			//Found a suitable memory type
 			const vk::MemoryAllocateInfo allocInfo(
-				requirements.size,						//Size
+				size,									//Size
 				i										//Memory type index
 			);
 

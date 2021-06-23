@@ -247,11 +247,6 @@ Buffer StagedBuffer::createStagingBuffer(	const Vulkan& vulkan,
 	constexpr vk::MemoryPropertyFlags memoryFlags =
 		vk::MemoryPropertyFlagBits::eHostVisible;
 
-	//In order to align size with nonCoherentAtomSize for flushing,
-	// it might need to be lengthened in order to have the correct size
-	const auto& limits = vulkan.getPhysicalDeviceProperties().limits;
-	size = Utils::align(size, limits.nonCoherentAtomSize);
-
 	return Buffer(
 		vulkan,
 		usageFlags,
